@@ -80,8 +80,8 @@ module PcListenerModule
 						SharedMemory.Initialize()
 						SharedMemory.SetMode(SharedMemory::SequenceDown)
 					when SharedLib::LoadConfigFromPC
-						dataFromPc = params["#{SharedLib::PcToBbbData}"]
-					  puts "parameter '#{SharedLib::PcToBbbCmd}' = '#{dataFromPc}'"
+						SharedMemory.Initialize()
+						SharedMemory.SetConfiguration(params["#{SharedLib::PcToBbbData}"])
 					else
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 					end						

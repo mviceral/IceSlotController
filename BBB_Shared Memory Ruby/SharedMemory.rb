@@ -19,39 +19,87 @@ class SharedMemory
     
     InRunMode = "InRunMode"
     InStopMode = "InStopMode"
-    
+    InIdleMode = "InIdleMode"
     SequenceUp = "SequenceUp"
     SequenceDown = "SequenceDown"
+    
+    TimeOfPcUpload = "TimeOfPcUpload"
+    Configuration = "Configuration"
+    TimeOfPcLastCmd = "TimeOfPcLastCmd"
     
     #
     # Known functions of SharedMemoryExtension
     #
+    def SetTimeOfPcLastCmd(timeOfPcLastCmdParam)
+        getDS()[TimeOfPcLastCmd] = timeOfPcLastCmdParam
+        return WriteDataV1(getDS().to_json)
+    end
+    
+    def GetTimeOfPcLastCmd()
+        return getDS()[TimeOfPcLastCmd]
+    end
+    
+    def GetTimeOfPcUpload()
+        return getDS()[TimeOfPcUpload]
+    end
+    
+    def GetConfiguration()
+        return JSON.parse(getDS()[Configuration])
+    end
+    
+    def SetConfiguration(dataParam)
+        getDS()[TimeOfPcUpload] = Time.new.to_i
+        getDS()[Configuration] = dataParam
+        SetTimeOfPcLastCmd(Time.new.to_i)
+        return WriteDataV1(getDS().to_json)
+    end
+    
     def Initialize()
         #   - This function initialized the shared memory variables.  If not called, the functions below will be rendered 
         #   useless.
         InitializeSharedMemory()
     end 
 
-    def GetMode()
-        ds = JSON.parse(GetDataV1()) # ds = data structure.
-        return ds[Mode]
+	def GetPcCmd()
+        return getDS()[Cmd]
+	end
+	
+    def SetPcCmd(cmdParam,calledFrom)
+        puts "param sent #{cmdParam}"
+        oldCmdParam = getDS()[Cmd]
+        print "Changing bbb mode from #{oldCmdParam} to "
+        getDS()[Cmd] = "#{cmdParam}"
+        puts "#{cmdParam} [#{calledFrom}]"
+        SetTimeOfPcLastCmd(Time.new.to_i)
+        return WriteDataV1(getDS().to_json)
+    end
+	
+	def GetBbbMode()
+        return getDS()[Mode]
     end
     
     def getDS() 
         #
         # Get the DS - data structure
         #
-        begin
-            ds = JSON.parse(GetDataV1()) # ds = data structure.
-        rescue
-            ds = Hash.new
+        if @ds.nil?
+            begin
+                @ds = JSON.parse(GetDataV1()) # ds = data structure.
+            rescue
+                @ds = Hash.new
+            end
         end
-        return ds
+        return @ds
     end
 
-    def SetMode(modeParam)
-        getDS()[Mode] = modeParam
-        WriteDataV1(getDS().to_json)
+    def SetBbbMode(modeParam,calledFrom)
+        puts "param sent #{modeParam}"
+        oldModeParam = getDS()[Mode]
+        print "Changing bbb mode from #{oldModeParam} to "
+        getDS()[Mode] = "#{modeParam}"
+        puts "#{modeParam} [#{calledFrom}]"
+        SetTimeOfPcLastCmd(Time.new.to_i)
+        return WriteDataV1(getDS().to_json)
     end
 	
     def GetData()

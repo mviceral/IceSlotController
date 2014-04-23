@@ -8,6 +8,7 @@ require_relative "../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryBbbGpio2"
 require 'json'
 require 'socket'      # Sockets are in standard library
 
+EMULATOR_STATE = false
 
 #@Removed comment to run on real machine
 require 'beaglebone'
@@ -192,7 +193,7 @@ include Port2Interface
 
 
     # Shared memory for emulator.
-    @emulatorEnabled = true
+    @emulatorEnabled = EMULATOR_STATE
     puts "initializing @regValues #{__LINE__}-#{__FILE__}"
     @regValues = Hash.new
     @sharedBbbGpio2 = SharedMemoryBbbGpio2.new
@@ -220,6 +221,7 @@ include Port2Interface
     end
 
     def forTesting_getGpio2State
+        # getForInitGetImagesOf16Addrs
         fromSharedMem = @sharedBbbGpio2.GetData()
         if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
             # The shared memory has some legit data in it.
@@ -269,7 +271,6 @@ include Port2Interface
         #
         # This function sets a value 'dataParam' on a given register address 'addrParam',
         #        
-        
         fromSharedMem = @sharedBbbGpio2.GetData()
         if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
             # The shared memory has some legit data in it.
@@ -283,7 +284,7 @@ include Port2Interface
         
         if @regValues[addrParam].nil? == false
             inBits = getBits(@regValues[addrParam])
-            puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : Current value."
+            # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : Current value."
         end
 =begin        
         inBits = getBits(dataParam)
@@ -291,7 +292,7 @@ include Port2Interface
 =end        
         @regValues[addrParam] = dataParam
         inBits = getBits(@regValues[addrParam])
-        puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : New value."
+        # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : New value."
         
         #
         # Send data to real time register data viewer
@@ -307,7 +308,6 @@ include Port2Interface
                 # puts e.message  
                 # puts e.backtrace.inspect  
         end        
-
         sendToPort2(addrParam,dataParam)
         # End of 'def setGPIO2(addrParam, dataParam)'
     end
@@ -316,7 +316,7 @@ include Port2Interface
         #
         # This function returns the value of a given address 'addrParam' of a register.
         #
-
+=begin
         if @emulatorEnabled == true
             fromSharedMem = @sharedBbbGpio2.GetData()
             if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
@@ -327,9 +327,12 @@ include Port2Interface
             end
             
             return parsed[addrParam.to_s].to_i
-        else    
+        else
+=end            
             return getFromPort2(addrParam)
+=begin            
         end
+=end        
     end
     
   def getForInitGetImagesOf16Addrs
@@ -351,7 +354,31 @@ include Port2Interface
       @regValues[ETS_ENA3_xB] = getGPIO2(ETS_ENA3_xB)
       @regValues[ETS_RX_SEL_xC] = getGPIO2(ETS_RX_SEL_xC)
       @regValues[ANA_MEAS4_SEL_xD] = getGPIO2(ANA_MEAS4_SEL_xD)
-      
+
+        fromSharedMem = @sharedBbbGpio2.GetData()
+        if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
+            # The shared memory has some legit data in it.
+            parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
+        else
+            parsed = Hash.new
+        end
+        
+        parsed[SLOT_ADDR_x0.to_s] = @regValues[SLOT_ADDR_x0]
+        parsed[LED_STAT_x1.to_s] = @regValues[LED_STAT_x1]
+        parsed[EXT_INPUTS_x2.to_s] = @regValues[EXT_INPUTS_x2] 
+        parsed[PS_ENABLE_x3.to_s] = @regValues[PS_ENABLE_x3]
+        parsed[EXT_SLOT_CTRL_x4.to_s] = @regValues[EXT_SLOT_CTRL_x4]
+        parsed[SLOT_FAN_PWM_x5.to_s] = @regValues[SLOT_FAN_PWM_x5]
+        parsed[ETS_ALM1_x6.to_s] = @regValues[ETS_ALM1_x6] 
+        parsed[ETS_ALM2_x7.to_s] = @regValues[ETS_ALM2_x7] 
+        parsed[ETS_ALM3_x8.to_s] = @regValues[ETS_ALM3_x8] 
+        parsed[ETS_ENA1_x9.to_s] = @regValues[ETS_ENA1_x9] 
+        parsed[ETS_ENA2_xA.to_s] = @regValues[ETS_ENA2_xA] 
+        parsed[ETS_ENA3_xB.to_s] = @regValues[ETS_ENA3_xB] 
+        parsed[ETS_RX_SEL_xC.to_s] = @regValues[ETS_RX_SEL_xC] 
+        parsed[ANA_MEAS4_SEL_xD.to_s] = @regValues[ANA_MEAS4_SEL_xD] 
+        @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json)
+
       puts "@regValues[SLOT_ADDR_x0] = 0x#{@regValues[SLOT_ADDR_x0].to_s(16)}"
       puts "@regValues[LED_STAT_x1] = 0x#{@regValues[LED_STAT_x1].to_s(16)}"
       puts "@regValues[EXT_INPUTS_x2] = 0x#{@regValues[EXT_INPUTS_x2].to_s(16)}"

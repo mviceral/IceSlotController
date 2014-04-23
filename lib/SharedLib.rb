@@ -6,9 +6,11 @@ class SharedLib
 	#
 	# Constants
 	#
-  RunFromPC = "RunFromPC"
-  StopFromPC = "StopFromPC"
-  LoadConfigFromPC = "LoadConfigFromPC"
+  RunFromPc = "RunFromPc"
+  StopFromPc = "StopFromPc"
+  LoadConfigFromPc = "LoadConfigFromPc"
+  InIdleMode = "InIdleMode"
+  InRunMode = "InRunMode"
   PcToBbbCmd = "PcToBbbCmd"
   PcToBbbData = "PcToBbbData"
   

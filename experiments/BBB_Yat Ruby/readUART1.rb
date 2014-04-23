@@ -3,22 +3,20 @@ require 'beaglebone'
 include Beaglebone
 
 baudrateToUse = 115200 # baud rate options are 9600, 19200, and 115200
-puts "Code not complete.  You must have a copy of openTtyO1Port into the local subdirectory."
-exit
-    puts 'Check 1 of 7 - cd /lib/firmware'
-    system("cd /lib/firmware")
-    
-    puts 'Check 2 of 7 - echo BB-UART1 > /sys/devices/bone_capemgr.9/slots'
-    system("echo BB-UART1 > /sys/devices/bone_capemgr.9/slots")
-    
-    puts "Check 3 of 7 - ./openTtyO1Port_#{baudrateToUse}.exe"
-    system("../BBB_openTtyO1Port c code/openTtyO1Port_#{baudrateToUse}.exe")
-    
-    puts 'Check 4 of 7 - stty -F /dev/ttyO1 raw'
-    system("stty -F /dev/ttyO1 raw")
-    
-    puts "Check 5 of 7 - stty -F /dev/ttyO1 #{baudrateToUse}"
-	system("stty -F /dev/ttyO1 #{baudrateToUse}")
+puts 'Check 1 of 7 - cd /lib/firmware'
+system("cd /lib/firmware")
+
+puts 'Check 2 of 7 - echo BB-UART1 > /sys/devices/bone_capemgr.9/slots'
+system("echo BB-UART1 > /sys/devices/bone_capemgr.9/slots")
+
+puts "Check 3 of 7 - ./openTtyO1Port_#{baudrateToUse}.exe"
+system("openTtyO1Port.exe")
+
+puts 'Check 4 of 7 - stty -F /dev/ttyO1 raw'
+system("stty -F /dev/ttyO1 raw")
+
+puts "Check 5 of 7 - stty -F /dev/ttyO1 #{baudrateToUse}"
+system("stty -F /dev/ttyO1 #{baudrateToUse}")
 
 puts "Check 6 of 7 - uart1 = UARTDevice.new(:UART1, #{baudrateToUse})"
 uart1 = UARTDevice.new(:UART1, baudrateToUse)
