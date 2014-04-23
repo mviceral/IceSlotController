@@ -90,7 +90,7 @@ class DutObj
         timeNow = Time.now.to_i
 		allDutData = "-BBB#{timeNow}"+allDutData
 		# puts "Poll A #{Time.now.inspect}"
-        SharedMemory.WriteData(allDutData)
+        SharedMemory.WriteData(allDutData,"#{__LINE__}-#{__FILE__}")
 		# puts "Poll B #{Time.now.inspect}"
         
         # End of 'def poll()'

@@ -34,8 +34,8 @@ class SharedMemory
     end
     
     def SetDispBoardData(configurationFileNameParam, configDateUploadParam, allStepsDone_YesNoParam, bbbModeParam,
-      stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotIpAddressParam, allStepsCompletedAtParam,dispTotalStepDurationParam )
-      
+      stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotIpAddressParam, allStepsCompletedAtParam,dispTotalStepDurationParam, 
+      adcInputParam, muxDataParam, tcuParam)      
     	ds = getDS()
     	if ds[SharedLib::PC].nil?
       	ds[SharedLib::PC] = Hash.new
@@ -52,7 +52,23 @@ class SharedMemory
       ds[SharedLib::PC][SharedLib::SlotIpAddress] = slotIpAddressParam
       ds[SharedLib::PC][SharedLib::AllStepsCompletedAt] = allStepsCompletedAtParam
       ds[SharedLib::PC][SharedLib::TotalStepDuration] = dispTotalStepDurationParam
-      WriteDataV1(ds.to_json)
+      ds[SharedLib::PC][SharedLib::AdcInput] = adcInputParam
+      ds[SharedLib::PC][SharedLib::MuxData] = muxDataParam
+      ds[SharedLib::PC][SharedLib::Tcu] = tcuParam
+      WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+	end
+
+
+	def GetDispAdcInput()
+		return getPCShared()[SharedLib::AdcInput]
+	end
+	
+	def GetDispMuxData()
+		return getPCShared()[SharedLib::MuxData]
+	end
+	
+	def GetDispTcu()
+		return getPCShared()[SharedLib::Tcu]
 	end
 
 	def GetDispAllStepsCompletedAt
@@ -106,7 +122,7 @@ class SharedMemory
     def SetAllStepsCompletedAt(allStepsCompletedAtParam)
         ds = getDS()
         ds[SharedLib::AllStepsCompletedAt] = allStepsCompletedAtParam
-        WriteDataV1(ds.to_json)
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
 
     def GetAllStepsCompletedAt()
@@ -120,7 +136,7 @@ class SharedMemory
     def SetSlotTime(slotTimeParam)
         ds = getDS()
         ds[SharedLib::SlotTime] = slotTimeParam
-        WriteDataV1(ds.to_json)
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
     
     def GetStepTotalTime
@@ -130,7 +146,7 @@ class SharedMemory
     def SetStepTotalTime(stepTotalTimeParam)
         ds = getDS()
         ds[SharedLib::StepTotalTime] = stepTotalTimeParam
-        WriteDataV1(ds.to_json)
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
     
     def GetStepName()
@@ -140,7 +156,7 @@ class SharedMemory
     def SetStepName(stepNameParam)
         ds = getDS()
         ds[SharedLib::StepName] = stepNameParam
-        WriteDataV1(ds.to_json)
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
     
     def GetStepNumber()
@@ -150,7 +166,7 @@ class SharedMemory
     def SetStepNumber(stepNumberParam)
         ds = getDS()
         ds[SharedLib::StepNumber] = stepNumberParam
-        WriteDataV1(ds.to_json)
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
     
     def GetTimeOfPcUpload()
@@ -169,7 +185,7 @@ class SharedMemory
     def SetConfigurationFileName(configurationFileNameParam)
         ds = getDS()
         ds[SharedLib::ConfigurationFileName] = configurationFileNameParam
-        WriteDataV1(ds.to_json)
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
 
     def GetConfigurationFileName()
@@ -180,13 +196,13 @@ class SharedMemory
         ds = getDS()
         puts "configDateUploadParam=#{configDateUploadParam} #{__LINE__}-#{__FILE__}"
         ds[SharedLib::ConfigDateUpload] = configDateUploadParam
-        WriteDataV1(ds.to_json)
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
 
 	def	SetDataBoardToPc(hashParam)
 		# hash = JSON.parse(hashParam)
 		hash = hashParam
-		PP.pp(hash)
+		# PP.pp(hash)
 		SetDispBoardData(
 			hash[SharedLib::ConfigurationFileName],
 			hash[SharedLib::ConfigDateUpload],
@@ -199,6 +215,9 @@ class SharedMemory
 			hash[SharedLib::SlotIpAddress],
 			hash[SharedLib::AllStepsCompletedAt],
 			hash[SharedLib::TotalStepDuration],
+			hash[SharedLib::AdcInput],
+			hash[SharedLib::MuxData],
+			hash[SharedLib::Tcu]
 			)
 	end
 
@@ -209,7 +228,7 @@ class SharedMemory
     def SetAllStepsDone_YesNo(allStepsDone_YesNoParam)
         ds = getDS()
         ds[SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
-        WriteDataV1(ds.to_json)
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
     
     def GetAllStepsDone_YesNo()
@@ -224,7 +243,7 @@ class SharedMemory
     	ds = getDS()
     	ds["Configuration"] = "" # Clears the configuration.
     	ds[TimeOfPcUpload] = Time.new.to_i
-      tbr = WriteDataV1(ds.to_json) # tbr - to be returned
+      tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}") # tbr - to be returned
       SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
       puts "Done 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
     end
@@ -237,7 +256,7 @@ class SharedMemory
             if ds["Configuration"][SharedLib::TotalStepDuration].nil?
                 ds["Configuration"][SharedLib::TotalStepDuration] = ""
             end
-            WriteDataV1(ds.to_json)
+            WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
         end
         return ds["Configuration"][SharedLib::TotalStepDuration]
     end
@@ -271,7 +290,7 @@ class SharedMemory
         ds["Configuration"] = hold
         ds["Configuration"][SharedLib::TotalStepDuration] = totalStepDuration
         puts "A.5 #{__LINE__}-#{__FILE__}"
-        tbr = WriteDataV1(ds.to_json) # tbr - to be returned        
+        tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}") # tbr - to be returned        
         SharedMemory.SetConfigDateUpload(SharedMemory.GetConfiguration()["ConfigDateUpload"])
         SharedMemory.SetConfigurationFileName(SharedMemory.GetConfiguration()["FileName"])
         puts "A.6 #{__LINE__}-#{__FILE__}"
@@ -298,7 +317,7 @@ class SharedMemory
         ds = getDS()
         ds[Cmd] = "#{cmdParam}"
         puts "#{cmdParam} [#{calledFrom}]"
-        WriteDataV1(ds.to_json)
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
         SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")        
     end
 	
@@ -315,7 +334,7 @@ class SharedMemory
         	# puts "From #{__LINE__}-#{__FILE__}"
         	# puts "GetDataV1()=#{GetDataV1()}"
         	ds = JSON.parse(GetDataV1()) # ds = data structure.
-          # puts "A - good data #{__LINE__}-#{__FILE__}"
+        	# puts "A - good data #{__LINE__}-#{__FILE__}"
         rescue
           ds = Hash.new
           puts "B - faulty data #{__LINE__}-#{__FILE__}"
@@ -327,7 +346,7 @@ class SharedMemory
     def SetTimeOfPcLastCmd(timeOfPcLastCmdParam,fromParam)
         ds = getDS()
         ds[TimeOfPcLastCmd] = timeOfPcLastCmdParam
-        tbr = WriteDataV1(ds.to_json)
+        tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
         return tbr
     end
     
@@ -345,13 +364,33 @@ class SharedMemory
         print "Changing bbb mode from #{oldModeParam} to "
         ds[Mode] = "#{modeParam}"
         puts "#{modeParam} [#{calledFrom}]"
-        WriteDataV1(ds.to_json)
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
-	
-    def GetData()
-    	tbr = getDS()[Data] # tbr - to be returned
+
+    def GetDataMuxData(fromParam)
+        # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
+    	tbr = getDS()[SharedLib::MuxData] # tbr - to be returned
     	if tbr.nil?
-    		tbr = ""    		
+    		tbr = Hash.new()
+    	end
+        return tbr
+    end
+    
+    def GetDataAdcInput(fromParam)
+        # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
+    	tbr = getDS()[SharedLib::AdcInput] # tbr - to be returned
+    	if tbr.nil?
+    		tbr = Hash.new()
+    	end
+        return tbr
+    end
+
+	
+    def GetDataTcu(fromParam)
+        # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
+    	tbr = getDS()[SharedLib::Tcu] # tbr - to be returned
+    	if tbr.nil?
+    		tbr = Hash.new()
     	end
         return tbr
     end
@@ -362,26 +401,67 @@ class SharedMemory
         return GetDataFromSharedMemory()
     end
     
-    def WriteData(stringParam)
+    def WriteData(stringParam,fromParam)
+        puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
         ds = getDS()
-        ds[Data] = stringParam 
-        WriteDataV1(ds.to_json)
+        if ds[SharedLib::Tcu].nil?
+            ds[SharedLib::Tcu] = Hash.new
+        end
+        
+        ds[SharedLib::Tcu] = stringParam 
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
     
-    def WriteDataV1(stringParam) # Changed function so other calls to it will fail and have to adhere to the new data 
+    def WriteDataV1(stringParam, fromParam) # Changed function so other calls to it will fail and have to adhere to the new data 
                                 # structure
         #   - Writes data to the shared memory.
         #       return values:
         #       0 - no error writing to memory.
         #       1 - not initialized.  Run the function InitializeVariables(), first.
         #       2 - sent String too long.  Not all data written in.
+        # puts "WriteDataV1 called from #{fromParam} #{__LINE__}-#{__FILE__}"
+        # puts "stringParam = #{stringParam}"
         tbr = WriteDataToSharedMemory(stringParam)
         return tbr
     end 
+    
+    def DoneSettingData() 
+        # Write the value of @setData into shared memory
+    end
+    
+    def SetupData
+        ds = getDS()
+        if ds[SharedLib::AdcInput].nil?
+            puts "Got in B #{__LINE__}-#{__FILE__}"
+            ds[SharedLib::AdcInput] = Hash.new
+        end
+
+        if ds[SharedLib::MuxData].nil?
+            puts "Got in C #{__LINE__}-#{__FILE__}"
+            ds[SharedLib::MuxData] = Hash.new
+        end
+
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+    end
+    
+    def SetData(dataTypeParam,indexParam,dataValueParam,multiplierParam)
+        ds = getDS()
+        if ds[dataTypeParam].nil?
+            puts "ds[#{dataTypeParam}] is nil #{__LINE__}-#{__FILE__}"
+            ds[dataTypeParam] = Hash.new
+        end
+        
+        ds[dataTypeParam][indexParam.to_s] = (dataValueParam*multiplierParam[indexParam]).to_s
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        # PP.pp(ds)
+        # puts "@setData.length=#{@setData.length}"
+        # gets
+        # puts "WriteDataV1(@setData.to_json) = #{WriteDataV1(@setData.to_json)}"
+    end
     
     class << self
       extend Forwardable
       def_delegators :instance, *SharedMemory.instance_methods(false)
     end
 end
-# 245
+# 434

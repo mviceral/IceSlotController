@@ -40,7 +40,71 @@ class SharedLib
     No = "No"
 
 	# Shared memory for PC side.
-		PC = "Pc"
+	PC = "Pc"
+	
+	# The constants used for referencing mux values, and adc input
+	IDUT1 = 0
+	IDUT2 = 1
+	IDUT3 = 2
+	IDUT4 = 3
+	IDUT5 = 4
+	IDUT6 = 5
+	IDUT7 = 6
+	IDUT8 = 7
+	IDUT9 = 8
+	IDUT10 = 9
+	IDUT11 = 10
+	IDUT12 = 11
+	IDUT13 = 12
+	IDUT14 = 13
+	IDUT15 = 14
+	IDUT16 = 15
+	IDUT17 = 16
+	IDUT18 = 17
+	IDUT19 = 18
+	IDUT20 = 19
+	IDUT21 = 20
+	IDUT22 = 21
+	IDUT23 = 22
+	IDUT24 = 23
+	IPS6 = 24
+	IPS8 = 25
+	IPS9 = 26
+	IPS10 = 27
+	SPARE = 28
+	IP5V = 29
+	IP12V = 30
+	IP24V = 31
+	VPS0 = 32
+	VPS1 = 33
+	VPS2 = 34
+	VPS3 = 35
+	VPS4 = 36
+	VPS5 = 37
+	VPS6 = 38
+	VPS7 = 39
+	VPS8 = 40
+	VPS9 = 41
+	VPS10 = 42
+	BIBP5V = 43
+	BIBN5V = 44
+	BIBP12V = 45
+	P12V = 46
+	P24V = 47
+	
+	SLOTP5V = 48
+	SLOTP3V3 = 49
+	SLOTP1V8 = 50
+	SlotTemp1 = 51
+	CALREF = 52
+	SlotTemp2 = 53
+	
+	
+	# Data Type
+	AdcInput = "A" # for AdcInput
+	MuxData = "M" # for MuxData
+    Tcu	= "T" # for TCU
+    
     #
     # Functions
     #

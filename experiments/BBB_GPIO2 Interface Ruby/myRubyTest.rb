@@ -113,16 +113,16 @@ class TestBench
                 pAin = AINPin.new(:P9_38)
                 readValue = pAin.read
                 # sleep(2)
-                puts "AIN3 (P9_38) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue/1000.0).round(4)} V'"
+                puts "AIN3 (P9_38) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue*2.3/1000.0).round(4)} V'"
                 
                 pAin = AINPin.new(:P9_36)
                 readValue = pAin.read
                 # sleep(2)
-                puts "AIN5 (P9_36) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue/1000.0).round(4)} V'"
+                puts "AIN5 (P9_36) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue*2.3/1000.0).round(4)} V'"
                 
                 pAin = AINPin.new(:P9_35)
                 readValue = pAin.read
-                puts "AIN6 (P9_35) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue/1000.0).round(4)} V'"
+                puts "AIN6 (P9_35) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue*2.3/1000.0).round(4)} V'"
                 puts ""
                 puts ""
             elsif muxInput == "x" || muxInput == "X"

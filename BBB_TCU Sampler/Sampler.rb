@@ -34,7 +34,6 @@ class TCUSampler
     
     FIXNUM_MAX = (2**(0.size * 8 -2) -1) # Had to get its value one time.  Might still be useful.
     
-    
     class PsSeqItem
         
         EthernetOrSlotPcb = "EthernetOrSlotPcb"
@@ -499,10 +498,134 @@ class TCUSampler
 	    end
     end
     
+    def getMuxValue(aMuxParam)
+        a=0
+        gPIO2.setGPIO2(GPIO2::ANA_MEAS4_SEL_xD, aMuxParam)
+        while a<5
+            readValue = @pAinMux.read
+            a += 1
+        end
+        return @pAinMux.read
+    end
+    
+    def pollAdcInput()
+        if @initpollAdcInputFunc
+            pAin = AINPin.new(:P9_39)
+            SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SLOTP5V,pAin.read,@multiplier)
+
+            pAin = AINPin.new(:P9_40)
+            SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SLOTP3V3,pAin.read,@multiplier)
+
+            pAin = AINPin.new(:P9_37)
+            SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SLOTP1V8,pAin.read,@multiplier)
+
+            pAin = AINPin.new(:P9_38)
+            SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SlotTemp1,pAin.read,@multiplier)
+
+            pAin = AINPin.new(:P9_36)
+            SharedMemory.SetData(SharedLib::AdcInput,SharedLib::CALREF,pAin.read,@multiplier)
+
+            pAin = AINPin.new(:P9_35)
+            SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SlotTemp2,pAin.read,@multiplier)
+            SharedMemory.DoneSettingData()
+        else
+            # The code is not initialized to run this function
+            puts "The code is not initialized to run this function - #{__LINE__}-#{__FILE__}"
+            exit
+        end
+    end
+    
+    def pollMuxValues()
+        if @initMuxValueFunc
+            aMux = 0
+            @pAinMux = AINPin.new(:P9_33)
+            while aMux<48
+                SharedMemory.SetData(SharedLib::MuxData,aMux,getMuxValue(aMux),@multiplier)
+                # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*aMuxMultiplier[aMux]/1000.0).round(4)} V'"
+                aMux += 1
+            end
+            SharedMemory.DoneSettingData()
+        else
+            # The code is not initialized to run this function
+            puts "The code is not initialized to run this function - #{__LINE__}-#{__FILE__}"
+            exit
+        end
+    end
+    	
+    def initMuxValueFunc()
+    	@initMuxValueFunc = true
+    	@multiplier[SharedLib::IDUT1] = 20.0
+    	@multiplier[SharedLib::IDUT2] = 20.0
+    	@multiplier[SharedLib::IDUT3] = 20.0
+    	@multiplier[SharedLib::IDUT4] = 20.0
+    	@multiplier[SharedLib::IDUT5] = 20.0
+    	@multiplier[SharedLib::IDUT6] = 20.0
+    	@multiplier[SharedLib::IDUT7] = 20.0
+    	@multiplier[SharedLib::IDUT8] = 20.0
+    	@multiplier[SharedLib::IDUT9] = 20.0
+    	@multiplier[SharedLib::IDUT10] = 20.0
+    	@multiplier[SharedLib::IDUT11] = 20.0
+    	@multiplier[SharedLib::IDUT12] = 20.0
+    	@multiplier[SharedLib::IDUT13] = 20.0
+    	@multiplier[SharedLib::IDUT14] = 20.0
+    	@multiplier[SharedLib::IDUT15] = 20.0
+    	@multiplier[SharedLib::IDUT16] = 20.0
+    	@multiplier[SharedLib::IDUT17] = 20.0
+    	@multiplier[SharedLib::IDUT18] = 20.0
+    	@multiplier[SharedLib::IDUT19] = 20.0
+    	@multiplier[SharedLib::IDUT20] = 20.0
+    	@multiplier[SharedLib::IDUT21] = 20.0
+    	@multiplier[SharedLib::IDUT22] = 20.0
+    	@multiplier[SharedLib::IDUT23] = 20.0
+    	@multiplier[SharedLib::IDUT24] = 20.0
+    	@multiplier[SharedLib::IPS6] = 2.0
+    	@multiplier[SharedLib::IPS8] = 5.0
+    	@multiplier[SharedLib::IPS9] = 5.0
+    	@multiplier[SharedLib::IPS10] = 5.0
+    	@multiplier[SharedLib::SPARE] = 5.0
+    	@multiplier[SharedLib::IP5V] = 5.0
+    	@multiplier[SharedLib::IP12V] = 10.0
+    	@multiplier[SharedLib::IP24V] = 10.0
+    	@multiplier[SharedLib::VPS0] = 2.300
+    	@multiplier[SharedLib::VPS1] = 2.300
+    	@multiplier[SharedLib::VPS2] = 2.300
+    	@multiplier[SharedLib::VPS3] = 2.300
+    	@multiplier[SharedLib::VPS4] = 2.300
+    	@multiplier[SharedLib::VPS5] = 2.300
+    	@multiplier[SharedLib::VPS6] = 2.300
+    	@multiplier[SharedLib::VPS7] = 2.300
+    	@multiplier[SharedLib::VPS8] = 4.010
+    	@multiplier[SharedLib::VPS9] = 4.010
+    	@multiplier[SharedLib::VPS10] = 4.010
+    	@multiplier[SharedLib::BIBP5V] = 4.010
+    	@multiplier[SharedLib::BIBN5V] = 4.010
+    	@multiplier[SharedLib::BIBP12V] = 9.660
+    	@multiplier[SharedLib::P12V] = 9.660
+    	@multiplier[SharedLib::P24V] = 20.100
+    end
+    
+    def initpollAdcInputFunc()
+    	@initpollAdcInputFunc = true
+    	@multiplier[SharedLib::SLOTP5V] = 4.01
+    	@multiplier[SharedLib::SLOTP3V3] = 2.3
+    	@multiplier[SharedLib::SLOTP1V8] = 2.3
+    	@multiplier[SharedLib::SlotTemp1] = 2.3
+    	@multiplier[SharedLib::CALREF] = 2.3
+    	@multiplier[SharedLib::SlotTemp2] = 2.3
+    end
+    
     def runTCUSampler
     	@setupAtHome = false
-        runThreadForSavingSlotStateEvery10Mins()
+    	@initMuxValueFunc = false
+    	@initpollAdcInputFunc = false
+    	@multiplier = Hash.new
+    	
         SharedMemory.Initialize()
+    	SharedMemory.SetupData()
+    	initMuxValueFunc()
+    	initpollAdcInputFunc()
+    	
+        runThreadForSavingSlotStateEvery10Mins()
         createLogInterval_UnitsInHours = 1 
         
         executeAllStty = "Yes" # "Yes" if you want to execute all...
@@ -541,21 +664,6 @@ class TCUSampler
         bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
         loadConfigurationFromHoldingTank()
 	    
-=begin        
-        #
-        # Determine the state of the slot
-        #
-        gPIO2.getForInitGetImagesOf16Addrs()
-        bbbLog("Starting Sampler Code.")
-        if gPIO2.getGPIO2(GPIO2::PS_ENABLE_x3)>0
-            #
-            # Some of the power supplies are on. The system probably had a power outage.
-            # Set the board to run mode
-            bbbLog("PS_ENABLE_x3=0x#{gPIO2.getGPIO2(GPIO2::PS_ENABLE_x3).to_s(16)} > 0 - meaning some PS are ON.")
-            bbbLog("Set board to run mode. #{__LINE__}-#{__FILE__}")
-            SharedMemory.SetBbbMode(InRunMode,"#{__LINE__}-#{__FILE__}")
-		end
-=end
         waitTime = Time.now+getPollIntervalInSeconds()
 
         while true
@@ -581,8 +689,11 @@ class TCUSampler
                             #
                             bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
                             if @setupAtHome == false
-		                          ThermalSiteDevices.pollDevices(uart1)
-		                          ThermalSiteDevices.logData
+                                pollAdcInput()
+                                pollMuxValues()
+                                SharedMemory.DoneSettingData() 
+                                ThermalSiteDevices.pollDevices(uart1)
+                                ThermalSiteDevices.logData
                             end
                             SharedMemory.SetStepTotalTime(@stepToWorkOn[TotalTimeLeft]-(Time.now.to_f-getTimeOfRun()))
         			    else
@@ -731,5 +842,5 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 601
+# 505
 
