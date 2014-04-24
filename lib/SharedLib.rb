@@ -26,6 +26,12 @@ class SharedLib
     Data = "Data"
     SlotIpAddress = "SlotIpAddress"
     BbbMode = "BbbMode"
+    AllStepsCompletedAt = "AllStepsCompletedAt"
+    TotalStepDuration = "TotalStepDuration"
+    
+    # Board State.
+    InRunMode = "InRunMode"
+    InStopMode = "InStopMode"
     
     #
     # Constants

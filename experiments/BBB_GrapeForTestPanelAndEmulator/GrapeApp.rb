@@ -70,7 +70,7 @@ module BbbSetterModule
                 if @@initialized == false
                     @@initialized == true
                     @@bbbSetter = BbbSetter.new
-                    # @@bbbSetter.gPIO2.getForInitGetImagesOf16Addrs()
+                    @@bbbSetter.gPIO2.getForInitGetImagesOf16Addrs()
                     if @@bbbSetter.nil?
                         puts "@@bbbSetter is nil after initialization..."
                     end

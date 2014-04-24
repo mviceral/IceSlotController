@@ -12,7 +12,7 @@ class SendSampledTcuToPCLib
     ITS_MOUNTED = "It's mounted."
     BbbToPc = 'http://192.168.7.1'
     PcToSamePc = "localhost"
-    SendToPc = PcToSamePc
+    SendToPc = BbbToPc
 
     def refreshDbHandler
         # puts "refreshDbHandler got called."
@@ -310,10 +310,10 @@ class SendSampledTcuToPCLib
         # like send data to PC for immediate display and for saving it, and saving the data into BBB local storage.
         # This way, there's lots of lee-way for recovery case something happens before the next polling.
         #
-        @timeOfData = SharedMemory.GetSlotTime()
+        @timeOfData = SharedMemory.GetSlotTime("#{__LINE__}-#{__FILE__}")
         SendDataToPC("#{__LINE__} #{__FILE__}")
         waitTime = Time.now+@pollIntervalInSeconds
-        while SharedMemory.GetSlotTime() == @timeOfData
+        while SharedMemory.GetSlotTime("#{__LINE__}-#{__FILE__}") == @timeOfData
             sleep(0.01) 
             # puts("Data is the same!!!")
             # puts "Test RunSender G #{__FILE__}-#{__LINE__}"
@@ -331,7 +331,7 @@ class SendSampledTcuToPCLib
         sentSampledData = @timeOfData
         while true
             # puts "Test RunSender C #{__FILE__}-#{__LINE__}"
-            @timeOfData = SharedMemory.GetSlotTime()
+            @timeOfData = SharedMemory.GetSlotTime("#{__LINE__}-#{__FILE__}")
             if (sentSampledData != @timeOfData)
                 SendDataToPC("#{__LINE__}-#{__FILE__}")
                 # puts "Test RunSender E #{__FILE__}-#{__LINE__}"
@@ -362,14 +362,14 @@ class SendSampledTcuToPCLib
                 #
                 # waitTime = Time.now+pollInterval
             else
-            	puts "Sleeping for #{waitTime.to_f-Time.now.to_f}"
+            	# puts "Sleeping for #{waitTime.to_f-Time.now.to_f}"
                 sleep(waitTime.to_f-Time.now.to_f) 
             end
             waitTime = waitTime+@pollIntervalInSeconds
         end
     end
 
-		def GetDataToSendPc()
+	def GetDataToSendPc()
         slotInfo = Hash.new()
         receivedData = SharedMemory.GetData()
         slotInfo[SharedLib::ConfigurationFileName] = SharedMemory.GetConfigurationFileName()
@@ -383,9 +383,11 @@ class SendSampledTcuToPCLib
         slotInfo[SharedLib::SlotTime] = @timeOfData
         slotInfo[SharedLib::Data] = receivedData
         slotInfo[SharedLib::SlotIpAddress] = GetSlotIpAddress()
+        slotInfo[SharedLib::AllStepsCompletedAt] = SharedMemory.GetAllStepsCompletedAt()
+        slotInfo[SharedLib::TotalStepDuration] = SharedMemory.GetTotalStepDuration();
         slotInfoJson = slotInfo.to_json
-			return slotInfoJson
-		end
+		return slotInfoJson
+	end
 		
     def SendDataToPC(fromParam)
     	puts "called from #{fromParam}"

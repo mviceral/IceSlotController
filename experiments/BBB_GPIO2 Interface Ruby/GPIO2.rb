@@ -11,7 +11,7 @@ require 'socket'      # Sockets are in standard library
 EMULATOR_STATE = false
 
 #@Removed comment to run on real machine
-####require 'beaglebone'
+require 'beaglebone'
 # require 'singleton'
 # require 'forwardable'
 
@@ -20,7 +20,7 @@ EMULATOR_STATE = false
 
 class GPIO2
     #@Removed 2 comment to run on real machine
-####    include Beaglebone
+    include Beaglebone
     include Port2Interface
     # include Singleton
   
@@ -209,6 +209,9 @@ class GPIO2
   	end
   	
   	fromSharedMem = @sharedBbbGpio2.GetData()
+  	# puts "fromSharedMem=#{fromSharedMem}"
+  	# puts "Paused #{__LINE__}-#{__FILE__}"
+  	# gets
 
 	# End of 'def initialize'
   end 
@@ -223,9 +226,11 @@ class GPIO2
     end
 
     def forTesting_getGpio2State
-        # getForInitGetImagesOf16Addrs
+        getForInitGetImagesOf16Addrs
         fromSharedMem = @sharedBbbGpio2.GetData()
-        if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
+        if fromSharedMem.nil? == false && 
+            fromSharedMem.length > 0 && 
+            fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
             # The shared memory has some legit data in it.
             parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
         else
