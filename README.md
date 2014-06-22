@@ -16,6 +16,19 @@ Or install it yourself as:
 
     $ gem install slot-controller
 
+## Dependencies
+
+Only tested with Debian 7 on Beaglebone
+
+* Ruby 1.93+
+
+### Debian Packages
+
+* sqlite3
+* libsqlite3-dev
+* ruby1.9.3-dev
+
+
 ## Usage
 
 TODO: Write usage instructions here
