@@ -1,13 +1,20 @@
+require 'beaglebone'
 require 'singleton'
+require 'forwardable'
 
 module SlotController
-  class OverloadedArray < Array
-    def [](i)
-      self.fetch(i)
+  class TemperatureDut < Array
+    def [](dut)
+      # Replace with doing the work to get the dut'th current value
+      # Use a function to get the temperature instead of the self.fetch
+      self.fetch(dut)
     end
 
-    def[]=(i,v)
-      self.insert(i,v)
+    def[]=(dut,v)
+      # Replace this with the work to set the temperature for the ith
+      # dut Use a function to set the temperature
+      
+      self.insert(dut,v)
     end
   end
   
@@ -31,8 +38,12 @@ module SlotController
       # Default Min/Max
       @min = (0..NUM_DUTS).map { |d| MIN_DEFAULT }
       @max = (0..NUM_DUTS).map { |d| MAX_DEFAULT }
-      @value = OverloadedArray.new
+      @value = TemperatureDut.new
     end
 
+    class << self
+      extend Forwardable
+      def_delegators :instance, *Temperature.instance_methods(false)
+    end
   end
 end
