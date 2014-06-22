@@ -1,4 +1,4 @@
-require "slot-controller/version"
+require "version"
 
 module Slot
   module Controller
