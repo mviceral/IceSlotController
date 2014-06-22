@@ -21,7 +21,7 @@ module SlotController
     
     NUM_DUTS = 24
     MIN_DEFAULT = -10
-    MAX_DEFUALT = 200
+    MAX_DEFAULT = 200
 
     def initialize
 
@@ -29,8 +29,8 @@ module SlotController
       # controler board to be able to get / set temperateu
 
       # Default Min/Max
-      @min = (0..24).map { |d| -10 }
-      @max = (0..24).map { |d| 200 }
+      @min = (0..NUM_DUTS).map { |d| MIN_DEFAULT }
+      @max = (0..NUM_DUTS).map { |d| MAX_DEFAULT }
       @value = OverloadedArray.new
     end
 
