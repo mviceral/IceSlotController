@@ -159,7 +159,7 @@ uart1 = UARTDevice.new(:UART1, baudrateToUse)
 puts "Check 7 of 7 - uart1.each_line"
 uart1.each_line { 
     |line| 
-
+=begin
     etime =  line.partition(",")
     etimeV = etime[0].delete(" eTime")
     etimeV = etimeV[1,etimeV.length]
@@ -248,6 +248,7 @@ uart1.each_line {
         puts "SD card for dbase is not present!!!"
         dataObj = DataObj.new()
     end
+=end
     #puts "->#{etimeV},ambTV:#{ambTV} ,setPV:  #{setPV}, casTV:  #{casTV}, stypeV:#{stypeVStripped[2]},senRV: #{senRActual},    adc0V:#{adc0Value},casRV:  #{casRV}, #{cooLHeatV},outPwrV:  #{outPwrVActual},verNV:#{verNVActual},byV:#{byValue}"
     puts line
 }

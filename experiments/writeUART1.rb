@@ -13,7 +13,7 @@ uart1 = UARTDevice.new(:UART1, 115200)
 
 # Write data to a UART1
 ARGV.each do|a|
-	uart1.write("#{a}\r\n");
+	uart1.write("#{a}\n");
 end    
 
 #
@@ -22,6 +22,6 @@ end
 while false do
 	sleep(2.0);
 	ARGV.each do|a|
-		uart1.write("#{a}\r\n");
+		uart1.write("#{a}\n");
 	end    
 end
