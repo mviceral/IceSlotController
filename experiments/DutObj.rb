@@ -209,21 +209,6 @@ class DutObj
         end
     end
     
-    def makeLogFile
-        timeNow = Time.now
-        # puts "nextLogCreation = #{nextLogCreation.inspect}"
-        # puts "timeNow = #{timeNow.inspect}"
-        
-        if nextLogCreation.nil? == false && nextLogCreation<timeNow
-            #
-            # Create new log.
-            #
-            createNewLog(timeNow)
-    	    # End of 'if @nextLogCreation<Time.now'
-        end
-        # End of 'makeLogFile'
-    end
-        
     def poll(uart1Param)
         # puts "within poll. statusDbFile=#{statusDbFile}"
         # gets
@@ -284,17 +269,30 @@ class DutObj
     		# puts "#{str}" # check the insert string.
     
             begin
-                db.execute "#{str}"
+                @db.execute "#{str}"
                 
-                #
-                # See if the dbase log file needs to be updated.  Puts it on a separate thread in hopes that the called
-                # function does not slow down the loop cycle.
-                #
-                Thread.new{makeLogFile()}
+                timeNow = Time.now
+                # puts "nextLogCreation = #{nextLogCreation.inspect}"
+                # puts "timeNow = #{timeNow.inspect}"
                 
+                if nextLogCreation.nil? == false && nextLogCreation<timeNow
+                    #
+                    # Create new log.
+                    #
+                    createNewLog(timeNow)
+            	    # End of 'if @nextLogCreation<Time.now'
+                end
+
                 rescue SQLite3::Exception => e 
             		puts "Exception occured"
             		puts e
+            		
+            		#
+            		# The template file could have been corrupted
+            		#
+                    # puts "We need replace the @dutLogTemplate_dBaseFile file. #{__FILE__} - #{__LINE__}"
+                    # gets
+            		@dutLogTemplate_dBaseFile_Replace = true
             		
             		@arrayParent[@indexOfDut] = DutObj.new(@indexOfDut,@createLogInterval_UnitsInHours,@arrayParent)
 
@@ -384,29 +382,71 @@ class DutObj
         # End of 'def dbaseFolder'
     end
     
-    def db
-        @db
-        # End of 'def db'
-    end
-    
     def refreshDbHandler
+        if @dutLogTemplate_dBaseFile_Replace
+            if (File.file?(@dutLogTemplate_dBaseFile))
+                puts "Check to see if file #{@dutLogTemplate_dBaseFile} exists. #{__FILE__} - #{__LINE__}"
+                gets
+                File.delete(@dutLogTemplate_dBaseFile)
+                puts "File #{@dutLogTemplate_dBaseFile} has been delete.  Verify it. #{__FILE__} - #{__LINE__}"
+                gets
+                @dutLogTemplate_dBaseFile_Replace = false
+            end
+        end
+
+        
         # puts "@statusDbFile=#{@statusDbFile}"
         if (File.file?(@statusDbFile))
             # puts "The dbase folder exists."
             @db = SQLite3::Database.open @statusDbFile
             # End of 'if (File.file?(@statusDbFile))'
         else 
-            # puts "The dbase folder->#{dbFile}<- does NOT exists."
-            @db = SQLite3::Database.new( @statusDbFile )
-            @db.execute("create table 'dutLog' ("+
-            "sysTime INTEGER,"+     # time of record in BBB
-            "ucRUNmode INTEGER,"+   # 'ucRUNmode' 0 == Standby, 1 == Run
-            "AmbientTemp REAL,"+    # 'dMeas' ambient temp
-            "TempOfDev REAL,"+      # 'Tdut' CastTc - Temp of dev
-            "contDir INTEGER,"+     # 'controllerDirection' Heat == 0, Cool == 1
-            "Output INTEGER,"+      # 'Output' PWM 0-255
-            "Alarm TEXT"+           # 'AlarmStr' The alarm text
-            ");")
+            #
+            # Trying to see where we can increase the speed of the software when ever it's creating a new dbase file.
+            # Instead of creating a dbase for dutlog for each device (which seems to slow the process), make a file 
+            # dbase file template and copy that instead.
+            #
+            
+            #
+            # if dutLogTemplate.db does not exists, create it.
+            # Copy the template to @statusDbFile
+            # Instantiate a @db handle with the @statusDbFile
+            #
+            @dutLogTemplate_dBaseFile = "/media/"+@dbaseFolder+"/dutLogTemplate.db"
+            unless File.file?(@dutLogTemplate_dBaseFile)
+                # puts "File '#{@dutLogTemplate_dBaseFile}' does not exists.  Creating. #{__FILE__} - #{__LINE__}"
+                # puts "The dbase folder->#{dbFile}<- does NOT exists."
+                @db = SQLite3::Database.new( @dutLogTemplate_dBaseFile )
+                @db.execute("create table 'dutLog' ("+
+                "sysTime INTEGER,"+     # time of record in BBB
+                "ucRUNmode INTEGER,"+   # 'ucRUNmode' 0 == Standby, 1 == Run
+                "AmbientTemp REAL,"+    # 'dMeas' ambient temp
+                "TempOfDev REAL,"+      # 'Tdut' CastTc - Temp of dev
+                "contDir INTEGER,"+     # 'controllerDirection' Heat == 0, Cool == 1
+                "Output INTEGER,"+      # 'Output' PWM 0-255
+                "Alarm TEXT"+           # 'AlarmStr' The alarm text
+                ");")
+                
+                #puts "Check to see if file #{@dutLogTemplate_dBaseFile} is now present. #{__FILE__} - #{__LINE__}"
+                #gets
+                
+                # End of unless File.file?(dutLogTemplate_dBaseFile)
+            end
+            
+            #puts "Make sure #{@statusDbFile} does not exists. #{__FILE__} - #{__LINE__}"
+            #gets
+            
+            copyCmd = "cp #{@dutLogTemplate_dBaseFile} #{@statusDbFile}"
+            # puts "#{copyCmd}" # Check the copy command.
+            # gets
+            system(copyCmd) # execute it.
+
+            # puts "Make sure #{@statusDbFile} is now created. #{__FILE__} - #{__LINE__}"
+            # gets
+            
+            # puts "The dbase folder exists."
+            @db = SQLite3::Database.open @statusDbFile
+
             # End of 'if (File.file?(@statusDbFile)) ELSE'
         end
     end
