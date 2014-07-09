@@ -2,7 +2,6 @@ require_relative 'DutObj'
 
 class AllDuts
     attr_accessor :duts
-    attr_accessor :hashIndexOfDut
 
     def initialize(createLogInterval_UnitsInHoursParam)
         @duts = Array.new
@@ -12,15 +11,6 @@ class AllDuts
             # puts "dutNum=#{dutNum}"
             dutNum +=1;
         end            
-        hashIndexOfDut = Hash[duts.map.with_index.to_a]
-    end
-    
-    def hashIndexOfDut
-        if @hashIndexOfDut.nil?
-            puts "@hashIndexOfDut is nil.  Initializing..."
-            initialize
-        end
-        @hashIndexOfDut
     end
     
     def getDut(dut)
@@ -37,10 +27,10 @@ class AllDuts
     end
 
     #def[]=(dut,v)
-      # Replace this with the work to set the temperature for the ith
-      # dut Use a function to set the temperature
+        # Replace this with the work to set the temperature for the ith
+        # dut Use a function to set the temperature
       
-    #  self.insert(dut,v)
+        #  self.insert(dut,v)
     #end
     
     # End of 'class Allduts'

@@ -1,22 +1,19 @@
 require_relative 'AllDuts'
+require 'etc' # For getting the name of file owner
 
 class DutObj
     NO_GOOD_DBASE_FOLDER = "No good database folder"
     attr_accessor :statusDbFile
-    def initialize(indexOfDutParam,createLogInterval_UnitsInHoursParam, arrayParentParam)
-        # puts "indexOfDutParam = #{indexOfDutParam} #{__FILE__}-#{__LINE__}"
-        # puts "@createLogInterval_UnitsInHoursParam = #{@createLogInterval_UnitsInHoursParam} #{__FILE__}-#{__LINE__}"
-        # puts "arrayParentParam = #{arrayParentParam} #{__FILE__}-#{__LINE__}"
-        # gets
-        @arrayParent = arrayParentParam
-        @indexOfDut = indexOfDutParam
-        @createLogInterval_UnitsInHours = createLogInterval_UnitsInHoursParam
+    def getLastLogCompletedAt
+        if dbaseFolder == NO_GOOD_DBASE_FOLDER
+            return nil
+            # End of 'if dbaseFolder == NO_GOOD_DBASE_FOLDER'
+        end
         
-        @db = nil
         #
-        # Start a log file.  Scenario - we're going to start the application.  This Dut checks a reference point of when it last logged.
-        # If the file is not found, create on immediately, then just checks whether it's time to create a new log based on the last log
-        # file created.
+        # Start a log file.  Scenario - we're going to start the application.  This Dut checks a reference point of when 
+        # it last logged. If the file is not found, create one immediately, then just checks whether it's time to create 
+        # a new log based on the last log file created.
         #
         
         #
@@ -24,14 +21,13 @@ class DutObj
         # Code logic.  If the log file for a given dut is not present, create a log now as a reference.
         # If the code restarts, checks the earliest log file created and makes sure to put a new log file 
         # based on the given interval of log creation.
-        # [ ] Code not done
         #
-        dutLogFileName = "dutLog#{@indexOfDut}_"
+        @dutLogFileName = "dutLog#{@indexOfDut}_"
         rootLogPath = "/media/"+self.dbaseFolder+"/"
         dirInMedia = Dir.entries("#{rootLogPath}")
         listOfFiles = Array.new
         for folderItem in dirInMedia
-            if folderItem.include? dutLogFileName
+            if folderItem.include? @dutLogFileName
                 listOfFiles.push(folderItem)
             end
             # End of 'for folderItem in dirInMedia'
@@ -65,7 +61,7 @@ class DutObj
             #
             # Parse the date from date text of 'latestLogDateFile'
             #
-            justTheDate = latestLogDateFile[dutLogFileName.length..-1]
+            justTheDate = latestLogDateFile[@dutLogFileName.length..-1]
             # puts "justTheDate = #{justTheDate}"
             logYear = justTheDate[0,4].to_i
             logMonth = justTheDate[4,2].to_i
@@ -73,73 +69,161 @@ class DutObj
             logHour = justTheDate[9,2].to_i
             logMin = justTheDate[11,2].to_i
             
-            # puts "logYear=#{logYear}, logMonth = #{logMonth}, logDay = #{logDay}, logHour = #{logHour}, logMin = #{logMin}"
+            # puts "logYear=#{logYear}, logMonth = #{logMonth}, logDay = #{logDay}, logHour = #{logHour}, 
+            # logMin = #{logMin}"
             
             #
             # Makes a date time object from the string file name.
             #
-            logCompletedAt = Time.new(logYear,logMonth,logDay,logHour,logMin,0);
-            nextLogCreation = logCompletedAt+@createLogInterval_UnitsInHours*60   # *60*60 converts @createLogInterval_UnitsInHours to seconds
-            
-            # puts "logCompletedAt = #{logCompletedAt.inspect}"
-            # puts "nextLogCreation = #{nextLogCreation.inspect}"
-            # puts "at #{__FILE__}-#{__LINE__}"
-            # gets # pause
+            # @logCompletedAt = Time.new(logYear,logMonth,logDay,logHour,logMin,0);
+            return Time.new(logYear,logMonth,logDay,logHour,logMin,0);
+            # End of 'if listOfFiles.count > 0'
+        else
+            return nil    
+            # End of 'if listOfFiles.count > 0 ELSE'
+        end
+        # End of 'def getLastLogCompletedAt'
+    end
     
-            timeNow = Time.now
-            if nextLogCreation<timeNow
-                # puts "Check 4 Log file is over due #{__FILE__}-#{__LINE__}"
+    def logCompletedAt
+        if @logCompletedAt.nil?
+            #
+            # Just call initialize again to get a legit value for @logCompletedAt
+            #
+            initialize(@indexOfDut,@createLogInterval_UnitsInHours, @arrayParent)
+            # End of 'if @logCompletedAt.nil?'
+        end
+        return  @logCompletedAt
+        # End of 'def logCompletedAt'
+    end
+
+    def nextLogCreation
+        if @nextLogCreation.nil? && logCompletedAt != nil
+            # puts "Within 'nextLogCreation' - @logCompletedAt = #{@logCompletedAt.inspect}"
+            @nextLogCreation = logCompletedAt+@createLogInterval_UnitsInHours*60    # *60*60 converts 
+                                                                                    # @createLogInterval_UnitsInHours 
+                                                                                    # to seconds
+            # End of 'if @nextLogCreation.nil?'
+        end 
+        return @nextLogCreation
+        # End of 'nextLogCreation'
+    end
+
+    def initialize(indexOfDutParam,createLogInterval_UnitsInHoursParam, arrayParentParam)
+        # puts "indexOfDutParam = #{indexOfDutParam} #{__FILE__}-#{__LINE__}"
+        # puts "@createLogInterval_UnitsInHoursParam = #{@createLogInterval_UnitsInHoursParam} #{__FILE__}-#{__LINE__}"
+        # puts "arrayParentParam = #{arrayParentParam} #{__FILE__}-#{__LINE__}"
+        # gets
+        @arrayParent = arrayParentParam
+        @indexOfDut = indexOfDutParam
+        @createLogInterval_UnitsInHours = createLogInterval_UnitsInHoursParam
+        @db = nil
+        
+        @logCompletedAt = getLastLogCompletedAt()
+        
+        if dbaseFolder != NO_GOOD_DBASE_FOLDER
+            if @logCompletedAt.nil? 
                 #
-                # It's time to make a new log.  Move the current database to a log file...
+                # There is no log file found from the search.  Create one as a base of when the we started logging...
                 #
+                # puts "There is no log file found from the search.  Create one as a base for when we started logging..."
+                
+                timeNow = Time.now
                 logYear = '%04d' % timeNow.year.to_i
                 logMonth = '%02d' % timeNow.month.to_i
                 logDay = '%02d' % timeNow.day.to_i
                 logHour = '%02d' % timeNow.hour.to_i
                 logMin = '%02d' % timeNow.min.to_i
                 
-                newLogFileName = "#{dutLogFileName}#{logYear}#{logMonth}#{logDay}_#{logHour}#{logMin}.db" 
-                cmd =  "mv /media/"+dbaseFolder+"/dutLog#{@indexOfDut}.db "+"/media/"+dbaseFolder+"/"+newLogFileName
-                system(cmd) # moves the dutLogXXX.db to a log file record
-                
-                cmd =  "touch "+"/media/"+dbaseFolder+"/"+newLogFileName
-                # puts cmd    # If the dutLogXXX.db does not exist, the log file will not exists either.  Therefore, 
-                            # just create a dummy log file so we'll have a reference.
+                newLogFileName = "#{@dutLogFileName}#{logYear}#{logMonth}#{logDay}_#{logHour}#{logMin}.db" 
+                cmd =  "touch /media/"+dbaseFolder+"/"+newLogFileName
+                # puts cmd # Check it
                 system(cmd)
+                @logCompletedAt = getLastLogCompletedAt()
+                # End of 'if @logCompletedAt.nil? '
+            else
+                @nextLogCreation = @logCompletedAt+@createLogInterval_UnitsInHours*60   # *60*60 converts 
+                                                                                      # @createLogInterval_UnitsInHours 
+                                                                                      # to seconds
+                # puts "@logCompletedAt = #{@logCompletedAt.inspect}"
+                # puts "@nextLogCreation = #{@nextLogCreation.inspect}"
                 # puts "at #{__FILE__}-#{__LINE__}"
                 # gets # pause
-                
-                #
-                # Create a new dbase since we moved the old dbase to a repository...
-                #
-        	    @arrayParent[@indexOfDut] = DutObj.new(@indexOfDut,@createLogInterval_UnitsInHours,@arrayParent)
-        	    
-        	    # End of 'if nextLogCreation<Time.now'
+        
+                timeNow = Time.now
+                if @nextLogCreation<timeNow
+                    #
+                    # Create new log.
+                    #
+                    createNewLog(timeNow)
+            	    # End of 'if @nextLogCreation<Time.now'
+                end
+                # End of 'if @logCompletedAt.nil? ELSE'
             end
-            # End of 'if listOfFiles.count > 0'
+            # End of 'if dbaseFolder != NO_GOOD_DBASE_FOLDER'
         else
+            printErrorSdCardMissing(__FILE__,__LINE__)
+        end 
+    
+        # End of 'def initialize()'
+    end
+    
+                
+    def createNewLog(timeNow)
+        if dbaseFolder != NO_GOOD_DBASE_FOLDER
+            # puts "Check 4 Log file is over due #{__FILE__}-#{__LINE__}"
             #
-            # There is no log file found from the search.  Create one as a base of when the we started logging...
+            # It's time to make a new log.  Move the current database to a log file...
             #
-            puts "There is no log file found from the search.  Create one as a base of when the we started logging..."
-            
-            timeNow = Time.now
             logYear = '%04d' % timeNow.year.to_i
             logMonth = '%02d' % timeNow.month.to_i
             logDay = '%02d' % timeNow.day.to_i
             logHour = '%02d' % timeNow.hour.to_i
             logMin = '%02d' % timeNow.min.to_i
             
-            newLogFileName = "#{dutLogFileName}#{logYear}#{logMonth}#{logDay}_#{logHour}#{logMin}.db" 
-            cmd =  "touch /media/"+dbaseFolder+"/"+newLogFileName
-            puts cmd # Check it
+            newLogFileName = "#{@dutLogFileName}#{logYear}#{logMonth}#{logDay}_#{logHour}#{logMin}.db" 
+            cmd =  "mv /media/"+dbaseFolder+"/dutLog#{@indexOfDut}.db "+"/media/"+dbaseFolder+"/"+newLogFileName
+            system(cmd) # moves the dutLogXXX.db to a log file record
+            
+            cmd =  "touch "+"/media/"+dbaseFolder+"/"+newLogFileName
+            # puts cmd    # If the dutLogXXX.db does not exist, the log file will not exists either.  Therefore, 
+                        # just create a dummy log file so we'll have a reference.
             system(cmd)
-            # End of 'if listOfFiles.count > 0 ELSE'
+            # puts "at #{__FILE__}-#{__LINE__}"
+            # gets # pause
+            
+            #
+            # Create a new dbase since we moved the old dbase to a repository...
+            #
+            # @arrayParent[@indexOfDut] = DutObj.new(@indexOfDut,@createLogInterval_UnitsInHours,@arrayParent)
+            
+            # Refresh the dbHandler instead.
+            refreshDbHandler
+            
+            @logCompletedAt = getLastLogCompletedAt()
+            @nextLogCreation = @logCompletedAt+@createLogInterval_UnitsInHours*60   # *60*60 converts 
+                                                                                  # @createLogInterval_UnitsInHours 
+                                                                                  # to seconds
+        else
+            printErrorSdCardMissing()
         end
-
-        # End of 'def initialize()'
     end
     
+    def makeLogFile
+        timeNow = Time.now
+        # puts "nextLogCreation = #{nextLogCreation.inspect}"
+        # puts "timeNow = #{timeNow.inspect}"
+        
+        if nextLogCreation.nil? == false && nextLogCreation<timeNow
+            #
+            # Create new log.
+            #
+            createNewLog(timeNow)
+    	    # End of 'if @nextLogCreation<Time.now'
+        end
+        # End of 'makeLogFile'
+    end
+        
     def poll(uart1Param)
         # puts "within poll. statusDbFile=#{statusDbFile}"
         # gets
@@ -193,8 +277,9 @@ class DutObj
             # The database is available, so go ahead and insert the data into the database.
             #
             
-    		str = "Insert into dutLog(sysTime,ucRUNmode      ,AmbientTemp      ,TempOfDev      ,contDir      ,Output      ,Alarm) "+
-    				   "values(    #{Time.now.to_i},#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},#{output[0]},\"#{alarm[0]}\")"
+    		str = "Insert into dutLog(sysTime,ucRUNmode,AmbientTemp,TempOfDev,contDir,Output,Alarm) "+
+    		        "values(    #{Time.now.to_i},#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},"+
+    		        "#{output[0]},\"#{alarm[0]}\")"
     				   
     		# puts "#{str}" # check the insert string.
     
@@ -202,9 +287,11 @@ class DutObj
                 db.execute "#{str}"
                 
                 #
-                # See if the dbase log file needs to be updated.
+                # See if the dbase log file needs to be updated.  Puts it on a separate thread in hopes that the called
+                # function does not slow down the loop cycle.
                 #
-            
+                Thread.new{makeLogFile()}
+                
                 rescue SQLite3::Exception => e 
             		puts "Exception occured"
             		puts e
@@ -219,7 +306,7 @@ class DutObj
             
             # End of 'if DutObj.dbaseFolder != NO_GOOD_DBASE_FOLDER'
         else 
-            puts "SD card for dbase is not present!!!"
+            printErrorSdCardMissing(__FILE__,__LINE__)
             @arrayParent[@indexOfDut] = DutObj.new(@indexOfDut,@createLogInterval_UnitsInHours,@arrayParent)
 
 
@@ -228,10 +315,22 @@ class DutObj
         
         # End of 'def poll()'
     end
+
+    def printErrorSdCardMissing (file, line)
+        puts "#{Time.now.inspect} SD card for dbase is not present!!!"
+        
+        #
+        # Re-initialize this DutObj so even if it's running and a new SD Card was put in, it'll  continue where it left
+        # off
+        #
+        @db = nil
+        # End of 'def printErrorSdCardMissing'
+    end
     
     def statusDbFile
         @statusDbFile
     end
+    
     def dbaseFolder
         if @db.nil?
             #
@@ -241,12 +340,19 @@ class DutObj
             dirInMedia = Dir.entries("/media")
             for folderItem in dirInMedia
                 if (folderItem != "." and folderItem != "..")
-                    @dbaseFolder = folderItem
+                    uid = File.stat("/media/#{folderItem}").uid
+                    if Etc.getpwuid(uid).name == "debian"
+                        @dbaseFolder = folderItem
+                        break
+                        # End of 'if Etc.getpwuid(uid).name == "debian"'
+                    end
                     # End of 'if (folderItem != "." and folderItem != "..")'
                 end
                 # End of 'for folderItem in dirInMedia'
             end
-
+            
+            
+            
             if @dbaseFolder != NO_GOOD_DBASE_FOLDER
                 #
                 # SD Card is present.
@@ -260,34 +366,16 @@ class DutObj
                 # Ensure that database table for dynamic data (status request) is present...
                 #
                 @statusDbFile = "/media/"+@dbaseFolder+"/dutLog#{@indexOfDut}.db"
-                # puts "@statusDbFile=#{@statusDbFile}"
-                if (File.file?(@statusDbFile))
-                    # puts "The dbase folder exists."
-                    @db = SQLite3::Database.open @statusDbFile
-                    # End of 'if (File.file?(@statusDbFile))'
-                else 
-                    # puts "The dbase folder->#{dbFile}<- does NOT exists."
-                    @db = SQLite3::Database.new( @statusDbFile )
-                    @db.execute("create table 'dutLog' ("+
-                    "sysTime INTEGER,"+     # time of record in BBB
-                    "ucRUNmode INTEGER,"+   # 'ucRUNmode' 0 == Standby, 1 == Run
-                    "AmbientTemp REAL,"+    # 'dMeas' ambient temp
-                    "TempOfDev REAL,"+      # 'Tdut' CastTc - Temp of dev
-                    "contDir INTEGER,"+     # 'controllerDirection' Heat == 0, Cool == 1
-                    "Output INTEGER,"+      # 'Output' PWM 0-255
-                    "Alarm TEXT"+           # 'AlarmStr' The alarm text
-                    ");")
-                    # End of 'if (File.file?(@statusDbFile)) ELSE'
-                end
                 
+                refreshDbHandler
                 #
                 # Ensure that database table for set temperature is present...
                 #
                 
                 # End of 'if @dbaseFolder != NO_GOOD_DBASE_FOLDER'
+            else
+                printErrorSdCardMissing(__FILE__,__LINE__)
             end
-
-            
             # End of 'if @db.nil?'
         end
         
@@ -299,6 +387,28 @@ class DutObj
     def db
         @db
         # End of 'def db'
+    end
+    
+    def refreshDbHandler
+        # puts "@statusDbFile=#{@statusDbFile}"
+        if (File.file?(@statusDbFile))
+            # puts "The dbase folder exists."
+            @db = SQLite3::Database.open @statusDbFile
+            # End of 'if (File.file?(@statusDbFile))'
+        else 
+            # puts "The dbase folder->#{dbFile}<- does NOT exists."
+            @db = SQLite3::Database.new( @statusDbFile )
+            @db.execute("create table 'dutLog' ("+
+            "sysTime INTEGER,"+     # time of record in BBB
+            "ucRUNmode INTEGER,"+   # 'ucRUNmode' 0 == Standby, 1 == Run
+            "AmbientTemp REAL,"+    # 'dMeas' ambient temp
+            "TempOfDev REAL,"+      # 'Tdut' CastTc - Temp of dev
+            "contDir INTEGER,"+     # 'controllerDirection' Heat == 0, Cool == 1
+            "Output INTEGER,"+      # 'Output' PWM 0-255
+            "Alarm TEXT"+           # 'AlarmStr' The alarm text
+            ");")
+            # End of 'if (File.file?(@statusDbFile)) ELSE'
+        end
     end
     # End of 'class DutObj'
 end

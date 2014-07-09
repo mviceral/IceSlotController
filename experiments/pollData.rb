@@ -13,8 +13,14 @@ include Beaglebone
 
 
 #
-# July 7, 2014 - Worked on polling 24 duts and recording all stats into 24 database.  I'm hoping it'll be able to keep up with how 
-# fast the polling interval is after polling and writing all data in to 24 separate dbases.
+# July 8, 2014 - Managed to write code that will poll 24 duts.  All duts recording logs in their own database.  The code
+# still needs 
+#   [ ] to be ensured its functionality
+#   [ ] to create a new log file per dut record when the interval of how long it is suppose to wait before creating a new
+#       log file is reached.
+#
+# July 7, 2014 - Worked on polling 24 duts and recording all stats into 24 database.  I'm hoping it'll be able to keep up 
+# with how fast the polling interval is after polling and writing all data in to 24 separate dbases.
 # 
 # July 7, 2014 - Initial software code for polling status data (dynamic data) from a dut (ThermalSite device).
 #
@@ -24,7 +30,7 @@ TOTAL_DUTS_TO_LOOK_AT  = 24
 #
 # Create log interval unit: hours
 #
-createLogInterval_UnitsInHours = 10 
+createLogInterval_UnitsInHours = 1 
 
 
     
@@ -90,11 +96,8 @@ while true
         # The code fix for the scenario above.  I can't get it to activate the code below, unless
         # the code was killed...
         #
-        puts "Hiccup - time to complete all polling takes longer than poll interval!!!"
-        puts "Hiccup - time to complete all polling takes longer than poll interval!!!"
-        puts "Hiccup - time to complete all polling takes longer than poll interval!!!"
-        puts "Hiccup - time to complete all polling takes longer than poll interval!!!"
-        exit # - the exit code...
+        puts "#{Time.now.inspect} Warning - time to complete all polling took longer than poll interval!!!"
+        # exit # - the exit code...
         #
         # waitTime = Time.now+pollInterval
     else
