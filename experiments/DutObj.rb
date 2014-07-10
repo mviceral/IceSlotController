@@ -249,6 +249,7 @@ class DutObj
             # Parse and save the statusResponse.
             #
             dutNum = 0;
+            allDutData = "";
             while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do
                 #
                 # Get the string index [1..-1] because we're skipping the first character '@'
@@ -261,53 +262,61 @@ class DutObj
                     # puts "@statusResponse[dutNum].nil? == true - skipping out of town. #{__FILE__} - #{__LINE__}"
                     return
                 end
-                ucRUNmode = @statusResponse[dutNum][1..-1].partition(",")
-                ambientTemp = ucRUNmode[2].partition(",")
-                tempOfDev = ambientTemp[2].partition(",")
-                contDir = tempOfDev[2].partition(",")
-                output = contDir[2].partition(",")
-                alarm = output[2].partition(",")
+                # puts "@statusResponse[#{dutNum}] = #{@statusResponse[dutNum]}"
+                allDutData += "|#{dutNum}"
+                allDutData += @statusResponse[dutNum]
+                # ucRUNmode = @statusResponse[dutNum][1..-1].partition(",")
+                # ambientTemp = ucRUNmode[2].partition(",")
+                # tempOfDev = ambientTemp[2].partition(",")
+                # contDir = tempOfDev[2].partition(",")
+                # output = contDir[2].partition(",")
+                # alarm = output[2].partition(",")
                 #puts "#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},#{output[0]},#{alarm[0]}"
                 #@statusDbFile[DutNum-1]
                 
                 #
                 # The database is available, so go ahead and insert the data into the database.
                 #
-                
-        		str = "Insert into dutLog(sysTime,dutNum,ucRUNmode,AmbientTemp,TempOfDev,contDir,Output,Alarm) "+
-        		        "values(    #{Time.now.to_i},#{dutNum},#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},"+
-        		        "#{output[0]},\"#{alarm[0]}\")"
-        				   
-        		# puts "#{str}" # check the insert string.
-        
-                begin
-                    @db.execute "#{str}"
-                    
-                    # puts "nextLogCreation = #{nextLogCreation.inspect}"
-                    # puts "timeNowParam = #{timeNowParam.inspect}"
-                    
-                    if nextLogCreation.nil? == false && nextLogCreation<timeNowParam
-                        #
-                        # Create new log.
-                        #
-                        createNewLog(timeNowParam)
-                	    # End of 'if @nextLogCreation<Time.now'
-                    end
-    
-                    rescue SQLite3::Exception => e 
-                		puts "#{Time.now.inspect} Exception occured"
-                		puts e
-                		
-                		@parent.dBase = DutObj.new(@createLogInterval_UnitsInHours,@parent)
-                	    # End of 'rescue SQLite3::Exception => e'
-                    ensure
-                    
-                    # End of 'begin' code block that will handle exceptions...
-                end
-    
                 dutNum +=1;
                 # End of 'while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do'
             end            
+                
+    		#str = "Insert into dutLog(sysTime,dutNum,ucRUNmode,AmbientTemp,TempOfDev,contDir,Output,Alarm) "+
+    		#        "values(    #{Time.now.to_i},#{dutNum},#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},"+
+    		#        "#{output[0]},\"#{alarm[0]}\")"
+
+    		str = "Insert into dutLog(sysTime,dutData) "+
+    		        "values(#{Time.now.to_i},\"#{allDutData}\")"
+    				   
+    		# puts "#{str}" # check the insert string.
+    
+            begin
+                # timeA = Time.now.to_f
+                @db.execute "#{str}"
+                # puts "Total time save: #{Time.now.to_f-timeA.to_f}"
+                
+                # puts "nextLogCreation = #{nextLogCreation.inspect}"
+                # puts "timeNowParam = #{timeNowParam.inspect}"
+                
+                if nextLogCreation.nil? == false && nextLogCreation<timeNowParam
+                    #
+                    # Create new log.
+                    #
+                    createNewLog(timeNowParam)
+            	    # End of 'if @nextLogCreation<Time.now'
+                end
+
+                rescue SQLite3::Exception => e 
+            		puts "#{Time.now.inspect} Exception occured"
+            		puts e
+            		
+            		@parent.dBase = DutObj.new(@createLogInterval_UnitsInHours,@parent)
+            	    # End of 'rescue SQLite3::Exception => e'
+                ensure
+                
+                # End of 'begin' code block that will handle exceptions...
+            end
+
             # End of 'if DutObj.dbaseFolder != NO_GOOD_DBASE_FOLDER'
         else 
             printErrorSdCardMissing
@@ -389,15 +398,20 @@ class DutObj
             # End of 'if (File.file?(@statusDbFile))'
         else 
             @db = SQLite3::Database.new( @statusDbFile )
+            # @db.execute("create table 'dutLog' ("+
+            # "sysTime INTEGER,"+     # time of record in BBB
+            # "dutNum INTEGER,"+      # 'dutNum' the dut number reference of the data
+            # "ucRUNmode INTEGER,"+   # 'ucRUNmode' 0 == Standby, 1 == Run
+            # "AmbientTemp REAL,"+    # 'dMeas' ambient temp
+            # "TempOfDev REAL,"+      # 'Tdut' CastTc - Temp of dev
+            # "contDir INTEGER,"+     # 'controllerDirection' Heat == 0, Cool == 1
+            # "Output INTEGER,"+      # 'Output' PWM 0-255
+            # "Alarm TEXT"+           # 'AlarmStr' The alarm text
+            # ");")
+
             @db.execute("create table 'dutLog' ("+
             "sysTime INTEGER,"+     # time of record in BBB
-            "dutNum INTEGER,"+      # 'dutNum' the dut number reference of the data
-            "ucRUNmode INTEGER,"+   # 'ucRUNmode' 0 == Standby, 1 == Run
-            "AmbientTemp REAL,"+    # 'dMeas' ambient temp
-            "TempOfDev REAL,"+      # 'Tdut' CastTc - Temp of dev
-            "contDir INTEGER,"+     # 'controllerDirection' Heat == 0, Cool == 1
-            "Output INTEGER,"+      # 'Output' PWM 0-255
-            "Alarm TEXT"+           # 'AlarmStr' The alarm text
+            "dutData TEXT"+      # 'dutNum' the dut number reference of the data
             ");")
             # End of 'if (File.file?(@statusDbFile)) ELSE'
         end
