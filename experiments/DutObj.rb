@@ -1,14 +1,17 @@
 require_relative 'AllDuts'
-require 'etc' # For getting the name of file owner
+require 'etc' # For getting the name of file owner.  It makes sure that the path for the SD card is 'debian'
 
 class DutObj
     NO_GOOD_DBASE_FOLDER = "No good database folder"
     attr_accessor :statusDbFile
     def getLastLogCompletedAt
+        # puts "getLastLogCompletedAt 1"
         if dbaseFolder == NO_GOOD_DBASE_FOLDER
+            # puts "getLastLogCompletedAt 2"
             return nil
             # End of 'if dbaseFolder == NO_GOOD_DBASE_FOLDER'
         end
+        # puts "getLastLogCompletedAt 3"
         
         #
         # Start a log file.  Scenario - we're going to start the application.  This Dut checks a reference point of when 
@@ -22,7 +25,7 @@ class DutObj
         # If the code restarts, checks the earliest log file created and makes sure to put a new log file 
         # based on the given interval of log creation.
         #
-        @dutLogFileName = "dutLog#{@indexOfDut}_"
+        @dutLogFileName = "dutLog_"
         rootLogPath = "/media/"+self.dbaseFolder+"/"
         dirInMedia = Dir.entries("#{rootLogPath}")
         listOfFiles = Array.new
@@ -33,9 +36,9 @@ class DutObj
             # End of 'for folderItem in dirInMedia'
         end
         
-        # puts "Check 1 #{@indexOfDutParam} #{__FILE__}-#{__LINE__}"
+        # puts "Check 1 #{Param} #{__FILE__}-#{__LINE__}"
         if listOfFiles.count > 0
-            # puts "Check 2 #{@indexOfDutParam} #{__FILE__}-#{__LINE__}"
+            # puts "Check 2 #{Param} #{__FILE__}-#{__LINE__}"
             #
             # From the list, get the newest file modified date.
             #
@@ -43,7 +46,7 @@ class DutObj
             latestModeTime = nil
             listOfFiles.each { 
                 |file|
-                # puts "Check 3 #{@indexOfDutParam} #{__FILE__}-#{__LINE__}"
+                # puts "Check 3 #{Param} #{__FILE__}-#{__LINE__}"
                 # puts "checking file - #{file}"
                 modTime = File.mtime("#{rootLogPath}#{file}")
                 if latestModeTime.nil?
@@ -79,7 +82,7 @@ class DutObj
             return Time.new(logYear,logMonth,logDay,logHour,logMin,0);
             # End of 'if listOfFiles.count > 0'
         else
-            return nil    
+            return Time.now    
             # End of 'if listOfFiles.count > 0 ELSE'
         end
         # End of 'def getLastLogCompletedAt'
@@ -87,13 +90,15 @@ class DutObj
     
     def logCompletedAt
         if @logCompletedAt.nil?
+            # puts "@logCompletedAt.nil? is true"
             #
             # Just call initialize again to get a legit value for @logCompletedAt
             #
-            initialize(@indexOfDut,@createLogInterval_UnitsInHours, @arrayParent)
+            initialize(@createLogInterval_UnitsInHours, @parent)
             # End of 'if @logCompletedAt.nil?'
         end
-        return  @logCompletedAt
+        # puts "logCompletedAt.nil?=#{@logCompletedAt.nil?}"
+        @logCompletedAt
         # End of 'def logCompletedAt'
     end
 
@@ -109,17 +114,17 @@ class DutObj
         # End of 'nextLogCreation'
     end
 
-    def initialize(indexOfDutParam,createLogInterval_UnitsInHoursParam, arrayParentParam)
+    def initialize(createLogInterval_UnitsInHoursParam, parentParam)
         # puts "indexOfDutParam = #{indexOfDutParam} #{__FILE__}-#{__LINE__}"
         # puts "@createLogInterval_UnitsInHoursParam = #{@createLogInterval_UnitsInHoursParam} #{__FILE__}-#{__LINE__}"
         # puts "arrayParentParam = #{arrayParentParam} #{__FILE__}-#{__LINE__}"
         # gets
-        @arrayParent = arrayParentParam
-        @indexOfDut = indexOfDutParam
         @createLogInterval_UnitsInHours = createLogInterval_UnitsInHoursParam
+        @parent = parentParam
         @db = nil
-        
+        @statusResponse = Array.new(TOTAL_DUTS_TO_LOOK_AT)
         @logCompletedAt = getLastLogCompletedAt()
+        @dbaseFolder = NO_GOOD_DBASE_FOLDER        
         
         if dbaseFolder != NO_GOOD_DBASE_FOLDER
             if @logCompletedAt.nil? 
@@ -162,7 +167,8 @@ class DutObj
             end
             # End of 'if dbaseFolder != NO_GOOD_DBASE_FOLDER'
         else
-            printErrorSdCardMissing(__FILE__,__LINE__)
+             # printErrorSdCardMissing(__FILE__,__LINE__)
+             @db = nil
         end 
     
         # End of 'def initialize()'
@@ -182,7 +188,7 @@ class DutObj
             logMin = '%02d' % timeNow.min.to_i
             
             newLogFileName = "#{@dutLogFileName}#{logYear}#{logMonth}#{logDay}_#{logHour}#{logMin}.db" 
-            cmd =  "mv /media/"+dbaseFolder+"/dutLog#{@indexOfDut}.db "+"/media/"+dbaseFolder+"/"+newLogFileName
+            cmd =  "mv /media/"+dbaseFolder+"/dutLog.db "+"/media/"+dbaseFolder+"/"+newLogFileName
             system(cmd) # moves the dutLogXXX.db to a log file record
             
             cmd =  "touch "+"/media/"+dbaseFolder+"/"+newLogFileName
@@ -192,11 +198,6 @@ class DutObj
             # puts "at #{__FILE__}-#{__LINE__}"
             # gets # pause
             
-            #
-            # Create a new dbase since we moved the old dbase to a repository...
-            #
-            # @arrayParent[@indexOfDut] = DutObj.new(@indexOfDut,@createLogInterval_UnitsInHours,@arrayParent)
-            
             # Refresh the dbHandler instead.
             refreshDbHandler
             
@@ -205,16 +206,16 @@ class DutObj
                                                                                   # @createLogInterval_UnitsInHours 
                                                                                   # to seconds
         else
-            printErrorSdCardMissing()
+            # printErrorSdCardMissing()
+            @db = nil
         end
     end
     
-    def poll(uart1Param)
+    def poll(dutNumParam, uart1Param)
         # puts "within poll. statusDbFile=#{statusDbFile}"
         # gets
         uartStatusCmd = "S?\n"
         uart1Param.write("#{uartStatusCmd}");
-        statusResponse = "" # This the response from the status/dynamic data query...
         keepLooping = true
         #
         # Code block for ensuring that status request is sent and the expected response is received.
@@ -224,7 +225,7 @@ class DutObj
                 complete_results = Timeout.timeout(1) do      
                     uart1Param.each_line { 
                         |line| 
-                        statusResponse = line
+                        @statusResponse[dutNumParam] = line
                         keepLooping = false     # loops out of the keepLooping loop.
                         break if line =~ /^@/   # loops out of the each_line loop.
                     }
@@ -240,83 +241,86 @@ class DutObj
             end
         end
         
-        #
-        # Parse and save the statusResponse.
-        #
-        
-        #
-        # Get the string index [1..-1] because we're skipping the first character '@'
-        # Parse the data out.
-        #
-        ucRUNmode = statusResponse[1..-1].partition(",")
-        ambientTemp = ucRUNmode[2].partition(",")
-        tempOfDev = ambientTemp[2].partition(",")
-        contDir = tempOfDev[2].partition(",")
-        output = contDir[2].partition(",")
-        alarm = output[2].partition(",")
-        #puts "#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},#{output[0]},#{alarm[0]}"
-        #@statusDbFile[DutNum-1]
-    
+    end
+
+    def saveAllData(timeNowParam)
         if dbaseFolder != NO_GOOD_DBASE_FOLDER
             #
-            # The database is available, so go ahead and insert the data into the database.
+            # Parse and save the statusResponse.
             #
-            
-    		str = "Insert into dutLog(sysTime,ucRUNmode,AmbientTemp,TempOfDev,contDir,Output,Alarm) "+
-    		        "values(    #{Time.now.to_i},#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},"+
-    		        "#{output[0]},\"#{alarm[0]}\")"
-    				   
-    		# puts "#{str}" # check the insert string.
-    
-            begin
-                @db.execute "#{str}"
-                
-                timeNow = Time.now
-                # puts "nextLogCreation = #{nextLogCreation.inspect}"
-                # puts "timeNow = #{timeNow.inspect}"
-                
-                if nextLogCreation.nil? == false && nextLogCreation<timeNow
+            dutNum = 0;
+            while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do
+                #
+                # Get the string index [1..-1] because we're skipping the first character '@'
+                # Parse the data out.
+                #
+                if @statusResponse[dutNum].nil? == true
                     #
-                    # Create new log.
+                    # SD card just got plugged in.  DutObj got re-initialized.
                     #
-                    createNewLog(timeNow)
-            	    # End of 'if @nextLogCreation<Time.now'
+                    # puts "@statusResponse[dutNum].nil? == true - skipping out of town. #{__FILE__} - #{__LINE__}"
+                    return
                 end
-
-                rescue SQLite3::Exception => e 
-            		puts "Exception occured"
-            		puts e
-            		
-            		#
-            		# The template file could have been corrupted
-            		#
-                    # puts "We need replace the @dutLogTemplate_dBaseFile file. #{__FILE__} - #{__LINE__}"
-                    # gets
-            		@dutLogTemplate_dBaseFile_Replace = true
-            		
-            		@arrayParent[@indexOfDut] = DutObj.new(@indexOfDut,@createLogInterval_UnitsInHours,@arrayParent)
-
-            	    # End of 'rescue SQLite3::Exception => e'
-                ensure
+                ucRUNmode = @statusResponse[dutNum][1..-1].partition(",")
+                ambientTemp = ucRUNmode[2].partition(",")
+                tempOfDev = ambientTemp[2].partition(",")
+                contDir = tempOfDev[2].partition(",")
+                output = contDir[2].partition(",")
+                alarm = output[2].partition(",")
+                #puts "#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},#{output[0]},#{alarm[0]}"
+                #@statusDbFile[DutNum-1]
                 
-                # End of 'begin' code block that will handle exceptions...
-            end
-            
+                #
+                # The database is available, so go ahead and insert the data into the database.
+                #
+                
+        		str = "Insert into dutLog(sysTime,dutNum,ucRUNmode,AmbientTemp,TempOfDev,contDir,Output,Alarm) "+
+        		        "values(    #{Time.now.to_i},#{dutNum},#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},"+
+        		        "#{output[0]},\"#{alarm[0]}\")"
+        				   
+        		# puts "#{str}" # check the insert string.
+        
+                begin
+                    @db.execute "#{str}"
+                    
+                    # puts "nextLogCreation = #{nextLogCreation.inspect}"
+                    # puts "timeNowParam = #{timeNowParam.inspect}"
+                    
+                    if nextLogCreation.nil? == false && nextLogCreation<timeNowParam
+                        #
+                        # Create new log.
+                        #
+                        createNewLog(timeNowParam)
+                	    # End of 'if @nextLogCreation<Time.now'
+                    end
+    
+                    rescue SQLite3::Exception => e 
+                		puts "#{Time.now.inspect} Exception occured"
+                		puts e
+                		
+                		@parent.dBase = DutObj.new(@createLogInterval_UnitsInHours,@parent)
+                	    # End of 'rescue SQLite3::Exception => e'
+                    ensure
+                    
+                    # End of 'begin' code block that will handle exceptions...
+                end
+    
+                dutNum +=1;
+                # End of 'while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do'
+            end            
             # End of 'if DutObj.dbaseFolder != NO_GOOD_DBASE_FOLDER'
         else 
-            printErrorSdCardMissing(__FILE__,__LINE__)
-            @arrayParent[@indexOfDut] = DutObj.new(@indexOfDut,@createLogInterval_UnitsInHours,@arrayParent)
-
-
+            printErrorSdCardMissing
+            # puts"@parent=#{@parent}"
+            @parent.dBase = DutObj.new(@createLogInterval_UnitsInHours,@parent)
             # End of 'if DutObj.dbaseFolder != NO_GOOD_DBASE_FOLDER - ELSE'
         end
         
         # End of 'def poll()'
     end
 
-    def printErrorSdCardMissing (file, line)
-        puts "#{Time.now.inspect} SD card for dbase is not present!!!"
-        
+    def printErrorSdCardMissing
+        puts "#{Time.now.inspect} SD card for dbase is not present!!!"  #{file} - #{line}"
         #
         # Re-initialize this DutObj so even if it's running and a new SD Card was put in, it'll  continue where it left
         # off
@@ -330,6 +334,7 @@ class DutObj
     end
     
     def dbaseFolder
+        # puts "dbaseFolder from #{file} - #{line}"
         if @db.nil?
             #
             # Check if dbase file exists is the SD Card
@@ -357,22 +362,16 @@ class DutObj
                 #
                 
                 #
-                # Ensure that database table for static data (version request) is present...
-                #
-                
-                #
                 # Ensure that database table for dynamic data (status request) is present...
                 #
-                @statusDbFile = "/media/"+@dbaseFolder+"/dutLog#{@indexOfDut}.db"
+                @statusDbFile = "/media/"+@dbaseFolder+"/dutLog.db"
                 
                 refreshDbHandler
-                #
-                # Ensure that database table for set temperature is present...
-                #
-                
+
                 # End of 'if @dbaseFolder != NO_GOOD_DBASE_FOLDER'
             else
-                printErrorSdCardMissing(__FILE__,__LINE__)
+                # printErrorSdCardMissing(__FILE__,__LINE__)
+                @db = nil
             end
             # End of 'if @db.nil?'
         end
@@ -383,70 +382,23 @@ class DutObj
     end
     
     def refreshDbHandler
-        if @dutLogTemplate_dBaseFile_Replace
-            if (File.file?(@dutLogTemplate_dBaseFile))
-                puts "Check to see if file #{@dutLogTemplate_dBaseFile} exists. #{__FILE__} - #{__LINE__}"
-                gets
-                File.delete(@dutLogTemplate_dBaseFile)
-                puts "File #{@dutLogTemplate_dBaseFile} has been delete.  Verify it. #{__FILE__} - #{__LINE__}"
-                gets
-                @dutLogTemplate_dBaseFile_Replace = false
-            end
-        end
-
-        
         # puts "@statusDbFile=#{@statusDbFile}"
         if (File.file?(@statusDbFile))
             # puts "The dbase folder exists."
             @db = SQLite3::Database.open @statusDbFile
             # End of 'if (File.file?(@statusDbFile))'
         else 
-            #
-            # Trying to see where we can increase the speed of the software when ever it's creating a new dbase file.
-            # Instead of creating a dbase for dutlog for each device (which seems to slow the process), make a file 
-            # dbase file template and copy that instead.
-            #
-            
-            #
-            # if dutLogTemplate.db does not exists, create it.
-            # Copy the template to @statusDbFile
-            # Instantiate a @db handle with the @statusDbFile
-            #
-            @dutLogTemplate_dBaseFile = "/media/"+@dbaseFolder+"/dutLogTemplate.db"
-            unless File.file?(@dutLogTemplate_dBaseFile)
-                # puts "File '#{@dutLogTemplate_dBaseFile}' does not exists.  Creating. #{__FILE__} - #{__LINE__}"
-                # puts "The dbase folder->#{dbFile}<- does NOT exists."
-                @db = SQLite3::Database.new( @dutLogTemplate_dBaseFile )
-                @db.execute("create table 'dutLog' ("+
-                "sysTime INTEGER,"+     # time of record in BBB
-                "ucRUNmode INTEGER,"+   # 'ucRUNmode' 0 == Standby, 1 == Run
-                "AmbientTemp REAL,"+    # 'dMeas' ambient temp
-                "TempOfDev REAL,"+      # 'Tdut' CastTc - Temp of dev
-                "contDir INTEGER,"+     # 'controllerDirection' Heat == 0, Cool == 1
-                "Output INTEGER,"+      # 'Output' PWM 0-255
-                "Alarm TEXT"+           # 'AlarmStr' The alarm text
-                ");")
-                
-                #puts "Check to see if file #{@dutLogTemplate_dBaseFile} is now present. #{__FILE__} - #{__LINE__}"
-                #gets
-                
-                # End of unless File.file?(dutLogTemplate_dBaseFile)
-            end
-            
-            #puts "Make sure #{@statusDbFile} does not exists. #{__FILE__} - #{__LINE__}"
-            #gets
-            
-            copyCmd = "cp #{@dutLogTemplate_dBaseFile} #{@statusDbFile}"
-            # puts "#{copyCmd}" # Check the copy command.
-            # gets
-            system(copyCmd) # execute it.
-
-            # puts "Make sure #{@statusDbFile} is now created. #{__FILE__} - #{__LINE__}"
-            # gets
-            
-            # puts "The dbase folder exists."
-            @db = SQLite3::Database.open @statusDbFile
-
+            @db = SQLite3::Database.new( @statusDbFile )
+            @db.execute("create table 'dutLog' ("+
+            "sysTime INTEGER,"+     # time of record in BBB
+            "dutNum INTEGER,"+      # 'dutNum' the dut number reference of the data
+            "ucRUNmode INTEGER,"+   # 'ucRUNmode' 0 == Standby, 1 == Run
+            "AmbientTemp REAL,"+    # 'dMeas' ambient temp
+            "TempOfDev REAL,"+      # 'Tdut' CastTc - Temp of dev
+            "contDir INTEGER,"+     # 'controllerDirection' Heat == 0, Cool == 1
+            "Output INTEGER,"+      # 'Output' PWM 0-255
+            "Alarm TEXT"+           # 'AlarmStr' The alarm text
+            ");")
             # End of 'if (File.file?(@statusDbFile)) ELSE'
         end
     end

@@ -2,16 +2,25 @@ require 'timeout'
 require 'sqlite3'
 require 'beaglebone'
 require_relative 'DutObj'
-require_relative 'AllDuts'
-require 'singleton'
-require 'forwardable'
+require_relative 'ThermalSiteDevices'
 include Beaglebone
 
 #
 # Notes:  Some code may need to get implemented.  Search for the string below
 # - "[ ] Code not done"
 
-
+#
+# July 10, 2014 - Goal, "Clean the code" that only uses one database.  Made object ThermalSiteDevices that does data
+# polling, and logging data.
+#
+#
+# July 9, 2014 - Managed to code where the software is running, and the SD card dies suddenly (i.e. it's removed), the
+# code continues to run.  When a new SD card is plugged in while the code is running, the code continues to do its task.
+#
+# Made another version where instead of having 24 databases, and each dbase logs the data per thermal site device, I've
+# updated the code to just use one database.  The reason for the transition was to minimize the time of interval when 
+# creating a new database when the log interval time is reached.
+#
 #
 # July 8, 2014 - Managed to write code that will poll 24 duts.  All duts recording logs in their own database.  The code
 # still needs 
@@ -32,38 +41,40 @@ TOTAL_DUTS_TO_LOOK_AT  = 24
 #
 createLogInterval_UnitsInHours = 1 
 
+#
+# Do a poll for every pollInterval in seconds
+#
+pollIntervalInSeconds = 10
 
-    
-    
 executeAllStty = "Yes" # "Yes" if you want to execute all...
 baudrateToUse = 115200 # baud rate options are 9600, 19200, and 115200
 if (executeAllStty == "Yes") 
-    puts 'Check 1 of 7 - cd /lib/firmware'
+    # puts 'Check 1 of 7 - cd /lib/firmware'
     system("cd /lib/firmware")
     
-    puts 'Check 2 of 7 - echo BB-UART1 > /sys/devices/bone_capemgr.9/slots'
+    # puts 'Check 2 of 7 - echo BB-UART1 > /sys/devices/bone_capemgr.9/slots'
     system("echo BB-UART1 > /sys/devices/bone_capemgr.9/slots")
     
-    puts "Check 3 of 7 - ./openTtyO1Port_#{baudrateToUse}.exe"
-	system("./openTtyO1Port_#{baudrateToUse}.exe")
+    # puts "Check 3 of 7 - ./openTtyO1Port_#{baudrateToUse}.exe"
+	system("./openTtyO1Port.exe #{baudrateToUse}")
     
-    puts 'Check 4 of 7 - stty -F /dev/ttyO1 raw'
+    # puts 'Check 4 of 7 - stty -F /dev/ttyO1 raw'
     system("stty -F /dev/ttyO1 raw")
     
-    puts "Check 5 of 7 - stty -F /dev/ttyO1 #{baudrateToUse}"
+    # puts "Check 5 of 7 - stty -F /dev/ttyO1 #{baudrateToUse}"
 	system("stty -F /dev/ttyO1 #{baudrateToUse}")
 	
 	# End of 'if (executeAllStty == "Yes")'
 end
 
 
-puts "Check 6 of 7 - uart1 = UARTDevice.new(:UART1, #{baudrateToUse})"
+# puts "Check 6 of 7 - uart1 = UARTDevice.new(:UART1, #{baudrateToUse})"
 uart1 = UARTDevice.new(:UART1, baudrateToUse)
 
 
-puts "Check 7 of 7 - Start polling..."
-puts "Press the restart button on the ThermalSite unit..."
-
+#puts "Check 7 of 7 - Start polling..."
+#puts "Press the restart button on the ThermalSite unit..."
+puts "Logging 23 dut thermalsites."
 =begin
 #
 # Read the dump all way down 'Stype:1, RTD100' so we could start the process.
@@ -80,14 +91,19 @@ uart1.each_line {
 ################################################
 #
 # Do an infinite loop for this code.
-# Do a poll for every pollInterval in seconds
 #
-pollIntervalInSeconds = 10
+ThermalSiteDevices.setTotalHoursToLogData(createLogInterval_UnitsInHours)
 waitTime = Time.now+pollIntervalInSeconds
-allDuts = AllDuts.new(createLogInterval_UnitsInHours)
+# allDuts = AllDuts.new(createLogInterval_UnitsInHours)
 while true
     #
-    # What if there was a hiccup below and waitTime-Time.now becomes negative
+    # Gather data...
+    #
+    ThermalSiteDevices.pollDevices(uart1)
+    ThermalSiteDevices.logData
+
+    #
+    # What if there was a hiccup and waitTime-Time.now becomes negative
     # The code ensures that the process is exactly going to take place at the given interval.  No lag that
     # takes place on processing data.
     #
@@ -96,27 +112,20 @@ while true
         # The code fix for the scenario above.  I can't get it to activate the code below, unless
         # the code was killed...
         #
-        puts "#{Time.now.inspect} Warning - time to complete all polling took longer than poll interval!!!"
+        puts "#{Time.now.inspect} Warning - time to complete polling took longer than poll interval!!!"
         # exit # - the exit code...
         #
         # waitTime = Time.now+pollInterval
     else
-        sleep(waitTime-Time.now) 
+        sleep(waitTime.to_f-Time.now.to_f) 
     end
     waitTime = waitTime+pollIntervalInSeconds
-    
-    dutNum = 0;
-    while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do
-        #puts "'#{dutNum}'.statusDbFile = #{allDuts.getDut(dutNum).statusDbFile}"
-        #gets
-        allDuts.getDut(dutNum).poll(uart1)
-        dutNum +=1;
-    end            
 end
 
     
 #
 # Pieces of code
+# Tables for static data, when temperature set point was called, and reset request.
 #
 =begin
 dbFile = "/media/"+@dbaseFolder+"/staticdata#{DutNum}.db"
