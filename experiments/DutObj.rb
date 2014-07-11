@@ -202,7 +202,7 @@ class DutObj
             refreshDbHandler
             
             @logCompletedAt = getLastLogCompletedAt()
-            @nextLogCreation = @logCompletedAt+@createLogInterval_UnitsInHours*60   # *60*60 converts 
+            @nextLogCreation = @logCompletedAt+@createLogInterval_UnitsInHours*60*60   # *60*60 converts 
                                                                                   # @createLogInterval_UnitsInHours 
                                                                                   # to seconds
         else
@@ -362,8 +362,6 @@ class DutObj
                 end
                 # End of 'for folderItem in dirInMedia'
             end
-            
-            
             
             if @dbaseFolder != NO_GOOD_DBASE_FOLDER
                 #

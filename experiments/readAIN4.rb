@@ -132,6 +132,17 @@ include Beaglebone
 # puts "ain = #{AIN.read(:P9_33)}"
 #end
 
+GPIO.pin_mode(:P9_12, :OUT)
+puts ":P9_12 enabled = #{GPIO.enabled?(:P9_12)}"
+
+# Initialize pin P9_12 in OUTPUT mode
+p9_12 = GPIOPin.new(:P9_12, :OUT)
+
+# Provide 3.3v on pin P9_12
+p9_12.digital_write(:HIGH)
+
+puts "Got through here..."
+
 i = 0
 num = 5
 time0 = Time.now
