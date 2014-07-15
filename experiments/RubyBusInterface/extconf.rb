@@ -2,7 +2,7 @@
 require "mkmf"
 
 # Give it a name
-extension_name = "businterface"
+extension_name = "Port2Interface"
 
 # The destination
 dir_config(extension_name)
