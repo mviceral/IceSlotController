@@ -37,6 +37,31 @@ shutdown -r now
 Wait about 10 seconds and reconnect to the BeagleBone Black through SSH. To see what capes are enabled:
 cat /sys/devices/bone_capemgr.*/slots
 
+#
+# Original slots setting
+#
+root@beaglebone:/media# cat /sys/devices/bone_capemgr.9/slots
+ 0: 54:PF---
+ 1: 55:PF---
+ 2: 56:PF---
+ 3: 57:PF---
+ 4: ff:P-O-L Bone-LT-eMMC-2G,00A0,Texas Instrument,BB-BONE-EMMC-2G
+ 5: ff:P-O-L Bone-Black-HDMI,00A0,Texas Instrument,BB-BONELT-HDMI
+
+#
+# Should look like below after turning off the HDMI cape
+#
+root@beaglebone:/media# cat /sys/devices/bone_capemgr.9/slots
+ 0: 54:PF---
+ 1: 55:PF---
+ 2: 56:PF---
+ 3: 57:PF---
+ 4: ff:P-O-L Bone-LT-eMMC-2G,00A0,Texas Instrument,BB-BONE-EMMC-2G
+ 5: ff:P-O-- Bone-Black-HDMI,00A0,Texas Instrument,BB-BONELT-HDMI
+
+#
+# Actual slots image after turning off the HDMI
+#
  0: 54:PF---
  1: 55:PF---
  2: 56:PF---
@@ -70,125 +95,242 @@ class ByteAndAddress
     
     def runUI
         initialize
-        userInput = ""
-        until userInput == "BYE" 
-            listCommands
-            print "-> "
-            userInput = gets.chomp.upcase
+        data = 0
+        addr = 0
+        while true
+            # puts "#{data},#{addr}"
+            #
+            # Sets the strobe to low
+            #
+            @bbb_stb.digital_write(:LOW)
             
-            case userInput
-            when "A"
-                puts "\nUser ran a strobe"
-                @bbb_stb.digital_write(:HIGH)
-                @bbb_stb.digital_write(:LOW)
-              
-            when "B"
-                puts "Set BBB_ADR."
-                print "ADR value: "
-                userInput = gets.chomp.upcase
-                if userInput =~ /^[0-9A-F]+$/
-                    bits = userInput.to_i(16).to_s(2)
-                    while bits.length < 4
-                        bits = "0"+bits
-                    end
-                    puts "bit value = #{bits[0]},#{bits[1]},#{bits[2]},#{bits[3]} = #{bits}"
-                    if bits[3] == "1"
-                        @bbb_adr0.digital_write(:HIGH)
-                    else 
-                        @bbb_adr0.digital_write(:LOW)
-                    end
-                    
-                    if bits[2] == "1"
-                        @bbb_adr1.digital_write(:HIGH)
-                    else 
-                        @bbb_adr1.digital_write(:LOW)
-                    end
-                    
-                    if bits[1] == "1"
-                        @bbb_adr2.digital_write(:HIGH)
-                    else 
-                        @bbb_adr2.digital_write(:LOW)
-                    end
-                    
-                    if bits[0] == "1"
-                        @bbb_adr3.digital_write(:HIGH)
-                    else 
-                        @bbb_adr3.digital_write(:LOW)
-                    end
-                else
-                    puts "#{userInput} is NOT a valid Hex value."
-                end
-                
-            when "C"
-                puts "Set BBB_DATA."
-                print "DATA value: "
-                userInput = gets.chomp.upcase
-                if userInput =~ /^[0-9A-F]+$/
-                    bits = userInput.to_i(16).to_s(2)
-                    while bits.length < 8
-                        bits = "0"+bits
-                    end
-                    puts "bit value = #{bits}"
-                    if bits[7] == "1"
-                        @bbb_data0.digital_write(:HIGH)
-                    else 
-                        @bbb_data0.digital_write(:LOW)
-                    end
-                    
-                    if bits[6] == "1"
-                        @bbb_data1.digital_write(:HIGH)
-                    else 
-                        @bbb_data1.digital_write(:LOW)
-                    end
-                    
-                    if bits[5] == "1"
-                        @bbb_data2.digital_write(:HIGH)
-                    else 
-                        @bbb_data2.digital_write(:LOW)
-                    end
-                    
-                    if bits[4] == "1"
-                        @bbb_data3.digital_write(:HIGH)
-                    else 
-                        @bbb_data3.digital_write(:LOW)
-                    end
-                    
-                    if bits[3] == "1"
-                        @bbb_data4.digital_write(:HIGH)
-                    else 
-                        @bbb_data4.digital_write(:LOW)
-                    end
-                    
-                    if bits[2] == "1"
-                        @bbb_data5.digital_write(:HIGH)
-                    else 
-                        @bbb_data5.digital_write(:LOW)
-                    end
-                    
-                    if bits[1] == "1"
-                        @bbb_data6.digital_write(:HIGH)
-                    else 
-                        @bbb_data6.digital_write(:LOW)
-                    end
-                    
-                    if bits[0] == "1"
-                        @bbb_data7.digital_write(:HIGH)
-                    else 
-                        @bbb_data7.digital_write(:LOW)
-                    end
-                    
-                else
-                    puts "#{userInput} is NOT a valid Hex value."
-                end
-                
-            when "BYE"
-                puts "User wants to exit the code."
+            #
+            # Sets the address
+            #
+            if addr < 15
+                addr = addr+1
             else
-                puts "'#{userInput}' is not a valid command."
-            end                
-            # End of 'unless userInput == "BYE"'
+                addr = 0
+            end
+            # bits = addr.to_i(16).to_s(2)
+            bits = addr.to_s(2)
+            while bits.length < 4
+                bits = "0"+bits
+            end
+            
+            # puts "bit value = #{bits[0]},#{bits[1]},#{bits[2]},#{bits[3]} = #{bits}"
+            if bits[3] == "1"
+                @bbb_adr0.digital_write(:HIGH)
+            else 
+                @bbb_adr0.digital_write(:LOW)
+            end
+            
+            if bits[2] == "1"
+                @bbb_adr1.digital_write(:HIGH)
+            else 
+                @bbb_adr1.digital_write(:LOW)
+            end
+            
+            if bits[1] == "1"
+                @bbb_adr2.digital_write(:HIGH)
+            else 
+                @bbb_adr2.digital_write(:LOW)
+            end
+            
+            if bits[0] == "1"
+                @bbb_adr3.digital_write(:HIGH)
+            else 
+                @bbb_adr3.digital_write(:LOW)
+            end
+            
+            #
+            # Sets the data
+            #
+            if data < 255
+                data = data+1
+            else
+                data = 0
+            end
+            # bits = data.to_i(16).to_s(2)
+            bits = data.to_s(2)
+            while bits.length < 8
+                bits = "0"+bits
+            end
+            # puts "bit value = #{bits}"
+            if bits[7] == "1"
+                @bbb_data0.digital_write(:HIGH)
+            else 
+                @bbb_data0.digital_write(:LOW)
+            end
+            
+            if bits[6] == "1"
+                @bbb_data1.digital_write(:HIGH)
+            else 
+                @bbb_data1.digital_write(:LOW)
+            end
+            
+            if bits[5] == "1"
+                @bbb_data2.digital_write(:HIGH)
+            else 
+                @bbb_data2.digital_write(:LOW)
+            end
+            
+            if bits[4] == "1"
+                @bbb_data3.digital_write(:HIGH)
+            else 
+                @bbb_data3.digital_write(:LOW)
+            end
+            
+            if bits[3] == "1"
+                @bbb_data4.digital_write(:HIGH)
+            else 
+                @bbb_data4.digital_write(:LOW)
+            end
+            
+            if bits[2] == "1"
+                @bbb_data5.digital_write(:HIGH)
+            else 
+                @bbb_data5.digital_write(:LOW)
+            end
+            
+            if bits[1] == "1"
+                @bbb_data6.digital_write(:HIGH)
+            else 
+                @bbb_data6.digital_write(:LOW)
+            end
+            
+            if bits[0] == "1"
+                @bbb_data7.digital_write(:HIGH)
+            else 
+                @bbb_data7.digital_write(:LOW)
+            end
+            
+            #
+            # Sets the strobe to low
+            #
+            @bbb_stb.digital_write(:HIGH)
         end
-        puts "\nExiting code.\n\n"
+=begin
+userInput = ""
+until userInput == "BYE" 
+    listCommands
+    print "-> "
+    userInput = gets.chomp.upcase
+    
+    case userInput
+    when "A"
+        puts "\nUser ran a strobe"
+        @bbb_stb.digital_write(:HIGH)
+        @bbb_stb.digital_write(:LOW)
+      
+    when "B"
+        puts "Set BBB_ADR."
+        print "ADR value: "
+        userInput = gets.chomp.upcase
+        if userInput =~ /^[0-9A-F]+$/
+            bits = userInput.to_i(16).to_s(2)
+            while bits.length < 4
+                bits = "0"+bits
+            end
+            puts "bit value = #{bits[0]},#{bits[1]},#{bits[2]},#{bits[3]} = #{bits}"
+            if bits[3] == "1"
+                @bbb_adr0.digital_write(:HIGH)
+            else 
+                @bbb_adr0.digital_write(:LOW)
+            end
+            
+            if bits[2] == "1"
+                @bbb_adr1.digital_write(:HIGH)
+            else 
+                @bbb_adr1.digital_write(:LOW)
+            end
+            
+            if bits[1] == "1"
+                @bbb_adr2.digital_write(:HIGH)
+            else 
+                @bbb_adr2.digital_write(:LOW)
+            end
+            
+            if bits[0] == "1"
+                @bbb_adr3.digital_write(:HIGH)
+            else 
+                @bbb_adr3.digital_write(:LOW)
+            end
+        else
+            puts "#{userInput} is NOT a valid Hex value."
+        end
+        
+    when "C"
+        puts "Set BBB_DATA."
+        print "DATA value: "
+        userInput = gets.chomp.upcase
+        if userInput =~ /^[0-9A-F]+$/
+            bits = userInput.to_i(16).to_s(2)
+            while bits.length < 8
+                bits = "0"+bits
+            end
+            puts "bit value = #{bits}"
+            if bits[7] == "1"
+                @bbb_data0.digital_write(:HIGH)
+            else 
+                @bbb_data0.digital_write(:LOW)
+            end
+            
+            if bits[6] == "1"
+                @bbb_data1.digital_write(:HIGH)
+            else 
+                @bbb_data1.digital_write(:LOW)
+            end
+            
+            if bits[5] == "1"
+                @bbb_data2.digital_write(:HIGH)
+            else 
+                @bbb_data2.digital_write(:LOW)
+            end
+            
+            if bits[4] == "1"
+                @bbb_data3.digital_write(:HIGH)
+            else 
+                @bbb_data3.digital_write(:LOW)
+            end
+            
+            if bits[3] == "1"
+                @bbb_data4.digital_write(:HIGH)
+            else 
+                @bbb_data4.digital_write(:LOW)
+            end
+            
+            if bits[2] == "1"
+                @bbb_data5.digital_write(:HIGH)
+            else 
+                @bbb_data5.digital_write(:LOW)
+            end
+            
+            if bits[1] == "1"
+                @bbb_data6.digital_write(:HIGH)
+            else 
+                @bbb_data6.digital_write(:LOW)
+            end
+            
+            if bits[0] == "1"
+                @bbb_data7.digital_write(:HIGH)
+            else 
+                @bbb_data7.digital_write(:LOW)
+            end
+            
+        else
+            puts "#{userInput} is NOT a valid Hex value."
+        end
+        
+    when "BYE"
+        puts "User wants to exit the code."
+    else
+        puts "'#{userInput}' is not a valid command."
+    end                
+    # End of 'unless userInput == "BYE"'
+end
+puts "\nExiting code.\n\n"
+=end
         # End of 'runUI'
     end
 
@@ -204,6 +346,15 @@ class ByteAndAddress
         @bbb_adr2 = GPIOPin.new(:P8_31, :OUT) 
         @bbb_adr3 = GPIOPin.new(:P8_32, :OUT) 
 
+        @bbb_data0 = GPIOPin.new(:P8_45, :IN) 
+        @bbb_data1 = GPIOPin.new(:P8_46, :IN) 
+        @bbb_data2 = GPIOPin.new(:P8_43, :IN) 
+        @bbb_data3 = GPIOPin.new(:P8_44, :IN) 
+        @bbb_data4 = GPIOPin.new(:P8_41, :IN) 
+        @bbb_data5 = GPIOPin.new(:P8_42, :IN) 
+        @bbb_data6 = GPIOPin.new(:P8_39, :IN) 
+        @bbb_data7 = GPIOPin.new(:P8_40, :IN) 
+=begin
         @bbb_data0 = GPIOPin.new(:P8_45, :OUT) 
         @bbb_data1 = GPIOPin.new(:P8_46, :OUT) 
         @bbb_data2 = GPIOPin.new(:P8_43, :OUT) 
@@ -212,7 +363,7 @@ class ByteAndAddress
         @bbb_data5 = GPIOPin.new(:P8_42, :OUT) 
         @bbb_data6 = GPIOPin.new(:P8_39, :OUT) 
         @bbb_data7 = GPIOPin.new(:P8_40, :OUT) 
-
+=end
         @uiCmds = [
             ["A","Push one strobe."],
             ["B","Set BBB_ADR."],
