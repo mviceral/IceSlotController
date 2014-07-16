@@ -1,7 +1,7 @@
-To see what the ThermalSite (TS) is sending through UART port, run readUART1.rb with ruby:
+To see what the ThermalSite (TS) is sending through UART port, run readUART1.rb with ruby on its own terminal:
 ruby readUART1.rb
 
-To send TS commands on the TS device through UART port, run:
+To send TS commands on the TS device through UART port, run the script on another terminal:
 
 ruby writeUART1.rb <cmd>
 
