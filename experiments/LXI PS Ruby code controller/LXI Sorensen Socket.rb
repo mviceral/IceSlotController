@@ -5,7 +5,25 @@ port = 5025                # port
 
 socket = TCPSocket.open(host,port)  # Connect to server
 
-socket.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
+# socket.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
+
+srv = TCPServer.open(3333)
+
+userInput = ""
+while userInput != "bye"
+    userInput = gets.chomp.upcase
+    puts "You entered: #{userInput}"
+    puts "To exit, type 'bye'"
+end
+exit
+
+client = srv.accept
+data = ""
+recv_length = 56
+while (tmp = client.recv(recv_length))
+    data += tmp
+    break if tmp.length < recv_length
+end
 
 # Read the SCPI Status Byte status register,
 socket.print("*STB?\r\n")
@@ -24,41 +42,25 @@ exitString = "exit"
 # Setup the user command structure
 #
 
-#
-# 'a'
-#
-aCmds = [
-		['*CLS','']
-	]
-a = ['a',aCmds,'clear the unit to its power-on default settings.']
-
-#
-# 'b'
-#
-bCmds = [
-		['*RST','']
-	]
-b = ['b',bCmds,'reset the unit.']
-
-#
-# 'c'
-#
-cCmds =	[
-		[ "*CLS","clear the unit to its power-on default settings."], 
-		[ "*RST","reset the unit."], 
-		[ "SOUR:CURR 1.0","program output current to 1.0 A."], 
-		[ "SOUR:CURR?","confirm the output current setting (response: 1.0)."], 
-		[ "SOUR:VOLT 5.0","program output voltage to 5.0 VDC."], 
-		[ "SOUR:VOLT?","confirm the output voltage setting (response: 5.0)."], 
-		[ "MEAS:CURR?","measure the actual output current (response: ~ 0.0 with no load on output)."], 
-		[ "MEAS:VOLT?","measure the actual output voltage (response: ~ 5.0)."] 
-	]
-c = ['c', cCmds, 'Program a unit with no load at the output to 5 VDC @ 1A, and verify the output. ' ]
-
-#
-# 'd'
-#
-dCmds = [
+commandList = [
+    [   'a',    
+        [
+            ['*CLS','']
+        ],
+        'clear the unit to its power-on default settings.'
+    ],
+    [   'b',
+        [
+		    ['*RST','']
+	    ],
+	    'reset the unit.'
+    ],
+    [   'c', 
+        [
+    		[ "*HELP?","Display All SCPI Command Headers"]
+	    ], 
+	    'Display all the SCPI command headers available on this device.' 
+    ],['d',[
 		['*CLS','clear the unit to its power-on default settings.'],
 		['*RST','reset the unit.'],
 		['SOUR:VOLT:PROT 4.0','program the OVP trip point to 4.0 VDC.'],
@@ -68,15 +70,9 @@ dCmds = [
 		['STAT:PROT:ENABLE 8','program the unit to report OVP trip.'],
 		['STAT:PROT:ENABLE?','confirm that OVP fault is enabled (response: 8).'],
 		['STAT:PROT:EVENT?','confirm no faults occurred (response: 0). confirm that the OVP LED is not active.']
-	]
-d = ['d',dCmds, ' Program a unit with no load at the output to generate a Ethernet OVP Fault upon an overvoltage protection trip condition']
-
-eCmds = [
+	], ' Program a unit with no load at the output to generate a Ethernet OVP Fault upon an overvoltage protection trip condition'],['e',[
 		['SOUR:VOLT 7.0','program output voltage to 7.0 VDC - cause OVP trip! confirm that OVP LED is active.'] 
-	]
-e = ['e',eCmds, "Causes an OVP after calling 'd'."]
-f = ['exit',nil, 'Exit from code.']
-commandList = [a,b,c,d,e,f] 
+	], "Causes an OVP after calling 'd'."],['bye',nil, 'Exits from code.']] 
 
 while (userInput != exitString)
 	puts "List of commands for power supply."
