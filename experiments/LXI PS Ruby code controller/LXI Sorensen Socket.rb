@@ -1,29 +1,10 @@
+require 'timeout'
 require 'socket'
  
 host = '192.168.1.241'     # The web server
 port = 5025                # port
 
 socket = TCPSocket.open(host,port)  # Connect to server
-
-# socket.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1)
-
-srv = TCPServer.open(3333)
-
-userInput = ""
-while userInput != "bye"
-    userInput = gets.chomp.upcase
-    puts "You entered: #{userInput}"
-    puts "To exit, type 'bye'"
-end
-exit
-
-client = srv.accept
-data = ""
-recv_length = 56
-while (tmp = client.recv(recv_length))
-    data += tmp
-    break if tmp.length < recv_length
-end
 
 # Read the SCPI Status Byte status register,
 socket.print("*STB?\r\n")
@@ -57,16 +38,25 @@ commandList = [
     ],
     [   'c', 
         [
-    		[ "*HELP?","Display All SCPI Command Headers"]
+    		[ "*CLS","clear the unit to its power-on default settings."], 
+		[ "*RST","reset the unit."], 
+		[ "OUTP:POW:STAT ON","Turns on that 'Output Enable'"], 
+		[ "SOUR:CURR 1.0","program output current to 1.0 A."], 
+		[ "SOUR:CURR?","confirm the output current setting (response: 1.0)."], 
+		[ "SOUR:VOLT 5.0","program output voltage to 5.0 VDC."], 
+		[ "SOUR:VOLT?","confirm the output voltage setting (response: 5.0)."], 
+		[ "MEAS:CURR?","measure the actual output current (response: ~ 0.0 with no load on output)."], 
+		[ "MEAS:VOLT?","measure the actual output voltage (response: ~ 5.0)."] 
 	    ], 
-	    'Display all the SCPI command headers available on this device.' 
+	    'Program a unit with no load at the output to 5 VDC @ 1A, and verify the output.' 
     ],['d',[
 		['*CLS','clear the unit to its power-on default settings.'],
 		['*RST','reset the unit.'],
-		['SOUR:VOLT:PROT 4.0','program the OVP trip point to 4.0 VDC.'],
-		['SOUR:VOLT:PROT?','confirm the OVP trip point setting (response: 4.0).'],
+		[ "OUTP:POW:STAT ON","Turns on that 'Output Enable'"], 
+		[ "SOUR:VOLT 4.0","program output voltage to 4.0 VDC."], 
+		['SOU:VOLT:PROT:OVER:LEV','program the OVP trip point to 4.0 VDC.'],
 		['SOUR:CURR 1.0','program output current to 1.0 A.'],
-		['SOUR:VOLT 3.0','program output voltage to 3.0 VDC.'],
+		['SOUR:VOLT 4.5','program output voltage to 4.5 VDC.'],
 		['STAT:PROT:ENABLE 8','program the unit to report OVP trip.'],
 		['STAT:PROT:ENABLE?','confirm that OVP fault is enabled (response: 8).'],
 		['STAT:PROT:EVENT?','confirm no faults occurred (response: 0). confirm that the OVP LED is not active.']
@@ -107,9 +97,27 @@ while (userInput != exitString)
 					counter0 += 1
 					puts "'#{sCpiCmd[0]}' - '#{sCpiCmd[1]}'"
 					socket.print("#{sCpiCmd[0]}\r\n")
-					if sCpiCmd[0][sCpiCmd[0].length-1] == '?'
-						response = socket.recv(  255 ) # Read complete response
-						puts "	Data Received: #{response}"
+					if sCpiCmd[0][-1] == '?'
+						# sleep(0.50)
+						print "	Data Received: "
+						keepLooping = true
+					    while keepLooping
+					        begin
+					            complete_results = Timeout.timeout(10) do 
+									tmp = socket.recv(256)
+									if tmp.include? "\r"
+										puts "#{tmp}"
+										keepLooping = false
+										break # break out of time out
+									else
+										print "#{tmp}"
+									end
+						    end
+					        rescue Timeout::Error
+					        	keepLooping = false
+					        	puts "- no response."
+					        end
+					    end
 					end
 				end
 				break
@@ -123,3 +131,4 @@ while (userInput != exitString)
 	print ">"
 end
 
+socket.close
