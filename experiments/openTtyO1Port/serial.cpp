@@ -1,3 +1,8 @@
+/*
+    To compile:
+    g++ serial.cpp
+*/
+
 #include <stdio.h>
 #include "serialib.h"
 
@@ -1044,15 +1049,35 @@ unsigned long int TimeOut::ElapsedTime_ms()
 }
 
 
-int main()
+int main(int argc, char *argv[])
 {
+    int baudRate;
+    if ( argc != 2 ) /* argc should be 2 for correct execution */
+    {
+        /* We print argv[0] assuming it is the program name */
+        printf( "usage: %s <baud rate>\n", argv[0] );
+        printf( "Where <baud rate> can be 9600, 19200, or 115200\n");
+        return 0;
+    }
+    else {
+        /*
+        Check to make sure that the parameter is one of these: 9600, 19200, or 115200 
+        */
+        baudRate = atoi(argv[1]);
+        if ((baudRate == 9600 || baudRate == 19200 || baudRate == 115200) == false) {
+            printf( "usage: %s <baud rate>\n", argv[0] );
+            printf( "Where <baud rate> can be 9600, 19200, or 115200\n");
+            return 0;
+        }
+    }
+    
     serialib LS;                                                            // Object of the serialib class
     int Ret;                                                                // Used for return values
     char Buffer[128];
 
     // Open serial port
 
-    Ret=LS.Open(DEVICE_PORT,115200);                                     // Open serial link at 115200 bauds
+    Ret=LS.Open(DEVICE_PORT,baudRate);                                     // Open serial link at 115200 bauds
     // Ret=LS.Open(DEVICE_PORT,19200);                                         // Open serial link at 19200 bauds
     // Ret=LS.Open(DEVICE_PORT,9600);                                       // Open serial link at 9600 bauds
     if (Ret!=1) {                                                           // If an error occured...
