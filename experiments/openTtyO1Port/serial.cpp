@@ -1,6 +1,6 @@
 /*
     To compile:
-    g++ serial.cpp
+    g++ serial.cpp -o openTtyO1Port.exe
 */
 
 #include <stdio.h>
@@ -1084,7 +1084,7 @@ int main(int argc, char *argv[])
         printf ("Error while opening port. Permission problem ?\n");        // ... display a message ...
         return Ret;                                                         // ... quit the application
     }
-    printf ("Serial port opened successfully !\n");
+    // printf ("Serial port opened successfully !\n");
 
     // Write the AT command on the serial port
 
@@ -1093,7 +1093,7 @@ int main(int argc, char *argv[])
         printf ("Error while writing data\n");                              // ... display a message ...
         return Ret;                                                         // ... quit the application.
     }
-    printf ("Write operation is successful \n");
+    // printf ("Write operation is successful \n");
 
     // Read a string from the serial device
     Ret=LS.ReadString(Buffer,'\n',128,500 /* 0.5 second*/ /*5000 5 sec test*/ );              // Read a maximum of 128 characters with a timeout of 0.5 seconds

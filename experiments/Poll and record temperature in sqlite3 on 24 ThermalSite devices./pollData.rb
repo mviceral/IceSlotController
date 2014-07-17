@@ -56,7 +56,8 @@ if (executeAllStty == "Yes")
     system("echo BB-UART1 > /sys/devices/bone_capemgr.9/slots")
     
     # puts "Check 3 of 7 - ./openTtyO1Port_#{baudrateToUse}.exe"
-	system("./openTtyO1Port_115200.exe")
+	system("../openTtyO1Port/openTtyO1Port.exe 115200")
+	 
     
     # puts 'Check 4 of 7 - stty -F /dev/ttyO1 raw'
     system("stty -F /dev/ttyO1 raw")

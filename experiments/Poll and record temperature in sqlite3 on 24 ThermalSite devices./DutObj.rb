@@ -1,5 +1,8 @@
-require_relative 'AllDuts'
+# require_relative 'AllDuts'
 require 'etc' # For getting the name of file owner.  It makes sure that the path for the SD card is 'debian'
+
+MOUNT_CARD_DIR = "/mnt/card"
+ITS_MOUNTED = "It's mounted."
 
 class DutObj
     NO_GOOD_DBASE_FOLDER = "No good database folder"
@@ -26,7 +29,7 @@ class DutObj
         # based on the given interval of log creation.
         #
         @dutLogFileName = "dutLog_"
-        rootLogPath = "/media/"+self.dbaseFolder+"/"
+        rootLogPath = self.dbaseFolder+"/"
         dirInMedia = Dir.entries("#{rootLogPath}")
         listOfFiles = Array.new
         for folderItem in dirInMedia
@@ -115,6 +118,8 @@ class DutObj
     end
 
     def initialize(createLogInterval_UnitsInHoursParam, parentParam)
+        # puts "DutObj got initialized."
+        system("umount /mnt/card") # unmount the card, case it crashes and the user puts in a new card.
         # puts "indexOfDutParam = #{indexOfDutParam} #{__FILE__}-#{__LINE__}"
         # puts "@createLogInterval_UnitsInHoursParam = #{@createLogInterval_UnitsInHoursParam} #{__FILE__}-#{__LINE__}"
         # puts "arrayParentParam = #{arrayParentParam} #{__FILE__}-#{__LINE__}"
@@ -141,7 +146,7 @@ class DutObj
                 logMin = '%02d' % timeNow.min.to_i
                 
                 newLogFileName = "#{@dutLogFileName}#{logYear}#{logMonth}#{logDay}_#{logHour}#{logMin}.db" 
-                cmd =  "touch /media/"+dbaseFolder+"/"+newLogFileName
+                cmd =  "touch "+dbaseFolder+"/"+newLogFileName
                 # puts cmd # Check it
                 system(cmd)
                 @logCompletedAt = getLastLogCompletedAt()
@@ -188,10 +193,10 @@ class DutObj
             logMin = '%02d' % timeNow.min.to_i
             
             newLogFileName = "#{@dutLogFileName}#{logYear}#{logMonth}#{logDay}_#{logHour}#{logMin}.db" 
-            cmd =  "mv /media/"+dbaseFolder+"/dutLog.db "+"/media/"+dbaseFolder+"/"+newLogFileName
+            cmd =  "mv "+dbaseFolder+"/dutLog.db "+dbaseFolder+"/"+newLogFileName
             system(cmd) # moves the dutLogXXX.db to a log file record
             
-            cmd =  "touch "+"/media/"+dbaseFolder+"/"+newLogFileName
+            cmd =  "touch "+dbaseFolder+"/"+newLogFileName
             # puts cmd    # If the dutLogXXX.db does not exist, the log file will not exists either.  Therefore, 
                         # just create a dummy log file so we'll have a reference.
             system(cmd)
@@ -329,7 +334,7 @@ class DutObj
     end
 
     def printErrorSdCardMissing
-        puts "#{Time.now.inspect} SD card for dbase is not present!!!"  #{file} - #{line}"
+        puts "#{Time.now.inspect} SD card for dbase is not present!!!"  #{__FILE__} - #{__LINE__}"
         #
         # Re-initialize this DutObj so even if it's running and a new SD Card was put in, it'll  continue where it left
         # off
@@ -343,24 +348,70 @@ class DutObj
     end
     
     def dbaseFolder
-        # puts "dbaseFolder from #{file} - #{line}"
+        # puts "dbaseFolder from #{__FILE__} - #{__LINE__}"
         if @db.nil?
+            #
+            # Make sure the /mnt/card directory is present
+            #
+            mntCardDirPresent = false
+            dirInMedia = Dir.entries("/mnt") 
+            for folderItem in dirInMedia
+                if (folderItem == "card")
+                    mntCardDirPresent = true
+                    break
+                    # End of 'if (folderItem != "." and folderItem != "..")'
+                end
+                # End of 'for folderItem in dirInMedia'
+            end
+            
+            if mntCardDirPresent == false
+                #
+                # The /mnt/card dir is not present.
+                #
+                puts "\n\n\n The file path /mnt/card for the SD card mount is not present.  Please create the path: mkdir /mnt/card"
+                exit
+                # system("mkdird /mnt/card") - This call does not work...
+            end
+            
+            #
+            # Find out if the SD Card is mounted.
+            #
+
+            isMounted = `if grep -qs '/mnt/card' /proc/mounts; then
+                echo "It's mounted."
+            else
+                echo "It's not mounted."
+            fi`
+            
+            isMounted = isMounted.chomp
+            
+            # puts "isMounted='#{isMounted}'"
+
             #
             # Check if dbase file exists is the SD Card
             #
             @dbaseFolder = NO_GOOD_DBASE_FOLDER
-            dirInMedia = Dir.entries("/media")
-            for folderItem in dirInMedia
-                if (folderItem != "." and folderItem != "..")
-                    uid = File.stat("/media/#{folderItem}").uid
-                    if Etc.getpwuid(uid).name == "debian"
-                        @dbaseFolder = folderItem
+            if isMounted == ITS_MOUNTED
+                @dbaseFolder = MOUNT_CARD_DIR
+            else
+                #
+                # The card is not mounted.
+                #
+                # See if the SD card present.
+                #
+                dirInMedia = Dir.entries("/dev")
+                for folderItem in dirInMedia
+                    if (folderItem == "mmcblk0p1")
+                        #
+                        # The device is plugged in.  Mount it to /mnt/card.
+                        #
+                        system("mount /dev/mmcblk0p1 "+MOUNT_CARD_DIR)
+                        @dbaseFolder = MOUNT_CARD_DIR
                         break
-                        # End of 'if Etc.getpwuid(uid).name == "debian"'
+                        # End of 'if (folderItem == "mmcblk0p1")'
                     end
-                    # End of 'if (folderItem != "." and folderItem != "..")'
+                    # End of 'for folderItem in dirInMedia'
                 end
-                # End of 'for folderItem in dirInMedia'
             end
             
             if @dbaseFolder != NO_GOOD_DBASE_FOLDER
@@ -371,7 +422,7 @@ class DutObj
                 #
                 # Ensure that database table for dynamic data (status request) is present...
                 #
-                @statusDbFile = "/media/"+@dbaseFolder+"/dutLog.db"
+                @statusDbFile = @dbaseFolder+"/dutLog.db"
                 
                 refreshDbHandler
 
