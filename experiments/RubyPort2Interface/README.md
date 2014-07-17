@@ -1,13 +1,12 @@
 This is the ruby code using c-code to access the GPIO2 port.
 
 To run:
-# clear; ruby extconf.rb ; make; ruby myRubyTest.rb
+clear; ruby extconf.rb ; make; ruby myRubyTest.rb
 
 See the pattern in the scope once it's running.
 
 Special note:  make sure the HDMI is dislodged.  Follow the instruction below
 
-=begin
 BeagleBone Black HDMI Cape must be disabled.  Follow the article below.
 
 http://www.logicsupply.com/blog/2013/07/18/disabling-the-beaglebone-black-hdmi-cape/
@@ -82,4 +81,3 @@ root@beaglebone:/media# cat /sys/devices/bone_capemgr.9/slots
 Every line shows something like “P-O-L” or “P-O–”. The letter “L” means the Cape is enabled; no letter “L” means 
 that it is disabled. You can see here that the HDMI Cape has been disabled, so pin 27 to 46 on header P8 are now 
 available to use. 
-=end
