@@ -3,3 +3,4 @@ dies, it will continue to run.
 
 To run the code, run the ruby command.
 ruby pollData.rb
+
