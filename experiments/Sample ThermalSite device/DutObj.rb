@@ -471,3 +471,4 @@ class DutObj
     end
     # End of 'class DutObj'
 end
+
