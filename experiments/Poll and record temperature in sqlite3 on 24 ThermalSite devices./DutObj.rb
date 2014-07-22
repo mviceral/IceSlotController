@@ -289,12 +289,14 @@ class DutObj
     		#str = "Insert into dutLog(sysTime,dutNum,ucRUNmode,AmbientTemp,TempOfDev,contDir,Output,Alarm) "+
     		#        "values(    #{Time.now.to_i},#{dutNum},#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},"+
     		#        "#{output[0]},\"#{alarm[0]}\")"
+            
+            timeNow = Time.now.to_i
+    		str = "Insert into dutLog(sysTime,marked,dutData) "+
+    		        "values(#{timeNow},0,\"#{allDutData}\")"
+    		allDutData = "#{timeNow}"+allDutData
+    		puts "Data to be saved ->#{allDutData}<-" # check the insert string.
+            response = `curl -d '{"Duts":"#{allDutData}" }' -H Content-Type:application/json http://192.168.7.1:9292/v1/migrations/Duts`
 
-    		str = "Insert into dutLog(sysTime,dutData) "+
-    		        "values(#{Time.now.to_i},\"#{allDutData}\")"
-    				   
-    		# puts "#{str}" # check the insert string.
-    
             begin
                 # timeA = Time.now.to_f
                 @db.execute "#{str}"
@@ -459,8 +461,10 @@ class DutObj
             # ");")
 
             @db.execute("create table 'dutLog' ("+
-            "sysTime INTEGER,"+     # time of record in BBB
-            "dutData TEXT"+      # 'dutNum' the dut number reference of the data
+            "sysTime INTEGER,"+ # time of record in BBB
+            "marked INTEGER,"+  # == 0 means data has NOT been saved into Linux box.
+                                # == 1 means data has been saved into Linux box.
+            "dutData TEXT"+     # 'dutNum' the dut number reference of the data
             ");")
             # End of 'if (File.file?(@statusDbFile)) ELSE'
         end
