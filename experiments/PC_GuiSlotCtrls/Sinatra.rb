@@ -2,6 +2,20 @@ require 'rubygems'
 require 'sinatra'
 require 'sqlite3'
 
+def CreateDutCell(labelParam,rawDataParam)
+	rawDataParam = rawDataParam[0].partition("@")
+	isRunning = rawDataParam[2].partition(",")
+	ambientTemp = isRunning[2].partition(",")
+	dutTemp = ambientTemp[2].partition(",")
+	toBeReturned = "<table>"
+	toBeReturned += "<tr><td>"+labelParam+"</td></tr>"
+	toBeReturned += "<tr><td>Temp</td><td>#{dutTemp[0]}C</td></tr>"
+	toBeReturned += "<tr><td>Current</td><td>###A</td></tr>"
+	toBeReturned += "</table>"
+	return toBeReturned
+	# End of 'CreateDutCell("S20",dut20[2])'
+end
+
 get '/about' do
 	'A little about me.'
 end
@@ -48,7 +62,8 @@ post '/form' do
 		ary = db.execute "SELECT * FROM latest where idData = 1"    
 		asdf = []
 		ary.each do |row|				
-			dut1 = row['slotData'].partition("|")
+			dut0 = row['slotData'].partition("|")
+			dut1 = dut0[2].partition("|")
 			dut2 = dut1[2].partition("|")
 			dut3 = dut2[2].partition("|")
 			dut4 = dut3[2].partition("|")
@@ -71,70 +86,40 @@ post '/form' do
 			dut21 = dut20[2].partition("|")
 			dut22 = dut21[2].partition("|")
 			dut23 = dut22[2].partition("|")
-			dut24 = dut23[2].partition("|")
 
-			dut1 = dut1[0].partition("@")
-			dut2 = dut2[0].partition("@")
-			dut3 = dut3[0].partition("@")
-			dut4 = dut4[0].partition("@")
-			dut5 = dut5[0].partition("@")
-			dut6 = dut6[0].partition("@")
-			dut7 = dut7[0].partition("@")
-			dut8 = dut8[0].partition("@")
-			dut9 = dut9[0].partition("@")
-			dut10 = dut10[0].partition("@")
-			dut11 = dut11[0].partition("@")
-			dut12 = dut12[0].partition("@")
-			dut13 = dut13[0].partition("@")
-			dut14 = dut14[0].partition("@")
-			dut15 = dut15[0].partition("@")
-			dut16 = dut16[0].partition("@")
-			dut17 = dut17[0].partition("@")
-			dut18 = dut18[0].partition("@")
-			dut19 = dut19[0].partition("@")
-			dut20 = dut20[0].partition("@")
-			dut21 = dut21[0].partition("@")
-			dut22 = dut22[0].partition("@")
-			dut23 = dut23[0].partition("@")
-			dut24 = dut24[0].partition("@")
-			
 			str += 	"#{Time.at(row['slotTime']).inspect}"
 			str += 	"<table border=\"1\">"
 			str += 	"<tr>"
-			str += 	"<td>#{dut1[2]}</td>"
-			str += 	"<td>#{dut2[2]}</td>"
-			str += 	"<td>#{dut3[2]}</td>"
-			str += 	"<td>#{dut4[2]}</td>"
+			str += 	"<td>"+CreateDutCell("S20",dut20)+"</td>"
+			str += 	"<td>"+CreateDutCell("S16",dut16)+"</td>"
+			str += 	"<td>"+CreateDutCell("S12",dut12)+"</td>"
+			str += 	"<td>"+CreateDutCell("S8",dut8)+"</td>"
+			str += 	"<td>"+CreateDutCell("S4",dut4)+"</td>"
+			str += 	"<td>"+CreateDutCell("S0",dut0)+"</td>"
 			str += 	"</tr>"
 			str += 	"<tr>"
-			str += 	"<td>#{dut5[2]}</td>"
-			str += 	"<td>#{dut6[2]}</td>"
-			str += 	"<td>#{dut7[2]}</td>"
-			str += 	"<td>#{dut8[2]}</td>"
+			str += 	"<td>"+CreateDutCell("S21",dut21)+"</td>"
+			str += 	"<td>"+CreateDutCell("S17",dut17)+"</td>"
+			str += 	"<td>"+CreateDutCell("S13",dut13)+"</td>"
+			str += 	"<td>"+CreateDutCell("S9",dut9)+"</td>"
+			str += 	"<td>"+CreateDutCell("S5",dut5)+"</td>"
+			str += 	"<td>"+CreateDutCell("S1",dut1)+"</td>"
 			str += 	"</tr>"
 			str += 	"<tr>"
-			str += 	"<td>#{dut9[2]}</td>"
-			str += 	"<td>#{dut10[2]}</td>"
-			str += 	"<td>#{dut11[2]}</td>"
-			str += 	"<td>#{dut12[2]}</td>"
+			str += 	"<td>"+CreateDutCell("S22",dut22)+"</td>"
+			str += 	"<td>"+CreateDutCell("S18",dut18)+"</td>"
+			str += 	"<td>"+CreateDutCell("S14",dut14)+"</td>"
+			str += 	"<td>"+CreateDutCell("S10",dut10)+"</td>"
+			str += 	"<td>"+CreateDutCell("S6",dut6)+"</td>"
+			str += 	"<td>"+CreateDutCell("S2",dut2)+"</td>"
 			str += 	"</tr>"
 			str += 	"<tr>"
-			str += 	"<td>#{dut13[2]}</td>"
-			str += 	"<td>#{dut14[2]}</td>"
-			str += 	"<td>#{dut15[2]}</td>"
-			str += 	"<td>#{dut16[2]}</td>"
-			str += 	"</tr>"
-			str += 	"<tr>"
-			str += 	"<td>#{dut17[2]}</td>"
-			str += 	"<td>#{dut18[2]}</td>"
-			str += 	"<td>#{dut19[2]}</td>"
-			str += 	"<td>#{dut20[2]}</td>"
-			str += 	"</tr>"
-			str += 	"<tr>"
-			str += 	"<td>#{dut21[2]}</td>"
-			str += 	"<td>#{dut22[2]}</td>"
-			str += 	"<td>#{dut23[2]}</td>"
-			str += 	"<td>#{dut24[2]}</td>"
+			str += 	"<td>"+CreateDutCell("S23",dut23)+"</td>"
+			str += 	"<td>"+CreateDutCell("S19",dut19)+"</td>"
+			str += 	"<td>"+CreateDutCell("S15",dut15)+"</td>"
+			str += 	"<td>"+CreateDutCell("S11",dut11)+"</td>"
+			str += 	"<td>"+CreateDutCell("S7",dut7)+"</td>"
+			str += 	"<td>"+CreateDutCell("S3",dut4)+"</td>"
 			str += 	"</tr>"
 			str += 	"</table>"
 		end
@@ -149,7 +134,7 @@ post '/form' do
 	end
 	str += "</div>	
 	<script type=\"text/javascript\">
-	setInterval(function(){loadXMLDoc()},3000);
+	setInterval(function(){loadXMLDoc()},10000); # 5000 = 5 seconds
 	</script>
 	"
 end
