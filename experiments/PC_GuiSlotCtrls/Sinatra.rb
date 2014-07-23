@@ -27,6 +27,13 @@ end
 post '/form' do
 	begin
 		str = "
+	<style>
+	#slotA
+	{
+	border:1px solid black;
+	border-collapse:collapse;
+	}
+	</style>
 	<script type=\"text/javascript\">
 	function loadXMLDoc()
 	{
@@ -87,39 +94,38 @@ post '/form' do
 			dut22 = dut21[2].partition("|")
 			dut23 = dut22[2].partition("|")
 
-			str += 	"#{Time.at(row['slotTime']).inspect}"
-			str += 	"<table border=\"1\">"
+			str += 	"<table style=\"border-collapse : collapse; border : 1px solid black;\">"
 			str += 	"<tr>"
-			str += 	"<td>"+CreateDutCell("S20",dut20)+"</td>"
-			str += 	"<td>"+CreateDutCell("S16",dut16)+"</td>"
-			str += 	"<td>"+CreateDutCell("S12",dut12)+"</td>"
-			str += 	"<td>"+CreateDutCell("S8",dut8)+"</td>"
-			str += 	"<td>"+CreateDutCell("S4",dut4)+"</td>"
-			str += 	"<td>"+CreateDutCell("S0",dut0)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S20",dut20)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S16",dut16)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S12",dut12)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S8",dut8)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S4",dut4)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S0",dut0)+"</td>"
 			str += 	"</tr>"
 			str += 	"<tr>"
-			str += 	"<td>"+CreateDutCell("S21",dut21)+"</td>"
-			str += 	"<td>"+CreateDutCell("S17",dut17)+"</td>"
-			str += 	"<td>"+CreateDutCell("S13",dut13)+"</td>"
-			str += 	"<td>"+CreateDutCell("S9",dut9)+"</td>"
-			str += 	"<td>"+CreateDutCell("S5",dut5)+"</td>"
-			str += 	"<td>"+CreateDutCell("S1",dut1)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S21",dut21)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S17",dut17)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S13",dut13)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S9",dut9)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S5",dut5)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S1",dut1)+"</td>"
 			str += 	"</tr>"
 			str += 	"<tr>"
-			str += 	"<td>"+CreateDutCell("S22",dut22)+"</td>"
-			str += 	"<td>"+CreateDutCell("S18",dut18)+"</td>"
-			str += 	"<td>"+CreateDutCell("S14",dut14)+"</td>"
-			str += 	"<td>"+CreateDutCell("S10",dut10)+"</td>"
-			str += 	"<td>"+CreateDutCell("S6",dut6)+"</td>"
-			str += 	"<td>"+CreateDutCell("S2",dut2)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S22",dut22)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S18",dut18)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S14",dut14)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S10",dut10)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S6",dut6)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S2",dut2)+"</td>"
 			str += 	"</tr>"
 			str += 	"<tr>"
-			str += 	"<td>"+CreateDutCell("S23",dut23)+"</td>"
-			str += 	"<td>"+CreateDutCell("S19",dut19)+"</td>"
-			str += 	"<td>"+CreateDutCell("S15",dut15)+"</td>"
-			str += 	"<td>"+CreateDutCell("S11",dut11)+"</td>"
-			str += 	"<td>"+CreateDutCell("S7",dut7)+"</td>"
-			str += 	"<td>"+CreateDutCell("S3",dut4)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S23",dut23)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S19",dut19)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S15",dut15)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S11",dut11)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S7",dut7)+"</td>"
+			str += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+CreateDutCell("S3",dut4)+"</td>"
 			str += 	"</tr>"
 			str += 	"</table>"
 		end
