@@ -27,7 +27,7 @@ class ThermalSiteDevices
     end
     
     def pollDevices(uart1)
-        puts Time.now.inspect+" - ThermalSiteDevices.pollDevices function got called."
+        # puts Time.now.inspect+" - ThermalSiteDevices.pollDevices function got called."
         dutNum = 0;
         while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do
             #puts "'#{dutNum}'.statusDbFile = #{allDuts.getDut(dutNum).statusDbFile}"
