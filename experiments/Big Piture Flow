@@ -1,0 +1,58 @@
+User start from linux box
+
+
+Load the configurations from local file
+    connect to each BBB
+        copy the configurations to the BBBs.
+        linux box tells BBB 
+            - that configuration files are available for processing
+            - to start process BBB using uploaded configuration 
+    If connection to a BBB fails
+        - system halts.    
+        
+        
+Run Cycle    
+    stay connected to BBB to get any events
+        Type of event from BBB
+            - Error
+            - state
+                - loading
+                - running
+                - stopping
+                - time before completion?
+    If connection to a BBB fails
+        - system halts.
+
+
+Complete 
+    BBBs send events to linux box 
+
+
+Things to consider:
+    How will the linux box start the processes in BBB? 
+        Shell cmd? "run &"
+        
+    Will the linux box ping the BBB if the process is complete?
+    If the user would like to see the data recorded from the dbase, how are the data going to be moved from BBB to linux box?
+    
+    
+Articles of interests:
+http://stackoverflow.com/questions/185451/quick-and-dirty-way-to-ensure-only-one-instance-of-a-shell-script-is-running-at
+Quick-and-dirty way to ensure only one instance of a shell script is running at a time
+--------
+LOCKFILE=/tmp/lock.txt
+if [ -e ${LOCKFILE} ] && kill -0 `cat ${LOCKFILE}`; then
+    echo "already running"
+    exit
+fi
+
+# make sure the lockfile is removed when we exit and then claim it
+trap "rm -f ${LOCKFILE}; exit" INT TERM EXIT
+echo $$ > ${LOCKFILE}
+
+# do stuff
+sleep 1000
+
+rm -f ${LOCKFILE}
+--------
+http://www.linuxquestions.org/questions/linux-general-1/how-to-show-the-list-of-stopped-and-background-jobs-433273/
