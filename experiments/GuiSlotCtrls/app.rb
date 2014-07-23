@@ -85,20 +85,33 @@ module MigrationCount
 			post "/Duts" do
 				if params["Duts"]
 					#
-					# Get the count so we have a proper ID
-					#
-					db = SQLite3::Database.open "latest.db"
-					db.results_as_hash = true
-
-					#
 					# Parse out the data sent from BBB
 					#
 					receivedData = params['Duts']
+					# puts "receivedData = #{receivedData}" 
 					timeOfData = receivedData.partition("|")
 					dutData = timeOfData[2]
+
+					#
+					# Get the count so we have a proper ID
+					#
+					latestDb = SQLite3::Database.open "latest.db"
+					latestDb.results_as_hash = true
+
 					str = "update Latest set slotData = \"#{dutData}\", slotTime=#{timeOfData[0]} where idData = 1"
 					# puts "str=#{str}"
-					db.execute "#{str}"
+					latestDb.execute "#{str}"
+
+
+					#
+					# Save the data to the dbase record.
+					#
+					dbRecord = SQLite3::Database.open "dbRecord.db"
+					# dbRecord.resutls_as_hash = true
+					str = "insert into dbRecord (slotTime, slotData) values(#{timeOfData[0]},\"#{dutData}\")"
+					# puts "str=#{str}"
+					dbRecord.execute "#{str}"					
+					{dataTime:timeOfData[0]}
 				end
 			end
 
