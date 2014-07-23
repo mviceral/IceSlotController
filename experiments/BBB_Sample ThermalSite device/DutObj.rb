@@ -285,24 +285,24 @@ class DutObj
                 dutNum +=1;
                 # End of 'while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do'
             end            
-                
-	#str = "Insert into dutLog(sysTime,dutNum,ucRUNmode,AmbientTemp,TempOfDev,contDir,Output,Alarm) "+
-	#        "values(    #{Time.now.to_i},#{dutNum},#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},"+
-	#        "#{output[0]},\"#{alarm[0]}\")"
+			
+		#str = "Insert into dutLog(sysTime,dutNum,ucRUNmode,AmbientTemp,TempOfDev,contDir,Output,Alarm) "+
+		#        "values(    #{Time.now.to_i},#{dutNum},#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},"+
+		#        "#{output[0]},\"#{alarm[0]}\")"
 
-	timeNow = Time.now.to_i
-	str = "Insert into dutLog(sysTime,marked,dutData) "+
-	        "values(#{timeNow},0,\"#{allDutData}\")"
-	allDutData = "#{timeNow}"+allDutData
-	# puts "Data to be saved ->#{allDutData}<-" # check the insert string.
-	# response = `curl -d '{"Duts":"#{allDutData}" }' -H Content-Type:application/json http://192.168.7.1:9292/v1/migrations/Duts`
+		# timeNow = Time.now.to_i
+		# str = "Insert into dutLog(sysTime,marked,dutData) "+
+		#	"values(#{timeNow},0,\"#{allDutData}\")"
+		# allDutData = "#{timeNow}"+allDutData
+		# puts "Data to be saved ->#{allDutData}<-" # check the insert string.
+		# response = `curl -d '{"Duts":"#{allDutData}" }' -H Content-Type:application/json http://192.168.7.1:9292/v1/migrations/Duts`
     		#str = "Insert into NotYetSentData(sysTime,dutNum,ucRUNmode,AmbientTemp,TempOfDev,contDir,Output,Alarm) "+
     		#        "values(    #{Time.now.to_i},#{dutNum},#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},"+
     		#        "#{output[0]},\"#{alarm[0]}\")"
             
             	timeNow = Time.now.to_i
     		str = "Insert into NotYetSentData(sysTime,dutData) "+
-    		        "values(#{timeNow},\"#{allDutData}\")"
+    		       "values(#{timeNow},\"#{allDutData}\")"
     		allDutData = "#{timeNow}"+allDutData
     		# puts "Data to be saved ->#{allDutData}<-" # check the insert string.
             	response = `curl -d '{"Duts":"#{allDutData}" }' -H Content-Type:application/json http://192.168.7.1:9292/v1/migrations/Duts`
