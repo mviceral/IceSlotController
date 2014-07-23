@@ -193,7 +193,7 @@ class DutObj
             logMin = '%02d' % timeNow.min.to_i
             
             newLogFileName = "#{@dutLogFileName}#{logYear}#{logMonth}#{logDay}_#{logHour}#{logMin}.db" 
-            cmd =  "mv "+dbaseFolder+"/dutLog.db "+dbaseFolder+"/"+newLogFileName
+            cmd =  "mv "+dbaseFolder+"/NotYetSentData.db "+dbaseFolder+"/"+newLogFileName
             system(cmd) # moves the dutLogXXX.db to a log file record
             
             cmd =  "touch "+dbaseFolder+"/"+newLogFileName
@@ -286,6 +286,7 @@ class DutObj
                 # End of 'while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do'
             end            
                 
+<<<<<<< HEAD
 	#str = "Insert into dutLog(sysTime,dutNum,ucRUNmode,AmbientTemp,TempOfDev,contDir,Output,Alarm) "+
 	#        "values(    #{Time.now.to_i},#{dutNum},#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},"+
 	#        "#{output[0]},\"#{alarm[0]}\")"
@@ -296,6 +297,18 @@ class DutObj
 	allDutData = "#{timeNow}"+allDutData
 	puts "Data to be saved ->#{allDutData}<-" # check the insert string.
 	# response = `curl -d '{"Duts":"#{allDutData}" }' -H Content-Type:application/json http://192.168.7.1:9292/v1/migrations/Duts`
+=======
+    		#str = "Insert into NotYetSentData(sysTime,dutNum,ucRUNmode,AmbientTemp,TempOfDev,contDir,Output,Alarm) "+
+    		#        "values(    #{Time.now.to_i},#{dutNum},#{ucRUNmode[0]},#{ambientTemp[0]},#{tempOfDev[0]},#{contDir[0]},"+
+    		#        "#{output[0]},\"#{alarm[0]}\")"
+            
+            timeNow = Time.now.to_i
+    		str = "Insert into NotYetSentData(sysTime,dutData) "+
+    		        "values(#{timeNow},\"#{allDutData}\")"
+    		# allDutData = "#{timeNow}"+allDutData
+    		# puts "Data to be saved ->#{allDutData}<-" # check the insert string.
+            # response = `curl -d '{"Duts":"#{allDutData}" }' -H Content-Type:application/json http://192.168.7.1:9292/v1/migrations/Duts`
+>>>>>>> 2c5bef0765d3c9c25eb6aea9f6408a9f4063eb18
 
             begin
                 # timeA = Time.now.to_f
@@ -424,7 +437,7 @@ class DutObj
                 #
                 # Ensure that database table for dynamic data (status request) is present...
                 #
-                @statusDbFile = @dbaseFolder+"/dutLog.db"
+                @statusDbFile = @dbaseFolder+"/NotYetSentData.db"
                 
                 refreshDbHandler
 
@@ -449,7 +462,7 @@ class DutObj
             # End of 'if (File.file?(@statusDbFile))'
         else 
             @db = SQLite3::Database.new( @statusDbFile )
-            # @db.execute("create table 'dutLog' ("+
+            # @db.execute("create table 'NotYetSentData' ("+
             # "sysTime INTEGER,"+     # time of record in BBB
             # "dutNum INTEGER,"+      # 'dutNum' the dut number reference of the data
             # "ucRUNmode INTEGER,"+   # 'ucRUNmode' 0 == Standby, 1 == Run
@@ -460,10 +473,8 @@ class DutObj
             # "Alarm TEXT"+           # 'AlarmStr' The alarm text
             # ");")
 
-            @db.execute("create table 'dutLog' ("+
+            @db.execute("create table 'NotYetSentData' ("+
             "sysTime INTEGER,"+ # time of record in BBB
-            "marked INTEGER,"+  # == 0 means data has NOT been saved into Linux box.
-                                # == 1 means data has been saved into Linux box.
             "dutData TEXT"+     # 'dutNum' the dut number reference of the data
             ");")
             # End of 'if (File.file?(@statusDbFile)) ELSE'
