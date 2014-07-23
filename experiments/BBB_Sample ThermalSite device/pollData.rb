@@ -44,7 +44,7 @@ createLogInterval_UnitsInHours = 1
 #
 # Do a poll for every pollInterval in seconds
 #
-pollIntervalInSeconds = 10
+pollIntervalInSeconds = 10 
 
 executeAllStty = "Yes" # "Yes" if you want to execute all...
 baudrateToUse = 115200 # baud rate options are 9600, 19200, and 115200
