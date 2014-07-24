@@ -1,0 +1,102 @@
+Ruby Objects to C Datatypes:
+
+int	            NUM2INT(Numeric)	                (Includes type check)
+int	            FIX2INT(Fixnum)	                    (Faster)
+unsigned int	NUM2UINT(Numeric)	                (Includes type check)
+unsigned int	FIX2UINT(Fixnum)	                (Includes type check)
+long	        NUM2LONG(Numeric)	                (Includes type check)
+long	        FIX2LONG(Fixnum)	                (Faster)
+unsigned long	NUM2ULONG(Numeric)	                (Includes type check)
+char	        NUM2CHR(Numeric or String)	        (Includes type check)
+char *	        STR2CSTR(String)	
+char *	        rb_str2cstr(String, int *length)	Returns length as well
+double	        NUM2DBL(Numeric)
+
+http://blog.jacius.info/ruby-c-extension-cheat-sheet/
+
+Testing Ruby objects
+
+    RTEST( VALUE )
+
+    True if object would be true in “if( object )” in Ruby, i.e. object is neither ‘false’ nor ‘nil’.
+
+    TYPE( VALUE )
+
+    return T_* (e.g. T_STRING, T_ARRAY, T_FIXNUM, T_SYMBOL, T_DATA) depending on the Ruby type of VALUE. Wrapped objects return T_DATA.
+
+    Qtrue, Qfalse, Qnil
+
+    Variables for the Ruby values of true, false, and nil.
+
+C types -> Ruby objects
+
+    INT2NUM( int ) – convert an integer to Fixnum or Bignum.
+    UINT2NUM( unsigned int ) – convert an unsigned integer to Fixnum or Bignum.
+    rb_float_new( double ) – convert a double to Float.
+    rb_str_new2( char* ) – convert a character string to String.
+    rb_intern( char* ) – convert a character string to ID (for Ruby function names, etc.).
+    ID2SYM( rb_intern(char*) ) – convert a character string to a ruby Symbol object.
+
+Ruby objects -> C types
+
+    NUM2INT( VALUE ) – convert Numeric to integer.
+    NUM2UINT( VALUE ) – convert Numeric to unsigned integer.
+    NUM2DBL( VALUE ) – convert Numeric to double.
+    RSTRING( VALUE )->len – length of a String.
+    RSTRING( VALUE )->ptr – char * pointer to string data.
+
+Wrapping C objects into Ruby objects (and back again)
+
+    Data_Wrap_Struct( cKlass, mark_func, free_func, data* )
+
+    Wrap data (a pointer to a C type instance) as instance of cKlass (which is a VALUE reference to a Ruby class).
+
+    Data_Make_Struct( cKlass, data_type, mark_func, free_funk, data* )
+
+    Like Data_Wrap_Struct, but allocate memory for a new data_type first. I don’t use this much, actually, but I included it for completeness.
+
+    Data_Get_Struct( VALUE, data_type, data* )
+
+    Unwrap the ruby object as a data_type, and set data* to point to it.
+
+Accessing Variables / Constants
+
+    rb_define_const( VALUE module, char* name, VALUE value )
+
+    Create a new constant with this name, under the module, and set its value.
+
+    rb_define_global_const( char* name, VALUE value )
+
+    Create a constant in the global namespace (same as rb_define_const using rb_cObject as the module).
+
+    rb_const_get( VALUE module, ID name )
+
+    Get the value of the constant with this name, defined under the module/class
+
+    rb_const_set( VALUE module, ID name, VALUE value )
+
+    Set the value of the constant with this name, defined under the module/class
+
+Generally Useful Functions
+
+    rb_any_to_s( VALUE object ) – Calls #to_s on the object. Returns a Ruby string.
+
+    rb_inspect( VALUE object ) – Calls #inspect on the object. Returns a Ruby string.
+
+    rb_raise( VALUE error_klass, char *message, […] )
+
+    Like raise in Ruby. The message can have printf-style substitution (%s, etc.). Args after the message are plugged into the substitution.
+
+    rb_warn( char *message, […] )
+
+    Prints a warning message to the console, including the file and line number of the ruby code that called the function that emitted the warning. The message can have printf-style substitution (%s, etc.). Args after the message are plugged into the substitution.
+
+    rb_warning( char *message, […] )
+
+    Like rb_warn, but only prints a message if the Ruby global variable $VERBOSE is true.
+
+Rubygame Helpers
+
+These are reusable functions I created for convenience. They are part of Rubygame, not part of Ruby.
+
+    make_symbol( char* ) – Convert character string to Symbol. Equivalent to ‘ID2SYM( rb_intern( char* ) )’.
