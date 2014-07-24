@@ -53,7 +53,7 @@ VALUE method_WriteDataToSharedMemory(VALUE self, VALUE rubyStringParam) {
         INT2NUM(1);
     }
     /*
-        Set the first byte to let all the processes that the data is being updated.
+        Set the first byte to let all the processes know that the data is being updated.
     */
     while (*shm != (char)0)
         usleep(1); // Wait for a micro second until we get the buffer available for writing.
