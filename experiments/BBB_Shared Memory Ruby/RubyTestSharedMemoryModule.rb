@@ -2,15 +2,14 @@
 # To run:
 # clear; ruby extconf.rb ; make; ruby myRubyTest.rb
 #
-require_relative 'SharedMemoryModule.so'
+require_relative 'SharedMemory'
 
-include SharedMemoryModule
 
 #WriteDataToSharedMemory("abcd12345")
-InitializeSharedMemory()
-fromSharedMem = GetDataFromSharedMemory()
+SharedMemory.Initialize()
+fromSharedMem = SharedMemory.GetData()
 puts "Content of fromSharedMem=#{fromSharedMem}"
-newData = "abcd12345"
-WriteDataToSharedMemory(newData)
-fromSharedMem = GetDataFromSharedMemory()
+# newData = "abcd12345"
+SharedMemory.WriteData("This is a ruby test memory sharing.")
+fromSharedMem = SharedMemory.GetData()
 puts "NEW Content of fromSharedMem=#{fromSharedMem}"

@@ -17,11 +17,11 @@ int shmid;
 
 
 // Defining a space for information and references about the module to be stored internally
-VALUE SharedMemoryModule = Qnil;
+VALUE SharedMemoryExtension = Qnil;
 
 
 // Prototype for the initialization method - Ruby calls this, not you
-void Init_SharedMemoryModule();
+void Init_SharedMemoryExtension();
 
 
 // Prototype for our methods 'WriteDataToSharedMemory' - methods are prefixed by 'method_' here
@@ -31,11 +31,11 @@ void method_InitializeSharedMemory(VALUE self);
 
 
 // The initialization method for this module
-void Init_SharedMemoryModule() {
-	SharedMemoryModule = rb_define_module("SharedMemoryModule");
-	rb_define_method(SharedMemoryModule, "WriteDataToSharedMemory", method_WriteDataToSharedMemory, 1);
-	rb_define_method(SharedMemoryModule, "GetDataFromSharedMemory", method_GetDataFromSharedMemory, 0);
-	rb_define_method(SharedMemoryModule, "InitializeSharedMemory", method_InitializeSharedMemory, 0);
+void Init_SharedMemoryExtension() {
+	SharedMemoryExtension = rb_define_module("SharedMemoryExtension");
+	rb_define_method(SharedMemoryExtension, "WriteDataToSharedMemory", method_WriteDataToSharedMemory, 1);
+	rb_define_method(SharedMemoryExtension, "GetDataFromSharedMemory", method_GetDataFromSharedMemory, 0);
+	rb_define_method(SharedMemoryExtension, "InitializeSharedMemory", method_InitializeSharedMemory, 0);
 }
 
 VALUE method_WriteDataToSharedMemory(VALUE self, VALUE rubyStringParam) {

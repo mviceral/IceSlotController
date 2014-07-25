@@ -46,7 +46,7 @@ createLogInterval_UnitsInHours = 1
 #
 pollIntervalInSeconds = 10 
 
-executeAllStty = "Yes" # "Yes" if you want to execute all...
+executeAllStty = "no" # "Yes" if you want to execute all...
 baudrateToUse = 115200 # baud rate options are 9600, 19200, and 115200
 if (executeAllStty == "Yes") 
     # puts 'Check 1 of 7 - cd /lib/firmware'
@@ -56,7 +56,7 @@ if (executeAllStty == "Yes")
     system("echo BB-UART1 > /sys/devices/bone_capemgr.9/slots")
     
     # puts "Check 3 of 7 - ./openTtyO1Port_#{baudrateToUse}.exe"
-	system("../openTtyO1Port/openTtyO1Port.exe 115200")
+	system("../BBB_openTtyO1Port c code/openTtyO1Port.exe #{baudrateToUse}")
 	 
     
     # puts 'Check 4 of 7 - stty -F /dev/ttyO1 raw'
@@ -100,8 +100,11 @@ while true
     #
     # Gather data...
     #
+    puts "Start polling: #{Time.now.inspect}"
     ThermalSiteDevices.pollDevices(uart1)
+    puts "Done polling: #{Time.now.inspect}"
     ThermalSiteDevices.logData
+    puts "Done logging: #{Time.now.inspect}"
 
     #
     # What if there was a hiccup and waitTime-Time.now becomes negative
