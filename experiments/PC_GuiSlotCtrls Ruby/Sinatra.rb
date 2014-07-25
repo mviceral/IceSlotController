@@ -117,7 +117,8 @@ def GetSlotDisplay (slotLabelParam)
 			dut22 = dut21[2].partition("|")
 			dut23 = dut22[2].partition("|")
 
-			getSlotDisplay_ToBeReturned += 	"<table style=\"border-collapse : collapse; border : 1px solid black;\"  bgcolor=\"#000000\">"
+			getSlotDisplay_ToBeReturned += 	
+			"<table style=\"border-collapse : collapse; border : 1px solid black;\"  bgcolor=\"#000000\">"
 			getSlotDisplay_ToBeReturned += 	"<tr>"
 			getSlotDisplay_ToBeReturned += 	
 			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S20",dut20)+"</td>"
@@ -202,7 +203,9 @@ def GetSlotDisplay (slotLabelParam)
 			getSlotDisplay_ToBeReturned += 	
 			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS7",dut0)+"</td>"
 			getSlotDisplay_ToBeReturned += 	
-			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PNPCell("5.01","-5.10","12.24")+"</td>"
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"
+			    +PNPCell("5.01","-5.10","12.24")+
+            "</td>"
 			getSlotDisplay_ToBeReturned += 	
 			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell("55.5","45.5")+"</td>"
 			getSlotDisplay_ToBeReturned += 	"</tr>"
