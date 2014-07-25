@@ -1,3 +1,4 @@
+# ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 require 'rubygems'
 require 'sinatra'
 require 'sqlite3'
@@ -7,7 +8,14 @@ set :cellWidth,  95
 def SlotCell(temp1Param, temp2Param)
 	toBeReturned = "<table bgcolor=\"#ffaa77\" width=\"#{settings.cellWidth}\">"
 	toBeReturned += "<tr><td><font size=\"1\">SLOT</font></td></tr>"
-	toBeReturned += "<tr><td><font size=\"1\">TEMP1</font></td><td><font size=\"1\">#{temp1Param}C</font></td></tr>"
+	toBeReturned += "	<tr>
+						<td>
+							<font size=\"1\">TEMP1</font>
+						</td>
+						<td>
+							<font size=\"1\">#{temp1Param}C</font>
+						</td>
+					</tr>"
 	toBeReturned += "<tr><td><font size=\"1\">TEMP2</font></td><td><font size=\"1\">#{temp2Param}C</font></td></tr>"
 	toBeReturned += "</table>"
 	return toBeReturned
@@ -33,11 +41,11 @@ def PsCell(labelParam,rawDataParam)
 	toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
 	toBeReturned += "<tr>"
 	if labelParam == "S8"
-		bgcolor = "bgcolor=\"#ff0000\""
+		style = "style=\"border:1px solid black;background-color:#ff0000\""
 	else
-		bgcolor = ""
+		style = ""
 	end
-	toBeReturned += "	<td #{bgcolor} ><font size=\"1\">Voltage</font></td><td #{bgcolor} ><font size=\"1\">#{dutTemp[0]}V</font></td>"
+	toBeReturned += "	<td #{style} ><font size=\"1\">Voltage</font></td><td #{style} ><font size=\"1\">#{dutTemp[0]}V</font></td>"
 	toBeReturned += "</tr>"
 	toBeReturned += "<tr><td><font size=\"1\">Current</font></td><td><font size=\"1\">###A</font></td></tr>"
 	toBeReturned += "</table>"
@@ -161,7 +169,13 @@ def GetSlotDisplay (slotLabelParam)
 		<table>
 			<tr><td></td></tr>
 			<tr><td></td></tr>
-			<tr><td><font size=\"3\"/>#{slotLabelParam}</td></tr>
+			<tr>
+				<td>
+					<table>
+						<tr><td nowrap><font size=\"3\"/>#{slotLabelParam}</td><td>&nbsp;</td><td style=\"border:1px solid black; border-collapse:collapse; width: 100%;\"><font size=\"1\"/>MESSAGE BOX:</td></tr>
+					</table>
+				</td>
+			</tr>
 			<tr>
 				<td>"+getSlotDisplay_ToBeReturned+"</td>
 			   	<td valign=\"TOP\">
@@ -172,8 +186,7 @@ def GetSlotDisplay (slotLabelParam)
 			   		</table>
 			   	</td>
 			</tr>
-			<tr><td></td></tr>
-			<tr><td style=\"border:1px solid black; border-collapse:collapse\"><font size=\"1\"/>MESSAGE BOX:</td></tr>
+			<tr><td></td></tr>			
 			<tr><td></td></tr>
 		</table>"
 	return getSlotDisplay_ToBeReturned
