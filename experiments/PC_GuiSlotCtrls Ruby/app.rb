@@ -1,4 +1,4 @@
-require 'grape'
+# ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------require 'grape'
 require 'singleton'
 require 'forwardable'
 require 'pp'
