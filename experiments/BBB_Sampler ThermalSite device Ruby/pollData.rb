@@ -3,7 +3,7 @@ require 'beaglebone'
 require_relative 'DutObj'
 require_relative 'ThermalSiteDevices'
 include Beaglebone
-# --------------------------- Bench mark string length so it'll fit on GitHub display ------------------------------
+# ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 #
 # Notes:  Some code may need to get implemented.  Search for the string below
 # - "[ ] Code not done"
