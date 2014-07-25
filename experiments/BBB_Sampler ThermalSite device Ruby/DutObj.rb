@@ -10,7 +10,7 @@ class DutObj
     end
     
     def poll(dutNumParam, uart1Param)
-        puts "within poll. dutNumParam=#{dutNumParam}"
+        #puts "within poll. dutNumParam=#{dutNumParam}"
         # gets
         uartStatusCmd = "S?\n"
         uart1Param.write("#{uartStatusCmd}");
@@ -33,6 +33,26 @@ class DutObj
                 puts "Timed out Error. dutNumParam=#{dutNumParam}"
                 uart1Param.disable   # uart1Param variable is now dead cuz it timed out.
                 uart1Param = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
+
+                puts "Flushing out ThermalSite uart."
+                keepLooping2 = true
+                while keepLooping2
+                    begin
+                        complete_results = Timeout.timeout(1) do      
+                            uart1Param.each_line { 
+                                |line| 
+                                puts "' -- ${line}"
+                            }
+                    end
+                    rescue Timeout::Error
+                        puts "Done flushing out ThermalSite uart."
+                        uart1Param.disable   # uart1Param variable is now dead cuz it timed out.
+                        uart1Param = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
+                        keepLooping2 = false     # loops out of the keepLooping loop.
+                    end
+                end
+
+
                 uart1Param.write("#{uartStatusCmd}");    # Resend the status request command.
     
                 #
@@ -40,7 +60,7 @@ class DutObj
                 #
             end
         end
-        puts "Leaving poll. dutNumParam=#{dutNumParam}"
+        #puts "Leaving poll. dutNumParam=#{dutNumParam}"
     end
 
     def saveAllData(timeNowParam)
@@ -67,9 +87,9 @@ class DutObj
 		
         timeNow = Time.now.to_i
 		allDutData = "-BBB#{timeNow}"+allDutData
-		puts "Poll A #{Time.now.inspect}"
+		# puts "Poll A #{Time.now.inspect}"
         SharedMemory.WriteData(allDutData)
-		puts "Poll B #{Time.now.inspect}"
+		# puts "Poll B #{Time.now.inspect}"
         
         # End of 'def poll()'
     end

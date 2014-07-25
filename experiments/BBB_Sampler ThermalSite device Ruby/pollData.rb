@@ -1,10 +1,9 @@
 require 'timeout'
-require 'sqlite3'
 require 'beaglebone'
 require_relative 'DutObj'
 require_relative 'ThermalSiteDevices'
 include Beaglebone
-
+# --------------------------- Bench mark string length so it'll fit on GitHub display ------------------------------
 #
 # Notes:  Some code may need to get implemented.  Search for the string below
 # - "[ ] Code not done"
@@ -72,6 +71,30 @@ end
 # puts "Check 6 of 7 - uart1 = UARTDevice.new(:UART1, #{baudrateToUse})"
 uart1 = UARTDevice.new(:UART1, baudrateToUse)
 
+#
+# Flush out the uart if there is anything sitting in the ThermalSite buffer.
+#
+=begin
+puts "Flushing out ThermalSite uart."
+keepLooping = false # turned off code cuz it didn't have any effect on getting goog UART connection.
+while keepLooping
+    begin
+        complete_results = Timeout.timeout(1) do      
+            uart1.each_line { 
+                |line| 
+                puts "' -- ${line}"
+            }
+    end
+    rescue Timeout::Error
+        puts "Done flushing out ThermalSite uart."
+        uart1.disable   # uart1Param variable is now dead cuz it timed out.
+        uart1 = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
+        keepLooping = false     # loops out of the keepLooping loop.
+    end
+end
+=end
+
+
 
 #puts "Check 7 of 7 - Start polling..."
 #puts "Press the restart button on the ThermalSite unit..."
@@ -96,15 +119,22 @@ uart1.each_line {
 ThermalSiteDevices.setTotalHoursToLogData(createLogInterval_UnitsInHours)
 waitTime = Time.now+pollIntervalInSeconds
 # allDuts = AllDuts.new(createLogInterval_UnitsInHours)
+switcher = 0
 while true
     #
     # Gather data...
     #
-    puts "Start polling: #{Time.now.inspect}"
+    # puts "Start polling: #{Time.now.inspect}"
     ThermalSiteDevices.pollDevices(uart1)
-    puts "Done polling: #{Time.now.inspect}"
+    switcher+=1
+    if switcher%2==0
+        print "|"
+    else
+        print "*"
+    end
+    # puts "Done polling: #{Time.now.inspect}"
     ThermalSiteDevices.logData
-    puts "Done logging: #{Time.now.inspect}"
+    # puts "Done logging: #{Time.now.inspect}"
 
     #
     # What if there was a hiccup and waitTime-Time.now becomes negative
