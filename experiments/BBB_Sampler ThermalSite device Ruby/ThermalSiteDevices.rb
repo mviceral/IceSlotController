@@ -30,8 +30,6 @@ class ThermalSiteDevices
         # puts Time.now.inspect+" - ThermalSiteDevices.pollDevices function got called."
         dutNum = 0;
         while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do
-            #puts "'#{dutNum}'.statusDbFile = #{allDuts.getDut(dutNum).statusDbFile}"
-            #gets
             dBase.poll(dutNum,uart1)
             dutNum +=1;
         end            

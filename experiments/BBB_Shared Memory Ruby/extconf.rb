@@ -2,7 +2,7 @@
 require "mkmf"
 
 # Give it a name
-extension_name = "SharedMemoryModule"
+extension_name = "SharedMemoryExtension"
 
 # The destination
 dir_config(extension_name)

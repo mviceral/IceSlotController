@@ -35,8 +35,7 @@ Ruby objects -> C types
     NUM2INT( VALUE ) – convert Numeric to integer.
     NUM2UINT( VALUE ) – convert Numeric to unsigned integer.
     NUM2DBL( VALUE ) – convert Numeric to double.
-    RSTRING( VALUE )->len – length of a String.
-    RSTRING( VALUE )->ptr – char * pointer to string data.
+    StringValuePtr(VALUE) – char * pointer to string data.
 
 Wrapping C objects into Ruby objects (and back again)
     Data_Wrap_Struct( cKlass, mark_func, free_func, data* )
