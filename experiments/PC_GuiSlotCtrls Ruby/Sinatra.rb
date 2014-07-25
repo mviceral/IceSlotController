@@ -203,7 +203,8 @@ def GetSlotDisplay (slotLabelParam)
 			getSlotDisplay_ToBeReturned += 	
 			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS7",dut0)+"</td>"
 			getSlotDisplay_ToBeReturned += 	
-			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PNPCell("5.01","-5.10","12.24")+"</td>"
+			"<td style=\"border-collapse : 
+				collapse; border : 1px solid black;\">"+PNPCell("5.01","-5.10","12.24")+"</td>"
 			getSlotDisplay_ToBeReturned += 	
 			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell("55.5","45.5")+"</td>"
 			getSlotDisplay_ToBeReturned += 	"</tr>"
