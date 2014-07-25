@@ -45,7 +45,12 @@ def PsCell(labelParam,rawDataParam)
 	else
 		style = ""
 	end
-	toBeReturned += "	<td #{style} ><font size=\"1\">Voltage</font></td><td #{style} ><font size=\"1\">#{dutTemp[0]}V</font></td>"
+	toBeReturned += "	<td #{style} >
+											<font size=\"1\">Voltage</font>
+										</td>
+										<td #{style} >
+											<font size=\"1\">#{dutTemp[0]}V</font>
+										</td>"
 	toBeReturned += "</tr>"
 	toBeReturned += "<tr><td><font size=\"1\">Current</font></td><td><font size=\"1\">###A</font></td></tr>"
 	toBeReturned += "</table>"
@@ -66,7 +71,13 @@ def DutCell(labelParam,rawDataParam)
 	else
 		bgcolor = ""
 	end
-	toBeReturned += "	<td #{bgcolor} ><font size=\"1\">Temp</font></td><td #{bgcolor} ><font size=\"1\">#{dutTemp[0]}C</font></td>"
+	toBeReturned += "	
+		<td #{bgcolor} >
+			<font size=\"1\">Temp</font>
+		</td>
+		<td #{bgcolor} >
+			<font size=\"1\">#{dutTemp[0]}C</font>
+		</td>"
 	toBeReturned += "</tr>"
 	toBeReturned += "<tr><td><font size=\"1\">Current</font></td><td><font size=\"1\">###A</font></td></tr>"
 	toBeReturned += "</table>"
@@ -108,52 +119,92 @@ def GetSlotDisplay (slotLabelParam)
 
 			getSlotDisplay_ToBeReturned += 	"<table style=\"border-collapse : collapse; border : 1px solid black;\"  bgcolor=\"#000000\">"
 			getSlotDisplay_ToBeReturned += 	"<tr>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S20",dut20)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S16",dut16)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S12",dut12)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S8",dut8)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S4",dut4)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S0",dut0)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS0",dut0)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS4",dut0)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS8",dut0)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("5V",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S20",dut20)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S16",dut16)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S12",dut12)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S8",dut8)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S4",dut4)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S0",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS0",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS4",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS8",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("5V",dut0)+"</td>"
 			getSlotDisplay_ToBeReturned += 	"</tr>"
 			getSlotDisplay_ToBeReturned += 	"<tr>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S21",dut21)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S17",dut17)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S13",dut13)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S9",dut9)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S5",dut5)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S1",dut1)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS1",dut0)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS5",dut0)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS9",dut0)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("12V",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S21",dut21)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S17",dut17)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S13",dut13)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S9",dut9)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S5",dut5)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S1",dut1)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS1",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS5",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS9",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("12V",dut0)+"</td>"
 			getSlotDisplay_ToBeReturned += 	"</tr>"
 			getSlotDisplay_ToBeReturned += 	"<tr>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S22",dut22)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S18",dut18)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S14",dut14)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S10",dut10)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S6",dut6)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S2",dut2)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS2",dut0)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS6",dut0)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS10",dut0)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("24V",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S22",dut22)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S18",dut18)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S14",dut14)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S10",dut10)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S6",dut6)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S2",dut2)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS2",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS6",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS10",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("24V",dut0)+"</td>"
 			getSlotDisplay_ToBeReturned += 	"</tr>"
 			getSlotDisplay_ToBeReturned += 	"<tr>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S23",dut23)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S19",dut19)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S15",dut15)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S11",dut11)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S7",dut7)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S3",dut4)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS3",dut0)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS7",dut0)+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PNPCell("5.01","-5.10","12.24")+"</td>"
-			getSlotDisplay_ToBeReturned += 	"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell("55.5","45.5")+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S23",dut23)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S19",dut19)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S15",dut15)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S11",dut11)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S7",dut7)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S3",dut4)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS3",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS7",dut0)+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PNPCell("5.01","-5.10","12.24")+"</td>"
+			getSlotDisplay_ToBeReturned += 	
+			"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell("55.5","45.5")+"</td>"
 			getSlotDisplay_ToBeReturned += 	"</tr>"
 			getSlotDisplay_ToBeReturned += 	"</table>"
 		end
@@ -172,19 +223,27 @@ def GetSlotDisplay (slotLabelParam)
 			<tr>
 				<td>
 					<table>
-						<tr><td nowrap><font size=\"3\"/>#{slotLabelParam}</td><td>&nbsp;</td><td style=\"border:1px solid black; border-collapse:collapse; width: 100%;\"><font size=\"1\"/>MESSAGE BOX:</td></tr>
+						<tr>
+							<td nowrap>
+								<font size=\"3\"/>#{slotLabelParam}
+							</td>
+							<td>&nbsp;</td>
+							<td style=\"border:1px solid black; border-collapse:collapse; width: 100%;\">
+								<font size=\"1\"/>MESSAGE BOX:
+							</td>
+						</tr>
 					</table>
 				</td>
 			</tr>
 			<tr>
 				<td>"+getSlotDisplay_ToBeReturned+"</td>
-			   	<td valign=\"TOP\">
-			   		<table>
-			   			<tr><td><font size=\"2\"/>TIMER</td></tr>
-			   			<tr><td><button type=\"button\" style=\"width:100;height:25\">LOAD</button></td></tr>
-			   			<tr><td><button type=\"button\" style=\"width:100;height:25\">CLEAR</button></td></tr>
-			   		</table>
-			   	</td>
+		   	<td valign=\"TOP\">
+		   		<table>
+		   			<tr><td><font size=\"2\"/>TIMER</td></tr>
+		   			<tr><td><button type=\"button\" style=\"width:100;height:25\">LOAD</button></td></tr>
+		   			<tr><td><button type=\"button\" style=\"width:100;height:25\">CLEAR</button></td></tr>
+		   		</table>
+		   	</td>
 			</tr>
 			<tr><td></td></tr>			
 			<tr><td></td></tr>
