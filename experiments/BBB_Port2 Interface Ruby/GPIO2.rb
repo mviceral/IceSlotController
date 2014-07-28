@@ -48,21 +48,29 @@ class GPIO2
     # The following are the addresses of the registered names, along with their items
     #
     SLOT_ADDR_x0        = 0x0
-        X0_SLOT1            = 0x80
-        X0_SLOT0            = 0x40
-        X0_SYS5             = 0x20
-        X0_SYS4             = 0x10
-        X0_SYS3             = 0x08
-        X0_SYS2             = 0x04
-        X0_SYS1             = 0x02
-        X0_SYS0             = 0x01
+        # For Reading
+        # Gives 4 slots
+        # Gives you up to 64 systems - just basically get the whole value vice broken to little bits checking each
+        # state of bits.
+        #
+        # Scenario
+        # Step 1 , gets this address, assigns to the IP address of BBB.
+        # Config file must be available for the frist 3 address for the IP of the BBB.
+        #
+        X0_Reset            = 0x01  # Write to reset.
+        
     LED_STAT_x1         = 0x1
+        # Needs to be a X1_LEDEN = 1 to have the rest have a purpose.  For debugging.
         X1_LEDEN            = 0x80
         X1_LED3             = 0x08
         X1_LED2             = 0x04
         X1_LED1             = 0x02
         X1_LED0             = 0x01
+        
     EXT_INPUTS_x2       = 0x2
+        # Bitwise function, look for a 1 indicating that it's been activated (capture).
+        # Mainly reading bitwise
+        # XOR bit masking
         X2_FANT2B           = 0x80
         X2_FANT2A           = 0x40
         X2_FANT1B           = 0x20
@@ -71,7 +79,15 @@ class GPIO2
         X2_SENSR1           = 0x04
         X2_USRSW2           = 0x02
         X2_USRSW1           = 0x01
+        # Writing - to clear the above bits.
+        # After reading, write the clear to reset all the bits.
+        # (Capture compare function)
+        X2_CLEAR            = 0x01
+        
     PS_ENABLE_x3        = 0x3
+        # For power supply sequencing.
+        # Bitwise for mainly for writing.
+        # XOR bit masking
         X3_P12V             = 0x40
         X3_N5V              = 0x20
         X3_P5V              = 0x10
@@ -79,7 +95,10 @@ class GPIO2
         X3_PS8              = 0x04
         X3_PS9              = 0x02
         X3_PS10             = 0x01
+        
     EXT_SLOT_CTRL_x4    = 0x4
+        # Bitwise for mainly for writing.
+        # XOR bit masking
         X4_POWER            = 0x80
         X4_FAN1             = 0x20
         X4_FAN2             = 0x10
@@ -87,16 +106,13 @@ class GPIO2
         X4_LEDRED           = 0x04
         X4_LEDYEL           = 0x02
         X4_LEDGRN           = 0x01
+        
     SLOT_FAN_PWM_x5     = 0x5
-        X5_PWM7             = 0x80
-        X5_PWM6             = 0x40
-        X5_PWM5             = 0x20
-        X5_PWM4             = 0x10
-        X5_PWM3             = 0x08
-        X5_PWM2             = 0x04
-        X5_PWM1             = 0x02
-        X5_PWM0             = 0x01
+        # Mostly for setting, - write the whole byte.
+        
     ETS_ALM1_x6         = 0x6
+        # Bitwise only for reading.
+        # TCU alarm 
         X6_ALM7             = 0x80
         X6_ALM6             = 0x40
         X6_ALM5             = 0x20
@@ -105,7 +121,9 @@ class GPIO2
         X6_ALM2             = 0x04
         X6_ALM1             = 0x02
         X6_ALM0             = 0x01
+
     ETS_ALM2_x7         = 0x7
+        # Bitwise only for reading.
         X7_ALM15            = 0x80
         X7_ALM14            = 0x40
         X7_ALM13            = 0x20
@@ -114,7 +132,9 @@ class GPIO2
         X7_ALM10            = 0x04
         X7_ALM9             = 0x02
         X7_ALM8             = 0x01
+
     ETS_ALM3_x8         = 0x8
+        # Bitwise only for reading.
         X8_ALM23            = 0x80
         X8_ALM22            = 0x40
         X8_ALM21            = 0x20
@@ -123,7 +143,10 @@ class GPIO2
         X8_ALM18            = 0x04
         X8_ALM17            = 0x02
         X8_ALM16            = 0x01
+
     ETS_ENA1_x9         = 0x9
+        # Bitwise mainly for writing.
+        # XOR bit mask
         X9_ETS7             = 0x80
         X9_ETS6             = 0x40
         X9_ETS5             = 0x20
@@ -132,7 +155,10 @@ class GPIO2
         X9_ETS2             = 0x04
         X9_ETS1             = 0x02
         X9_ETS0             = 0x01
+
     ETS_ENA2_xA         = 0xA
+        # Bitwise mainly for writing.
+        # XOR bit mask
         XA_ETS15            = 0x80
         XA_ETS14            = 0x40
         XA_ETS13            = 0x20
@@ -141,7 +167,10 @@ class GPIO2
         XA_ETS10            = 0x04
         XA_ETS09            = 0x02
         XA_ETS08            = 0x01
+
     ETS_ENA3_xB         = 0xB
+        # Bitwise mainly for writing.
+        # XOR bit mask
         XB_ETS23            = 0x80
         XB_ETS22            = 0x40
         XB_ETS21            = 0x20
@@ -150,19 +179,14 @@ class GPIO2
         XB_ETS18            = 0x04
         XB_ETS17            = 0x02
         XB_ETS16            = 0x01
+
     ETS_RX_SEL_xC       = 0xC
-        XC_RXMUX4           = 0x10
-        XC_RXMUX3           = 0x08
-        XC_RXMUX2           = 0x04
-        XC_RXMUX1           = 0x02
-        XC_RXMUX0           = 0x01
+        # Just a number from 0 to 23, mostly writing
+        # The TCU (temp controller unit)
+
     ANA_MEAS4_SEL_xD    = 0xD
-        XD_ANAMUX5          = 0x20
-        XD_ANAMUX4          = 0x10
-        XD_ANAMUX3          = 0x08
-        XD_ANAMUX2          = 0x04
-        XD_ANAMUX1          = 0x02
-        XD_ANAMUX0          = 0x01
+        # Just a number from 0 to 48, mostly writing
+        # The item to measure analog channel 4.
     
     def getRegValue (addrParam, itemParam)
         #

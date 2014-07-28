@@ -66,7 +66,6 @@ char addrValueImage[16];
 /*
     C-code function declarations...
 */
-int calledAlready = 0;
 void sendToPort2(int addrParam, int dataParam);
 int getFromPort2(int addrParam);
 
@@ -82,7 +81,6 @@ void Init_Port2Interface();
 VALUE method_getFromPort2(VALUE self, VALUE addrRuby);
 void method_sendToPort2(VALUE self, VALUE addrRuby, VALUE addrData);
 void method_initPort2(VALUE self);
-void method_getImagesOf16AddrsGPIO2(VALUE self);
 VALUE method_getRegValueGPIO2(VALUE self, VALUE addrRuby, VALUE itemRuby);
 
 // The initialization method for this module
@@ -91,7 +89,6 @@ void Init_Port2Interface() {
 	rb_define_method(Port2Interface, "getFromPort2", method_getFromPort2, 1);
 	rb_define_method(Port2Interface, "sendToPort2", method_sendToPort2, 2);
 	rb_define_method(Port2Interface, "initPort2", method_initPort2, 0);
-	rb_define_method(Port2Interface, "getImagesOf16Addrs", method_getImagesOf16AddrsGPIO2, 0);
 	rb_define_method(Port2Interface, "getRegValue", method_getRegValueGPIO2, 0);
 }
 
@@ -137,8 +134,8 @@ void sendToPort2(int addrParam, int dataParam) {
 }
 
 void method_sendToPort2(VALUE self, VALUE addrRuby, VALUE dataRuby) {
-    sendToPort2(FIX2INT(addrRuby),FIX2INT(dataRuby));
     addrValueImage[FIX2INT(addrRuby)] = FIX2INT(dataRuby);
+    sendToPort2(FIX2INT(addrRuby),FIX2INT(dataRuby));
 }
 
 void method_initPort2(VALUE self) {
@@ -147,35 +144,26 @@ void method_initPort2(VALUE self) {
     gpio_AddrData_OE = gpio_addr+GPIO_OE; // Sets the strobe register to output.
     gpio_AddrData_DataOut = gpio_addr+GPIO_DATAOUT;
     gpio_AddrData_DataIn = gpio_addr+GPIO_DATAIN;
-}
-
-void method_getImagesOf16AddrsGPIO2(VALUE self) {
-    /*
-        This function gets all the images of the given 16 address of the slot.
-    */
-    if (calledAlready == 0) {
-        /*
-            Call this function once.
-        */
-        calledAlready = 1;
-        addrValueImage[0x0] = getFromPort2(0);
-    }
     
-    addrValueImage[0x1] = getFromPort2(1);
-    addrValueImage[0x2] = getFromPort2(2);
-    addrValueImage[0x3] = getFromPort2(3);
-    addrValueImage[0x4] = getFromPort2(4);
-    addrValueImage[0x5] = getFromPort2(5);
-    addrValueImage[0x6] = getFromPort2(6);
-    addrValueImage[0x7] = getFromPort2(7);
-    addrValueImage[0x8] = getFromPort2(8);
-    addrValueImage[0x9] = getFromPort2(9);
-    addrValueImage[0xA] = getFromPort2(10);
-    addrValueImage[0xB] = getFromPort2(11);
-    addrValueImage[0xC] = getFromPort2(12);
-    addrValueImage[0xD] = getFromPort2(13);
-    addrValueImage[0xE] = getFromPort2(14);
-    addrValueImage[0xF] = getFromPort2(15);
+    /*
+        Gets the images of the register on initialization
+    */
+    addrValueImage[0x0] = getFromPort2(0x0);
+    addrValueImage[0x1] = getFromPort2(0x1);
+    addrValueImage[0x2] = getFromPort2(0x2);
+    addrValueImage[0x3] = getFromPort2(0x3);
+    addrValueImage[0x4] = getFromPort2(0x4);
+    addrValueImage[0x5] = getFromPort2(0x5);
+    addrValueImage[0x6] = getFromPort2(0x6);
+    addrValueImage[0x7] = getFromPort2(0x7);
+    addrValueImage[0x8] = getFromPort2(0x8);
+    addrValueImage[0x9] = getFromPort2(0x9);
+    addrValueImage[0xA] = getFromPort2(0xA);
+    addrValueImage[0xB] = getFromPort2(0xB);
+    addrValueImage[0xC] = getFromPort2(0xC);
+    addrValueImage[0xD] = getFromPort2(0xD);
+    addrValueImage[0xE] = getFromPort2(0xE);
+    addrValueImage[0xF] = getFromPort2(0xF);
 }
 
 VALUE method_getRegValueGPIO2(VALUE self, VALUE addrRuby, VALUE itemRuby) {
