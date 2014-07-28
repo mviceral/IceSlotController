@@ -5,6 +5,14 @@ require_relative 'ThermalSiteDevices'
 include Beaglebone
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 #
+# Special not regarding file openTtyO1Port_115200.exe, this comes from the folder BBB_openTtyO1Port c code, and 
+# it's compiled as an executable.
+#
+# 	system("./openTtyO1Port_115200.exe")
+
+
+
+#
 # Notes:  Some code may need to get implemented.  Search for the string below
 # - "[ ] Code not done"
 
@@ -13,22 +21,23 @@ include Beaglebone
 # polling, and logging data.
 #
 #
-# July 9, 2014 - Managed to code where the software is running, and the SD card dies suddenly (i.e. it's removed), the
-# code continues to run.  When a new SD card is plugged in while the code is running, the code continues to do its task.
+# July 9, 2014 - Managed to code where the software is running, and the SD card dies suddenly (i.e. it's removed), 
+# the code continues to run.  When a new SD card is plugged in while the code is running, the code continues to do 
+# its task.
 #
-# Made another version where instead of having 24 databases, and each dbase logs the data per thermal site device, I've
-# updated the code to just use one database.  The reason for the transition was to minimize the time of interval when 
-# creating a new database when the log interval time is reached.
+# Made another version where instead of having 24 databases, and each dbase logs the data per thermal site device, 
+# I've updated the code to just use one database.  The reason for the transition was to minimize the time of 
+# interval when creating a new database when the log interval time is reached.
 #
 #
-# July 8, 2014 - Managed to write code that will poll 24 duts.  All duts recording logs in their own database.  The code
-# still needs 
+# July 8, 2014 - Managed to write code that will poll 24 duts.  All duts recording logs in their own database.  The 
+# code still needs 
 #   [ ] to be ensured its functionality
-#   [ ] to create a new log file per dut record when the interval of how long it is suppose to wait before creating a new
-#       log file is reached.
+#   [ ] to create a new log file per dut record when the interval of how long it is suppose to wait before creating 
+# a new log file is reached.
 #
-# July 7, 2014 - Worked on polling 24 duts and recording all stats into 24 database.  I'm hoping it'll be able to keep up 
-# with how fast the polling interval is after polling and writing all data in to 24 separate dbases.
+# July 7, 2014 - Worked on polling 24 duts and recording all stats into 24 database.  I'm hoping it'll be able to 
+# keep up with how fast the polling interval is after polling and writing all data in to 24 separate dbases.
 # 
 # July 7, 2014 - Initial software code for polling status data (dynamic data) from a dut (ThermalSite device).
 #
@@ -45,7 +54,7 @@ createLogInterval_UnitsInHours = 1
 #
 pollIntervalInSeconds = 10 
 
-executeAllStty = "no" # "Yes" if you want to execute all...
+executeAllStty = "Yes" # "Yes" if you want to execute all...
 baudrateToUse = 115200 # baud rate options are 9600, 19200, and 115200
 if (executeAllStty == "Yes") 
     # puts 'Check 1 of 7 - cd /lib/firmware'
@@ -54,15 +63,15 @@ if (executeAllStty == "Yes")
     # puts 'Check 2 of 7 - echo BB-UART1 > /sys/devices/bone_capemgr.9/slots'
     system("echo BB-UART1 > /sys/devices/bone_capemgr.9/slots")
     
-    # puts "Check 3 of 7 - ./openTtyO1Port_#{baudrateToUse}.exe"
-	system("../BBB_openTtyO1Port c code/openTtyO1Port.exe #{baudrateToUse}")
-	 
-    
     # puts 'Check 4 of 7 - stty -F /dev/ttyO1 raw'
     system("stty -F /dev/ttyO1 raw")
     
     # puts "Check 5 of 7 - stty -F /dev/ttyO1 #{baudrateToUse}"
 	system("stty -F /dev/ttyO1 #{baudrateToUse}")
+	
+    # puts "Check 3 of 7 - ./openTtyO1Port_#{baudrateToUse}.exe"
+	# system("../BBB_openTtyO1Port c code/openTtyO1Port_115200.exe")
+	system("./openTtyO1Port_115200.exe")
 	
 	# End of 'if (executeAllStty == "Yes")'
 end

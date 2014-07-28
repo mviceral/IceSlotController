@@ -1042,37 +1042,38 @@ unsigned long int TimeOut::ElapsedTime_ms()
 
 int main(int argc, char *argv[])
 {
-    /*
     int baudRate;
-    if ( argc != 2 ) /* argc should be 2 for correct execution * /
-    {
-        / * We print argv[0] assuming it is the program name * /
-        printf( "usage: %s <baud rate>\n", argv[0] );
-        printf( "Where <baud rate> can be 9600, 19200, or 115200\n");
-        return 0;
-    }
-    else {
-        / *
-        Check to make sure that the parameter is one of these: 9600, 19200, or 115200 
-        * /
-        baudRate = atoi(argv[1]);
-        if ((baudRate == 9600 || baudRate == 19200 || baudRate == 115200) == false) {
+    int diagnosticMode = 0;
+    /*
+    if (diagnosticMode == 0) {
+        if ( argc != 2 ) / * argc should be 2 for correct execution * /
+        {
+            / * We print argv[0] assuming it is the program name * /
             printf( "usage: %s <baud rate>\n", argv[0] );
             printf( "Where <baud rate> can be 9600, 19200, or 115200\n");
             return 0;
         }
+        else {
+            / *
+            Check to make sure that the parameter is one of these: 9600, 19200, or 115200 
+            * /
+            baudRate = atoi(argv[1]);
+            if ((baudRate == 9600 || baudRate == 19200 || baudRate == 115200) == false) {
+                printf( "usage: %s <baud rate>\n", argv[0] );
+                printf( "Where <baud rate> can be 9600, 19200, or 115200\n");
+                return 0;
+            }
+        }
     }
     */
-    
+
     serialib LS;                                                            // Object of the serialib class
     int Ret;                                                                // Used for return values
     char Buffer[128];
 
     // Open serial port
-
-    // Ret=LS.Open(DEVICE_PORT,baudRate);                                     // Open serial link at 115200 bauds
-    Ret=LS.Open(DEVICE_PORT,115200);                                         // Open serial link at 115200 bauds
-    // Ret=LS.Open(DEVICE_PORT,19200);                                         // Open serial link at 19200 bauds
+    Ret=LS.Open(DEVICE_PORT,115200);                                    // Open serial link at 115200 bauds
+    // Ret=LS.Open(DEVICE_PORT,19200);                                      // Open serial link at 19200 bauds
     // Ret=LS.Open(DEVICE_PORT,9600);                                       // Open serial link at 9600 bauds
     if (Ret!=1) {                                                           // If an error occured...
         printf ("Error while opening port. Permission problem ?\n");        // ... display a message ...
@@ -1080,86 +1081,112 @@ int main(int argc, char *argv[])
     }
     // printf ("Serial port opened successfully !\n");
 
-    // Write the AT command on the serial port
-    char userInput[80];
-    int send;
-    while (true) {
-        puts("Send string options");
-        puts("a) V? - for Version.");
-        puts("b) S? - for Status.");
-        puts("c) L! - for displaying status ever interval.");
-        puts("d) N! - Stopping the display of status ever interval.");
-        puts("e) R? - to reset the system.");
-        puts("f) Flush - this flushes out any buffers in the system.");
-        puts("hasta) - exit the code.");
-        scanf ("%s", userInput);
-        
-        // printf("userInput=%s",userInput);
-        
-        /* Loop through the array and change every character
-         * to its uppercase equivilant */
-        for(int i = 0; i < strlen(userInput); ++i)
-        {
-            userInput[i] = toupper(userInput[i]);
-        }
-        
-        send = 0;
-        if (!strcmp(userInput,"A")) {
-            strcpy(userInput,"V?\n");
-            send = 1;
-        }
-        else if (!strcmp(userInput,"B")) {
-            strcpy(userInput,"S?\n");
-            send = 1;
-        }
-        else if (!strcmp(userInput,"C")){
-            strcpy(userInput,"L!\n");
-            send = 1;
-        }
-        else if (!strcmp(userInput,"D")){
-            strcpy(userInput,"N!\n");
-            send = 1;
-        }
-        else if (!strcmp(userInput,"E")){
-            strcpy(userInput,"R?\n");
-            send = 1;
-        }
-        else if (!strcmp(userInput,"F")) {
-            puts("Flushing out TS...");
-            do {
+    if (diagnosticMode == 1) {
+        /*
+            We're in diagnostic mode.
+        */
+        // Write the AT command on the serial port
+        char userInput[80];
+        int send;
+        while (true) {
+            puts("Send string options");
+            puts("a) V? - for Version.");
+            puts("b) S? - for Status.");
+            puts("c) L! - for displaying status ever interval.");
+            puts("d) N! - Stopping the display of status ever interval.");
+            puts("e) R? - to reset the system.");
+            puts("f) Flush - this flushes out any buffers in the system.");
+            puts("hasta) - exit the code.");
+            scanf ("%s", userInput);
+            
+            // printf("userInput=%s",userInput);
+            
+            /* Loop through the array and change every character
+             * to its uppercase equivilant */
+            for(int i = 0; i < strlen(userInput); ++i)
+            {
+                userInput[i] = toupper(userInput[i]);
+            }
+            
+            send = 0;
+            if (!strcmp(userInput,"A")) {
+                strcpy(userInput,"V?\n");
+                send = 1;
+            }
+            else if (!strcmp(userInput,"B")) {
+                strcpy(userInput,"S?\n");
+                send = 1;
+            }
+            else if (!strcmp(userInput,"C")){
+                strcpy(userInput,"L!\n");
+                send = 1;
+            }
+            else if (!strcmp(userInput,"D")){
+                strcpy(userInput,"N!\n");
+                send = 1;
+            }
+            else if (!strcmp(userInput,"E")){
+                strcpy(userInput,"R?\n");
+                send = 1;
+            }
+            else if (!strcmp(userInput,"F")) {
+                puts("Flushing out TS...");
+                do {
+                    // Read a string from the serial device
+                    Ret=LS.ReadString(Buffer,'\n',128,500 /* 0.5 second*/ /*5000 5 sec test*/ );              // Read a maximum of 128 characters with a timeout of 0.5 seconds
+                                                                                        // The final character of the string must be a line feed ('\n')
+                    if (Ret>0)                                                              // If a string has been read from, print the string
+                        printf ("String read from serial port : %s",Buffer);
+                } while (Ret>0);
+            }
+            else if (!strcmp(userInput,"HASTA"))
+                break;
+            else 
+                strcpy(userInput,"Not a valid input!!!");
+                
+            if (send == 1) {
+            /*
+                    The user wants a version
+                */
+                printf("Sending %s\n",userInput);
+                Ret=LS.WriteString(userInput);                                             // Send the command on the serial port
+                if (Ret!=1) {                                                           // If the writting operation failed ...
+                    printf ("Error while writing data\n");                              // ... display a message ...
+                    return Ret;                                                         // ... quit the application.
+                }
+                // printf ("Write operation is successful \n");
+            
                 // Read a string from the serial device
                 Ret=LS.ReadString(Buffer,'\n',128,500 /* 0.5 second*/ /*5000 5 sec test*/ );              // Read a maximum of 128 characters with a timeout of 0.5 seconds
                                                                                     // The final character of the string must be a line feed ('\n')
                 if (Ret>0)                                                              // If a string has been read from, print the string
                     printf ("String read from serial port : %s",Buffer);
-            } while (Ret>0);
-        }
-        else if (!strcmp(userInput,"HASTA"))
-            break;
-        else 
-            strcpy(userInput,"Not a valid input!!!");
+                else
+                    printf ("TimeOut reached. No data received !\n");                   // If not, print a message.
             
-        if (send == 1) {
-        /*
-                The user wants a version
-            */
-            printf("Sending %s\n",userInput);
-            Ret=LS.WriteString(userInput);                                             // Send the command on the serial port
-            if (Ret!=1) {                                                           // If the writting operation failed ...
-                printf ("Error while writing data\n");                              // ... display a message ...
-                return Ret;                                                         // ... quit the application.
             }
-            // printf ("Write operation is successful \n");
-        
+        }
+
+    }
+    else {
+        /*
+            We're in non-diagnostic mode.
+        */
+        // printf("Initializing UART.\n");
+        Ret=LS.WriteString("S?");                   // Get the status...
+        if (Ret!=1) {                               // If the writting operation failed ...
+            printf ("Error while writing data\n");  // ... display a message ...
+            return Ret;                             // ... quit the application.
+        }
+    
+        do {
             // Read a string from the serial device
             Ret=LS.ReadString(Buffer,'\n',128,500 /* 0.5 second*/ /*5000 5 sec test*/ );              // Read a maximum of 128 characters with a timeout of 0.5 seconds
                                                                                 // The final character of the string must be a line feed ('\n')
             if (Ret>0)                                                              // If a string has been read from, print the string
                 printf ("String read from serial port : %s",Buffer);
-            else
-                printf ("TimeOut reached. No data received !\n");                   // If not, print a message.
-        
-        }
+        } while (Ret>0);
+        // puts("Done initializing UART.\n");
     }
 
     // Close the connection with the device

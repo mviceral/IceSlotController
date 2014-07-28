@@ -1,6 +1,6 @@
 # require_relative 'AllDuts'
 require_relative '../BBB_Shared Memory Ruby/SharedMemory'
-
+# ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 class DutObj
 
     def initialize(createLogInterval_UnitsInHoursParam, parentParam)
