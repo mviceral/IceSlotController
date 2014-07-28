@@ -138,6 +138,7 @@ void sendToPort2(int addrParam, int dataParam) {
 
 void method_sendToPort2(VALUE self, VALUE addrRuby, VALUE dataRuby) {
     sendToPort2(FIX2INT(addrRuby),FIX2INT(dataRuby));
+    addrValueImage[FIX2INT(addrRuby)] = FIX2INT(dataRuby);
 }
 
 void method_initPort2(VALUE self) {
