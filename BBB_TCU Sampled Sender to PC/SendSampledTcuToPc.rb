@@ -4,7 +4,7 @@ require 'singleton'
 require 'forwardable'
 require_relative '../BBB_Shared Memory Ruby/SharedMemory'
 
-class GetDataFromDb
+class SendSampledTcuToPC
     include Singleton
     NO_GOOD_DBASE_FOLDER = "No good database folder"
     MOUNT_CARD_DIR = "/mnt/card"
@@ -247,7 +247,13 @@ class GetDataFromDb
         end
     end
     
-
+    def runSampler
+        puts "Running the sampler."
+        system('cd ../"BBB_TCU Sampler"; bash runTcuSampler.sh &')
+        puts "Done executing the runTcuSampler.sh script."
+        # End of 'def runSampler'
+    end
+    
     def RunSender
         @pollIntervalInSeconds = 10 
         SharedMemory.Initialize()
@@ -271,7 +277,7 @@ class GetDataFromDb
                 # The Sampler does not seem to be updating the shared memory data.  It must be down.
                 # Start the sampler process.
                 #
-                puts "Sampler process is not running!"
+                runSampler
             end
         end
         puts "Test RunSender H #{__FILE__}-#{__LINE__}"
@@ -286,6 +292,13 @@ class GetDataFromDb
                 SendDataToPC(sampledData)
                 puts "Test RunSender E #{__FILE__}-#{__LINE__}"
                 sentSampledData = sampledData
+            else
+                #
+                # Data is still the same?  Perhaps the sampler died?  Run the sampler.
+                #
+                puts "Test RunSender G - SAMPLER DIED!!! #{__FILE__}-#{__LINE__}"
+                runSampler
+                puts "Test RunSender H - RESTARTED SAMPLER #{__FILE__}-#{__LINE__}"
             end
             puts "Test RunSender F #{__FILE__}-#{__LINE__}"
             
@@ -515,10 +528,10 @@ class GetDataFromDb
     #
     class << self
       extend Forwardable
-      def_delegators :instance, *GetDataFromDb.instance_methods(false)
+      def_delegators :instance, *SendSampledTcuToPC.instance_methods(false)
     end    
     
-    # End of 'class GetDataFromDb'
+    # End of 'class SendSampledTcuToPC'
 end 
 
-GetDataFromDb.RunSender
+SendSampledTcuToPC.RunSender
