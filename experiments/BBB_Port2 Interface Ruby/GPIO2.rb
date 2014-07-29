@@ -27,6 +27,13 @@ class GPIO2
         # End of 'def initialize'
     end 
     
+    def setBitOff(addrParam, dataParam)
+        
+    end
+    
+    def setBitOn(addrParam, dataParam)
+    end
+    
     def setGPIO2(addrParam, dataParam)
         sendToPort2(addrParam,dataParam)
         # End of 'def setGPIO2(addrParam, dataParam)'
