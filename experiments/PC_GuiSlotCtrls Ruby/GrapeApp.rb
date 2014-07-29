@@ -83,8 +83,14 @@ module MigrationCount
 					# dbRecord.resutls_as_hash = true
 					str = "insert into dbRecord (slotTime, slotData) values(#{timeOfData[0]},\"#{dutData}\")"
 					# puts "str=#{str}"
-					dbRecord.execute "#{str}"					
-					{dataTime:timeOfData[0]}
+					begin
+						dbRecord.execute "#{str}"					
+						{dataTime:timeOfData[0]}
+						
+						rescue SQLite3::Exception => e 
+        		puts "#{Time.now.inspect} Exception occured"
+        		puts e
+					end
 				end
 			end
 		end

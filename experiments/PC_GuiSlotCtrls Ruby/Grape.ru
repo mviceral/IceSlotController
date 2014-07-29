@@ -1,3 +1,3 @@
-require './app.rb'
+require './GrapeApp.rb'
 use Rack::Reloader
 run MigrationCount::API
