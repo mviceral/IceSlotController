@@ -71,12 +71,6 @@ class TCUSampler
             #
             # puts "Start polling: #{Time.now.inspect}"
             ThermalSiteDevices.pollDevices(uart1)
-            switcher+=1
-            if switcher%2==0
-                print "|"
-            else
-                print "*"
-            end
             # puts "Done polling: #{Time.now.inspect}"
             ThermalSiteDevices.logData
             # puts "Done logging: #{Time.now.inspect}"
