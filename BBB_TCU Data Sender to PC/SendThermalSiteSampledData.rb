@@ -39,13 +39,13 @@ class GetDataFromDb
 
 
     def getLastLogCompletedAt
-        # puts "getLastLogCompletedAt 1"
+        puts "getLastLogCompletedAt 1"
         if dbaseFolder == NO_GOOD_DBASE_FOLDER
-            # puts "getLastLogCompletedAt 2"
+            puts "getLastLogCompletedAt 2"
             return nil
             # End of 'if dbaseFolder == NO_GOOD_DBASE_FOLDER'
         end
-        # puts "getLastLogCompletedAt 3"
+        puts "getLastLogCompletedAt 3"
         
         #
         # Start a log file.  Scenario - we're going to start the application.  This Dut checks a reference point of when 
@@ -61,18 +61,21 @@ class GetDataFromDb
         #
         @dutLogFileName = "dutLog_"
         rootLogPath = self.dbaseFolder+"/"
+        puts "rootLogPath= #{rootLogPath} #{__FILE__}-#{__LINE__}"
+        puts "@dutLogFileName= #{@dutLogFileName} #{__FILE__}-#{__LINE__}"
         dirInMedia = Dir.entries("#{rootLogPath}")
         listOfFiles = Array.new
         for folderItem in dirInMedia
+            puts "checking folderItem - '#{folderItem}' #{__FILE__}-#{__LINE__}"
             if folderItem.include? @dutLogFileName
                 listOfFiles.push(folderItem)
             end
             # End of 'for folderItem in dirInMedia'
         end
         
-        # puts "Check 1 #{Param} #{__FILE__}-#{__LINE__}"
+        puts "Check 1 #{__FILE__}-#{__LINE__}"
         if listOfFiles.count > 0
-            # puts "Check 2 #{Param} #{__FILE__}-#{__LINE__}"
+            puts "Check 2 #{Param} #{__FILE__}-#{__LINE__}"
             #
             # From the list, get the newest file modified date.
             #
@@ -81,7 +84,7 @@ class GetDataFromDb
             listOfFiles.each { 
                 |file|
                 # puts "Check 3 #{Param} #{__FILE__}-#{__LINE__}"
-                # puts "checking file - #{file}"
+                puts "checking file - #{file} #{__FILE__}-#{__LINE__}"
                 modTime = File.mtime("#{rootLogPath}#{file}")
                 if latestModeTime.nil?
                     latestModeTime = modTime
@@ -116,6 +119,7 @@ class GetDataFromDb
             return Time.new(logYear,logMonth,logDay,logHour,logMin,0);
             # End of 'if listOfFiles.count > 0'
         else
+            puts "Returning time now...  #{__FILE__}-#{__LINE__}"
             return Time.now    
             # End of 'if listOfFiles.count > 0 ELSE'
         end
@@ -123,12 +127,15 @@ class GetDataFromDb
     end
     
     def logCompletedAt
+        puts "within logCompletedAt A  #{__FILE__}-#{__LINE__}"
         if @logCompletedAt.nil?
+            puts "within logCompletedAt B  #{__FILE__}-#{__LINE__}"
             # puts "@logCompletedAt.nil? is true"
             #
             # Just call initialize again to get a legit value for @logCompletedAt
             #
             initialize(@createLogInterval_UnitsInHours)
+            puts "Test B #{__FILE__}-#{__LINE__}"
             # End of 'if @logCompletedAt.nil?'
         end
         # puts "logCompletedAt.nil?=#{@logCompletedAt.nil?}"
@@ -138,24 +145,26 @@ class GetDataFromDb
 
 
     def initialize
-        # puts "DutObj got initialized."
+        puts "DutObj got initialized."
         system("umount /mnt/card") # unmount the card, case it crashes and the user puts in a new card.
-        # puts "indexOfDutParam = #{indexOfDutParam} #{__FILE__}-#{__LINE__}"
-        # puts "@createLogInterval_UnitsInHoursParam = #{@createLogInterval_UnitsInHoursParam} #{__FILE__}-#{__LINE__}"
-        # puts "arrayParentParam = #{arrayParentParam} #{__FILE__}-#{__LINE__}"
-        # gets
         @createLogInterval_UnitsInHours = 40 
         @db = nil
         @statusResponse = Array.new(TOTAL_DUTS_TO_LOOK_AT)
         @logCompletedAt = getLastLogCompletedAt()
         @dbaseFolder = NO_GOOD_DBASE_FOLDER        
+        puts "dbaseFolder #{dbaseFolder}  #{__FILE__}-#{__LINE__}"
+        puts "NO_GOOD_DBASE_FOLDER = #{NO_GOOD_DBASE_FOLDER}  #{__FILE__}-#{__LINE__}"
         
+        puts "Check E"
         if dbaseFolder != NO_GOOD_DBASE_FOLDER
+            puts "Check A"
             if @logCompletedAt.nil? 
+                puts "Check B"
                 #
                 # There is no log file found from the search.  Create one as a base of when the we started logging...
                 #
-                # puts "There is no log file found from the search.  Create one as a base for when we started logging..."
+                puts "There is no log file found from the search.  Create one as a base for when we started logging..."
+                gets # pause
                 
                 timeNow = Time.now
                 logYear = '%04d' % timeNow.year.to_i
@@ -171,13 +180,14 @@ class GetDataFromDb
                 @logCompletedAt = getLastLogCompletedAt()
                 # End of 'if @logCompletedAt.nil? '
             else
+                puts "Check C"
                 @nextLogCreation = @logCompletedAt+@createLogInterval_UnitsInHours*60   # *60*60 converts 
                                                                                       # @createLogInterval_UnitsInHours 
                                                                                       # to seconds
-                # puts "@logCompletedAt = #{@logCompletedAt.inspect}"
-                # puts "@nextLogCreation = #{@nextLogCreation.inspect}"
-                # puts "at #{__FILE__}-#{__LINE__}"
-                # gets # pause
+                puts "@logCompletedAt = #{@logCompletedAt.inspect}"
+                puts "@nextLogCreation = #{@nextLogCreation.inspect}"
+                puts "at #{__FILE__}-#{__LINE__}"
+                gets # pause
         
                 timeNow = Time.now
                 if @nextLogCreation<timeNow
@@ -191,8 +201,10 @@ class GetDataFromDb
             end
             # End of 'if dbaseFolder != NO_GOOD_DBASE_FOLDER'
         else
+            puts "Check D"
              # printErrorSdCardMissing(__FILE__,__LINE__)
              @db = nil
+             puts "@db to nil '#{@db}' #{__FILE__}-#{__LINE__}"
         end 
     
         # End of 'def initialize()'
@@ -228,6 +240,7 @@ class GetDataFromDb
             @nextLogCreation = @logCompletedAt+@createLogInterval_UnitsInHours*60*60   # *60*60 converts 
                                                                                   # @createLogInterval_UnitsInHours 
                                                                                   # to seconds
+            puts "@nextLogCreation=#{@nextLogCreation} #{__FILE__}-#{__LINE__}"
         else
             # printErrorSdCardMissing()
             @db = nil
@@ -238,27 +251,43 @@ class GetDataFromDb
     def RunSender
         @pollIntervalInSeconds = 10 
         SharedMemory.Initialize()
-        initialize
+        # initialize
         #
         # The goal is - the moment the new data becomes available from the sampler, that's when you start processing
         # like send data to PC for immediate display and for saving it, and saving the data into BBB local storage.
         # This way, there's lots of lee-way for recovery case something happens before the next polling.
         #
         sampledData = SharedMemory.GetData()
+        puts "Test RunSender A #{__FILE__}-#{__LINE__}"
         SendDataToPC(sampledData)
+        puts "Test RunSender B #{__FILE__}-#{__LINE__}"
+        waitTime = Time.now+@pollIntervalInSeconds
         while SharedMemory.GetData() == sampledData
             sleep(0.01) 
             # puts("Data is the same!!!")
+            puts "Test RunSender G #{__FILE__}-#{__LINE__}"
+            if waitTime < Time.now
+                #
+                # The Sampler does not seem to be updating the shared memory data.  It must be down.
+                # Start the sampler process.
+                #
+                puts "Sampler process is not running!"
+            end
         end
+        puts "Test RunSender H #{__FILE__}-#{__LINE__}"
         
         waitTime = Time.now+@pollIntervalInSeconds
         sentSampledData = sampledData
         while true
+            puts "Test RunSender C #{__FILE__}-#{__LINE__}"
             sampledData = SharedMemory.GetData()
             if (sentSampledData != sampledData)
+                puts "Test RunSender D #{__FILE__}-#{__LINE__}"
                 SendDataToPC(sampledData)
+                puts "Test RunSender E #{__FILE__}-#{__LINE__}"
                 sentSampledData = sampledData
             end
+            puts "Test RunSender F #{__FILE__}-#{__LINE__}"
             
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
@@ -283,6 +312,7 @@ class GetDataFromDb
     end
 
     def SendDataToPC(sampledDataParam)
+        puts "SendDataToPC A #{__FILE__}-#{__LINE__}"
         # db = SQLite3::Database.open "NotSentData.db"
     	# db.results_as_hash = true
     	# ary = db.execute "select * from NotSentData"
@@ -293,17 +323,22 @@ class GetDataFromDb
             # Parse the data, get the time in the data.
             #
 			receivedData = sampledDataParam.partition("BBB")[2]
+            puts "SendDataToPC B #{__FILE__}-#{__LINE__}"
 			timeOfData = receivedData.partition("|")[0]
+            puts "SendDataToPC C #{__FILE__}-#{__LINE__}"
 			# puts "receivedData within 'Send' process='#{receivedData}'"
             response = 
                 RestClient.post "http://192.168.7.1:9292/v1/migrations/Duts", {Duts:"#{sampledDataParam}" }.to_json, :content_type => :json, :accept => :json
+            puts "SendDataToPC D #{__FILE__}-#{__LINE__}"
             # puts "response.code=#{response.code}"
             # puts "response.cookies=#{response.cookies}"
             # puts "response.headers=#{response.headers}"
             # puts "PC response.to_str=#{response.to_str}"
             if timeOfData = response.to_str
+                puts "SendDataToPC E #{__FILE__}-#{__LINE__}"
                 puts "The PC acknowledged the sent data.  It was saved locally."
                 saveDataToDb(receivedData)
+                puts "SendDataToPC F #{__FILE__}-#{__LINE__}"
             end
             rescue => e
                 e.response
@@ -311,8 +346,9 @@ class GetDataFromDb
     end
 
     def nextLogCreation
+        puts "Within 'nextLogCreation' - @logCompletedAt = #{@logCompletedAt.inspect}  #{__FILE__} - #{__LINE__}"
         if @nextLogCreation.nil? && logCompletedAt != nil
-            # puts "Within 'nextLogCreation' - @logCompletedAt = #{@logCompletedAt.inspect}"
+            puts "Within 'nextLogCreation' - @logCompletedAt = #{@logCompletedAt.inspect}  #{__FILE__} - #{__LINE__}"
             @nextLogCreation = logCompletedAt+@createLogInterval_UnitsInHours*60    # *60*60 converts 
                                                                                     # @createLogInterval_UnitsInHours 
                                                                                     # to seconds
@@ -323,7 +359,11 @@ class GetDataFromDb
     end
 
     def saveDataToDb(dataToSaveParam)
+        puts "saveDataToDb got called.  #{__FILE__} - #{__LINE__}"
+        puts "dbaseFolder = '#{dbaseFolder}'  #{__FILE__} - #{__LINE__}"
+        puts "saveDataToDb A  #{__FILE__} - #{__LINE__}"
         if dbaseFolder != NO_GOOD_DBASE_FOLDER
+            puts "saveDataToDb B  #{__FILE__} - #{__LINE__}"
             timeNow = Time.now.to_i
             
     		str = "Insert into DutLog(dutData) "+
@@ -331,13 +371,15 @@ class GetDataFromDb
 
             begin
                 @db.execute "#{str}"
+                puts "saveDataToDb D  #{__FILE__} - #{__LINE__}"
 
                 # puts "Total time save: #{Time.now.to_f-timeA.to_f}"
                 
-                # puts "nextLogCreation = #{nextLogCreation.inspect}"
-                # puts "timeNowParam = #{timeNowParam.inspect}"
+                puts "nextLogCreation = #{nextLogCreation.inspect} #{__FILE__} - #{__LINE__}"
+                puts "timeNowParam = #{Time.now.inspect} #{__FILE__} - #{__LINE__}"
                 
                 if nextLogCreation.nil? == false && nextLogCreation<Time.now
+                    puts "timeNowParam = #{Time.now.inspect} #{__FILE__} - #{__LINE__}"
                     #
                     # Create new log.
                     #
@@ -359,6 +401,7 @@ class GetDataFromDb
 
             # End of 'if DutObj.dbaseFolder != NO_GOOD_DBASE_FOLDER'
         else 
+            puts "saveDataToDb C  #{__FILE__} - #{__LINE__}"
             printErrorSdCardMissing
             # puts"@parent=#{@parent}"
             @parent.dBase = DutObj.new(@createLogInterval_UnitsInHours,@parent)
