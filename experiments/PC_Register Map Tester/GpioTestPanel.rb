@@ -5,7 +5,7 @@ require 'sqlite3'
 require_relative "GpioTestPanel_common"
 set :port, 4567
 def uiTest
-	tpg = TestPanelGui.new("#00ffbb","#99ffbb","#66cccc","#66aacc")
+	tpg = TestPanelGui.new("#00ffbb","#99ffbb","#ff77dd","#ff99dd")
 	ui = "
 	<style>
 	table#main {
