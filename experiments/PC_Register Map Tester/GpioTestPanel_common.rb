@@ -89,7 +89,7 @@ class TestPanelGui
 		# End of def getBitLables
 	end
 
-	def testItemByte(addrParam,bitLabelsParam)
+	def testItemByte(addrParam,addrName,bitLabelsParam)
 		if getRowNUmber() % 2 == 0
 			@rowColor = @rowColor1
 		else
@@ -98,6 +98,7 @@ class TestPanelGui
 		testItemBit_tbr = "" # tbr - to be returned	
 		testItemBit_tbr += "<tr id=\"main\" bgcolor=\"#{@rowColor}\">
 				<td id=\"main\" rowspan=\"3\" valign=\"center\"><center><font size=\"1\">#{addrParam}</font></center></td>
+				<td id=\"main\" rowspan=\"3\" valign=\"center\"><center><font size=\"1\">#{addrName}</font></center></td>
 				<td id=\"main\" rowspan=\"2\" valign=\"center\"><center><button type=\"button\" style=\"height:20px; width:50px; font-size:10px\">Update</button></center></td>"
 		testItemBit_tbr += getBitLables(bitLabelsParam)
 		testItemBit_tbr += "
@@ -130,7 +131,7 @@ class TestPanelGui
 			</tr>"
 	end
 
-	def readItemBit(addrParam,bitLabelsParam)
+	def readItemBit(addrParam,addrName,bitLabelsParam)
 		if getRowReadNumber() % 2 == 0
 			@rowColor = @rowColorRead1
 		else
@@ -139,6 +140,7 @@ class TestPanelGui
 		testItemBit_tbr = "" # tbr - to be returned	
 		testItemBit_tbr += "<tr id=\"main\" bgcolor=\"#{@rowColor}\">
 				<td id=\"main\" rowspan=\"2\" valign=\"center\"><center><font size=\"1\">#{addrParam}</font></center></td>
+				<td id=\"main\" rowspan=\"2\" valign=\"center\"><center><font size=\"1\">#{addrName}</font></center></td>
 				<td id=\"main\" rowspan=\"2\" valign=\"center\"><center><font size=\"1\">GPIO</font></center></td>"
 		testItemBit_tbr += getBitLables(bitLabelsParam)
 		testItemBit_tbr += "
@@ -157,7 +159,7 @@ class TestPanelGui
 			</tr>"
 	end
 
-	def testItemBit(addrParam,bitLabelsParam)
+	def testItemBit(addrParam,addrName,bitLabelsParam)
 		if getRowNUmber() % 2 == 0
 			@rowColor = @rowColor1
 		else
@@ -166,6 +168,7 @@ class TestPanelGui
 		testItemBit_tbr = "" # tbr - to be returned	
 		testItemBit_tbr += "<tr id=\"main\" bgcolor=\"#{@rowColor}\">
 				<td id=\"main\" rowspan=\"3\" valign=\"center\"><center><font size=\"1\">#{addrParam}</font></center></td>
+				<td id=\"main\" rowspan=\"3\" valign=\"center\"><center><font size=\"1\">#{addrName}</font></center></td>
 				<td id=\"main\" rowspan=\"2\" valign=\"center\">
 					<center>
 						<button type=\"button\" style=\"height:20px; width:50px; font-size:10px\">Update</button></button></center></td>"
