@@ -3,10 +3,13 @@ require 'rubygems'
 require 'sinatra'
 require 'sqlite3'
 require_relative "GpioTestPanel_common"
-set :port, 4567
+set :port, 4568
 def uiTest
 	tpg = TestPanelGui.new("#00ffbb","#99ffbb","#ccaa33","#cccc33")
 	ui = "
+	<html>
+	<body>
+	<form action=\"/\" method=\"POST\">
 	<style>
 	table#main {
 		  border-collapse: collapse;
@@ -91,8 +94,17 @@ def uiTest
 			whatIsChecked += 2;
 		if (checkBox0[0].checked)						
 			whatIsChecked += 1;
-		var myTextField = document.getElementById(idOfRow);		
-		myTextField.innerHTML = \"0x\"+whatIsChecked.toString(16).toUpperCase();
+		var idOfHexLabel = idOfRow.concat(\"lbl\");
+		var idOfHiddenInput = \"hdn\";
+		idOfHiddenInput = idOfHiddenInput.concat(idOfRow);
+		var hiddenField = document.getElementById(idOfHiddenInput);		
+		var myTextField = document.getElementById(idOfHexLabel);		
+		hiddenField.value = whatIsChecked.toString(16).toUpperCase();
+		myTextField.innerHTML = whatIsChecked.toString(16).toUpperCase();
+		if (myTextField.innerHTML.length<2)
+			myTextField.innerHTML = \"0x0\"+myTextField.innerHTML;
+		else
+			myTextField.innerHTML = \"0x\"+myTextField.innerHTML;
 		// myTextField.value = \"Hello World\";
 		// alert(\"Checkbox got pressed.  element.name=\"+element.name+\".  idOfRow=\"+idOfRow+\"\");
 	}
@@ -146,21 +158,58 @@ def uiTest
 	<script type=\"text/javascript\">
 	// setInterval(function(){loadXMLDoc()},10000); 
 	</script>
+	</form>
+	</body>
+	</html>
 	"
 
 	return ui
 end
 
+post '/' do
+	# uiDisplay = "params[:_0x01] = #{params[:_0x01]}, Hex value = '#{params[:hdn0x01]}'"+uiTest
+	if params[:_0x00] == "Update"
+		uiDisplay = "0x00 : Hex value = '#{params[:hdn0x00]}'"+uiTest
+	elsif params[:_0x01] == "Update"
+		uiDisplay = "0x01 : Hex value = '#{params[:hdn0x01]}'"+uiTest
+	elsif params[:_0x02] == "Update"
+		uiDisplay = "0x02 : Hex value = '#{params[:hdn0x02]}'"+uiTest
+	elsif params[:_0x03] == "Update"
+		uiDisplay = "0x03 : Hex value = '#{params[:hdn0x03]}'"+uiTest
+	elsif params[:_0x04] == "Update"
+		uiDisplay = "0x04 : Hex value = '#{params[:hdn0x04]}'"+uiTest
+	elsif params[:_0x05] == "Update"
+		uiDisplay = "0x05 : Hex value = '#{params[:hdn0x05]}'"+uiTest
+	elsif params[:_0x06] == "Update"
+		uiDisplay = "0x06 : Hex value = '#{params[:hdn0x06]}'"+uiTest
+	elsif params[:_0x07] == "Update"
+		uiDisplay = "0x07 : Hex value = '#{params[:hdn0x07]}'"+uiTest
+	elsif params[:_0x08] == "Update"
+		uiDisplay = "0x08 : Hex value = '#{params[:hdn0x08]}'"+uiTest
+	elsif params[:_0x09] == "Update"
+		uiDisplay = "0x09 : Hex value = '#{params[:hdn0x09]}'"+uiTest
+	elsif params[:_0x0A] == "Update"
+		uiDisplay = "0x0A : Hex value = '#{params[:hdn0x0A]}'"+uiTest
+	elsif params[:_0x0B] == "Update"
+		uiDisplay = "0x0B : Hex value = '#{params[:hdn0x0B]}'"+uiTest
+	else
+		uiDisplay = uiTest
+	end
+end
+
+get '/' do
+	uiDisplay = "D You said '#{params[:submit]}'" + uiTest
+end
 
 get '/about' do
 	'A little about me.'
 end
 
-get '/form' do 
-	uiDisplay = uiTest
+get '/form' do	
+	uiDisplay = "A You said '#{params[:submit]}'" + uiTest
 end
 
-post '/form' do
-	uiDisplay = uiTest
+post '/form' do	
+	uiDisplay = "B You said '#{params[:submit]}'" + uiTest
 end
 

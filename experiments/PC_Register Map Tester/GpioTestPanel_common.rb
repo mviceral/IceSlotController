@@ -196,7 +196,13 @@ class TestPanelGui
 				<td id=\"main\" rowspan=\"3\" valign=\"center\"><center><font size=\"1\">#{addrName}</font></center></td>
 				<td id=\"main\" rowspan=\"2\" valign=\"center\">
 					<center>
-						<button type=\"button\" style=\"height:20px; width:50px; font-size:10px\">Update</button></center></td>"
+						<input 
+							type=\"submit\" 
+							style=\"height:20px; width:50px; font-size:10px\" 
+							value=\"Update\" 
+							name=\"_#{addrParam}\" />								
+					</center>
+				</td>"
 		testItemBit_tbr += getBitLables(bitLabelsParam)
 		testItemBit_tbr += "
 				<td id=\"main\"><center></center></td>			
@@ -204,7 +210,10 @@ class TestPanelGui
 			<tr id=\"main\" bgcolor=\"#{@rowColor}\">"	
 		testItemBit_tbr += getBitRadioBtns(addrParam,bitLabelsParam)
 		testItemBit_tbr += "
-				<td id=\"main\"><center><font size=\"1\"><label id=\"#{addrParam}\">0x00</font></center></td>			
+				<td id=\"main\">
+					<center><font size=\"1\"><label id=\"#{addrParam}lbl\">0x00</font></center>
+					<input type=\"hidden\" name=\"hdn#{addrParam}\" id=\"hdn#{addrParam}\" value=\"\" />
+				</td>			
 			</tr>
 			<tr id=\"main\" bgcolor=\"#{@rowColor}\">
 				<td id=\"main\"><center><font size=\"1\">GPIO</font></center></td>
