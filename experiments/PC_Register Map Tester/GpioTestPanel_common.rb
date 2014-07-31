@@ -140,7 +140,16 @@ class TestPanelGui
 				<td id=\"main\"><center><input type=\"checkbox\" name=\"x000\" disabled></center></td>
 			"
 		testItemBit_tbr += "
-				<td id=\"main\"><center><input type=\"text\" id=\"text\" name=\"#{addrParam}\" style=\"height:20px; width:50px; font-size:10px\" /></center></td>			
+				<td id=\"main\">
+					<center>
+						<input 
+							type=\"text\" 
+							id=\"text\" 
+							name=\"#{addrParam}\" 
+							style=\"height:20px; width:50px; font-size:10px\" />
+					<input type=\"hidden\" name=\"hdn#{addrParam}\" id=\"hdn#{addrParam}\" value=\"\" />
+					</center>
+				</td>			
 			</tr>
 			<tr id=\"main\" bgcolor=\"#{@rowColor}\">
 				<td id=\"main\"><center><font size=\"1\">GPIO</font></center></td>
