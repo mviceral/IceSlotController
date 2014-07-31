@@ -3,7 +3,9 @@ require 'rubygems'
 require 'sinatra'
 require 'sqlite3'
 require_relative "GpioTestPanel_common"
-set :port, 4568
+set :port, 4567
+require 'json'
+require_relative '../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryGPIO2'
 
 def uiTest
 	tpg = TestPanelGui.new("#998899","#996699","#3399ff","#33BBff")
@@ -39,7 +41,7 @@ def uiTest
 				document.getElementById(\"myDiv\").innerHTML=xmlhttp.responseText;
 			}
 		}	
-		xmlhttp.open(\"POST\",\"../form\",true);
+		xmlhttp.open(\"POST\",\"../\",true);
 		xmlhttp.send();
 	}
 	</script>
@@ -100,11 +102,11 @@ get '/about' do
 	'A little about me.'
 end
 
-get '/form' do 
+get '/' do 
 	uiDisplay = uiTest
 end
 
-post '/form' do
+post '/' do
 	uiDisplay = uiTest
 end
 

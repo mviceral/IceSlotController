@@ -2,10 +2,13 @@
 # require 'singleton'
 # require 'forwardable'
 
+require 'json'
+require_relative '../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryGPIO2'
 
 class TestPanelGui
 
 	def initialize (rC1Param,rC2Param,rCR1Param,rCR2Param)
+		SharedMemoryGpio2.Initialize()
 		@rowNumber = 3
 		@readRowNumber = 3
 		@rowColor1 = rC1Param
@@ -113,6 +116,62 @@ class TestPanelGui
 		return pieces	
 		# End of def getBitLables
 	end
+	
+	def hexToDisplay(addrParam)
+		parsed = Hash.new
+		fromSharedMem = SharedMemoryGpio2.GetData()
+		if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
+			#  The shared memory has some legit data in it.
+			# settings.sharedMem += "After trimming out the tag: '#{fromSharedMem["BbbShared".length..-1]}'.<br>"
+			parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
+		else
+			# settings.sharedMem += "Shared memory has does NOT have a valid data.<br>"
+		end
+	
+		hex_tbr = parsed[addrParam].to_i.to_s(16)
+		if hex_tbr.length<2
+			hex_tbr = "0"+hex_tbr
+		end
+		return "0x"+hex_tbr
+	end
+	
+	def dataBitsToDisplay(addrParam)
+    dataBitsToDisplay_tbr = ""
+		fromSharedMem = SharedMemoryGpio2.GetData()
+		if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
+			#  The shared memory has some legit data in it.
+			# settings.sharedMem += "After trimming out the tag: '#{fromSharedMem["BbbShared".length..-1]}'.<br>"
+			# dataBitsToDisplay_tbr = "Has some data.<br>"
+			parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
+		else
+			# settings.sharedMem += "Shared memory has does NOT have a valid data.<br>"
+			parsed = Hash.new
+			# dataBitsToDisplay_tbr = "Has NO data.<br>"
+		end
+		
+		bits = parsed[addrParam].to_i.to_s(2)
+    while bits.length < 8
+        bits = "0"+bits
+    end
+    
+    ct = 0
+    while ct<8
+    	if bits[ct] == "1"
+    		dataBitsToDisplay_tbr += "
+    			<td id=\"main\">
+    				<center>
+							<font size=\"1\">X</font>
+    				</center>
+    			</td>"
+    	else
+    		dataBitsToDisplay_tbr += "
+    			<td id=\"main\">
+    			</td>"
+    	end
+    	ct += 1
+    end
+    return dataBitsToDisplay_tbr
+	end
 
 	def testItemByte(addrParam,addrName,bitLabelsParam)
 		if getRowNUmber() % 2 == 0
@@ -129,16 +188,8 @@ class TestPanelGui
 		testItemBit_tbr += "
 				<td id=\"main\"><center></center></td>			
 			</tr>
-			<tr id=\"main\" bgcolor=\"#{@rowColor}\">
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x007\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x006\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x005\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x004\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x003\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x002\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x001\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x000\" disabled></center></td>
-			"
+			<tr id=\"main\" bgcolor=\"#{@rowColor}\">"			
+		testItemBit_tbr += dataBitsToDisplay(addrParam)
 		testItemBit_tbr += "
 				<td id=\"main\">
 					<center>
@@ -150,18 +201,13 @@ class TestPanelGui
 					<input type=\"hidden\" name=\"hdn#{addrParam}\" id=\"hdn#{addrParam}\" value=\"\" />
 					</center>
 				</td>			
-			</tr>
+			</tr>"
+		testItemBit_tbr += "
 			<tr id=\"main\" bgcolor=\"#{@rowColor}\">
-				<td id=\"main\"><center><font size=\"1\">GPIO</font></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x007\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x006\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x005\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x004\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x003\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x002\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x001\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x000\" disabled></center></td>
-				<td id=\"main\"><center><font size=\"1\">0x00</font></center></td>			
+				<td id=\"main\"><center><font size=\"1\">GPIO</font></center></td>"
+		testItemBit_tbr += dataBitsToDisplay(addrParam)
+		testItemBit_tbr += "
+				<td id=\"main\"><center><font size=\"1\">"+hexToDisplay(addrParam)+"</font></center></td>			
 			</tr>"
 	end
 
@@ -180,16 +226,10 @@ class TestPanelGui
 		testItemBit_tbr += "
 				<td id=\"main\"><center></center></td>			
 			</tr>
-			<tr id=\"main\" bgcolor=\"#{@rowColor}\">			
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x007\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x006\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x005\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x004\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x003\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x002\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x001\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x000\" disabled></center></td>
-				<td id=\"main\"><center><font size=\"1\">0x00</font></center></td>			
+			<tr id=\"main\" bgcolor=\"#{@rowColor}\">"			
+		testItemBit_tbr += dataBitsToDisplay(addrParam)
+		testItemBit_tbr += "
+				<td id=\"main\"><center><font size=\"1\">"+hexToDisplay(addrParam)+"</font></center></td>			
 			</tr>"
 	end
 
@@ -225,16 +265,10 @@ class TestPanelGui
 				</td>			
 			</tr>
 			<tr id=\"main\" bgcolor=\"#{@rowColor}\">
-				<td id=\"main\"><center><font size=\"1\">GPIO</font></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x007\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x006\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x005\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x004\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x003\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x002\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x001\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"checkbox\" name=\"x000\" disabled></center></td>
-				<td id=\"main\"><center><font size=\"1\">0x00</font></center></td>			
+				<td id=\"main\"><center><font size=\"1\">GPIO</font></center></td>"
+		testItemBit_tbr += dataBitsToDisplay(addrParam)
+		testItemBit_tbr += "
+				<td id=\"main\"><center><font size=\"1\">"+hexToDisplay(addrParam)+"</font></center></td>			
 			</tr>"
 	end	
 =begin	
