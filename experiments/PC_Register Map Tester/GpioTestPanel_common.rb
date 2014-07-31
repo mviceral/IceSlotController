@@ -32,34 +32,59 @@ class TestPanelGui
 		return 1
 	end
 
-	def getBitRadioBtns(strParam)
+	def getBitRadioBtns(addrParam,strParam)
 		pieces = ""
 		totalBits = 0
-		while strParam.index('|') != nil
-			totalBits+=1
-			at = strParam.index('|')
-			toAdd = strParam[0..(at-1)]
+		while strParam.rindex('|') != nil
+			at = strParam.rindex('|')+1
+			toAdd = strParam[at..-1]
 			if toAdd == " "
-				pieces += "<td id=\"main\"><center><input type=\"radio\" name=\"x004\" disabled></center></td>"
+				pieces = "
+				<td id=\"main\">
+					<center>
+						<input type=\"checkbox\" name=\"#{addrParam}#{totalBits}\" disabled>
+					</center>
+				</td>"+pieces
 			else 
-				pieces += "<td id=\"main\"><center><input type=\"radio\" name=\"x004\"></center></td>"
+				pieces = "
+				<td id=\"main\">
+					<center>
+						<input type=\"checkbox\" name=\"#{addrParam}#{totalBits}\" onchange=\"toggleCheckbox(this)\">
+					</center>
+				</td>"+pieces
 			end
 
-			at += 1
-			strParam = strParam[at..-1]
+			at -= 2
+			strParam = strParam[0..at]
+			totalBits+=1
 		end
 	
 		if strParam == " "
-			pieces += "<td id=\"main\"><center><input type=\"radio\" name=\"x004\" disabled></center></td>"
+			pieces = "
+				<td id=\"main\">
+					<center>
+						<input type=\"checkbox\" name=\"#{addrParam}#{totalBits}\" disabled>
+					</center>
+				</td>"+pieces
 		else 
-			pieces += "<td id=\"main\"><center><input type=\"radio\" name=\"x004\"></center></td>"
+			pieces = "
+				<td id=\"main\">
+					<center>
+						<input type=\"checkbox\" name=\"#{addrParam}#{totalBits}\" onchange=\"toggleCheckbox(this)\">
+					</center>
+				</td>"+pieces
 		end
-		totalBits += 1
+		totalBits+=1
 	
 		# Fill the rest of the bits.
 		while totalBits<8
+			pieces = "
+				<td id=\"main\">
+					<center>
+						<input type=\"checkbox\" name=\"#{addrParam}#{totalBits}\" disabled>
+					</center>
+				</td>"+pieces
 			totalBits+=1
-			pieces = "<td id=\"main\"><center><input type=\"radio\" name=\"x004\" disabled></center></td>"+pieces
 		end
 		return pieces	
 	end
@@ -105,29 +130,29 @@ class TestPanelGui
 				<td id=\"main\"><center></center></td>			
 			</tr>
 			<tr id=\"main\" bgcolor=\"#{@rowColor}\">
-				<td id=\"main\"><center><input type=\"radio\" name=\"x007\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x006\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x005\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x004\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x003\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x002\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x001\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x000\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x007\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x006\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x005\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x004\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x003\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x002\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x001\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x000\" disabled></center></td>
 			"
 		testItemBit_tbr += "
-				<td id=\"main\"><center><input type=\"text\" id=\"text\" name=\"text_name\" style=\"height:20px; width:50px; font-size:10px\" /></center></td>			
+				<td id=\"main\"><center><input type=\"text\" id=\"text\" name=\"#{addrParam}\" style=\"height:20px; width:50px; font-size:10px\" /></center></td>			
 			</tr>
 			<tr id=\"main\" bgcolor=\"#{@rowColor}\">
 				<td id=\"main\"><center><font size=\"1\">GPIO</font></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x007\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x006\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x005\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x004\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x003\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x002\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x001\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x000\" disabled></center></td>
-				<td id=\"main\"><center><font size=\"1\">0x1</font></center></td>			
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x007\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x006\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x005\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x004\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x003\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x002\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x001\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x000\" disabled></center></td>
+				<td id=\"main\"><center><font size=\"1\">0x00</font></center></td>			
 			</tr>"
 	end
 
@@ -147,15 +172,15 @@ class TestPanelGui
 				<td id=\"main\"><center></center></td>			
 			</tr>
 			<tr id=\"main\" bgcolor=\"#{@rowColor}\">			
-				<td id=\"main\"><center><input type=\"radio\" name=\"x007\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x006\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x005\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x004\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x003\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x002\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x001\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x000\" disabled></center></td>
-				<td id=\"main\"><center><font size=\"1\">0x1</font></center></td>			
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x007\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x006\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x005\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x004\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x003\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x002\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x001\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x000\" disabled></center></td>
+				<td id=\"main\"><center><font size=\"1\">0x00</font></center></td>			
 			</tr>"
 	end
 
@@ -171,27 +196,27 @@ class TestPanelGui
 				<td id=\"main\" rowspan=\"3\" valign=\"center\"><center><font size=\"1\">#{addrName}</font></center></td>
 				<td id=\"main\" rowspan=\"2\" valign=\"center\">
 					<center>
-						<button type=\"button\" style=\"height:20px; width:50px; font-size:10px\">Update</button></button></center></td>"
+						<button type=\"button\" style=\"height:20px; width:50px; font-size:10px\">Update</button></center></td>"
 		testItemBit_tbr += getBitLables(bitLabelsParam)
 		testItemBit_tbr += "
 				<td id=\"main\"><center></center></td>			
 			</tr>
 			<tr id=\"main\" bgcolor=\"#{@rowColor}\">"	
-		testItemBit_tbr += getBitRadioBtns(bitLabelsParam)
+		testItemBit_tbr += getBitRadioBtns(addrParam,bitLabelsParam)
 		testItemBit_tbr += "
-				<td id=\"main\"><center><font size=\"1\">0x1</font></center></td>			
+				<td id=\"main\"><center><font size=\"1\"><label id=\"#{addrParam}\">0x00</font></center></td>			
 			</tr>
 			<tr id=\"main\" bgcolor=\"#{@rowColor}\">
 				<td id=\"main\"><center><font size=\"1\">GPIO</font></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x007\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x006\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x005\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x004\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x003\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x002\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x001\" disabled></center></td>
-				<td id=\"main\"><center><input type=\"radio\" name=\"x000\" disabled></center></td>
-				<td id=\"main\"><center><font size=\"1\">0x1</font></center></td>			
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x007\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x006\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x005\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x004\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x003\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x002\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x001\" disabled></center></td>
+				<td id=\"main\"><center><input type=\"checkbox\" name=\"x000\" disabled></center></td>
+				<td id=\"main\"><center><font size=\"1\">0x00</font></center></td>			
 			</tr>"
 	end	
 =begin	
