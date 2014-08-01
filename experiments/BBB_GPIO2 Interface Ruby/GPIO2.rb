@@ -56,13 +56,13 @@ class GPIO2
   	# Write to shared mem
 		fromSharedMem = @sharedGpio2.GetData()
 		parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
-		file = File.open("/tmp/setGPIO.txt", 'a')
-		file.write("setGPIO2: addrParam=#{addrParam}, addrParam.class=#{addrParam.class}, dataParam=#{dataParam}\n")
+		# file = File.open("/tmp/setGPIO.txt", 'a')
+		# file.write("setGPIO2: addrParam=#{addrParam}, addrParam.class=#{addrParam.class}, dataParam=#{dataParam}\n")
 		if @emulatorEnabled
-			file.write("@emulatorEnabled is true.\n") 
+			# file.write("@emulatorEnabled is true.\n") 
   		parsed[addrParam.to_s] = dataParam
   		returnedValue = @sharedGpio2.WriteData("BbbShared"+parsed.to_json)
-  		file.write("returnedValue = '#{returnedValue}'.\n")
+  		# file.write("returnedValue = '#{returnedValue}'.\n")
 		end
 #@Removed comment to run on real machine
 #sendToPort2(addrParam,dataParam)
@@ -71,27 +71,27 @@ class GPIO2
   
   def getGPIO2(addrParam)
   		# write to emulator
-  		file = File.open("/tmp/setGPIO.txt", 'a') 
-  		file.write("Within 'def getGPIO2(addrParam)'.\n");
-  		file.write("addrParam.class=#{addrParam.class}\n");
+  		# file = File.open("/tmp/setGPIO.txt", 'a') 
+  		# file.write("Within 'def getGPIO2(addrParam)'.\n");
+  		# file.write("addrParam.class=#{addrParam.class}\n");
   		if @emulatorEnabled
 				fromSharedMem = @sharedGpio2.GetData()
 				if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
 					#  The shared memory has some legit data in it.
 					# settings.sharedMem += "After trimming out the tag: '#{fromSharedMem["BbbShared".length..-1]}'.<br>"
-					file.write("Shared memory is enabled.\n");
+					# file.write("Shared memory is enabled.\n");
 					parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
 					parsed.each do |key, array|
-						file.write("#{key}----- key.class='#{key.class}'")
-						file.write("array='#{array}'")						
+						# file.write("#{key}----- key.class='#{key.class}'")
+						# file.write("array='#{array}'")						
 					end  		
-					file.write("parsed = '#{parsed}'\n") 
-					file.write("getGPIO2: addrParam=#{addrParam}  parsed[addrParam.to_s]=#{parsed[addrParam.to_s]}.\n") 
+					# file.write("parsed = '#{parsed}'\n") 
+					# file.write("getGPIO2: addrParam=#{addrParam}  parsed[addrParam.to_s]=#{parsed[addrParam.to_s]}.\n") 
 				else
-					file.write("Shared memory is NOT enabled.");
+					# file.write("Shared memory is NOT enabled.");
 					parsed = Hash.new
 				end
-				file.write("getGPIO2: addrParam=#{addrParam}, addrParam.class='#{addrParam.class}' parsed[addrParam]=#{parsed[addrParam]}.\n") 
+				# file.write("getGPIO2: addrParam=#{addrParam}, addrParam.class='#{addrParam.class}' parsed[addrParam]=#{parsed[addrParam]}.\n") 
 	  		return parsed[addrParam.to_s]
 	  	else
 #@Removed comment to run on real machine
