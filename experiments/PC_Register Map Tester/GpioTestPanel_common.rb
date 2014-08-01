@@ -17,6 +17,76 @@ class TestPanelGui
 		@rowColorRead2 = rCR2Param
 	end
 	
+	def javaScript
+		tbr = "
+				function toggleCheckbox(element)
+				{
+					// alert('element.name.length='+element.name.length+'');
+					//int hold = element.name.length-1;
+					var idOfRow = element.name.substring(0, element.name.length-1);
+					// var idOfRow=\"asdf\";
+					// alert('Checkbox got pressed.  element.name='+element.name+'.  idOfRow='+idOfRow+'');
+					var id0 = idOfRow.concat(\"0\");
+					var id1 = idOfRow.concat(\"1\");
+					var id2 = idOfRow.concat(\"2\");
+					var id3 = idOfRow.concat(\"3\");
+					var id4 = idOfRow.concat(\"4\");
+					var id5 = idOfRow.concat(\"5\");
+					var id6 = idOfRow.concat(\"6\");
+					var id7 = idOfRow.concat(\"7\");
+					var checkBox0 = document.getElementsByName(id0);
+					var checkBox1 = document.getElementsByName(id1);
+					var checkBox2 = document.getElementsByName(id2);
+					var checkBox3 = document.getElementsByName(id3);
+					var checkBox4 = document.getElementsByName(id4);
+					var checkBox5 = document.getElementsByName(id5);
+					var checkBox6 = document.getElementsByName(id6);
+					var checkBox7 = document.getElementsByName(id7);
+					/*
+					alert(''+checkBox7[0].checked+','
+									+checkBox6[0].checked+','
+									+checkBox5[0].checked+','
+									+checkBox4[0].checked+','
+									+checkBox3[0].checked+','
+									+checkBox2[0].checked+','
+									+checkBox1[0].checked+','
+									+checkBox0[0].checked);
+					*/
+					var whatIsChecked = 0;
+					if (checkBox7[0].checked)						
+						whatIsChecked += 128;
+					if (checkBox6[0].checked)						
+						whatIsChecked += 64;
+					if (checkBox5[0].checked)						
+						whatIsChecked += 32;
+					if (checkBox4[0].checked)						
+						whatIsChecked += 16;
+					if (checkBox3[0].checked)						
+						whatIsChecked += 8;
+					if (checkBox2[0].checked)						
+						whatIsChecked += 4;
+					if (checkBox1[0].checked)						
+						whatIsChecked += 2;
+					if (checkBox0[0].checked)						
+						whatIsChecked += 1;
+					var idOfHexLabel = idOfRow.concat(\"lbl\");
+					var idOfHiddenInput = \"hdn\";
+					idOfHiddenInput = idOfHiddenInput.concat(idOfRow);
+					var hiddenField = document.getElementById(idOfHiddenInput);		
+					var myTextField = document.getElementById(idOfHexLabel);		
+					hiddenField.value = whatIsChecked
+					myTextField.innerHTML = whatIsChecked.toString(16).toUpperCase();
+					if (myTextField.innerHTML.length<2)
+						myTextField.innerHTML = \"0x0\"+myTextField.innerHTML;
+					else
+						myTextField.innerHTML = \"0x\"+myTextField.innerHTML;
+					// myTextField.value = \"Hello World\";
+					// alert(\"Checkbox got pressed.  element.name=\"+element.name+\".  idOfRow=\"+idOfRow+\"\");
+				}
+		"
+		return tbr
+	end
+	
 	def resetRowCount
 		# This way, the colors will not keep switching every screen upgrade.
 		@rowNumber = 3
