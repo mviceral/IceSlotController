@@ -6,8 +6,8 @@ require_relative 'SharedMemoryGPIO2'
 
 
 #WriteDataToSharedMemory("abcd12345")
-SharedMemoryGpio2.Initialize()
-fromSharedMem = SharedMemoryGpio2.GetData()
+smgpio2 = SharedMemoryGpio2.new
+fromSharedMem = smgpio2.GetData()
 puts "Content of fromSharedMem=#{fromSharedMem}"
 # newData = "abcd12345"
 # SharedMemoryGpio2.WriteData("This is a ruby test memory sharing.")

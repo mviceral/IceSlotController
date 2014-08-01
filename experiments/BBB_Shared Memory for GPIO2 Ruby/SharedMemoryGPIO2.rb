@@ -3,19 +3,20 @@
 # clear; ruby extconf.rb ; make; ruby myRubyTest.rb
 #
 require_relative 'SharedMemoryExtensionGpio2.so'
-require 'singleton'
-require 'forwardable'
+# require 'singleton'
+# require 'forwardable'
 
 class SharedMemoryGpio2 
     include SharedMemoryExtensionGpio2
-    include Singleton
+#    include Singleton
     
     #
     # Known functions of SharedMemoryExtension
     #
-    def Initialize()
+    def initialize()
         #   - This function initialized the shared memory variables.  If not called, the functions below will be rendered 
         #   useless.
+        # puts "SharedMemoryGpio2 got called.  Within Initialize()."
         InitializeSharedMemory()
     end 
 
@@ -34,9 +35,11 @@ class SharedMemoryGpio2
         return WriteDataToSharedMemory(stringParam)
     end 
     
+=begin
     class << self
       extend Forwardable
       def_delegators :instance, *SharedMemoryGpio2.instance_methods(false)
     end
+=end
 end
 

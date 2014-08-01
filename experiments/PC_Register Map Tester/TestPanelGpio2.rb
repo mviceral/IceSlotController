@@ -5,12 +5,12 @@ require 'sinatra'
 require_relative "GpioTestPanel_common"
 require 'json'
 require_relative '../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryGPIO2'
-
+require_relative '../BBB_GPIO2 Interface Ruby/GPIO2'
 
 set :port, 4568
 set :sharedMem, ""
+set :tpg, TestPanelGui.new("#00ffbb","#99ffbb","#ccaa33","#cccc33",GPIO2.new)
 def uiTest
-	tpg = TestPanelGui.new("#00ffbb","#99ffbb","#ccaa33","#cccc33")
 	ui = "
 	<html>
 		<body>
@@ -134,22 +134,24 @@ def uiTest
 							<td id=\"main\" width=\"3%\" ><center><font size=\"1\">Bit 0</font></center></td>			
 							<td id=\"main\" width=\"3%\" ><center><font size=\"1\">HEX</font></center></td>			
 						</tr>"
-						ui += tpg.readItemBit("0x00","SLOTADDR","SLOT1|SLOT0|SYS5|SYS4|SYS3|SYS2|SYS1|SYS0")
-						ui += tpg.testItemBit("0x00","RESET_ALL","RST")	
-						ui += tpg.testItemBit("0x01","STAT_LED","LEDEN| | | |LED3|LED2|LED1|LED0")	
-						ui += tpg.testItemBit("0x02","WXT_CLEAR_LATCH","CLEAR")
-						ui += tpg.readItemBit("0x02","EXT_INPUTS","FANT2B|FANT2A|FANT1B|FANT1A|SENSR2|SENSR1|USRSW2|USRSW1")
-						ui += tpg.testItemBit("0x03","PS_ENABLE","P12V|N5V|P5V|PS6|PS8|PS9|PS10")	
-						ui += tpg.testItemBit("0x04","SL_CNTL_EXT","POWER| |FAN1|FAN2|BUZR|LEDRED|LEDYEL|LEDGRN")	
-						ui += tpg.testItemByte("0x05","SL_FAN_PWM","PWM7|PWM6|PWM5|PWM4|PWM3|PWM2|PWM1|PWM0")
-						ui += tpg.readItemBit("0x06","ETS_ALM1","ALM7|ALM6|ALM5|ALM4|ALM3|ALM2|ALM1|ALM0")
-						ui += tpg.readItemBit("0x07","ETS_ALM2","ALM15|ALM14|ALM13|ALM12|ALM11|ALM10|ALM9|ALM8")
-						ui += tpg.readItemBit("0x08","ETS_ALM2","ALM23|ALM22|ALM21|ALM20|ALM19|ALM18|ALM17|ALM16")
-						ui += tpg.testItemBit("0x09","ETS_ENA1","ETS7|ETS6|ETS5|ETS4|ETS3|ETS2|ETS1|ETS0")
-						ui += tpg.testItemBit("0x0A","ETS_ENA2","ETS15|ETS14|ETS13|ETS12|ETS11|ETS10|ETS9|ETS8")
-						ui += tpg.testItemBit("0x0B","ETS_ENA3","ETS23|ETS22|ETS21|ETS20|ETS19|ETS18|ETS17|ETS16")
-						ui += tpg.testItemByte("0x0C","ETS_RX_SEL","RXMUX4|RXMUX3|RXMUX2|RXMUX1|RXMUX0")
-						ui += tpg.testItemByte("0x0D","ANA_MEAS4_SEL","ANAMUX5|ANAMUX4|ANAMUX3|ANAMUX2|ANAMUX1|ANAMUX0")
+						ui += settings.tpg.readItemBit("0x00","SLOTADDR","SLOT1|SLOT0|SYS5|SYS4|SYS3|SYS2|SYS1|SYS0")
+						ui += settings.tpg.testItemBit("0x00","RESET_ALL","RST")	
+						ui += settings.tpg.testItemBit("0x01","STAT_LED","LEDEN| | | |LED3|LED2|LED1|LED0")	
+						ui += settings.tpg.testItemBit("0x02","WXT_CLEAR_LATCH","CLEAR")
+						ui += settings.tpg.readItemBit(
+							"0x02",
+							"EXT_INPUTS","FANT2B|FANT2A|FANT1B|FANT1A|SENSR2|SENSR1|USRSW2|USRSW1")
+						ui += settings.tpg.testItemBit("0x03","PS_ENABLE","P12V|N5V|P5V|PS6|PS8|PS9|PS10")	
+						ui += settings.tpg.testItemBit("0x04","SL_CNTL_EXT","POWER| |FAN1|FAN2|BUZR|LEDRED|LEDYEL|LEDGRN")	
+						ui += settings.tpg.testItemByte("0x05","SL_FAN_PWM","PWM7|PWM6|PWM5|PWM4|PWM3|PWM2|PWM1|PWM0")
+						ui += settings.tpg.readItemBit("0x06","ETS_ALM1","ALM7|ALM6|ALM5|ALM4|ALM3|ALM2|ALM1|ALM0")
+						ui += settings.tpg.readItemBit("0x07","ETS_ALM2","ALM15|ALM14|ALM13|ALM12|ALM11|ALM10|ALM9|ALM8")
+						ui += settings.tpg.readItemBit("0x08","ETS_ALM2","ALM23|ALM22|ALM21|ALM20|ALM19|ALM18|ALM17|ALM16")
+						ui += settings.tpg.testItemBit("0x09","ETS_ENA1","ETS7|ETS6|ETS5|ETS4|ETS3|ETS2|ETS1|ETS0")
+						ui += settings.tpg.testItemBit("0x0A","ETS_ENA2","ETS15|ETS14|ETS13|ETS12|ETS11|ETS10|ETS9|ETS8")
+						ui += settings.tpg.testItemBit("0x0B","ETS_ENA3","ETS23|ETS22|ETS21|ETS20|ETS19|ETS18|ETS17|ETS16")
+						ui += settings.tpg.testItemByte("0x0C","ETS_RX_SEL","RXMUX4|RXMUX3|RXMUX2|RXMUX1|RXMUX0")
+						ui += settings.tpg.testItemByte("0x0D","ANA_MEAS4_SEL","ANAMUX5|ANAMUX4|ANAMUX3|ANAMUX2|ANAMUX1|ANAMUX0")
 						ui += 
 					"</table></td><td>&nbsp;</td></tr>
 						<tr>
@@ -173,54 +175,46 @@ end
 
 post '/' do
 	settings.sharedMem = ""
-	SharedMemoryGpio2.Initialize()
-	fromSharedMem = SharedMemoryGpio2.GetData()
-	if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
-		parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
-	else
-		parsed = Hash.new
-	end
-	
 	if params[:_0x00] == "Update"
 		# settings.sharedMem += "0x00 : Hex value = '#{params[:hdn0x00]}'"
-		parsed["0x00"] = params[:hdn0x00]
+		settings.tpg.gpio2.setGPIO2(0x00.to_i,params[:hdn0x00])
 	elsif params[:_0x01] == "Update"
-		# settings.sharedMem += "0x01 : Hex value = '#{params[:hdn0x01]}'"
-		parsed["0x01"] = params[:hdn0x01]
+		settings.sharedMem += "0x01 : Hex value = '#{params[:hdn0x01]}'"
+		settings.tpg.gpio2.setGPIO2(0x01.to_i,params[:hdn0x01])
 	elsif params[:_0x02] == "Update"
 		# settings.sharedMem += "0x02 : Hex value = '#{params[:hdn0x02]}'"
-		parsed["0x02"] = params[:hdn0x02]
+		settings.tpg.gpio2.setGPIO2(0x02.to_i,params[:hdn0x02])
 	elsif params[:_0x03] == "Update"
 		# settings.sharedMem += "0x03 : Hex value = '#{params[:hdn0x03]}'"
-		parsed["0x03"] = params[:hdn0x03]
+		settings.tpg.gpio2.setGPIO2(0x03.to_i,params[:hdn0x03])
 	elsif params[:_0x04] == "Update"
 		# settings.sharedMem += "0x04 : Hex value = '#{params[:hdn0x04]}'"
-		parsed["0x04"] = params[:hdn0x04]
+		settings.tpg.gpio2.setGPIO2(0x04.to_i,params[:hdn0x04])
 	elsif params[:_0x05] == "Update"
 		# settings.sharedMem += "0x05 : Hex value = '#{params[:hdn0x05]}'"
-		parsed["0x05"] = params[:hdn0x05]
+		settings.tpg.gpio2.setGPIO2(0x05.to_i,params[:hdn0x05])
 	elsif params[:_0x06] == "Update"
 		# settings.sharedMem += "0x06 : Hex value = '#{params[:hdn0x06]}'"
-		parsed["0x06"] = params[:hdn0x06]
+		settings.tpg.gpio2.setGPIO2(0x06.to_i,params[:hdn0x06])
 	elsif params[:_0x07] == "Update"
 		# settings.sharedMem += "0x07 : Hex value = '#{params[:hdn0x07]}'"
-		parsed["0x07"] = params[:hdn0x07]
+		settings.tpg.gpio2.setGPIO2(0x07.to_i,params[:hdn0x07])
 	elsif params[:_0x08] == "Update"
 		# settings.sharedMem += "0x08 : Hex value = '#{params[:hdn0x08]}'"
-		parsed["0x08"] = params[:hdn0x08]
+		settings.tpg.gpio2.setGPIO2(0x08.to_i,params[:hdn0x08])
 	elsif params[:_0x09] == "Update"
 		# settings.sharedMem += "0x09 : Hex value = '#{params[:hdn0x09]}'"
-		parsed["0x09"] = params[:hdn0x09]
+		settings.tpg.gpio2.setGPIO2(0x09.to_i,params[:hdn0x09])
 	elsif params[:_0x0A] == "Update"
 		# settings.sharedMem += "0x0A : Hex value = '#{params[:hdn0x0A]}'"
-		parsed["0x0A"] = params[:hdn0x0A]
+		settings.tpg.gpio2.setGPIO2(0x0A.to_i,params[:hdn0x0A])
 	elsif params[:_0x0B] == "Update"
 		# settings.sharedMem += "0x0B : Hex value = '#{params[:hdn0x0B]}'"
-		parsed["0x0B"] = params[:hdn0x0B]
+		settings.tpg.gpio2.setGPIO2(0x0B.to_i,params[:hdn0x0B])
 	end	
 	# settings.sharedMem += "Contented of shared memory: '#{parsed.to_json}'"
-	SharedMemoryGpio2.WriteData("BbbShared"+parsed.to_json)
 	settings.sharedMem += uiTest
+	settings.tpg.resetRowCount
 	uiDisplay = "#{settings.sharedMem}"
 end
 

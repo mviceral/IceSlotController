@@ -6,9 +6,10 @@ require_relative "GpioTestPanel_common"
 set :port, 4567
 require 'json'
 require_relative '../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryGPIO2'
+require_relative '../BBB_GPIO2 Interface Ruby/GPIO2'
 
 def uiTest
-	tpg = TestPanelGui.new("#998899","#996699","#3399ff","#33BBff")
+	tpg = TestPanelGui.new("#998899","#996699","#3399ff","#33BBff",GPIO2.new)
 	ui = "
 	<style>
 	table#main {

@@ -7,14 +7,24 @@ require_relative '../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryGPIO2'
 
 class TestPanelGui
 
-	def initialize (rC1Param,rC2Param,rCR1Param,rCR2Param)
-		SharedMemoryGpio2.Initialize()
+	def initialize (rC1Param,rC2Param,rCR1Param,rCR2Param, gpio2Param)
+		@gpio2 = gpio2Param
 		@rowNumber = 3
 		@readRowNumber = 3
 		@rowColor1 = rC1Param
 		@rowColor2 = rC2Param
 		@rowColorRead1 = rCR1Param
 		@rowColorRead2 = rCR2Param
+	end
+	
+	def resetRowCount
+		# This way, the colors will not keep switching every screen upgrade.
+		@rowNumber = 3
+		@readRowNumber = 3
+	end
+	
+	def gpio2
+		return @gpio2
 	end
 	
 	def getRowReadNumber
@@ -117,18 +127,8 @@ class TestPanelGui
 		# End of def getBitLables
 	end
 	
-	def hexToDisplay(addrParam)
-		parsed = Hash.new
-		fromSharedMem = SharedMemoryGpio2.GetData()
-		if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
-			#  The shared memory has some legit data in it.
-			# settings.sharedMem += "After trimming out the tag: '#{fromSharedMem["BbbShared".length..-1]}'.<br>"
-			parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
-		else
-			# settings.sharedMem += "Shared memory has does NOT have a valid data.<br>"
-		end
-	
-		hex_tbr = parsed[addrParam].to_i.to_s(16)
+	def hexToDisplay(addrParam)	
+		hex_tbr = @gpio2.getGPIO2(addrParam[2..-1].to_i(16).to_i).to_i.to_s(16)
 		if hex_tbr.length<2
 			hex_tbr = "0"+hex_tbr
 		end
@@ -137,19 +137,8 @@ class TestPanelGui
 	
 	def dataBitsToDisplay(addrParam)
     dataBitsToDisplay_tbr = ""
-		fromSharedMem = SharedMemoryGpio2.GetData()
-		if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
-			#  The shared memory has some legit data in it.
-			# settings.sharedMem += "After trimming out the tag: '#{fromSharedMem["BbbShared".length..-1]}'.<br>"
-			# dataBitsToDisplay_tbr = "Has some data.<br>"
-			parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
-		else
-			# settings.sharedMem += "Shared memory has does NOT have a valid data.<br>"
-			parsed = Hash.new
-			# dataBitsToDisplay_tbr = "Has NO data.<br>"
-		end
 		
-		bits = parsed[addrParam].to_i.to_s(2)
+		bits = @gpio2.getGPIO2(addrParam[2..-1].to_i(16).to_i).to_i.to_s(2)
     while bits.length < 8
         bits = "0"+bits
     end
