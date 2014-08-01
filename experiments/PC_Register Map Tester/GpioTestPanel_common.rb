@@ -19,6 +19,89 @@ class TestPanelGui
 	
 	def javaScript
 		tbr = "
+				function validateForm() {
+					/*
+						var theForm = document.forms[\"genericform\"];
+						
+						var _0x00Input = theForm[\"_0x00\"]
+						var _0x05Input = theForm[\"_0x05\"]
+						var _0x0CInput = theForm[\"_0x0C\"]
+						var _0x0DInput = theForm[\"_0x0D\"]
+												
+						if ( _0x00Input != undefined && _0x00Input.value == \"Update\") {
+							var x00 = parseInt(document.forms[\"genericform\"][\"hdn0x00\"].value);
+							if ( (0<=x00 && x00 <=255) == false) {
+								alert(\"Register 0x00 must be less that 256.\");
+								return false;
+							}
+						}
+						
+						if ( _0x05Input != undefined && _0x05Input.value == \"Update\") {
+							var x05 = parseInt(document.forms[\"genericform\"][\"hdn0x05\"].value);
+							if ( (0<=x05 && x05<=255) == false) {
+								alert(\"Register 0x05 must be less that 256.\");
+								return false;
+							}						
+						} 
+						
+						if ( _0x0CInput != undefined && _0x0CInput.value == \"Update\") {
+							var x0C = parseInt(document.forms[\"genericform\"][\"hdn0x0C\"].value);
+							if ( (0<=x0C && x0C<=24) == false) {
+								alert(\"Register 0x0C must be less that 24.\");
+								return false;
+							}
+						}
+						
+						if ( _0x0DInput != undefined && _0x0DInput.value == \"Update\") {
+							var x0D = parseInt(document.forms[\"genericform\"][\"hdn0x0D\"].value);
+							if ( (0<=x0D && x0D<=48) == false) {
+								alert(\"Register 0x0C must be less that 48.\");
+								return false;
+							}
+						}						
+					*/
+						return true;
+				}
+						
+				function checkByteValue(valuePara) {
+						if ( valuePara == \"0x00\" ) {
+							var x00 = parseInt(document.forms[\"genericform\"][\"hdn0x00\"].value);
+							document.getElementById(\"value\").value = x00;
+							if ( (0<=x00 && x00 <=255) == false) {
+								alert(\"Register 0x00 must be less that 256.\");
+								return false;
+							}							
+						}
+						
+						if ( valuePara == \"0x05\" ) {
+							var x05 = parseInt(document.forms[\"genericform\"][\"hdn0x05\"].value);
+							document.getElementById(\"value\").value = x05;
+							if ( (0<=x05 && x05<=255) == false) {
+								alert(\"Register 0x05 must be less that 256.\");
+								return false;
+							}						
+						} 
+						
+						if ( valuePara == \"0x0C\" ) {
+							var x0C = parseInt(document.forms[\"genericform\"][\"hdn0x0C\"].value);
+							document.getElementById(\"value\").value = x0C;
+							if ( (0<=x0C && x0C<=24) == false) {
+								alert(\"Register 0x0C must be less that 24.\");
+								return false;
+							}
+						}
+						
+						if ( valuePara == \"0x0D\" ) {
+							var x0D = parseInt(document.forms[\"genericform\"][\"hdn0x0D\"].value);
+							document.getElementById(\"value\").value = x0D;
+							if ( (0<=x0D && x0D<=48) == false) {
+								alert(\"Register 0x0D must be less that 48.\");
+								return false;
+							}
+						}						
+						document.getElementById(\"addr\").value = valuePara;
+				}
+
 				function toggleCheckbox(element)
 				{
 					// alert('element.name.length='+element.name.length+'');
@@ -242,22 +325,30 @@ class TestPanelGui
 		testItemBit_tbr += "<tr id=\"main\" bgcolor=\"#{@rowColor}\">
 				<td id=\"main\" rowspan=\"3\" valign=\"center\"><center><font size=\"1\">#{addrParam}</font></center></td>
 				<td id=\"main\" rowspan=\"3\" valign=\"center\"><center><font size=\"1\">#{addrName}</font></center></td>
-				<td id=\"main\" rowspan=\"2\" valign=\"center\"><center><button type=\"button\" style=\"height:20px; width:50px; font-size:10px\">Update</button></center></td>"
+				<td id=\"main\" rowspan=\"2\" valign=\"center\">
+					<center>
+						<button 
+							style=\"height:20px; width:50px; font-size:10px\" 							
+							onclick=\"checkByteValue('#{addrParam}')\" />
+							Update
+							</button>
+					</center>
+				</td>"
 		testItemBit_tbr += getBitLables(bitLabelsParam)
 		testItemBit_tbr += "
 				<td id=\"main\"><center></center></td>			
 			</tr>
 			<tr id=\"main\" bgcolor=\"#{@rowColor}\">"			
-		testItemBit_tbr += dataBitsToDisplay(addrParam)
+		testItemBit_tbr += "<td/><td/><td/><td/><td/><td/><td/><td align=\"right\"><font size=\"1\">(int-&gt;)</font></td>"
 		testItemBit_tbr += "
 				<td id=\"main\">
 					<center>
 						<input 
 							type=\"text\" 
 							id=\"text\" 
-							name=\"#{addrParam}\" 
-							style=\"height:20px; width:50px; font-size:10px\" />
-					<input type=\"hidden\" name=\"hdn#{addrParam}\" id=\"hdn#{addrParam}\" value=\"\" />
+							name=\"hdn#{addrParam}\" 
+							style=\"height:20px; width:50px; font-size:10px\"
+							/>
 					</center>
 				</td>			
 			</tr>"

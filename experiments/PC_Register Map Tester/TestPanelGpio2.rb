@@ -14,7 +14,9 @@ def uiTest
 	ui = "
 	<html>
 		<body>
-			<form action=\"/\" method=\"POST\">
+			<form 
+				name=\"genericform\" 
+				action=\"/\" method=\"POST\" onsubmit=\"return validateForm();\">
 				<style>
 				table#main {
 						border-collapse: collapse;
@@ -84,13 +86,14 @@ def uiTest
 							<td id=\"main\" width=\"3%\" ><center><font size=\"1\">Bit 0</font></center></td>			
 							<td id=\"main\" width=\"3%\" ><center><font size=\"1\">HEX</font></center></td>			
 						</tr>"
-						ui += settings.tpg.readItemBit("0x00","SLOTADDR","SLOT1|SLOT0|SYS5|SYS4|SYS3|SYS2|SYS1|SYS0")
-						ui += settings.tpg.testItemBit("0x00","RESET_ALL","RST")	
+						ui += settings.tpg.readItemBit(
+							"0x00",
+							"SLOTADDR/<br>RESET_ALL",
+							"SLOT1|SLOT0|SYS5|SYS4|SYS3|SYS2|SYS1|SYS0/<br>RST")
 						ui += settings.tpg.testItemBit("0x01","STAT_LED","LEDEN| | | |LED3|LED2|LED1|LED0")	
-						ui += settings.tpg.testItemBit("0x02","WXT_CLEAR_LATCH","CLEAR")
 						ui += settings.tpg.readItemBit(
 							"0x02",
-							"EXT_INPUTS","FANT2B|FANT2A|FANT1B|FANT1A|SENSR2|SENSR1|USRSW2|USRSW1")
+							"EXT_INPUTS/<br>WXT_CLEAR_LATCH","FANT2B|FANT2A|FANT1B|FANT1A|SENSR2|SENSR1|USRSW2|USRSW1/<br>CLEAR")
 						ui += settings.tpg.testItemBit("0x03","PS_ENABLE","P12V|N5V|P5V|PS6|PS8|PS9|PS10")	
 						ui += settings.tpg.testItemBit("0x04","SL_CNTL_EXT","POWER| |FAN1|FAN2|BUZR|LEDRED|LEDYEL|LEDGRN")	
 						ui += settings.tpg.testItemByte("0x05","SL_FAN_PWM","PWM7|PWM6|PWM5|PWM4|PWM3|PWM2|PWM1|PWM0")
@@ -115,6 +118,8 @@ def uiTest
 				<script type=\"text/javascript\">
 				// setInterval(function(){loadXMLDoc()},10000); 
 				</script>
+				<input type=\"hidden\" id=\"addr\" name=\"addr\" value=\"\">
+				<input type=\"hidden\" id=\"value\" name=\"value\" value=\"\">
 			</form>
 		</body>
 	</html>
@@ -124,12 +129,16 @@ def uiTest
 end
 
 post '/' do
+	settings.tpg.resetRowCount
 	settings.sharedMem = ""
-	if params[:_0x00] == "Update"
+	if params[:addr].length > 0
+		# settings.sharedMem += "params[:addr]=#{params[:addr]}, params[:value]=#{params[:value]}\n"
+		settings.tpg.gpio2.setGPIO2(params[:addr][2..-1].to_i(16).to_i,params[:value])
+	elsif params[:_0x00] == "Update"
 		# settings.sharedMem += "0x00 : Hex value = '#{params[:hdn0x00]}'"
 		settings.tpg.gpio2.setGPIO2(0x00.to_i,params[:hdn0x00])
 	elsif params[:_0x01] == "Update"
-		settings.sharedMem += "0x01 : Hex value = '#{params[:hdn0x01]}'"
+		# settings.sharedMem += "0x01 : Hex value = '#{params[:hdn0x01]}'"
 		settings.tpg.gpio2.setGPIO2(0x01.to_i,params[:hdn0x01])
 	elsif params[:_0x02] == "Update"
 		# settings.sharedMem += "0x02 : Hex value = '#{params[:hdn0x02]}'"
@@ -141,7 +150,7 @@ post '/' do
 		# settings.sharedMem += "0x04 : Hex value = '#{params[:hdn0x04]}'"
 		settings.tpg.gpio2.setGPIO2(0x04.to_i,params[:hdn0x04])
 	elsif params[:_0x05] == "Update"
-		# settings.sharedMem += "0x05 : Hex value = '#{params[:hdn0x05]}'"
+		settings.sharedMem += "0x05 : Hex value = '#{params[:hdn0x05]}'"
 		settings.tpg.gpio2.setGPIO2(0x05.to_i,params[:hdn0x05])
 	elsif params[:_0x06] == "Update"
 		# settings.sharedMem += "0x06 : Hex value = '#{params[:hdn0x06]}'"
@@ -161,14 +170,20 @@ post '/' do
 	elsif params[:_0x0B] == "Update"
 		# settings.sharedMem += "0x0B : Hex value = '#{params[:hdn0x0B]}'"
 		settings.tpg.gpio2.setGPIO2(0x0B.to_i,params[:hdn0x0B])
+	elsif params[:_0x0C] == "Update"
+		settings.sharedMem += "0x0C : Hex value = '#{params[:hdn0x0C]}'"
+		settings.tpg.gpio2.setGPIO2(0x0C.to_i,params[:hdn0x0C])
+	elsif params[:_0x0D] == "Update"
+		settings.sharedMem += "0x0D : Hex value = '#{params[:hdn0x0D]}'"
+		settings.tpg.gpio2.setGPIO2(0x0D.to_i,params[:hdn0x0D])
 	end	
 	# settings.sharedMem += "Contented of shared memory: '#{parsed.to_json}'"
 	settings.sharedMem += uiTest
-	settings.tpg.resetRowCount
 	uiDisplay = "#{settings.sharedMem}"
 end
 
 get '/' do
+	settings.tpg.resetRowCount
 	uiDisplay = uiTest
 end
 
@@ -176,11 +191,4 @@ get '/about' do
 	'A little about me.'
 end
 
-get '/form' do	
-	uiDisplay = "A You said '#{params[:submit]}'" + uiTest
-end
-
-post '/form' do	
-	uiDisplay = "B You said '#{params[:submit]}'" + uiTest
-end
 

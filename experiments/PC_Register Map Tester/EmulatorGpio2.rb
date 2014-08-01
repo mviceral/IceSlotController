@@ -14,7 +14,9 @@ def uiTest
 	ui = "
 	<html>
 		<body>
-			<form action=\"/\" method=\"POST\">
+			<form 
+				name=\"genericform\" 
+				action=\"/\" method=\"POST\" onsubmit=\"return validateForm();\">
 				<style>
 				table#main {
 						border-collapse: collapse;
@@ -118,6 +120,8 @@ def uiTest
 				<script type=\"text/javascript\">
 				<!-- setInterval(function(){loadXMLDoc()},10000);  -->
 				</script>
+				<input type=\"hidden\" id=\"addr\" name=\"addr\" value=\"\">
+				<input type=\"hidden\" id=\"value\" name=\"value\" value=\"\">
 			</form>
 		</body>
 	</html>
@@ -132,12 +136,17 @@ get '/about' do
 end
 
 get '/' do 
+	settings.tpg.resetRowCount
 	uiDisplay = uiTest
 end
 
 post '/' do
+	settings.tpg.resetRowCount
 	settings.sharedMem = ""
-	if params[:_0x00] == "Update"
+	if params[:addr].length > 0
+		# settings.sharedMem += "params[:addr]=#{params[:addr]}, params[:value]=#{params[:value]}\n"
+		settings.tpg.gpio2.setGPIO2(params[:addr][2..-1].to_i(16).to_i,params[:value])
+	elsif params[:_0x00] == "Update"
 		# settings.sharedMem += "0x00 : Hex value = '#{params[:hdn0x00]}'"
 		settings.tpg.gpio2.setGPIO2(0x00.to_i,params[:hdn0x00])
 	elsif params[:_0x01] == "Update"
@@ -173,9 +182,14 @@ post '/' do
 	elsif params[:_0x0B] == "Update"
 		# settings.sharedMem += "0x0B : Hex value = '#{params[:hdn0x0B]}'"
 		settings.tpg.gpio2.setGPIO2(0x0B.to_i,params[:hdn0x0B])
+	elsif params[:_0x0C] == "Update"
+		# settings.sharedMem += "0x0B : Hex value = '#{params[:hdn0x0B]}'"
+		settings.tpg.gpio2.setGPIO2(0x0C.to_i,params[:hdn0x0C])
+	elsif params[:_0x0D] == "Update"
+		# settings.sharedMem += "0x0B : Hex value = '#{params[:hdn0x0B]}'"
+		settings.tpg.gpio2.setGPIO2(0x0D.to_i,params[:hdn0x0D])
 	end	
 	settings.sharedMem += uiTest
-	settings.tpg.resetRowCount
 	uiDisplay = "#{settings.sharedMem}"
 end
 
