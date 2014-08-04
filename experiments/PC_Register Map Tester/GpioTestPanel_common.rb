@@ -3,7 +3,7 @@
 # require 'forwardable'
 
 require 'json'
-require_relative '../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryGPIO2'
+require_relative '../PC_SharedMemTestPanel Ruby/SharedMemoryGPIO2'
 
 class TestPanelGui
 
@@ -23,16 +23,18 @@ class TestPanelGui
 		# 
 		#
 		begin
-			latestBbbState = RestClient.post "http://192.168.7.1:9292/v1/migrations/Duts", {Duts:"#	
-			{sampledDataParam}" }.to_json, :content_type => :json, :accept => :json
-			
+			latestBbbState = RestClient.get "http://192.168.7.2:8000/v1/bbbsetter/"
 			#
 			# latestBbbState is what you save into the share memory in the PC.
 			#
-			rescue => e
-			e.response
-        end	
-			end
+			result = JSON.parse(latestBbbState.to_str)
+			registers = result["registers"]
+			@sharedGpio2 = SharedMemoryGpio2.new
+			@sharedGpio2.WriteData("BbbShared"+registers.to_json)
+			readMemory = @sharedGpio2.GetData()
+			puts "readMemory = #{readMemory}"
+		end
+	end	
 	
 	def javaScript
 		tbr = "
@@ -298,7 +300,7 @@ class TestPanelGui
 	end
 	
 	def hexToDisplay(addrParam)	
-		hex_tbr = @gpio2.getGPIO2(addrParam[2..-1].to_i(16).to_i).to_i.to_s(16)
+		hex_tbr = @gpio2.getGPIO2(addrParam[2..-1]).to_i.to_s(16)
 		if hex_tbr.length<2
 			hex_tbr = "0"+hex_tbr
 		end
@@ -308,7 +310,7 @@ class TestPanelGui
 	def dataBitsToDisplay(addrParam)
     dataBitsToDisplay_tbr = ""
 		
-		bits = @gpio2.getGPIO2(addrParam[2..-1].to_i(16).to_i).to_i.to_s(2)
+		bits = @gpio2.getGPIO2(addrParam[2..-1]).to_i.to_s(2)
     while bits.length < 8
         bits = "0"+bits
     end
