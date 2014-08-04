@@ -10,7 +10,9 @@ require_relative '../BBB_GPIO2 Interface Ruby/GPIO2'
 set :port, 4568
 set :sharedMem, ""
 set :tpg, TestPanelGui.new("#00ffbb","#99ffbb","#ccaa33","#cccc33",GPIO2.new)
+
 def uiTest
+	settings.tpg.getLatestBbbState
 	ui = "
 	<html>
 		<body>

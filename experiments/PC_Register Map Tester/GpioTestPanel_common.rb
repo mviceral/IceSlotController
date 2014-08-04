@@ -17,6 +17,23 @@ class TestPanelGui
 		@rowColorRead2 = rCR2Param
 	end
 	
+	def getLatestBbbState
+		#
+		# Get the latest BBB register values.
+		# 
+		#
+		begin
+			latestBbbState = RestClient.post "http://192.168.7.1:9292/v1/migrations/Duts", {Duts:"#	
+			{sampledDataParam}" }.to_json, :content_type => :json, :accept => :json
+			
+			#
+			# latestBbbState is what you save into the share memory in the PC.
+			#
+			rescue => e
+			e.response
+        end	
+			end
+	
 	def javaScript
 		tbr = "
 				function validateForm() {
