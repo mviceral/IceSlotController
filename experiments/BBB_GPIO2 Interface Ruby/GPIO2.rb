@@ -4,45 +4,44 @@
 #
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 require_relative 'Port2Interface.so'
+require_relative '../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryGPIO2.rb'
 require 'json'
 
 #@Removed comment to run on real machine
-# require 'beaglebone'
+require 'beaglebone'
 # require 'singleton'
 # require 'forwardable'
 
 
 class GPIO2
 #@Removed 2 comment to run on real machine
-# include Beaglebone
-# include Port2Interface
-  # include Singleton
+include Beaglebone
+include Port2Interface
+# include Singleton
   
   def initialize
 #@Removed comment to run on real machine
-=begin
-      GPIOPin.new(:P8_45, :IN) 
-      GPIOPin.new(:P8_46, :IN) 
-      GPIOPin.new(:P8_43, :IN) 
-      GPIOPin.new(:P8_44, :IN) 
-      GPIOPin.new(:P8_41, :IN) 
-      GPIOPin.new(:P8_42, :IN) 
-      GPIOPin.new(:P8_39, :IN) 
-      GPIOPin.new(:P8_40, :IN) 
-=end
-	
+  GPIOPin.new(:P8_45, :IN) 
+  GPIOPin.new(:P8_46, :IN) 
+  GPIOPin.new(:P8_43, :IN) 
+  GPIOPin.new(:P8_44, :IN) 
+  GPIOPin.new(:P8_41, :IN) 
+  GPIOPin.new(:P8_42, :IN) 
+  GPIOPin.new(:P8_39, :IN) 
+  GPIOPin.new(:P8_40, :IN) 
+
 #@Removed comment to run on real machine
-#initPort2()
+    initPort2()
     
     # Shared memory for emulator.
     @emulatorEnabled = true
-		@sharedGpio2 = SharedMemoryGpio2.new
-		fromSharedMem = @sharedGpio2.GetData()
-		if fromSharedMem[0.."BbbShared".length-1] != "BbbShared"
-			parsed = Hash.new
-			@sharedGpio2.WriteData("BbbShared"+parsed.to_json)
-		end
-		# End of 'def initialize'
+	@sharedGpio2 = SharedMemoryGpio2.new
+	fromSharedMem = @sharedGpio2.GetData()
+	if fromSharedMem[0.."BbbShared".length-1] != "BbbShared"
+		parsed = Hash.new
+		@sharedGpio2.WriteData("BbbShared"+parsed.to_json)
+	end
+	# End of 'def initialize'
   end 
   
   def setBitOff(addrParam, dataParam)
@@ -65,7 +64,7 @@ class GPIO2
   		# file.write("returnedValue = '#{returnedValue}'.\n")
 		end
 #@Removed comment to run on real machine
-#sendToPort2(addrParam,dataParam)
+    sendToPort2(addrParam,dataParam)
       # End of 'def setGPIO2(addrParam, dataParam)'
   end
   
@@ -75,28 +74,28 @@ class GPIO2
   		# file.write("Within 'def getGPIO2(addrParam)'.\n");
   		# file.write("addrParam.class=#{addrParam.class}\n");
   		if @emulatorEnabled
-				fromSharedMem = @sharedGpio2.GetData()
-				if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
-					#  The shared memory has some legit data in it.
-					# settings.sharedMem += "After trimming out the tag: '#{fromSharedMem["BbbShared".length..-1]}'.<br>"
-					# file.write("Shared memory is enabled.\n");
-					parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
-					parsed.each do |key, array|
-						# file.write("#{key}----- key.class='#{key.class}'")
-						# file.write("array='#{array}'")						
-					end  		
-					# file.write("parsed = '#{parsed}'\n") 
-					# file.write("getGPIO2: addrParam=#{addrParam}  parsed[addrParam.to_s]=#{parsed[addrParam.to_s]}.\n") 
-				else
-					# file.write("Shared memory is NOT enabled.");
-					parsed = Hash.new
-				end
-				# file.write("getGPIO2: addrParam=#{addrParam}, addrParam.class='#{addrParam.class}' parsed[addrParam]=#{parsed[addrParam]}.\n") 
+			fromSharedMem = @sharedGpio2.GetData()
+			if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
+				#  The shared memory has some legit data in it.
+				# settings.sharedMem += "After trimming out the tag: '#{fromSharedMem["BbbShared".length..-1]}'.<br>"
+				# file.write("Shared memory is enabled.\n");
+				parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
+				parsed.each do |key, array|
+					# file.write("#{key}----- key.class='#{key.class}'")
+					# file.write("array='#{array}'")						
+				end  		
+				# file.write("parsed = '#{parsed}'\n") 
+				# file.write("getGPIO2: addrParam=#{addrParam}  parsed[addrParam.to_s]=#{parsed[addrParam.to_s]}.\n") 
+			else
+				# file.write("Shared memory is NOT enabled.");
+				parsed = Hash.new
+			end
+			# file.write("getGPIO2: addrParam=#{addrParam}, addrParam.class='#{addrParam.class}' parsed[addrParam]=#{parsed[addrParam]}.\n") 
 	  		return parsed[addrParam.to_s]
 	  	else
 #@Removed comment to run on real machine
-#return getFromPort2(addrParam)
-  		end
+            return getFromPort2(addrParam)
+  	end
   end
   
   def getImagesOf16Addrs

@@ -2,6 +2,9 @@ require 'sqlite3'
 require 'beaglebone'
 include Beaglebone
 
+puts "Code not complete.  You must have a copy of openTtyO1Port into the local subdirectory."
+exit
+
 #
 # To use, just put in the text you want to send enclosed in text.  See example line below.
 # ->ruby writeUART1.rb "This is the text you want to send to the ThermalSite,"<-
