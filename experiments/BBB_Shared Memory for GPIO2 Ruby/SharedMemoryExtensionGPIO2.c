@@ -8,7 +8,7 @@
 /*  3*842 The size of the memory we want to allocate case there are long error messages in the ThermalSite firmware.  382 is the current
     size of the data retrieved from BBB.
 */
-#define SHMSZ 2526
+#define SHMSZ 256
 
 unsigned char initialized = 0;
 key_t key;

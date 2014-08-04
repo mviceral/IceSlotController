@@ -3,7 +3,8 @@ require 'beaglebone'
 include Beaglebone
 
 baudrateToUse = 115200 # baud rate options are 9600, 19200, and 115200
-=begin
+puts "Code not complete.  You must have a copy of openTtyO1Port into the local subdirectory."
+exit
     puts 'Check 1 of 7 - cd /lib/firmware'
     system("cd /lib/firmware")
     
@@ -18,7 +19,6 @@ baudrateToUse = 115200 # baud rate options are 9600, 19200, and 115200
     
     puts "Check 5 of 7 - stty -F /dev/ttyO1 #{baudrateToUse}"
 	system("stty -F /dev/ttyO1 #{baudrateToUse}")
-=end
 
 puts "Check 6 of 7 - uart1 = UARTDevice.new(:UART1, #{baudrateToUse})"
 uart1 = UARTDevice.new(:UART1, baudrateToUse)
