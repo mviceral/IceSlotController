@@ -12,7 +12,6 @@ require 'beaglebone'
 # require 'singleton'
 # require 'forwardable'
 
-
 class GPIO2
 #@Removed 2 comment to run on real machine
 include Beaglebone
@@ -31,16 +30,12 @@ include Port2Interface
   GPIOPin.new(:P8_40, :IN) 
 
 #@Removed comment to run on real machine
+    puts "A initPort2() got called - #{__LINE__}-#{__FILE__}"
     initPort2()
+    puts "B initPort2() got called - #{__LINE__}-#{__FILE__}"
     
     # Shared memory for emulator.
     @emulatorEnabled = true
-	@sharedGpio2 = SharedMemoryGpio2.new
-	fromSharedMem = @sharedGpio2.GetData()
-	if fromSharedMem[0.."BbbShared".length-1] != "BbbShared"
-		parsed = Hash.new
-		@sharedGpio2.WriteData("BbbShared"+parsed.to_json)
-	end
 	# End of 'def initialize'
   end 
   
@@ -52,50 +47,14 @@ include Port2Interface
   end
   
   def setGPIO2(addrParam, dataParam)
-  	# Write to shared mem
-		fromSharedMem = @sharedGpio2.GetData()
-		parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
-		# file = File.open("/tmp/setGPIO.txt", 'a')
-		# file.write("setGPIO2: addrParam=#{addrParam}, addrParam.class=#{addrParam.class}, dataParam=#{dataParam}\n")
-		if @emulatorEnabled
-			# file.write("@emulatorEnabled is true.\n") 
-  		parsed[addrParam.to_s] = dataParam
-  		returnedValue = @sharedGpio2.WriteData("BbbShared"+parsed.to_json)
-  		# file.write("returnedValue = '#{returnedValue}'.\n")
-		end
-#@Removed comment to run on real machine
+    puts "A sendToPort2() got called - #{__LINE__}-#{__FILE__}"
     sendToPort2(addrParam,dataParam)
-      # End of 'def setGPIO2(addrParam, dataParam)'
+    puts "B sendToPort2() got called - #{__LINE__}-#{__FILE__}"
+    # End of 'def setGPIO2(addrParam, dataParam)'
   end
   
   def getGPIO2(addrParam)
-  		# write to emulator
-  		# file = File.open("/tmp/setGPIO.txt", 'a') 
-  		# file.write("Within 'def getGPIO2(addrParam)'.\n");
-  		# file.write("addrParam.class=#{addrParam.class}\n");
-  		if @emulatorEnabled
-			fromSharedMem = @sharedGpio2.GetData()
-			if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
-				#  The shared memory has some legit data in it.
-				# settings.sharedMem += "After trimming out the tag: '#{fromSharedMem["BbbShared".length..-1]}'.<br>"
-				# file.write("Shared memory is enabled.\n");
-				parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
-				parsed.each do |key, array|
-					# file.write("#{key}----- key.class='#{key.class}'")
-					# file.write("array='#{array}'")						
-				end  		
-				# file.write("parsed = '#{parsed}'\n") 
-				# file.write("getGPIO2: addrParam=#{addrParam}  parsed[addrParam.to_s]=#{parsed[addrParam.to_s]}.\n") 
-			else
-				# file.write("Shared memory is NOT enabled.");
-				parsed = Hash.new
-			end
-			# file.write("getGPIO2: addrParam=#{addrParam}, addrParam.class='#{addrParam.class}' parsed[addrParam]=#{parsed[addrParam]}.\n") 
-	  		return parsed[addrParam.to_s]
-	  	else
-#@Removed comment to run on real machine
-            return getFromPort2(addrParam)
-  	end
+    return getFromPort2(addrParam)
   end
   
   def getImagesOf16Addrs

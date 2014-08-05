@@ -8,7 +8,7 @@
 /*  3*842 The size of the memory we want to allocate case there are long error messages in the ThermalSite firmware.  382 is the current
     size of the data retrieved from BBB.
 */
-#define SHMSZ 256
+#define SHMSZ 2526
 
 unsigned char initialized = 0;
 key_t key;
@@ -112,7 +112,7 @@ void method_InitializeSharedMemory(VALUE self) {
      * "1234".
      */
     // key = 1234; // 1234 key is for the BBB sender and sampler
-    key = 2345;    // 2345 key is for the GPIO2 input copier into shared memory so a website can view the data.
+    key = 2346;    // 2345 key is for the GPIO2 input copier into shared memory so a website can view the data.
 
     /*
      * Create the segment.

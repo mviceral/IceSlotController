@@ -16,7 +16,7 @@ class SharedMemoryGpio2
     def initialize()
         #   - This function initialized the shared memory variables.  If not called, the functions below will be rendered 
         #   useless.
-        # puts "SharedMemoryGpio2 got called.  Within Initialize()."
+        puts "SharedMemoryGpio2 got called.  Within Initialize()."
         InitializeSharedMemory()
     end 
 
@@ -26,13 +26,17 @@ class SharedMemoryGpio2
         return GetDataFromSharedMemory()
     end
     
-    def WriteData(stringParam)
+    def WriteData(stringParam,line,file)
         #   - Writes data to the shared memory.
         #       return values:
         #       0 - no error writing to memory.
         #       1 - not initialized.  Run the function InitializeVariables(), first.
         #       2 - sent String too long.  Not all data written in.
-        return WriteDataToSharedMemory(stringParam)
+        puts "Writing to shared mem : '#{stringParam}' #{line}-#{file}"
+        resp = WriteDataToSharedMemory(stringParam)
+        # puts "Responded with resp = '#{resp}'"
+        puts "What's written = '#{GetDataFromSharedMemory()}'"
+        return resp
     end 
     
 =begin
