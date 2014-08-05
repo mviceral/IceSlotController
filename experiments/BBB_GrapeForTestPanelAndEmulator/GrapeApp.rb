@@ -4,7 +4,7 @@ require 'grape'
 #require 'forwardable'
 require 'pp'
 require 'sqlite3'
-require_relative "../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryGPIO2"
+require_relative "../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryBbbGpio2"
 require_relative "../BBB_GPIO2 Interface Ruby/GPIO2"
 require 'json'
 
@@ -22,7 +22,7 @@ module BbbSetterModule
 
 		def initialize
 		    puts "BbbSetter initialize got called."
-          	@sharedGpio2 = SharedMemoryGpio2.new
+          	@sharedGpio2 = SharedMemoryBbbGpio2.new
           	@gpio2 = GPIO2.new
           	fromSharedMem = @sharedGpio2.GetData()
 		    puts "A fromSharedMem=#{fromSharedMem}."
@@ -49,7 +49,7 @@ module BbbSetterModule
 
 		def WriteData(dataParam)
 		    puts "WriteData got called."
-		    return @sharedGpio2.WriteData(dataParam,__LINE__,__FILE__)
+		    return @sharedGpio2.WriteData(dataParam)
 		end
 
 		# This bit of magic makes it so you don't have to say
