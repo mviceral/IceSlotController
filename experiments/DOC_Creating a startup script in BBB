@@ -1,0 +1,56 @@
+# ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ---------------
+The purpose of this code is to setup the BBB to start up a script to change the IP address to something that is 
+specified.
+
+The notes below were derived from this website: 
+http://kezhong.wordpress.com/2011/11/19/creating-my-own-systemd-service-files-on-fedora-16x86_64/
+
+Below is the webpage content:
+Creating my own systemd service files on Fedora 16(x86_64)
+
+systemd is a replacement for the System V init daemon for Linux. It is intended to provide a better framework for expressing services’ dependencies, allow more work to be done in parallel at system startup, and to reduce shell overhead. It has been used starting with Fedora 15.
+
+On my environment, the system is Fedora 16(X86_64). I want to send my radius log to another web server per 5 second so as to monitor it conveniently.
+
+Create the script file
+# vi /usr/local/bin/radinfo
+
+#!/bin/bash
+while true
+do
+  ext=$(date +%y%m%d-%H%M%S)
+  tail -200 /var/log/radius/radius.log > /dev/shm/radinfo
+  scp /dev/shm/radinfo kezhong@192.168.1.20:/var/www/html/radinfo/r$ext
+  ssh kezhong@192.168.1.20 “find /var/www/html/radinfo/ -cmin +60 -exec rm {} \;”                 
+  sleep 5
+done
+
+Give it execute permission
+# chmod u+x /usr/local/bin/radinfo
+
+Create the service file
+# vi /lib/systemd/system/radinfo.service
+
+[Unit]
+Description=Sending radius log to management server
+After=syslog.target network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/radinfo
+
+[Install]
+WantedBy=multi-user.target
+
+Make symbolic link
+# cd /etc/systemd/system/
+# ln -s /lib/systemd/system/radinfo.service radinfo.service
+
+Make systemd take notice of it
+# systemctl daemon-reload
+
+Activate a service immediately
+# systemctl start radinfo.service
+
+Enable a service to be started on bootup
+# systemctl enable radinfo.service
