@@ -4,13 +4,15 @@ require 'sinatra'
 # require 'sqlite3'
 require_relative "GpioTestPanel_common"
 require 'json'
-require_relative '../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryGPIO2'
-require_relative '../BBB_GPIO2 Interface Ruby/GPIO2'
+require_relative '../PC_SharedMemTestPanel Ruby/SharedMemoryGPIO2'
+require_relative 'PcGpio2'
 
 set :port, 4568
 set :sharedMem, ""
-set :tpg, TestPanelGui.new("#00ffbb","#99ffbb","#ccaa33","#cccc33",GPIO2.new)
+set :tpg, TestPanelGui.new("#00ffbb","#99ffbb","#ccaa33","#cccc33",PcGpio.new)
+
 def uiTest
+	settings.tpg.getLatestBbbState
 	ui = "
 	<html>
 		<body>
