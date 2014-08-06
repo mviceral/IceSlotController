@@ -141,56 +141,7 @@ get '/' do
 end
 
 post '/' do
-	settings.tpg.getLatestBbbState
-	settings.tpg.resetRowCount
-	settings.sharedMem = ""
-	if params[:addr].length > 0
-		# settings.sharedMem += "params[:addr]=#{params[:addr]}, params[:value]=#{params[:value]}\n"
-		settings.tpg.gpio2.setGPIO2(params[:addr][2..-1].to_i(16).to_i,params[:value])
-	elsif params[:_0x00] == "Update"
-		# settings.sharedMem += "0x00 : Hex value = '#{params[:hdn0x00]}'"
-		settings.tpg.gpio2.setGPIO2(0x00.to_i,params[:hdn0x00])
-	elsif params[:_0x01] == "Update"
-		# settings.sharedMem += "0x01 : Hex value = '#{params[:hdn0x01]}'"
-		settings.tpg.gpio2.setGPIO2(0x01.to_i,params[:hdn0x01])
-	elsif params[:_0x02] == "Update"
-		# settings.sharedMem += "0x02 : Hex value = '#{params[:hdn0x02]}'"
-		settings.tpg.gpio2.setGPIO2(0x02.to_i,params[:hdn0x02])
-	elsif params[:_0x03] == "Update"
-		# settings.sharedMem += "0x03 : Hex value = '#{params[:hdn0x03]}'"
-		settings.tpg.gpio2.setGPIO2(0x03.to_i,params[:hdn0x03])
-	elsif params[:_0x04] == "Update"
-		# settings.sharedMem += "0x04 : Hex value = '#{params[:hdn0x04]}'"
-		settings.tpg.gpio2.setGPIO2(0x04.to_i,params[:hdn0x04])
-	elsif params[:_0x05] == "Update"
-		# settings.sharedMem += "0x05 : Hex value = '#{params[:hdn0x05]}'"
-		settings.tpg.gpio2.setGPIO2(0x05.to_i,params[:hdn0x05])
-	elsif params[:_0x06] == "Update"
-		# settings.sharedMem += "0x06 : Hex value = '#{params[:hdn0x06]}'"
-		settings.tpg.gpio2.setGPIO2(0x06.to_i,params[:hdn0x06])
-	elsif params[:_0x07] == "Update"
-		# settings.sharedMem += "0x07 : Hex value = '#{params[:hdn0x07]}'"
-		settings.tpg.gpio2.setGPIO2(0x07.to_i,params[:hdn0x07])
-	elsif params[:_0x08] == "Update"
-		# settings.sharedMem += "0x08 : Hex value = '#{params[:hdn0x08]}'"
-		settings.tpg.gpio2.setGPIO2(0x08.to_i,params[:hdn0x08])
-	elsif params[:_0x09] == "Update"
-		# settings.sharedMem += "0x09 : Hex value = '#{params[:hdn0x09]}'"
-		settings.tpg.gpio2.setGPIO2(0x09.to_i,params[:hdn0x09])
-	elsif params[:_0x0A] == "Update"
-		# settings.sharedMem += "0x0A : Hex value = '#{params[:hdn0x0A]}'"
-		settings.tpg.gpio2.setGPIO2(0x0A.to_i,params[:hdn0x0A])
-	elsif params[:_0x0B] == "Update"
-		# settings.sharedMem += "0x0B : Hex value = '#{params[:hdn0x0B]}'"
-		settings.tpg.gpio2.setGPIO2(0x0B.to_i,params[:hdn0x0B])
-	elsif params[:_0x0C] == "Update"
-		# settings.sharedMem += "0x0B : Hex value = '#{params[:hdn0x0B]}'"
-		settings.tpg.gpio2.setGPIO2(0x0C.to_i,params[:hdn0x0C])
-	elsif params[:_0x0D] == "Update"
-		# settings.sharedMem += "0x0B : Hex value = '#{params[:hdn0x0B]}'"
-		settings.tpg.gpio2.setGPIO2(0x0D.to_i,params[:hdn0x0D])
-	end	
-	settings.sharedMem += uiTest
-	uiDisplay = "#{settings.sharedMem}"
+	settings.tpg.doThePostThingy(params)
+	uiDisplay = uiTest
 end
 

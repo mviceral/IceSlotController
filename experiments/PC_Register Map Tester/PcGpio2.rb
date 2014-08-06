@@ -41,13 +41,13 @@ class PcGpio
   end
   
   def getGPIO2(addrParam)
-  	puts "getGPIO2, addrParam=#{addrParam}"
+  	# puts "getGPIO2, addrParam=#{addrParam}"
   	fromSharedMem = @sharedGpio2.GetData()
-  	puts "fromSharedMem=#{fromSharedMem}"
+  	# puts "fromSharedMem=#{fromSharedMem}"
   	parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
-  	puts "parsed=#{parsed}"
+  	# puts "parsed=#{parsed}"
   	toBeReturned = parsed[addrParam.to_i(16).to_i.to_s]
-  	puts "toBeReturned.class=#{toBeReturned.class}, toBeReturned=#{toBeReturned}"
+  	# puts "toBeReturned.class=#{toBeReturned.class}, toBeReturned=#{toBeReturned}"
   	return toBeReturned
   end
   # End of 'class GPIO2'
