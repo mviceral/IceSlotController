@@ -6,4 +6,5 @@
 require_relative 'GPIO2'
 
 gpio2 = GPIO2.new
-gpio2.testWithScope
+# gpio2.testWithScope
+gpio2.testOnOffBits

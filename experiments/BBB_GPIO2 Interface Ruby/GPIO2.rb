@@ -4,7 +4,7 @@
 #
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 require_relative 'Port2Interface.so'
-require_relative '../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryGPIO2.rb'
+require_relative "../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryBbbGpio2"
 require 'json'
 
 #@Removed comment to run on real machine
@@ -30,39 +30,137 @@ include Port2Interface
   GPIOPin.new(:P8_40, :IN) 
 
 #@Removed comment to run on real machine
-    puts "A initPort2() got called - #{__LINE__}-#{__FILE__}"
     initPort2()
-    puts "B initPort2() got called - #{__LINE__}-#{__FILE__}"
-    
+
     # Shared memory for emulator.
     @emulatorEnabled = true
+    @sharedBbbGpio2 = SharedMemoryBbbGpio2.new
+  	fromSharedMem = @sharedBbbGpio2.GetData()
+  	if fromSharedMem[0.."BbbShared".length-1] != "BbbShared"
+        #
+        # The Shared memory is not initialized.  Set it up.
+        #
+        puts "A.1 Initializing shared mem in BBB."
+        parsed = Hash.new
+        @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json)
+  	end
+  	fromSharedMem = @sharedBbbGpio2.GetData()
+
 	# End of 'def initialize'
   end 
   
+  def getBits(dataParam)
+        bits = dataParam.to_s(2)
+        while bits.length < 8
+            bits = "0"+bits
+        end
+        return bits
+    end
+
+    def forTesting_getGpio2State
+        fromSharedMem = @sharedBbbGpio2.GetData()
+        if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
+            # The shared memory has some legit data in it.
+            parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
+        else
+            parsed = Hash.new
+        end
+        return parsed
+    end
+  
   def setBitOff(addrParam, dataParam)
-      
+      inBits = getBits(dataParam)
+      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bit to turn off."
+      hold = ~dataParam
+      inBits = getBits(hold)
+      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bits after the tilde."
+      inBits = getBits(@regValues[addrParam])
+      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value before of what to turn off."
+      @regValues[addrParam] = @regValues[addrParam]&hold
+      inBits = getBits(@regValues[addrParam])
+      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value after turning off."
+      setGPIO2(addrParam, @regValues[addrParam])
   end
   
   def setBitOn(addrParam, dataParam)
+      inBits = getBits(dataParam)
+      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bit to turn on."
+      inBits = getBits(@regValues[addrParam])
+      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value of what to turn on."
+      @regValues[addrParam] = @regValues[addrParam]|dataParam
+      inBits = getBits(@regValues[addrParam])
+      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value after turning on."
+      setGPIO2(addrParam, @regValues[addrParam])
   end
   
-  def setGPIO2(addrParam, dataParam)
-    puts "A sendToPort2() got called - #{__LINE__}-#{__FILE__}"
-    sendToPort2(addrParam,dataParam)
-    puts "B sendToPort2() got called - #{__LINE__}-#{__FILE__}"
-    # End of 'def setGPIO2(addrParam, dataParam)'
-  end
+    def setGPIO2(addrParam, dataParam)
+        fromSharedMem = @sharedBbbGpio2.GetData()
+        if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
+            # The shared memory has some legit data in it.
+            parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
+        else
+            parsed = Hash.new
+        end
+        
+        parsed[addrParam.to_s] = dataParam
+        @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json)
+        
+        sendToPort2(addrParam,dataParam)
+        # End of 'def setGPIO2(addrParam, dataParam)'
+    end
   
-  def getGPIO2(addrParam)
-    return getFromPort2(addrParam)
-  end
-  
-  def getImagesOf16Addrs
+    def getGPIO2(addrParam)
+        if @emulatorEnabled == true
+            fromSharedMem = @sharedBbbGpio2.GetData()
+            if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
+                # The shared memory has some legit data in it.
+                parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
+            else
+                parsed = Hash.new
+            end
+            
+            return parsed[addrParam.to_s].to_i
+        else    
+            return getFromPort2(addrParam)
+        end
+    end
+  def getForInitGetImagesOf16Addrs
       #
-      # This function must get called first and must be called all the time to get the latest values of the 
-      # registers
+      # This function must get called first in order the get the values of the registers.
       #
-      getImagesOf16AddrsGPIO2
+      puts "within - getForInitGetImagesOf16Addrs #{__LINE__}-#{__FILE__}"
+      @regValues = Hash.new
+      @regValues[SLOT_ADDR_x0] = getGPIO2(SLOT_ADDR_x0)
+      @regValues[LED_STAT_x1] = getGPIO2(LED_STAT_x1)
+      @regValues[EXT_INPUTS_x2] = getGPIO2(EXT_INPUTS_x2)
+      @regValues[PS_ENABLE_x3] = getGPIO2(PS_ENABLE_x3)
+      @regValues[EXT_SLOT_CTRL_x4] = getGPIO2(EXT_SLOT_CTRL_x4)
+      @regValues[SLOT_FAN_PWM_x5] = getGPIO2(SLOT_FAN_PWM_x5)
+      @regValues[ETS_ALM1_x6] = getGPIO2(ETS_ALM1_x6)
+      @regValues[ETS_ALM2_x7] = getGPIO2(ETS_ALM2_x7)
+      @regValues[ETS_ALM3_x8] = getGPIO2(ETS_ALM3_x8)
+      @regValues[ETS_ENA1_x9] = getGPIO2(ETS_ENA1_x9)
+      @regValues[ETS_ENA2_xA] = getGPIO2(ETS_ENA2_xA)
+      @regValues[ETS_ENA3_xB] = getGPIO2(ETS_ENA3_xB)
+      @regValues[ETS_RX_SEL_xC] = getGPIO2(ETS_RX_SEL_xC)
+      @regValues[ANA_MEAS4_SEL_xD] = getGPIO2(ANA_MEAS4_SEL_xD)
+      
+      puts "@regValues[SLOT_ADDR_x0] = 0x#{@regValues[SLOT_ADDR_x0].to_s(16)}"
+      puts "@regValues[LED_STAT_x1] = 0x#{@regValues[LED_STAT_x1].to_s(16)}"
+      puts "@regValues[EXT_INPUTS_x2] = 0x#{@regValues[EXT_INPUTS_x2].to_s(16)}"
+      puts "@regValues[PS_ENABLE_x3] = 0x#{@regValues[PS_ENABLE_x3].to_s(16)}"
+      puts "@regValues[EXT_SLOT_CTRL_x4] = 0x#{@regValues[EXT_SLOT_CTRL_x4].to_s(16)}"
+      puts "@regValues[SLOT_FAN_PWM_x5] = 0x#{@regValues[SLOT_FAN_PWM_x5].to_s(16)}"
+      puts "@regValues[ETS_ALM1_x6] = 0x#{@regValues[ETS_ALM1_x6].to_s(16)}"
+      puts "@regValues[ETS_ALM2_x7] = 0x#{@regValues[ETS_ALM2_x7].to_s(16)}"
+      puts "@regValues[ETS_ALM3_x8] = 0x#{@regValues[ETS_ALM3_x8].to_s(16)}"
+      puts "@regValues[ETS_ENA1_x9] = 0x#{@regValues[ETS_ENA1_x9].to_s(16)}"
+      puts "@regValues[ETS_ENA2_xA] = 0x#{@regValues[ETS_ENA2_xA].to_s(16)}"
+      puts "@regValues[ETS_ENA3_xB] = 0x#{@regValues[ETS_ENA3_xB].to_s(16)}"
+      puts "@regValues[ETS_RX_SEL_xC] = 0x#{@regValues[ETS_RX_SEL_xC].to_s(16)}"
+      puts "@regValues[ANA_MEAS4_SEL_xD] = 0x#{@regValues[ANA_MEAS4_SEL_xD].to_s(16)}"
+      # puts "<at a pause>"
+      # gets
   end
   
   #
@@ -239,6 +337,23 @@ include Port2Interface
       end
       # End of 'def testWithScope'
   end
+
+    def testOnOffBits
+        getForInitGetImagesOf16Addrs
+        setBitOn(SLOT_ADDR_x0,X0_Reset)
+        gets # for pause so you could see the emulator value update.
+        setBitOff(SLOT_ADDR_x0,X0_Reset)
+        gets # for pause so you could see the emulator value update.
+        setBitOff(EXT_INPUTS_x2,X2_FANT2B)
+        setBitOff(EXT_INPUTS_x2,X2_FANT2A)
+        setBitOff(EXT_INPUTS_x2,X2_FANT1B)
+        setBitOff(EXT_INPUTS_x2,X2_FANT1A)
+        setBitOff(EXT_INPUTS_x2,X2_SENSR2)
+        setBitOff(EXT_INPUTS_x2,X2_SENSR1)
+        setBitOff(EXT_INPUTS_x2,X2_USRSW2)
+        setBitOff(EXT_INPUTS_x2,X2_USRSW1)
+    end
+
 
 =begin    
     class << self

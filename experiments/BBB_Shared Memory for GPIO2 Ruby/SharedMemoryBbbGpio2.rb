@@ -16,7 +16,6 @@ class SharedMemoryBbbGpio2
     def initialize()
         #   - This function initialized the shared memory variables.  If not called, the functions below will be rendered 
         #   useless.
-        puts "SharedMemoryGpio2 got called.  Within Initialize()."
         InitializeSharedMemory()
     end 
 

@@ -4,9 +4,7 @@ require 'grape'
 #require 'forwardable'
 require 'pp'
 require 'sqlite3'
-require_relative "../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryBbbGpio2"
 require_relative "../BBB_GPIO2 Interface Ruby/GPIO2"
-require 'json'
 
 # If you set this true, it will put out some debugging info to STDOUT
 # (usually the termninal that you started rackup with)
@@ -21,27 +19,13 @@ module BbbSetterModule
 		
 
 		def initialize
-		    puts "BbbSetter initialize got called."
-          	@sharedGpio2 = SharedMemoryBbbGpio2.new
           	@gpio2 = GPIO2.new
-          	fromSharedMem = @sharedGpio2.GetData()
-		    puts "A fromSharedMem=#{fromSharedMem}."
-          	if fromSharedMem[0.."BbbShared".length-1] != "BbbShared"
-                #
-                # The Shared memory is not initialized.  Set it up.
-                #
-                puts "A.1 Initializing shared mem in BBB."
-                parsed = Hash.new
-                @sharedGpio2.WriteData("BbbShared"+parsed.to_json)
-          	end
-          	fromSharedMem = @sharedGpio2.GetData()
-		    puts "B fromSharedMem=#{fromSharedMem}."
 		end
 		
 		def gPIO2
 		    return @gpio2
 		end
-		
+=begin		
 		def GetData
 		    puts "GetData got called."
 		    return @sharedGpio2.GetData()
@@ -51,7 +35,7 @@ module BbbSetterModule
 		    puts "WriteData got called."
 		    return @sharedGpio2.WriteData(dataParam)
 		end
-
+=end
 		# This bit of magic makes it so you don't have to say
 		# Migrations.instance.quantity
 		# I.E. Normally to access methods that are using the Singleton
@@ -85,22 +69,13 @@ module BbbSetterModule
             get "/" do
                 if @@initialized == false
                     @@initialized == true
-                    puts "within GET / and initializing stuff."
                     @@bbbSetter = BbbSetter.new
                     if @@bbbSetter.nil?
                         puts "@@bbbSetter is nil after initialization..."
                     end
                 end
                 
-              	fromSharedMem = @@bbbSetter.GetData()
-              	puts "Within GET / - fromSharedMem=#{fromSharedMem}"
-              	if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
-              		# The shared memory has some legit data in it.
-              		parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
-              	else
-              	    parsed = Hash.new
-              	end
-              	{registers:parsed}
+              	{registers:@@bbbSetter.gPIO2.forTesting_getGpio2State()}
             end		
         end
     
@@ -110,30 +85,26 @@ module BbbSetterModule
 			# you will get the record with that id.
 			#
 			post "/" do
+                if @@initialized == false
+                    @@initialized == true
+                    @@bbbSetter = BbbSetter.new
+                    if @@bbbSetter.nil?
+                        puts "@@bbbSetter is nil after initialization..."
+                    end
+                end
+                
 				if params["addr"].nil? == false && params["data"].nil? == false
 					#
 					# Parse out the data sent from BBB
 					#
 					addr = params["addr"]
 					data = params["data"]
-					puts "receivedData - addr = #{addr}, addr.class=#{addr.class}, data = #{data}, data.class=#{data.class}" 
-					puts "A calling @@bbbSetter.gPIO2.setGPIO2(addr.to_i, data.to_i) #{__LINE__}-#{__FILE__}" 
-                  	fromSharedMem = @@bbbSetter.GetData()
-                  	if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
-                  		# The shared memory has some legit data in it.
-                  		parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
-                  	else
-                  	    parsed = Hash.new
-                  	end
-                  	parsed[addr] = data
-              	    @@bbbSetter.WriteData("BbbShared"+parsed.to_json)
 					@@bbbSetter.gPIO2.setGPIO2(addr.to_i, data.to_i)
-					puts "B calling @@bbbSetter.gPIO2.setGPIO2(addr.to_i, data.to_i) #{__LINE__}-#{__FILE__}" 
 					#
 					# Make an image of the received data into the shared memory case we have to reboot this grape app
 					# and just get the latest saved data from the shared.
 					#
-					parsed
+					@@bbbSetter.gPIO2.forTesting_getGpio2State()
 				end
 			end
 		end

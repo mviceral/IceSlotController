@@ -1,4 +1,7 @@
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ---------------
+
+!!! Can't get the doc given below to work.
+
 The purpose of this code is to setup the BBB to start up a script to change the IP address to something that is 
 specified.
 
