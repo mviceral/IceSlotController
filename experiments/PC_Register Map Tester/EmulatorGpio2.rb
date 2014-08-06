@@ -141,6 +141,7 @@ get '/' do
 end
 
 post '/' do
+	settings.tpg.getLatestBbbState
 	settings.tpg.resetRowCount
 	settings.sharedMem = ""
 	if params[:addr].length > 0

@@ -26,16 +26,16 @@ class SharedMemoryGpio2
         return GetDataFromSharedMemory()
     end
     
-    def WriteData(stringParam,line,file)
+    def WriteData(stringParam)
         #   - Writes data to the shared memory.
         #       return values:
         #       0 - no error writing to memory.
         #       1 - not initialized.  Run the function InitializeVariables(), first.
         #       2 - sent String too long.  Not all data written in.
-        puts "Writing to shared mem : '#{stringParam}' #{line}-#{file}"
+        # puts "Writing to shared mem : '#{stringParam}' #{line}-#{file}"
         resp = WriteDataToSharedMemory(stringParam)
         # puts "Responded with resp = '#{resp}'"
-        puts "What's written = '#{GetDataFromSharedMemory()}'"
+        # puts "What's written = '#{GetDataFromSharedMemory()}'"
         return resp
     end 
     
