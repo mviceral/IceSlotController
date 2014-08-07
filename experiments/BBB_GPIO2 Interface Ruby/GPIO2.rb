@@ -616,14 +616,14 @@ include Port2Interface
         #
         # Gets the states of the External Inputs
         #
-        tbr = getGPIO2(EXT_INPUTS_x2)
+        externalInputs = getGPIO2(EXT_INPUTS_x2)
         
         #
         # Clears the latch
         #
         setBitOn(EXT_INPUTS_x2,W2_CLEAR)
         
-        return tbr
+        return externalInputs
     end
     
     def psEnable (bitsParam)
@@ -684,6 +684,7 @@ include Port2Interface
         #
         # If the bitsParam>0, the fan bits on register EXT_SLOT_CTRL_x4 are set to on, else off.
         #
+=begin        
         if bitsParam>0
             setBitOn(EXT_SLOT_CTRL_x4,X4_FAN1)
             setBitOn(EXT_SLOT_CTRL_x4,X4_FAN2)
@@ -691,6 +692,7 @@ include Port2Interface
             setBitOff(EXT_SLOT_CTRL_x4,X4_FAN1)
             setBitOff(EXT_SLOT_CTRL_x4,X4_FAN2)
         end
+=end        
     end
 
     def etsAlarm1Get
@@ -744,7 +746,11 @@ include Port2Interface
         #
         # Code not implemented.
         # returns the TCU status
-        return ""
+        setGPIO2(ETS_RX_SEL_xC, muxParam)
+        
+        #
+        # Now read/write to UART0
+        #
     end
     
     def analogMeasureSelect(muxParam)
@@ -754,7 +760,7 @@ include Port2Interface
         #
         # Code not implemented.
         # returns the analog measurement.
-        return 1.234
+        setGPIO2(ANA_MEAS4_SEL_xD, muxParam)
     end
     
 =begin    
