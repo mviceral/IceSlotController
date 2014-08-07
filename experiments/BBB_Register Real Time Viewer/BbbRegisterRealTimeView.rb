@@ -29,7 +29,7 @@ def hv(dataParam)
     return "0x"+h
 end
 
-puts "Code is not running."
+puts "Code is now running."
 server = TCPServer.open(2000)  # Socket to listen on port 2000
 loop {                         # Servers run forever
     client = server.accept       # Wait for a client to connect
