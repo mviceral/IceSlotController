@@ -6,6 +6,8 @@
 require_relative 'Port2Interface.so'
 require_relative "../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryBbbGpio2"
 require 'json'
+require 'socket'      # Sockets are in standard library
+
 
 #@Removed comment to run on real machine
 require 'beaglebone'
@@ -291,7 +293,21 @@ include Port2Interface
         inBits = getBits(@regValues[addrParam])
         puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : New value."
         
-        
+        #
+        # Send data to real time register data viewer
+        #
+        hostname = 'localhost'
+        port = 2000
+        begin
+            s = TCPSocket.open(hostname, port)
+            
+            s.puts parsed.to_json
+            s.close               # Close the socket when done
+            rescue Exception => e  
+                # puts e.message  
+                # puts e.backtrace.inspect  
+        end        
+
         sendToPort2(addrParam,dataParam)
         # End of 'def setGPIO2(addrParam, dataParam)'
     end
