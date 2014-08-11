@@ -1,4 +1,6 @@
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
+# Code to look at:
+# "The run duration is complete."
 require 'rubygems'
 require 'sinatra'
 require 'sqlite3'
@@ -8,17 +10,68 @@ class UserInterface
 	BlankFileName = "-----------"
 	FileName = "FileName"
 	Load = "Load"
-	Play = "Run"
+	Run = "Run"
 	Stop = "Stop"
-	Eject = "Clear"
+	Clear = "Clear"
 	DurationHours = 	"DurationHours"
 	DurationMins = "DurationMins"
 	DurationHoursLeft = 	"DurationHoursLeft"
 	DurationMinsLeft = "DurationMinsLeft"
 	DurationSecsLeft = "DurationSecsLeft"
 	ButtonDisplay = "ButtonDisplay"
-	attr_accessor :LoadFileParam
+	TimeOfUpload = "TimeOfUpload"
+	TimeOfRun = "TimeOfRun"
+	TimeOfStop = "TimeOfStop"
+	TimeOfClear = "TimeOfClear"
+	
+	attr_accessor :SlotOwner
 	attr_accessor :slotProperties
+
+	def updateDurationTimeLeft(slotOwner)
+		dl = GetSlotDurationHoursLeft(slotOwner).to_i*60*60 # dl - duration left
+		dl += GetSlotDurationMinsLeft(slotOwner).to_i*60
+		dl += GetSlotDurationSecsLeft(slotOwner).to_i
+		dl -= (getSlotProperties(slotOwner)[TimeOfStop].to_i-getSlotProperties(slotOwner)[TimeOfRun].to_i) # dl is duration left
+		
+		hours = (dl/3600).to_i
+		dl -= hours*3600
+		mins = (dl/60).to_i
+		dl -= (mins*60).to_i
+		getSlotProperties(slotOwner)[DurationHoursLeft] = hours
+		getSlotProperties(slotOwner)[DurationMinsLeft] = mins
+		getSlotProperties(slotOwner)[DurationSecsLeft] = dl.to_i
+	end
+
+	def GetDurationLeft(slotLabelParam)
+		# If the button state is Stop, subtract the total time between now and TimeOfRun, then 
+		if getSlotProperties(slotLabelParam)[ButtonDisplay] == Stop
+			#
+			# What does it return?
+			#
+			dl = GetSlotDurationHoursLeft(slotLabelParam).to_i*60*60 # dl - duration left
+			dl += GetSlotDurationMinsLeft(slotLabelParam).to_i*60
+			dl += GetSlotDurationSecsLeft(slotLabelParam).to_i
+			if getSlotProperties(slotLabelParam)[TimeOfRun].nil?
+				"00:00:00"
+			else
+				dl -= (Time.new.to_i - getSlotProperties(slotLabelParam)[TimeOfRun].to_i)
+				hours = (dl/3600).to_i
+				dl -= hours*3600
+				mins = (dl/60).to_i
+				dl -= (mins*60).to_i
+		
+				if dl<0
+					#
+					# The run duration is complete.
+					#
+				end
+		
+				return "#{hours}:#{mins}:#{dl.to_i}"
+			end
+		elsif getSlotProperties(slotLabelParam)[ButtonDisplay] == Run
+				return "#{GetSlotDurationHoursLeft(slotLabelParam)}:#{GetSlotDurationMinsLeft(slotLabelParam)}:#{GetSlotDurationSecsLeft(slotLabelParam)}"
+		end
+	end 
 
 	def make2Digits(paramDigit)
 		if paramDigit.length < 2
@@ -27,31 +80,62 @@ class UserInterface
 		return paramDigit
 	end
 	
-	def getStepCompletion(slotLabelParam)
-		d = Time.now
-		d += GetSlotDurationHoursLeft(slotLabelParam).to_i*60*60
-		d += GetSlotDurationMinsLeft(slotLabelParam).to_i*60
-		d += GetSlotDurationSecsLeft(slotLabelParam).to_i
+	def getSlotsState
+		begin
+			fileRead = ""
+			File.open('SlotState_DoNotDeleteNorModify.json', "r") do |f|
+				f.each_line do |line|
+					fileRead += line
+				end
+			end
+			@slotProperties = JSON.parse(fileRead)
+			rescue 
+				# File does not exists, so just continue with a blank slate.
+		end
+	end
+	
+	def getStepCompletion(slotOwner)
+		if slotProperties.to_json == "{}"
+			getSlotsState()
+		end		
 		
-		month = d.month.to_s # make2Digits(d.month.to_s)
-		day = d.day.to_s # make2Digits(d.day.to_s)
-		year = d.year.to_s
-		hour = make2Digits(d.hour.to_s)
-		min = make2Digits(d.min.to_s)
-		sec = make2Digits(d.sec.to_s)
-		return month+"/"+day+"/"+year+" "+hour+":"+min+":"+sec
+		if getSlotProperties(slotOwner)[ButtonDisplay] == Load 
+			return BlankFileName
+		else
+			if getSlotProperties(slotOwner)[ButtonDisplay] == Run
+				d = Time.now
+				d += GetSlotDurationHoursLeft(slotOwner).to_i*60*60
+				d += GetSlotDurationMinsLeft(slotOwner).to_i*60
+				d += GetSlotDurationSecsLeft(slotOwner).to_i
+			else
+				puts "getSlotProperties(slotOwner)[TimeOfRun]=#{getSlotProperties(slotOwner)[TimeOfRun]}"
+				d = getSlotProperties(slotOwner)[TimeOfRun].to_i
+				d += GetSlotDurationHoursLeft(slotOwner).to_i*60*60 # dl - duration left
+				d += GetSlotDurationMinsLeft(slotOwner).to_i*60
+				d += GetSlotDurationSecsLeft(slotOwner).to_i			
+				d = Time.at(d)
+			end
+		
+			month = d.month.to_s # make2Digits(d.month.to_s)
+			day = d.day.to_s # make2Digits(d.day.to_s)
+			year = d.year.to_s
+			hour = make2Digits(d.hour.to_s)
+			min = make2Digits(d.min.to_s)
+			sec = make2Digits(d.sec.to_s)
+			return month+"/"+day+"/"+year+" "+hour+":"+min+":"+sec
+		end
 	end
 
-	def Eject
-		return Eject
+	def Clear
+		return Clear
 	end
 
 	def Stop
 		return Stop
 	end
 	
-	def Play
-		return Play
+	def Run
+		return Run
 	end
 	
 	def Load
@@ -62,7 +146,7 @@ class UserInterface
 		if @slotProperties.nil?
 			@slotProperties = Hash.new
 		end
-		return @slotProperties
+		@slotProperties
 	end
 	
 	def getSlotProperties(slotOwner)
@@ -78,6 +162,38 @@ class UserInterface
 	def setDurationHours(slotOwner, durationHoursParam)
 		getSlotProperties(slotOwner)[DurationHours] = durationHoursParam
 		getSlotProperties(slotOwner)[DurationHoursLeft] = durationHoursParam
+	end
+	
+	def setTimeOfRun(slotOwner)
+		getSlotProperties(slotOwner)[TimeOfRun] = Time.now.to_i
+	end
+	
+	def setTimeOfStop(slotOwner)
+		getSlotProperties(slotOwner)[TimeOfStop] = Time.now.to_i
+	end
+	
+	def setTimeOfClear(slotOwner)
+		getSlotProperties(slotOwner)[TimeOfClear] = Time.now.to_i
+	end
+		
+	def saveSlotState()
+		#
+		# Save the slot states of the environment.
+		# How's that going to work?
+		# - Open up a file, and save the Slot Properties
+		#
+		# puts "slotProperties.to_json.nil?=#{slotProperties.to_json.nil?}"
+		# puts "slotProperties.to_json='#{slotProperties.to_json}'"
+		if slotProperties.to_json == "{}"
+			# puts "calling - getSlotsState()"
+			getSlotsState()
+		end		
+		# puts "slotProperties.to_json=#{slotProperties.to_json}"
+		File.open("SlotState_DoNotDeleteNorModify.json", "w") { |file| file.write(slotProperties.to_json) }
+	end
+	
+	def setTimeOfUpload(slotOwner)
+		getSlotProperties(slotOwner)[TimeOfUpload] = Time.now
 	end
 	
 	def setDurationMinutes(slotOwner, totalMinutesParam)
@@ -104,7 +220,7 @@ class UserInterface
 	end
 
 	def setToAllowedToRunMode(slotOwner)
-		getSlotProperties(slotOwner)[ButtonDisplay] = Play
+		getSlotProperties(slotOwner)[ButtonDisplay] = Run
 	end
 	
 	def cellWidth
@@ -257,7 +373,7 @@ class UserInterface
 		return slotLabelParam.delete(' ')
 	end
 	
-	def GetSlotDisplay (slotLabelParam)
+	def GetSlotDisplay (slotLabelParam,slotLabel2Param)
 		getSlotDisplay_ToBeReturned = ""
 		begin
 			db = SQLite3::Database.open "latest.db"
@@ -427,8 +543,8 @@ class UserInterface
 				 						size=\"2\" 
 				 						style=\"font-style: italic;\">
 				 							<label 
-				 								id=\"stepCompletion_#{removeWhiteSpace(slotLabelParam)}\">
-				 									#{getStepCompletion(slotLabelParam)}
+				 								id=\"stepCompletion_#{slotLabel2Param}\">
+				 									#{getStepCompletion(slotLabel2Param)}
 				 							</label>
 				 					</font>
 				 				</td>
@@ -441,12 +557,12 @@ class UserInterface
 				 			<tr>
 				 				<td align = \"center\">
 				 					<button 
-										onclick=\"window.location='../TopBtnPressed?slot=#{slotLabelParam}&BtnState=#{getButtonDisplay(slotLabelParam)}'\"
+										onclick=\"window.location='../TopBtnPressed?slot=#{slotLabel2Param}&BtnState=#{getButtonDisplay(slotLabel2Param)}'\"
 										type=\"button\" 
 				 						style=\"width:100;height:25\" 
-				 						id=\"btn_#{removeWhiteSpace(slotLabelParam)}\"
+				 						id=\"btn_#{slotLabel2Param}\"
 				 						>
-				 							#{getButtonDisplay(slotLabelParam)}
+				 							#{getButtonDisplay(slotLabel2Param)}
 				 					</button>
 				 				</td>
 				 			</tr>
@@ -458,7 +574,7 @@ class UserInterface
 							<tr>
 								<td>
 									<center>
-									<font size=\"1.25\" style=\"font-style: italic;\">#{GetSlotFileName(slotLabelParam)}</font>								
+									<font size=\"1.25\" style=\"font-style: italic;\">#{GetSlotFileName(slotLabel2Param)}</font>								
 									</center>
 								</td>
 							</tr>
@@ -470,7 +586,7 @@ class UserInterface
 							<tr>
 								<td align = \"center\">
 									<font size=\"1.25\" style=\"font-style: italic;\">
-										#{GetSlotDurationHours(slotLabelParam)}:#{GetSlotDurationMins(slotLabelParam)}
+										#{GetSlotDurationHours(slotLabel2Param)}:#{GetSlotDurationMins(slotLabel2Param)}
 									</font>								
 								</td>
 							</tr>
@@ -486,10 +602,18 @@ class UserInterface
 										style=\"font-style: italic;\"
 									>
 										<label 
-											id=\"durationLeft_#{removeWhiteSpace(slotLabelParam)}\"
+											id=\"durationLeft_#{slotLabel2Param}\"
 										>
-											#{GetSlotDurationHoursLeft(slotLabelParam)}:#{GetSlotDurationMinsLeft(slotLabelParam)}:#{GetSlotDurationSecsLeft(slotLabelParam)}
-										</label>								
+											#{GetDurationLeft(slotLabel2Param)}
+										</label>
+										<input 
+											type=\"hidden\"
+											name=\"hiddenTimeOfRun_#{slotLabel2Param}\"
+											value=\"#{getSlotProperties(slotLabel2Param)[TimeOfRun].to_i}\" />
+										<input 
+											type=\"hidden\"
+											name=\"hiddenDurationLeft_#{slotLabel2Param}\"
+											value=\"#{GetSlotDurationHoursLeft(slotLabel2Param)}:#{GetSlotDurationMinsLeft(slotLabel2Param)}:#{GetSlotDurationSecsLeft(slotLabel2Param)}\" />
 									</font>
 								</td>
 							</tr>
@@ -500,16 +624,16 @@ class UserInterface
 				 			<tr>
 				 				<td align=\"center\">"
 				 				
-				 				if getButtonDisplay(slotLabelParam) == Play	
+				 				if getButtonDisplay(slotLabel2Param) == Run	
 				 					topTable+=				 					
 				 						"
 				 					<button 
-										onclick=\"window.location='../TopBtnPressed?slot=#{slotLabelParam}&BtnState=Eject'\"
+										onclick=\"window.location='../TopBtnPressed?slot=#{slotLabel2Param}&BtnState=Clear'\"
 										type=\"button\" 
 				 						style=\"width:100;height:25\" 
 				 						id=\"btn_LoadStartStop\"
 				 						>
-				 							#{Eject}
+				 							#{Clear}
 				 					</button>"
 				 				end
 				 				
@@ -548,8 +672,9 @@ class UserInterface
 	function updateCountDownsSub(SlotParam) {
 		var btnSlot1 = document.getElementById(\"btn_\"+SlotParam).innerHTML;
 		btnSlot1 = btnSlot1.trim();
-		if (btnSlot1 == \"#{Play}\") {
-			var durationLeft = document.getElementById(\"durationLeft_\"+SlotParam).innerHTML.trim();
+			var durationLeftHidden = document.getElementsByName(\"hiddenDurationLeft_\"+SlotParam)
+			durationLeftHidden = durationLeftHidden[0];
+			durationLeft = durationLeftHidden.value.trim();
 			
 			/*
 				Reverse parsing, get the seconds, then the minutes, then the hours.  The goal is to get the total time
@@ -567,6 +692,14 @@ class UserInterface
 
 			var hoursLeft = durationLeft.substring(0,colonBeforeMin);
 			var hours = 60*60*parseInt(hoursLeft);
+
+			var sc;
+			var timeOfRun = 0;
+			if (btnSlot1 == \"#{Stop}\") {
+				sc = document.getElementsByName(\"hiddenTimeOfRun_\"+SlotParam);			
+				timeOfRun = parseInt(sc[0].value)*1000;
+				sc.innerHTML = stepCompletionDisplay;
+			}					
 			
 			var currentdate = new Date();
 			var stepCompletion = new Date(currentdate.getTime() + (hours+minutes+seconds)*1000);
@@ -576,8 +709,23 @@ class UserInterface
 				stepCompletion.getFullYear() + \"  \" + 
 				stepCompletion.getHours() + \":\" + 
 				stepCompletion.getMinutes() + \":\" + stepCompletion.getSeconds();
-			var sc = document.getElementById(\"stepCompletion_\"+SlotParam);			
+				
+		if (btnSlot1 == \"#{Run}\") {
+			sc = document.getElementById(\"stepCompletion_\"+SlotParam);			
 			sc.innerHTML = stepCompletionDisplay;
+		}
+		else if (btnSlot1 == \"#{Stop}\") {
+			var diff = (hours+minutes+seconds)*1000-(currentdate.getTime()-timeOfRun);
+			hours = Math.floor(diff / (1000 * 60 * 60));
+			diff -= hours * (1000 * 60 * 60);
+
+			mins = Math.floor(diff / (1000 * 60));
+			diff -= mins * (1000 * 60);
+
+			seconds = Math.floor(diff / (1000));
+			diff -= seconds * (1000);
+			sc = document.getElementById(\"durationLeft_\"+SlotParam);			
+			sc.innerHTML = \"\"+hours+\":\"+mins+\":\"+seconds
 		}		
 	}
 	
@@ -613,9 +761,9 @@ class UserInterface
 	<div id=\"myDiv\">
 	
 	<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
-		<tr><td><center>"+GetSlotDisplay("SLOT 1")+"</center></td></tr>
-		<tr><td><center>"+GetSlotDisplay("SLOT 2")+"</center></td></tr>
-		<tr><td><center>"+GetSlotDisplay("SLOT 3")+"</center></td></tr>
+		<tr><td><center>"+GetSlotDisplay("SLOT 1","SLOT1")+"</center></td></tr>
+		<tr><td><center>"+GetSlotDisplay("SLOT 2","SLOT2")+"</center></td></tr>
+		<tr><td><center>"+GetSlotDisplay("SLOT 3","SLOT3")+"</center></td></tr>
 	</table>"
 		return displayForm
 		# end of 'def display'
@@ -626,7 +774,7 @@ class UserInterface
 		<html>
 			<body>
 					<form 
-						action=\"/TopBtnPressed?slot=#{@LoadFileParam}\" 
+						action=\"/TopBtnPressed?slot=#{@SlotOwner}\" 
 						method=\"post\" 
 						enctype=\"multipart/form-data\">
 						<font size=\"3\">Configuration File Uploader</font>
@@ -644,28 +792,54 @@ class UserInterface
 end
 
 set :ui, UserInterface.new
-set :port, 6079 # orig 4569
+set :port, 1979 # orig 4569
 
 get '/about' do
 	'A little about me.'
 end
 
 get '/TopBtnPressed' do
-	settings.ui.LoadFileParam = "#{params[:slot]}"
+	settings.ui.SlotOwner = "#{params[:slot]}"
 	if params[:BtnState] == settings.ui.Load
+		#
+		# The Load button got pressed.
+		#
 		return settings.ui.loadFile
-	elsif params[:BtnState] == settings.ui.Play
-		settings.ui.setToRunMode(settings.ui.LoadFileParam)
+	elsif params[:BtnState] == settings.ui.Run
+		#
+		# The Run button got pressed.
+		#
+		settings.ui.setToRunMode(settings.ui.SlotOwner)
+		settings.ui.setTimeOfRun(settings.ui.SlotOwner)
+		settings.ui.saveSlotState();
 		redirect "../"
 	elsif params[:BtnState] == settings.ui.Stop
-		settings.ui.setToAllowedToRunMode(settings.ui.LoadFileParam)
+		#
+		# The Stop button got pressed.
+		#
+		settings.ui.setToAllowedToRunMode(settings.ui.SlotOwner)
+		settings.ui.setTimeOfStop(settings.ui.SlotOwner)
+		
+		#
+		# Update the duration time
+		# Formula : Time now - Time of run, then convert to hours, mins, sec.
+		#
+		settings.ui.updateDurationTimeLeft(settings.ui.SlotOwner)
+		settings.ui.saveSlotState();
 		redirect "../"
-	elsif params[:BtnState] == settings.ui.Eject
-		settings.ui.setToLoadMode(settings.ui.LoadFileParam)
+	elsif params[:BtnState] == settings.ui.Clear
+		#
+		# The Clear button got pressed.
+		#
+		settings.ui.setToLoadMode(settings.ui.SlotOwner)
+		settings.ui.setTimeOfClear(settings.ui.SlotOwner)
+		settings.ui.saveSlotState();
 		redirect "../"
 	end
-	# return "get in /loadfile - slot = '#{settings.ui.LoadFileParam}'"+
+	# return "get in /loadfile - slot = '#{settings.ui.SlotOwner}'"+
 end
+
+
 
 post '/TopBtnPressed' do
 	tbr = "" # To be returned.
@@ -673,40 +847,50 @@ post '/TopBtnPressed' do
 	#
 	# Save the file in the upload folder.
 	#
+	goodUpload = true
 	File.open('uploads/configuration.json' , "w") do |f|
-	  f.write(params['myfile'][:tempfile].read)
+		begin
+		  f.write(params['myfile'][:tempfile].read)
+		  rescue
+		  	goodUpload = false
+		end
   end
   
-  #
-  # Read the file into the server environment
-  #
-  File.open('uploads/configuration.json', "r") do |f|
-		f.each_line do |line|
-		  tbr += line
+  if goodUpload
+		#
+		# Read the file into the server environment
+		#
+		File.open('uploads/configuration.json', "r") do |f|
+			f.each_line do |line|
+				tbr += line
+			end
 		end
-	end
 	
-	config = JSON.parse(tbr)
-	config["FileName"] = "#{params['myfile'][:filename]}"
-	# return "parameter = '#{params}'" # Check the content of config hash object.
+		config = JSON.parse(tbr)
+		config["FileName"] = "#{params['myfile'][:filename]}"
+		# return "parameter = '#{params}'" # Check the content of config hash object.
 	
-	#
-	# Verify data content
-	# 	Duration_TotalHours - must be a number
-	# 	Duration_TotalMinutes - must be a number
-	#
-	settings.ui.setConfigFileName(settings.ui.LoadFileParam, config["FileName"])
-	settings.ui.setDurationHours(settings.ui.LoadFileParam, config["Duration_TotalHours"])
-	settings.ui.setDurationMinutes(settings.ui.LoadFileParam, config["Duration_TotalMinutes"])
-	settings.ui.setToAllowedToRunMode(settings.ui.LoadFileParam)
-	redirect "../"
+		#
+		# Verify data content
+		# 	Duration_TotalHours - must be a number
+		# 	Duration_TotalMinutes - must be a number
+		#
+		settings.ui.setConfigFileName(settings.ui.SlotOwner, config["FileName"])
+		settings.ui.setDurationHours(settings.ui.SlotOwner, config["Duration_TotalHours"])
+		settings.ui.setDurationMinutes(settings.ui.SlotOwner, config["Duration_TotalMinutes"])
+		settings.ui.setTimeOfUpload(settings.ui.SlotOwner)
+		settings.ui.setToAllowedToRunMode(settings.ui.SlotOwner)
+		settings.ui.saveSlotState()
+  end  
+  redirect "../"
 end
 
 get '/' do 
-	settings.ui.display
+	return settings.ui.display
 end
 
-post '/' do
-	settings.ui.display
+post '/' do	
+	settings.ui.saveSlotState() # Saves the state everytime the display gets refreshed.  10 second resolution...
+	return settings.ui.display
 end
 
