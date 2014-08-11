@@ -31,11 +31,14 @@ class TestPanelGui
 			registers = result["registers"]
 			@sharedGpio2 = SharedMemoryGpio2.new
 			@sharedGpio2.WriteData("BbbShared"+registers.to_json)
-			readMemory = @sharedGpio2.GetData()
-			puts "readMemory = #{readMemory}"
+			# readMemory = @sharedGpio2.GetData()
+			# puts "readMemory = #{readMemory}"
 		end
-	end	
-	
+	end
+		
+	def sharedGpio
+		return @sharedGpio2
+	end
 	def javaScript
 		tbr = "
 				function validateForm() {
@@ -443,7 +446,11 @@ class TestPanelGui
 	
 	def doThePostThingy(params)
 		resetRowCount
-		if params[:addr].length > 0
+		if params.nil?
+			return
+		end
+		
+		if params[:addr].nil? == false && params[:addr].length > 0
 			# settings.sharedMem += "params[:addr]=#{params[:addr]}, params[:value]=#{params[:value]}\n"
 			gpio2.setGPIO2(params[:addr][2..-1].to_i(16).to_i,params[:value])
 		elsif params[:_0x00] == "Update"

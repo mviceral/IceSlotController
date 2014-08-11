@@ -6,6 +6,7 @@ require_relative "GpioTestPanel_common"
 
 set :port, 4567
 set :sharedMem, ""
+
 require 'json'
 require_relative '../PC_SharedMemTestPanel Ruby/SharedMemoryGPIO2'
 require_relative 'PcGpio2'
@@ -45,7 +46,34 @@ def uiTest
 					{
 						if (xmlhttp.readyState==4 && xmlhttp.status==200)
 						{
-							document.getElementById(\"myDiv\").innerHTML=xmlhttp.responseText;
+							/*
+							var now = new Date()
+							var year    = now.getFullYear();
+							var month   = \"\"+(now.getMonth()+1); 
+							var day     = \"\"+now.getDate();
+							var hour    = \"\"+now.getHours();
+							var minute  = \"\"+now.getMinutes();
+							var seconds  = \"\"+now.getSeconds();
+							
+							if (month.length<2)
+								month = \"0\"+month;
+							
+							if (day.length<2)
+								day = \"0\"+day;
+								
+							if (hour.length<2)
+								hour = \"0\"+hour;
+								
+							if (minute.length<2)
+								minute = \"0\"+minute;
+								
+							if (seconds.length<2)
+								seconds = \"0\"+seconds;
+								
+							document.getElementById(\"myDiv\").innerHTML=\"#{settings.tpg.gpio2}\"+year+month+day+\"-\"+hour+minute+seconds+\"MTV\";
+							*/
+							
+    					document.getElementById(\"myDiv\").innerHTML=xmlhttp.responseText;
 						}
 					}	
 					xmlhttp.open(\"POST\",\"../\",true);
@@ -94,7 +122,6 @@ def uiTest
 						</tr>"
 						ui += settings.tpg.testItemByte("0x00","SLOTADDR/<br>RESET_ALL","SLOT1|SLOT0|SYS5|SYS4|SYS3|SYS2|SYS1|SYS0/<br>RST")
 						ui += settings.tpg.readItemBit("0x01","STAT_LED","LEDEN| | | |LED3|LED2|LED1|LED0")	
-						# ui += settings.tpg.readItemBit("0x02","WXT_CLEAR_LATCH","CLEAR")
 						ui += settings.tpg.testItemBit(
 							"0x02",
 							"EXT_INPUTS/<br>WXT_CLEAR_LATCH","FANT2B|FANT2A|FANT1B|FANT1A|SENSR2|SENSR1|USRSW2|USRSW1/<br>CLEAR")
