@@ -23,6 +23,8 @@ class UserInterface
 	TimeOfRun = "TimeOfRun"
 	TimeOfStop = "TimeOfStop"
 	TimeOfClear = "TimeOfClear"
+	BtnDisplayImg = "BtnDisplayImg"
+	LoadImg = "LoadImg.gif"
 	
 	attr_accessor :SlotOwner
 	attr_accessor :slotProperties
@@ -200,7 +202,14 @@ class UserInterface
 		getSlotProperties(slotOwner)[DurationMins] = totalMinutesParam
 		getSlotProperties(slotOwner)[DurationMinsLeft] = totalMinutesParam		
 	end
-
+	
+	def getButtonImage(slotOwner)
+		if getSlotProperties(slotOwner)[BtnDisplayImg].nil?
+			getSlotProperties(slotOwner)[BtnDisplayImg] = LoadImg
+		end
+		return getSlotProperties(slotOwner)[BtnDisplayImg]
+	end
+	
 	def getButtonDisplay(slotOwner)
 		if getSlotProperties(slotOwner)[ButtonDisplay].nil?
 			getSlotProperties(slotOwner)[ButtonDisplay] = Load
@@ -664,10 +673,32 @@ class UserInterface
 	}
 	</style>
 	<script type=\"text/javascript\">
+	ct = 0;
 	function updateCountDowns() {
-		updateCountDownsSub(\"SLOT1\");
-		updateCountDownsSub(\"SLOT2\");
-		updateCountDownsSub(\"SLOT3\");
+	/*
+		For the blinky blinky
+		updateBtnColor(\"SLOT1\",ct);
+		if (ct>3) {
+			ct = 0;
+	*/
+			updateCountDownsSub(\"SLOT1\");
+			updateCountDownsSub(\"SLOT2\");
+			updateCountDownsSub(\"SLOT3\");
+/*
+		}
+		ct++;
+*/					
+	}
+	function updateBtnColor(SlotParam,ct) {
+		var btn = document.getElementById(\"btn_\"+SlotParam);
+		if (ct == 0)
+			btn.style=\"background: #ffaa77 no-repeat left;\"
+		if (ct == 1)
+			btn.style=\"background: #ffaa00 no-repeat left;\"			
+		if (ct == 2)
+			btn.style=\"background: #ff0077 no-repeat left;\"			
+		if (ct == 3)
+			btn.style=\"background: #00aa77 no-repeat left;\"
 	}
 	function updateCountDownsSub(SlotParam) {
 		var btnSlot1 = document.getElementById(\"btn_\"+SlotParam).innerHTML;
@@ -792,7 +823,7 @@ class UserInterface
 end
 
 set :ui, UserInterface.new
-set :port, 1979 # orig 4569
+set :port, 2679 # orig 4569
 
 get '/about' do
 	'A little about me.'
@@ -887,6 +918,16 @@ end
 
 get '/' do 
 	return settings.ui.display
+end
+
+get '/colors/:img' do 
+	puts "retrieving params[:img]=#{params[:img]}"
+	File.open("#{params[:img]}", "rb") do |f|
+		f.each_line do |line|
+			return f.read(1024)
+		end
+	end
+	return byte_block
 end
 
 post '/' do	
