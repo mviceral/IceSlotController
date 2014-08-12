@@ -28,7 +28,22 @@ class UserInterface
 	
 	attr_accessor :SlotOwner
 	attr_accessor :slotProperties
+	attr_accessor :upLoadConfigErrorName
+	attr_accessor :upLoadConfigErrorRow
+	attr_accessor :upLoadConfigErrorCol
 
+	def upLoadConfigErrorRow
+		@upLoadConfigErrorRow
+	end
+	
+	def upLoadConfigErrorCol
+		@upLoadConfigErrorCol
+	end
+	
+	def upLoadConfigErrorName
+		@upLoadConfigErrorName
+	end
+	
 	def updateDurationTimeLeft(slotOwner)
 		dl = GetSlotDurationHoursLeft(slotOwner).to_i*60*60 # dl - duration left
 		dl += GetSlotDurationMinsLeft(slotOwner).to_i*60
@@ -801,22 +816,145 @@ class UserInterface
 	end
 	
 	def loadFile
-		return "
+		#
+		# tbr - to be returned
+		#
+		tbr = "
 		<html>
 			<body>
 					<form 
 						action=\"/TopBtnPressed?slot=#{@SlotOwner}\" 
 						method=\"post\" 
 						enctype=\"multipart/form-data\">
-						<font size=\"3\">Configuration File Uploader</font>
+						<font size=\"3\">Configuration File Uploader</font>"
+		if upLoadConfigErrorRow.nil? == false && upLoadConfigErrorRow.length > 0
+			#
+			# There's an error, show it to the user.
+			#
+			tbr += "<br><br>"
+			tbr += "<font color=\"red\">Configuration File Error : "
+			tbr += "Row (#{upLoadConfigErrorRow}), Col (#{upLoadConfigErrorCol}) does not recognize "
+			tbr += "'#{upLoadConfigErrorName}' as an entry name.  "
+			tbr += "See sample template for configuration file."
+			tbr += "</font><br>"
+		end
+		tbr += "
 						<br>
 						<input type='file' name='myfile' />
 						<br>
 						<input type='submit' value='Upload' />
+						<br>
+						<br>
+						"
+						
+
+		if upLoadConfigErrorRow.nil? == false && upLoadConfigErrorRow.length > 0
+			#
+			# There's an error, show it to the user.
+			#
+			configFileTemplate = "
+			,,,,,,,,,,,,,,,,,
+			,,,,,,,,,,,,,,,,,
+			,Config File,,,,,,,,,,Condition,,,,,,
+			,,,,,Nom,Trip,Trip,FLAG,FLAG,Enable,IDLE,LOAD,START,RUN,STOP,CLEAR,
+			,index,Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,BIT,,,,,,,
+			,1,P12V,Controller PS Voltage,V,12,10.8,13.2,11.4,12.6,,ON,ON,ON,ON,ON,ON,
+			,2,IP12V,Controller PS Current,A,6,0,15,5.7,6.3,,,,,,,,
+			,3,P24V,Controller PS Voltage,V,24,21.6,26.4,22.8,25.2,,ON,ON,ON,ON,ON,ON,
+			,4,IP24v,Controller PS Current,A,20,0,60,19,21,,,,,,,,
+			,5,SLOT P5V,Controller PS Voltage,V,5,4.5,5.5,4.75,5.25,,ON,ON,ON,ON,ON,ON,
+			,6,IP5V,Controller PS Current,A,1,0,5,0.95,1.05,,,,,,,,
+			,7,SLOT P3V3,Controller PS Voltage,V,3.3,2.97,3.63,3.135,3.465,,ON,ON,ON,ON,ON,ON,
+			,8,SLOT P1V8,Controller PS Voltage,V,1.8,1.62,1.98,1.71,1.89,,ON,ON,ON,ON,ON,ON,
+			,9,BIB P5v,Slot PS Voltage,V,5,4.5,5.5,4.75,5.25,YES,OFF,SEQUP,ON,ON,ON,SEQDN,Slot PCB
+			,10,BIB P12V,Slot PS Voltage,V,12,10.8,13.2,11.4,12.6,YES,OFF,SEQUP,ON,ON,ON,SEQDN,Slot PCB
+			,11,BIB N5v,Slot PS Voltage,V,-5,-4.5,-5.5,-4.75,-5.25,YES,OFF,SEQUP,ON,ON,ON,SEQDN,Slot PCB
+			,12,CALREF,Slot Ref Voltage,V,1.2,1.08,1.32,1.14,1.26,,ON,ON,ON,ON,ON,ON,
+			,13,SLOT TEMP1 SENSR,Slot Temperatrure sensor,C,65,22,81.25,61.75,68.25,,ON,ON,ON,ON,ON,ON,
+			,14,SLOT TEMP2 SENSR,Slot Temperatrure sensor,C,65,22,81.25,61.75,68.25,,ON,ON,ON,ON,ON,ON,
+			,15,VPS0,Slot PS Voltage 0,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			,16,IPS0,Slot PS Current 0,A,125,0,140,14,131.25,,,,,,,,
+			,17,VPS1,Slot PS Voltage 1,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			,18,IPS1,Slot PS Current 1,A,125,0,140,14,131.25,,,,,,,,
+			,19,VPS2,Slot PS Voltage 2  (shared PS2),V,1.5,1.35,1.65,1.425,1.575,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			,20,IPS2,Slot PS Current 2 (shared PS2),A,70,0,70,7,73.5,,,,,,,,
+			,21,VPS3,Slot PS Voltage 3,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			,22,IPS3,Slot PS Current 3,A,125,0,140,14,131.25,,,,,,,,
+			,23,VPS4,Slot PS Voltage 4  (shared PS2),V,1.5,1.35,1.65,1.425,1.575,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			,24,IPS4,Slot PS Current 4  (shared PS2),A,70,0,70,7,73.5,,,,,,,,
+			,25,VPS5,Slot PS Voltage 5,V,ph,ph,ph,ph,ph,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			,26,IPS5,Slot PS Current 5,A,ph,ph,ph,ph,ph,,,,,,,,
+			,27,VPS6,Slot PS Voltage 6,V,3.3,2.97,3.63,3.135,3.465,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
+			,28,IPS6,Slot PS Current 6,A,3,0,5,0.5,3.15,,,,,,,,
+			,29,VPS7,Slot PS Voltage 7,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			,30,IPS7,Slot PS Current 7,A,125,0,140,14,131.25,,,,,,,,
+			,31,VPS8,Slot PS Voltage 8,V,5,4.5,5.5,4.75,5.25,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
+			,32,IPS8,Slot PS Current 8,A,1,0,3,0.3,1.05,,,,,,,,
+			,33,VPS9,Slot PS Voltage 9,V,2.1,1.89,2.31,1.995,2.205,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
+			,34,IPS9,Slot PS Current 9,A,1,0,3,0.3,1.05,,,,,,,,
+			,35,VPS10,Slot PS Voltage 10,V,2.5,2.25,2.75,2.375,2.625,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
+			,36,IPS10,Slot PS Current 10,A,3,0,5,0.5,3.15,,,,,,,,
+			,37,IDUT,Dut PS current 24 [1:24],A,23,0,27,2.7,24.15,,,,,,,,
+			,38,TDUT,DUT TEMPERATURE [1:24],C,125,25,135,118.75,131.25,YES,OFF,OFF,ON,ON,OFF,OFF,
+			,39,TIME,STEP TIME,M,2400,0,2640,,2520,,,,,,,,
+			,40,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10,0,11,,10.5,,,,,,,,
+			,41,Auto Restart,Auto restart,B,1,,,,,,,,,,,,
+			,42,Stop on Tolerance,Stop on tolerance limit,B,0,,,,,,,,,,,,
+			,43,Step Name,Step Name,T,STRING,,,,,,,,,,,,
+			,44,Next Step,Next Step Name,T,STRING,,END,,,,,,,,,,
+			,45,Text Vector,Test Vector Name & Path,T,STRING,,,,,,,,,,,,"
+
+			#
+			# Get the max column in the template so we could draw our table correcty
+			#
+			configTemplateRows = configFileTemplate.split("\n")
+			rowCt = 0
+			maxColCt = 0
+			while rowCt<configTemplateRows.length do
+				columns = configTemplateRows[rowCt].split(",")
+				colCt = 0
+				while colCt<columns.length do
+					colCt += 1
+				end
+				if maxColCt < colCt
+					maxColCt = colCt
+				end
+				rowCt += 1
+			end			
+			
+			tbr += "
+			Below is a sample configuration template:<br>
+				<table style=\"border-collapse: collapse;\">"
+			configTemplateRows = configFileTemplate.split("\n")
+				rowCt = 0
+				while rowCt<configTemplateRows.length do
+					tbr += "<tr style=\"border: 1px solid black;\">"
+					columns = configTemplateRows[rowCt].split(",")
+					colCt = 0
+					while colCt<columns.length do
+						tbr += "<td style=\"border: 1px solid black;\"><font size=\"1\">"+columns[colCt]+"</font></td>"		
+						colCt += 1
+					end
+					
+					while colCt<maxColCt do
+						tbr += "<td style=\"border: 1px solid black;\"><font size=\"1\">&nbsp;</font></td>"		
+						colCt += 1
+					end
+					
+					tbr += "</tr>"
+					rowCt += 1
+				end			
+			tbr += "
+				</table>
+			"
+		end
+		tbr += "
 					</form>
 			</body>
 		</html>
 		"
+		
+		return tbr
 		# end of 'def loadFile'
 	end
 	
@@ -835,6 +973,13 @@ get '/TopBtnPressed' do
 		#
 		# The Load button got pressed.
 		#
+		if params[:ErrRow] != ""
+			settings.ui.upLoadConfigErrorRow = params[:ErrRow]
+			settings.ui.upLoadConfigErrorCol = params[:ErrCol]
+			settings.ui.upLoadConfigErrorName = params[:ErrName]
+		else
+			settings.ui.upLoadConfigErrorName = ""
+		end
 		return settings.ui.loadFile
 	elsif params[:BtnState] == settings.ui.Run
 		#
@@ -879,7 +1024,7 @@ post '/TopBtnPressed' do
 	# Save the file in the upload folder.
 	#
 	goodUpload = true
-	File.open('uploads/configuration.json' , "w") do |f|
+	File.open('uploads/configuration.csv' , "w") do |f|
 		begin
 		  f.write(params['myfile'][:tempfile].read)
 		  rescue
@@ -891,24 +1036,87 @@ post '/TopBtnPressed' do
 		#
 		# Read the file into the server environment
 		#
-		File.open('uploads/configuration.json', "r") do |f|
+		config = Array.new
+		File.open('uploads/configuration.csv', "r") do |f|
 			f.each_line do |line|
-				tbr += line
+				config.push(line)
 			end
 		end
-	
-		config = JSON.parse(tbr)
-		config["FileName"] = "#{params['myfile'][:filename]}"
-		# return "parameter = '#{params}'" # Check the content of config hash object.
-	
+		
 		#
-		# Verify data content
-		# 	Duration_TotalHours - must be a number
-		# 	Duration_TotalMinutes - must be a number
+		# We got to parse the data.  Make sure that the data format is what Mike had provided by ensuring that the column
+		# item matches the known rows.
 		#
-		settings.ui.setConfigFileName(settings.ui.SlotOwner, config["FileName"])
-		settings.ui.setDurationHours(settings.ui.SlotOwner, config["Duration_TotalHours"])
-		settings.ui.setDurationMinutes(settings.ui.SlotOwner, config["Duration_TotalMinutes"])
+		
+		#
+		# The following are the known rows
+		#
+		knownRowNames = Hash.new
+		knownRowNames["P12V".upcase] = "nn" # nn - not nil.
+		knownRowNames["Name".upcase] = "nn"
+		knownRowNames["IP12V".upcase] = "nn"
+		knownRowNames["P24V".upcase] = "nn"
+		knownRowNames["IP24v".upcase] = "nn"
+		knownRowNames["SLOT P5V".upcase] = "nn"
+		knownRowNames["IP5V".upcase] = "nn"
+		knownRowNames["SLOT P3V3".upcase] = "nn"
+		knownRowNames["SLOT P1V8".upcase] = "nn"
+		knownRowNames["BIB P5v".upcase] = "nn"
+		knownRowNames["BIB P12V".upcase] = "nn"
+		knownRowNames["BIB N5v".upcase] = "nn"
+		knownRowNames["CALREF".upcase] = "nn"
+		knownRowNames["SLOT TEMP1 SENSR".upcase] = "nn"
+		knownRowNames["SLOT TEMP2 SENSR".upcase] = "nn"
+		knownRowNames["VPS0".upcase] = "nn"
+		knownRowNames["IPS0".upcase] = "nn"
+		knownRowNames["VPS1".upcase] = "nn"
+		knownRowNames["IPS1".upcase] = "nn"
+		knownRowNames["VPS2".upcase] = "nn"
+		knownRowNames["IPS2".upcase] = "nn"
+		knownRowNames["VPS3".upcase] = "nn"
+		knownRowNames["IPS3".upcase] = "nn"
+		knownRowNames["VPS4".upcase] = "nn"
+		knownRowNames["IPS4".upcase] = "nn"
+		knownRowNames["VPS5".upcase] = "nn"
+		knownRowNames["IPS5".upcase] = "nn"
+		knownRowNames["VPS6".upcase] = "nn"
+		knownRowNames["IPS6".upcase] = "nn"
+		knownRowNames["VPS7".upcase] = "nn"
+		knownRowNames["IPS7".upcase] = "nn"
+		knownRowNames["VPS8".upcase] = "nn"
+		knownRowNames["IPS8".upcase] = "nn"
+		knownRowNames["VPS9".upcase] = "nn"
+		knownRowNames["IPS9".upcase] = "nn"
+		knownRowNames["VPS10".upcase] = "nn"
+		knownRowNames["IPS10".upcase] = "nn"
+		knownRowNames["IDUT".upcase] = "nn"
+		knownRowNames["TDUT".upcase] = "nn"
+		knownRowNames["TIME".upcase] = "nn"
+		knownRowNames["TEMP WAIT".upcase] = "nn"
+		knownRowNames["Auto Restart".upcase] = "nn"
+		knownRowNames["Stop on Tolerance".upcase] = "nn"
+		knownRowNames["Step Name".upcase] = "nn"
+		knownRowNames["Next Step".upcase] = "nn"
+		knownRowNames["Text Vector".upcase] = "nn"
+		
+		#
+		# Make sure that each row have a column name that is found within the template which Mike provided.
+		#
+		ct = 0
+		while ct < config.length do
+			colContent = config[ct].split(",")[2].upcase
+			puts "colContent='#{colContent}'"
+			if colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn")
+				#
+				# How are we going to inform the user that the file is not a good one?
+				#
+				redirectWithError = "../TopBtnPressed?slot=#{settings.ui.SlotOwner}&BtnState=#{settings.ui.Load}"
+				redirectWithError += "&ErrRow=#{ct+1}&ErrCol=3&ErrName=#{colContent}"
+				redirect redirectWithError
+			end
+			ct += 1
+		end
+
 		settings.ui.setTimeOfUpload(settings.ui.SlotOwner)
 		settings.ui.setToAllowedToRunMode(settings.ui.SlotOwner)
 		settings.ui.saveSlotState()
