@@ -66,15 +66,24 @@ class TCUSampler
         # allDuts = AllDuts.new(createLogInterval_UnitsInHours)
         switcher = 0
         while true
-            #
-            # Gather data...
-            #
-            # puts "Start polling: #{Time.now.inspect}"
-            ThermalSiteDevices.pollDevices(uart1)
-            # puts "Done polling: #{Time.now.inspect}"
-            ThermalSiteDevices.logData
-            # puts "Done logging: #{Time.now.inspect}"
-        
+			case SharedMemory.GetMode()
+			when SharedMemory::InRunMode
+                #
+                # Gather data...
+                #
+                # puts "Start polling: #{Time.now.inspect}"
+                ThermalSiteDevices.pollDevices(uart1)
+                # puts "Done polling: #{Time.now.inspect}"
+                ThermalSiteDevices.logData
+                # puts "Done logging: #{Time.now.inspect}"
+			when SharedMemory::SequenceUp
+			    SharedMemory.SetMode(SharedMemory::InRunMode)
+			when SharedMemory::SequenceDown
+			    SharedMemory.SetMode(SharedMemory::InStopMode)
+            else
+                `echo "#{Time.new.inspect} : mode='#{SharedMemory.GetMode()}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
+            end						
+            
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
             # The code ensures that the process is exactly going to take place at the given interval.  No lag that

@@ -374,11 +374,7 @@ class SendSampledTcuToPC
 			# puts "receivedData within 'Send' process='#{receivedData}'"
             response = 
                 RestClient.post "http://192.168.7.1:9292/v1/migrations/Duts", {Duts:"#{sampledDataParam}" }.to_json, :content_type => :json, :accept => :json
-            # puts "SendDataToPC D #{__FILE__}-#{__LINE__}"
-            # puts "response.code=#{response.code}"
-            # puts "response.cookies=#{response.cookies}"
-            # puts "response.headers=#{response.headers}"
-            # puts "PC response.to_str=#{response.to_str}"
+                
             if timeOfData = response.to_str
                 # puts "SendDataToPC E #{__FILE__}-#{__LINE__}"
                 # puts "The PC acknowledged the sent data.  It was saved locally."
