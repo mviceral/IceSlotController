@@ -1,4 +1,17 @@
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
+=begin
+Trying to get the creation date of the uploaded file.
+http://stackoverflow.com/questions/3018123/php-how-to-get-creation-date-from-uploaded-file
+
+Solution, send the whole data and see if anything is different from what's send and what's in the BBB system.
+If there's a difference, update the data in BBB.
+-----------------------
+To get images so it'll probably display on Sinatra
+http://stackoverflow.com/questions/3493505/ruby-sinatra-serving-up-css-javascript-or-image-files
+get '/notes/images/:file' do
+  send_file('/root/dev/notes/images/'+params[:file], :disposition => 'inline')
+end
+=end
 # Code to look at:
 # "The run duration is complete."
 require 'rubygems'
@@ -7,26 +20,66 @@ require 'sqlite3'
 require 'json'
 
 class UserInterface
+	#
+	# Constants for what is to be displayed.
+	#
 	BlankFileName = "-----------"
 	FileName = "FileName"
+	
+	#
+	# Button Labels.
+	#
 	Load = "Load"
 	Run = "Run"
 	Stop = "Stop"
 	Clear = "Clear"
+	
+	#
+	# Duration time labels
+	#
 	DurationHours = 	"DurationHours"
 	DurationMins = "DurationMins"
 	DurationHoursLeft = 	"DurationHoursLeft"
 	DurationMinsLeft = "DurationMinsLeft"
 	DurationSecsLeft = "DurationSecsLeft"
+	
+	#
+	# Accessor for what's displayed on the top button of a slot
+	#
 	ButtonDisplay = "ButtonDisplay"
+	
+	#
+	# Accessors for indicated times of a slot
+	#
 	TimeOfUpload = "TimeOfUpload"
 	TimeOfRun = "TimeOfRun"
 	TimeOfStop = "TimeOfStop"
 	TimeOfClear = "TimeOfClear"
+	
+	#
+	# Accessor for the button image like Stop, Play, Load(Folder), Eject
+	#
 	BtnDisplayImg = "BtnDisplayImg"
 	LoadImg = "LoadImg.gif"
 	
-	attr_accessor :SlotOwner
+	#
+	# Column name parameters
+	#
+	Unit = "Unit"
+	NomSet = "NomSet"
+	TripMin = "TripMin"
+	TripMax = "TripMax"
+	FlagTolP = "FlagTolP"
+	FlagTolN = "FlagTolN"
+	EnableBit = "EnableBit"
+	IdleState = "IdleState"
+	LoadState = "LoadState"
+	StartState = "StartState"
+	RunState = "RunState"
+	StopState = "StopState"
+	ClearState = "ClearState"
+	Location = "Location"
+	
 	attr_accessor :slotProperties
 	attr_accessor :upLoadConfigErrorName
 	attr_accessor :upLoadConfigErrorRow
@@ -36,6 +89,20 @@ class UserInterface
 	attr_accessor :upLoadConfigErrorValue
 	attr_accessor :knownConfigRowNames
 
+	def setSlotOwner(slotOwnerParam)
+		@slotOwnerThe = slotOwnerParam
+	end
+
+	def getSlotOwner
+		if @slotOwnerThe.nil? || @slotOwnerThe == ""
+			puts "Calling getSlotsState #{__LINE__}-#{__FILE__}"
+			getSlotsState
+			puts "Calling - redirect \"../\" #{__LINE__}-#{__FILE__}"
+			redirect "../"
+		end
+		return @slotOwnerThe
+	end
+	
 	def clearError
 		@upLoadConfigErrorName = ""
 		@upLoadConfigErrorRow = ""
@@ -123,34 +190,34 @@ class UserInterface
 		@upLoadConfigErrorName
 	end
 	
-	def updateDurationTimeLeft(slotOwner)
-		dl = GetSlotDurationHoursLeft(slotOwner).to_i*60*60 # dl - duration left
-		dl += GetSlotDurationMinsLeft(slotOwner).to_i*60
-		dl += GetSlotDurationSecsLeft(slotOwner).to_i
-		dl -= (getSlotProperties(slotOwner)[TimeOfStop].to_i-getSlotProperties(slotOwner)[TimeOfRun].to_i) # dl is duration left
+	def updateDurationTimeLeft()
+		dl = GetSlotDurationHoursLeft().to_i*60*60 # dl - duration left
+		dl += GetSlotDurationMinsLeft().to_i*60
+		dl += GetSlotDurationSecsLeft().to_i
+		dl -= (getSlotProperties()[TimeOfStop].to_i-getSlotProperties()[TimeOfRun].to_i) # dl is duration left
 		
 		hours = (dl/3600).to_i
 		dl -= hours*3600
 		mins = (dl/60).to_i
 		dl -= (mins*60).to_i
-		getSlotProperties(slotOwner)[DurationHoursLeft] = hours
-		getSlotProperties(slotOwner)[DurationMinsLeft] = mins
-		getSlotProperties(slotOwner)[DurationSecsLeft] = dl.to_i
+		getSlotProperties()[DurationHoursLeft] = hours
+		getSlotProperties()[DurationMinsLeft] = mins
+		getSlotProperties()[DurationSecsLeft] = dl.to_i
 	end
 
-	def GetDurationLeft(slotLabelParam)
+	def GetDurationLeft()
 		# If the button state is Stop, subtract the total time between now and TimeOfRun, then 
-		if getSlotProperties(slotLabelParam)[ButtonDisplay] == Stop
+		if getSlotProperties()[ButtonDisplay] == Stop
 			#
 			# What does it return?
 			#
-			dl = GetSlotDurationHoursLeft(slotLabelParam).to_i*60*60 # dl - duration left
-			dl += GetSlotDurationMinsLeft(slotLabelParam).to_i*60
-			dl += GetSlotDurationSecsLeft(slotLabelParam).to_i
-			if getSlotProperties(slotLabelParam)[TimeOfRun].nil?
+			dl = GetSlotDurationHoursLeft().to_i*60*60 # dl - duration left
+			dl += GetSlotDurationMinsLeft().to_i*60
+			dl += GetSlotDurationSecsLeft().to_i
+			if getSlotProperties()[TimeOfRun].nil?
 				"00:00:00"
 			else
-				dl -= (Time.new.to_i - getSlotProperties(slotLabelParam)[TimeOfRun].to_i)
+				dl -= (Time.new.to_i - getSlotProperties()[TimeOfRun].to_i)
 				hours = (dl/3600).to_i
 				dl -= hours*3600
 				mins = (dl/60).to_i
@@ -164,8 +231,8 @@ class UserInterface
 		
 				return "#{hours}:#{mins}:#{dl.to_i}"
 			end
-		elsif getSlotProperties(slotLabelParam)[ButtonDisplay] == Run
-				return "#{GetSlotDurationHoursLeft(slotLabelParam)}:#{GetSlotDurationMinsLeft(slotLabelParam)}:#{GetSlotDurationSecsLeft(slotLabelParam)}"
+		elsif getSlotProperties()[ButtonDisplay] == Run
+				return "#{GetSlotDurationHoursLeft()}:#{GetSlotDurationMinsLeft()}:#{GetSlotDurationSecsLeft()}"
 		end
 	end 
 
@@ -190,25 +257,25 @@ class UserInterface
 		end
 	end
 	
-	def getStepCompletion(slotOwner)
+	def getStepCompletion()	
 		if slotProperties.to_json == "{}"
 			getSlotsState()
 		end		
 		
-		if getSlotProperties(slotOwner)[ButtonDisplay] == Load 
+		if getSlotProperties()[ButtonDisplay] == Load 
 			return BlankFileName
 		else
-			if getSlotProperties(slotOwner)[ButtonDisplay] == Run
+			if getSlotProperties()[ButtonDisplay] == Run
 				d = Time.now
-				d += GetSlotDurationHoursLeft(slotOwner).to_i*60*60
-				d += GetSlotDurationMinsLeft(slotOwner).to_i*60
-				d += GetSlotDurationSecsLeft(slotOwner).to_i
+				d += GetSlotDurationHoursLeft().to_i*60*60
+				d += GetSlotDurationMinsLeft().to_i*60
+				d += GetSlotDurationSecsLeft().to_i
 			else
-				puts "getSlotProperties(slotOwner)[TimeOfRun]=#{getSlotProperties(slotOwner)[TimeOfRun]}"
-				d = getSlotProperties(slotOwner)[TimeOfRun].to_i
-				d += GetSlotDurationHoursLeft(slotOwner).to_i*60*60 # dl - duration left
-				d += GetSlotDurationMinsLeft(slotOwner).to_i*60
-				d += GetSlotDurationSecsLeft(slotOwner).to_i			
+				puts "getSlotProperties()[TimeOfRun]=#{getSlotProperties()[TimeOfRun]}"
+				d = getSlotProperties()[TimeOfRun].to_i
+				d += GetSlotDurationHoursLeft().to_i*60*60 # dl - duration left
+				d += GetSlotDurationMinsLeft().to_i*60
+				d += GetSlotDurationSecsLeft().to_i			
 				d = Time.at(d)
 			end
 		
@@ -245,31 +312,31 @@ class UserInterface
 		@slotProperties
 	end
 	
-	def getSlotProperties(slotOwner)
-		if slotProperties[slotOwner].nil?
-			slotProperties[slotOwner] = Hash.new
+	def getSlotProperties()
+		if slotProperties[getSlotOwner()].nil?
+			slotProperties[getSlotOwner()] = Hash.new
 		end
-		return slotProperties[slotOwner]
+		return slotProperties[getSlotOwner()]
 	end
-	def setConfigFileName(slotOwner, fileNameParam)
-		getSlotProperties(slotOwner)[FileName] = fileNameParam
-	end
-	
-	def setDurationHours(slotOwner, durationHoursParam)
-		getSlotProperties(slotOwner)[DurationHours] = durationHoursParam
-		getSlotProperties(slotOwner)[DurationHoursLeft] = durationHoursParam
+	def setConfigFileName(fileNameParam)
+		getSlotProperties()[FileName] = fileNameParam
 	end
 	
-	def setTimeOfRun(slotOwner)
-		getSlotProperties(slotOwner)[TimeOfRun] = Time.now.to_i
+	def setDurationHours(durationHoursParam)
+		getSlotProperties()[DurationHours] = durationHoursParam
+		getSlotProperties()[DurationHoursLeft] = durationHoursParam
 	end
 	
-	def setTimeOfStop(slotOwner)
-		getSlotProperties(slotOwner)[TimeOfStop] = Time.now.to_i
+	def setTimeOfRun()
+		getSlotProperties()[TimeOfRun] = Time.now.to_i
 	end
 	
-	def setTimeOfClear(slotOwner)
-		getSlotProperties(slotOwner)[TimeOfClear] = Time.now.to_i
+	def setTimeOfStop()
+		getSlotProperties()[TimeOfStop] = Time.now.to_i
+	end
+	
+	def setTimeOfClear()
+		getSlotProperties()[TimeOfClear] = Time.now.to_i
 	end
 		
 	def saveSlotState()
@@ -288,42 +355,39 @@ class UserInterface
 		File.open("SlotState_DoNotDeleteNorModify.json", "w") { |file| file.write(slotProperties.to_json) }
 	end
 	
-	def setTimeOfUpload(slotOwner)
-		getSlotProperties(slotOwner)[TimeOfUpload] = Time.now
+	def setTimeOfUpload()
+		getSlotProperties()[TimeOfUpload] = Time.now
 	end
 	
-	def setDurationMinutes(slotOwner, totalMinutesParam)
-		getSlotProperties(slotOwner)[DurationMins] = totalMinutesParam
-		getSlotProperties(slotOwner)[DurationMinsLeft] = totalMinutesParam		
+	def setDurationMinutes(totalMinutesParam)
+		getSlotProperties()[DurationMins] = totalMinutesParam
+		getSlotProperties()[DurationMinsLeft] = totalMinutesParam		
 	end
 	
-	def getButtonImage(slotOwner)
-		if getSlotProperties(slotOwner)[BtnDisplayImg].nil?
-			getSlotProperties(slotOwner)[BtnDisplayImg] = LoadImg
+	def getButtonImage()
+		if getSlotProperties()[BtnDisplayImg].nil?
+			getSlotProperties()[BtnDisplayImg] = LoadImg
 		end
-		return getSlotProperties(slotOwner)[BtnDisplayImg]
+		return getSlotProperties()[BtnDisplayImg]
 	end
 	
-	def getButtonDisplay(slotOwner)
-		if getSlotProperties(slotOwner)[ButtonDisplay].nil?
-			getSlotProperties(slotOwner)[ButtonDisplay] = Load
+	def getButtonDisplay(slotLabelParam)
+		setSlotOwner(slotLabelParam)
+		if getSlotProperties()[ButtonDisplay].nil?
+			getSlotProperties()[ButtonDisplay] = Load
 		end
-		return getSlotProperties(slotOwner)[ButtonDisplay]
+		return getSlotProperties()[ButtonDisplay]
 	end
 	
-	def setToRunMode(slotOwner)
-		getSlotProperties(slotOwner)[ButtonDisplay] = Stop
-	end
-	
-	def setToLoadMode(slotOwner)
-		setConfigFileName(slotOwner, BlankFileName)
-		setDurationHours(slotOwner, "00")
-		setDurationMinutes(slotOwner, "00")
-		getSlotProperties(slotOwner)[ButtonDisplay] = Load
+	def setToLoadMode()
+		setConfigFileName(BlankFileName)
+		setDurationHours("00")
+		setDurationMinutes("00")
+		getSlotProperties()[ButtonDisplay] = Load
 	end
 
-	def setToAllowedToRunMode(slotOwner)
-		getSlotProperties(slotOwner)[ButtonDisplay] = Run
+	def setToAllowedToRunMode()
+		getSlotProperties()[ButtonDisplay] = Run
 	end
 	
 	def cellWidth
@@ -414,60 +478,48 @@ class UserInterface
 		# End of 'DutCell("S20",dut20[2])'
 	end
 
-	def GetSlotDurationSecsLeft(slotLabelParam)
-		if getSlotProperties(slotLabelParam)[DurationSecsLeft].nil?
-			getSlotProperties(slotLabelParam)[DurationSecsLeft] = "00"
+	def GetSlotDurationSecsLeft()
+		if getSlotProperties()[DurationSecsLeft].nil?
+			getSlotProperties()[DurationSecsLeft] = "00"
 		end
-		return getSlotProperties(slotLabelParam)[DurationSecsLeft]
+		return getSlotProperties()[DurationSecsLeft]
 	end
 
-	def GetSlotDurationMinsLeft(slotLabelParam)
-		if getSlotProperties(slotLabelParam)[DurationMinsLeft].nil?
-			getSlotProperties(slotLabelParam)[DurationMinsLeft] = "00"
+	def GetSlotDurationMinsLeft()
+		if getSlotProperties()[DurationMinsLeft].nil?
+			getSlotProperties()[DurationMinsLeft] = "00"
 		end
-		return getSlotProperties(slotLabelParam)[DurationMinsLeft]
+		return getSlotProperties()[DurationMinsLeft]
 	end
 	
-	def GetSlotDurationHoursLeft(slotLabelParam)
-		if getSlotProperties(slotLabelParam)[DurationHoursLeft].nil?
-			getSlotProperties(slotLabelParam)[DurationHoursLeft] = "00"
+	def GetSlotDurationHoursLeft()
+		if getSlotProperties()[DurationHoursLeft].nil?
+			getSlotProperties()[DurationHoursLeft] = "00"
 		end
-		return getSlotProperties(slotLabelParam)[DurationHoursLeft]
+		return getSlotProperties()[DurationHoursLeft]
 	end
 	
-	def GetSlotDurationHours(slotLabelParam)
-		if slotProperties[slotLabelParam].nil?
+	def GetSlotDurationHours()
+		if getSlotProperties()[DurationHours].nil?
 			return "00"
 		else
-			if slotProperties[slotLabelParam][DurationHours].nil?
-				return "00"
-			else
-				return slotProperties[slotLabelParam][DurationHours]
-			end
+			return getSlotProperties()[DurationHours]
 		end
 	end 
 	
-	def GetSlotDurationMins(slotLabelParam)
-		if slotProperties[slotLabelParam].nil?
+	def GetSlotDurationMins()
+		if getSlotProperties()[DurationMins].nil?
 			return "00"
 		else
-			if slotProperties[slotLabelParam][DurationMins].nil?
-				return "00"
-			else
-				return slotProperties[slotLabelParam][DurationMins]
-			end
+			return getSlotProperties()[DurationMins]
 		end
 	end 
 	
-	def GetSlotFileName (slotLabelParam)
-		if slotProperties[slotLabelParam].nil?
+	def GetSlotFileName ()
+		if getSlotProperties()[FileName].nil?
 			return BlankFileName
 		else
-			if slotProperties[slotLabelParam][FileName].nil?
-				return BlankFileName
-			else
-				return slotProperties[slotLabelParam][FileName]
-			end
+			return getSlotProperties()[FileName]
 		end
 		# End of 'def GetSlotFileName (slotLabelParam)'
 	end
@@ -477,6 +529,7 @@ class UserInterface
 	end
 	
 	def GetSlotDisplay (slotLabelParam,slotLabel2Param)
+		setSlotOwner(slotLabel2Param)
 		getSlotDisplay_ToBeReturned = ""
 		begin
 			db = SQLite3::Database.open "latest.db"
@@ -647,7 +700,7 @@ class UserInterface
 				 						style=\"font-style: italic;\">
 				 							<label 
 				 								id=\"stepCompletion_#{slotLabel2Param}\">
-				 									#{getStepCompletion(slotLabel2Param)}
+				 									#{getStepCompletion()}
 				 							</label>
 				 					</font>
 				 				</td>
@@ -677,7 +730,7 @@ class UserInterface
 							<tr>
 								<td>
 									<center>
-									<font size=\"1.25\" style=\"font-style: italic;\">#{GetSlotFileName(slotLabel2Param)}</font>								
+									<font size=\"1.25\" style=\"font-style: italic;\">#{GetSlotFileName()}</font>								
 									</center>
 								</td>
 							</tr>
@@ -689,7 +742,7 @@ class UserInterface
 							<tr>
 								<td align = \"center\">
 									<font size=\"1.25\" style=\"font-style: italic;\">
-										#{GetSlotDurationHours(slotLabel2Param)}:#{GetSlotDurationMins(slotLabel2Param)}
+										#{GetSlotDurationHours()}:#{GetSlotDurationMins()}
 									</font>								
 								</td>
 							</tr>
@@ -707,16 +760,16 @@ class UserInterface
 										<label 
 											id=\"durationLeft_#{slotLabel2Param}\"
 										>
-											#{GetDurationLeft(slotLabel2Param)}
+											#{GetDurationLeft()}
 										</label>
 										<input 
 											type=\"hidden\"
 											name=\"hiddenTimeOfRun_#{slotLabel2Param}\"
-											value=\"#{getSlotProperties(slotLabel2Param)[TimeOfRun].to_i}\" />
+											value=\"#{getSlotProperties()[TimeOfRun].to_i}\" />
 										<input 
 											type=\"hidden\"
 											name=\"hiddenDurationLeft_#{slotLabel2Param}\"
-											value=\"#{GetSlotDurationHoursLeft(slotLabel2Param)}:#{GetSlotDurationMinsLeft(slotLabel2Param)}:#{GetSlotDurationSecsLeft(slotLabel2Param)}\" />
+											value=\"#{GetSlotDurationHoursLeft()}:#{GetSlotDurationMinsLeft()}:#{GetSlotDurationSecsLeft()}\" />
 									</font>
 								</td>
 							</tr>
@@ -902,7 +955,7 @@ class UserInterface
 		<html>
 			<body>
 					<form 
-						action=\"/TopBtnPressed?slot=#{@SlotOwner}\" 
+						action=\"/TopBtnPressed?slot=#{getSlotOwner()}\" 
 						method=\"post\" 
 						enctype=\"multipart/form-data\">
 						<font size=\"3\">Configuration File Uploader</font>"
@@ -976,29 +1029,37 @@ class UserInterface
 				rowCt += 1
 			end			
 			
-			tbr += "Below is a sample configuration template.  Column name must be on zero-base column #2,"
-			tbr += " and data must be in this given order:<br><br>
-				<table style=\"border-collapse: collapse;\">"
-			configTemplateRows = configFileTemplate.split("\n")
-				rowCt = 0
-				while rowCt<configTemplateRows.length do
-					tbr += "<tr style=\"border: 1px solid black;\">"
-					columns = configTemplateRows[rowCt].split(",")
-					colCt = 0
-					while colCt<columns.length do
-						tbr += "<td style=\"border: 1px solid black;\"><font size=\"1\">"+columns[colCt]+"</font></td>"		
-						colCt += 1
-					end
+			tbr += "<center>Below is a sample configuration template.  Column Name must be on column 'C',"
+			tbr += " and data must be in this given order and format.  Do not use comma in the data.</center><br><br>
+				<table width=\"100%\">
+					<tr>
+						<td align=\"center\">
+							<center>
+							<table style=\"border-collapse: collapse;\">"
+						configTemplateRows = configFileTemplate.split("\n")
+							rowCt = 0
+							while rowCt<configTemplateRows.length do
+								tbr += "<tr style=\"border: 1px solid black;\">"
+								columns = configTemplateRows[rowCt].split(",")
+								colCt = 0
+								while colCt<columns.length do
+									tbr += "<td style=\"border: 1px solid black;\"><font size=\"1\">"+columns[colCt]+"</font></td>"		
+									colCt += 1
+								end
 					
-					while colCt<maxColCt do
-						tbr += "<td style=\"border: 1px solid black;\"><font size=\"1\">&nbsp;</font></td>"		
-						colCt += 1
-					end
+								while colCt<maxColCt do
+									tbr += "<td style=\"border: 1px solid black;\"><font size=\"1\">&nbsp;</font></td>"		
+									colCt += 1
+								end
 					
-					tbr += "</tr>"
-					rowCt += 1
-				end			
-			tbr += "
+								tbr += "</tr>"
+								rowCt += 1
+							end			
+						tbr += "
+							</table>
+							</center>
+						</td>
+					</tr>
 				</table>
 			"
 		end
@@ -1038,13 +1099,79 @@ class UserInterface
 	def checkConfigValue(valueParam, colnameParam, indexParam)
 		if (is_a_number?(valueParam) == false)
 			puts "Failed number test. #{__LINE__}-#{__FILE__}"
-			redirectWithError = "../TopBtnPressed?slot=#{@SlotOwner}&BtnState=#{Load}"
+			redirectWithError = "../TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 			redirectWithError += "&ErrIndex=#{indexParam}&ErrColType=#{colnameParam}&ErrValue=#{valueParam}"
 			return redirectWithError
 		else
 			return ""
 		end
 	end
+	
+	def clearInternalSettings
+		getSlotProperties()[FileName] = ""
+		getSlotProperties()[DurationHours] = "00"
+		getSlotProperties()[DurationHoursLeft] = "00"
+		getSlotProperties()[DurationMins] = "00"
+		getSlotProperties()[DurationMinsLeft] = "00"
+		getSlotProperties()[DurationSecsLeft] = "00"
+	end
+	
+	def setItemParameter(nameParam, param, valueParam)
+		puts "setItemParameter nameParam=#{nameParam}, param=#{param}, valueParam=#{valueParam} #{__LINE__}-#{__FILE__}"
+		puts "getSlotProperties()[nameParam].nil? = #{getSlotProperties()[nameParam].nil?}"
+		puts "getSlotProperties()[nameParam] = #{getSlotProperties()[nameParam]}"
+		puts " #{__LINE__}-#{__FILE__}"
+		if getSlotProperties()[nameParam].nil?
+			puts "A #{__LINE__}-#{__FILE__}"
+			getSlotProperties()[nameParam] = Hash.new
+			puts "B #{__LINE__}-#{__FILE__}"
+		end
+		puts "C #{__LINE__}-#{__FILE__}"
+		getSlotProperties()[nameParam][param] = valueParam
+		puts "D #{__LINE__}-#{__FILE__}"
+
+		# End of 'def setItemParameter(nameParam, param, valueParam)'
+	end
+
+	def setDataSetup(
+					nameParam,unitParam,nomSetParam,tripMinParam,tripMaxParam,flagTolPParam,flagTolNParam,enableBitParam,
+					idleStateParam,loadStateParam,startStateParam,runStateParam,stopStateParam,clearStateParam,locationParam
+				)
+		puts "setDataSetup function got called. #{__LINE__}-#{__FILE__}"
+		puts "SlotOwner = '#{getSlotOwner()}' #{__LINE__}-#{__FILE__}"
+		setItemParameter(nameParam,Unit,unitParam)
+		setItemParameter(nameParam,NomSet,nomSetParam)
+		setItemParameter(nameParam,TripMin,tripMinParam)
+		setItemParameter(nameParam,TripMax,tripMaxParam)
+		setItemParameter(nameParam,FlagTolP,flagTolPParam)
+		setItemParameter(nameParam,FlagTolN,flagTolNParam)
+		setItemParameter(nameParam,EnableBit,enableBitParam)
+		setItemParameter(nameParam,IdleState,idleStateParam)
+		setItemParameter(nameParam,LoadState,loadStateParam)
+		setItemParameter(nameParam,StartState,startStateParam)
+		setItemParameter(nameParam,RunState,runStateParam)
+		setItemParameter(nameParam,StopState,stopStateParam)
+		setItemParameter(nameParam,ClearState,clearStateParam)
+		setItemParameter(nameParam,Location,locationParam)
+		# End of 
+	end 
+	
+	def setToRunMode()
+		#
+		# Send all info to BBB
+		# 1) Make sure the BBB is up an running.
+		# 	1.A) BBB's grape code is running so BBB can respond back to PC.
+		#	2) Have the PC send the whole data to the BBB and have the BBB see if anything is different from
+		#	it has in the system.  If there's a difference, update the data in BBB.
+		#
+		
+		#
+		# When it's in run mode, set the button to stop.
+		#
+		getSlotProperties()[ButtonDisplay] = Stop
+	end	
+	
+	# End of class UserInterface
 end
 
 set :ui, UserInterface.new
@@ -1055,7 +1182,7 @@ get '/about' do
 end
 
 get '/TopBtnPressed' do
-	settings.ui.SlotOwner = "#{params[:slot]}"
+	settings.ui.setSlotOwner("#{params[:slot]}")
 	if params[:BtnState] == settings.ui.Load
 		#
 		# The Load button got pressed.
@@ -1081,41 +1208,50 @@ get '/TopBtnPressed' do
 		#
 		# The Run button got pressed.
 		#
-		settings.ui.setToRunMode(settings.ui.SlotOwner)
-		settings.ui.setTimeOfRun(settings.ui.SlotOwner)
+		settings.ui.setToRunMode()
+		settings.ui.setTimeOfRun()
 		settings.ui.saveSlotState();
 		redirect "../"
 	elsif params[:BtnState] == settings.ui.Stop
 		#
 		# The Stop button got pressed.
 		#
-		settings.ui.setToAllowedToRunMode(settings.ui.SlotOwner)
-		settings.ui.setTimeOfStop(settings.ui.SlotOwner)
+		settings.ui.setToAllowedToRunMode()
+		settings.ui.setTimeOfStop()
 		
 		#
 		# Update the duration time
 		# Formula : Time now - Time of run, then convert to hours, mins, sec.
 		#
-		settings.ui.updateDurationTimeLeft(settings.ui.SlotOwner)
+		settings.ui.updateDurationTimeLeft()
 		settings.ui.saveSlotState();
 		redirect "../"
 	elsif params[:BtnState] == settings.ui.Clear
 		#
 		# The Clear button got pressed.
 		#
-		settings.ui.setToLoadMode(settings.ui.SlotOwner)
-		settings.ui.setTimeOfClear(settings.ui.SlotOwner)
+		settings.ui.setToLoadMode()
+		settings.ui.setTimeOfClear()
 		settings.ui.saveSlotState();
 		redirect "../"
 	end	
-	# return "get in /loadfile - slot = '#{settings.ui.SlotOwner}'"+
 end
 
+get '/' do 
+	puts "get / got called."
+	return settings.ui.display
+end
 
+post '/' do	
+	puts "post / got called."
+	settings.ui.saveSlotState() # Saves the state everytime the display gets refreshed.  10 second resolution...
+	return settings.ui.display
+end
 
 post '/TopBtnPressed' do
 	settings.ui.clearError()
-	
+	settings.ui.clearInternalSettings();
+
 	tbr = "" # To be returned.
 	
 	#
@@ -1155,7 +1291,7 @@ post '/TopBtnPressed' do
 		#
 		# Setup the string for error
 		#
-		redirectWithError = "../TopBtnPressed?slot=#{settings.ui.SlotOwner}&BtnState=#{settings.ui.Load}"
+		redirectWithError = "../TopBtnPressed?slot=#{settings.ui.getSlotOwner()}&BtnState=#{settings.ui.Load}"
 
 
 		#
@@ -1188,8 +1324,17 @@ post '/TopBtnPressed' do
 		nomSetCol = 5
 		tripMinCol = 6
 		tripMaxCol = 7
-		flagTolPCol = 8
-		flagTolNCol = 9
+		flagTolPCol = 8 # Flag Tolerance Positive
+		flagTolNCol = 9 # Flag Tolerance Negative
+		enableBitCol = 10 # Flag indicating that software can turn it on or off
+		idleStateCol = 11 # Flag indicating that software can turn it on or off
+		loadStateCol = 12 # Flag indicating that software can turn it on or off
+		startStateCol = 13 # Flag indicating that software can turn it on or off
+		runStateCol = 14 # Flag indicating that software can turn it on or off
+		stopStateCol = 15 # Flag indicating that software can turn it on or off
+		clearStateCol = 16 # Flag indicating that software can turn it on or off
+		locationCol = 17 # Flag indicating that software can turn it on or off
+		
 		while ct < config.length do
 			columns = config[ct].split(",")
 			name = columns[nameCol].upcase
@@ -1200,22 +1345,46 @@ post '/TopBtnPressed' do
 			tripMax = columns[tripMaxCol].upcase
 			flagTolP = columns[flagTolPCol].upcase
 			flagTolN = columns[flagTolNCol].upcase
+			enableBit = columns[enableBitCol].upcase
+			idleState = columns[idleStateCol].upcase
+			loadState = columns[loadStateCol].upcase
+			startState = columns[startStateCol].upcase
+			runState = columns[runStateCol].upcase
+			stopState = columns[stopStateCol].upcase
+			clearState = columns[clearStateCol].upcase
+			location = columns[locationCol].upcase
 
+=begin			
 			puts "name=#{name} #{__LINE__}-#{__FILE__}"
-			puts "unit=#{unit} #{__LINE__}-#{__FILE__}"
-			
+			puts "unit=#{unit} #{__LINE__}-#{__FILE__}"			
 			puts "nomSet=#{nomSet} #{__LINE__}-#{__FILE__}"
 			puts "tripMin=#{tripMin} #{__LINE__}-#{__FILE__}"
 			puts "tripMax=#{tripMax} #{__LINE__}-#{__FILE__}"
 			puts "flagTolP=#{flagTolP} #{__LINE__}-#{__FILE__}"
 			puts "flagTolN=#{flagTolN} #{__LINE__}-#{__FILE__}"
 			puts "  -----------------  #{__LINE__}-#{__FILE__}"
-
+=end
 			if skipNumCheckOnRows[name].nil?
 				#
 				# The row with the given name is not to be skipped.
 				#
-				if unit == "V" || unit == "A" || unit == "C"
+				if unit == "M"
+					#
+					# Make sure that the following items -  nomSet,tripMin, tripMax, flagTolP, flagTolN are numbers
+					#					
+					error = settings.ui.checkConfigValue(nomSet,"nomSetCol",columns[1])
+					if error.length > 0
+						redirect error
+					else					
+						if "TIME".upcase == name
+							puts "in here -\"TIME\".upcase == name- #{__LINE__}-#{__FILE__}"
+							puts "nomSet = #{nomSet} #{__LINE__}-#{__FILE__}"
+							settings.ui.setDurationHours("00");
+							settings.ui.setDurationMinutes(nomSet);
+						end
+					end
+					# End of 'if unit == "M"'
+				elsif unit == "V" || unit == "A" || unit == "C"
 					#
 					# Make sure that the following items -  nomSet,tripMin, tripMax, flagTolP, flagTolN are numbers
 					#					
@@ -1243,34 +1412,36 @@ post '/TopBtnPressed' do
 					if error.length > 0
 						redirect error
 					end					
-				end
+					# End of 'elsif unit == "V" || unit == "A" || unit == "C"'
+				end								
+				#
+				# Get the data for processing
+				#
+				settings.ui.setDataSetup(
+					name,unit,nomSet,tripMin,tripMax,flagTolP,flagTolN,enableBit,idleState,
+					loadState,startState,runState,stopState,clearState,location
+				)
+				# end of 'if skipNumCheckOnRows[name].nil?'
 			end
+			
+			
 			# puts "colContent='#{colContent}'"
 			if colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn")
 				#
 				# How are we going to inform the user that the file is not a good one?
 				#
-				redirectWithError = "../TopBtnPressed?slot=#{settings.ui.SlotOwner}&BtnState=#{settings.ui.Load}"
+				redirectWithError = "../TopBtnPressed?slot=#{settings.ui.getSlotOwner()}&BtnState=#{settings.ui.Load}"
 				redirectWithError += "&ErrRow=#{ct+1}&ErrCol=3&ErrName=#{colContent}"
 				redirect redirectWithError
 			end
 			ct += 1
 		end
 		
-		settings.ui.setConfigFileName(settings.ui.SlotOwner, "#{params['myfile'][:filename]}")
-		settings.ui.setTimeOfUpload(settings.ui.SlotOwner)
-		settings.ui.setToAllowedToRunMode(settings.ui.SlotOwner)
+		settings.ui.setConfigFileName("#{params['myfile'][:filename]}")
+		settings.ui.setTimeOfUpload()
+		settings.ui.setToAllowedToRunMode()
 		settings.ui.saveSlotState()
   end  
   redirect "../"
-end
-
-get '/' do 
-	return settings.ui.display
-end
-
-post '/' do	
-	settings.ui.saveSlotState() # Saves the state everytime the display gets refreshed.  10 second resolution...
-	return settings.ui.display
 end
 
