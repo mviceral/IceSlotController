@@ -18,6 +18,8 @@ require 'rubygems'
 require 'sinatra'
 require 'sqlite3'
 require 'json'
+require 'rest_client'
+require_relative '../lib/SharedLib'
 
 class UserInterface
 	#
@@ -271,7 +273,6 @@ class UserInterface
 				d += GetSlotDurationMinsLeft().to_i*60
 				d += GetSlotDurationSecsLeft().to_i
 			else
-				puts "getSlotProperties()[TimeOfRun]=#{getSlotProperties()[TimeOfRun]}"
 				d = getSlotProperties()[TimeOfRun].to_i
 				d += GetSlotDurationHoursLeft().to_i*60*60 # dl - duration left
 				d += GetSlotDurationMinsLeft().to_i*60
@@ -384,6 +385,12 @@ class UserInterface
 		setDurationHours("00")
 		setDurationMinutes("00")
 		getSlotProperties()[ButtonDisplay] = Load
+	end
+
+	def setBbbConfigUpload()
+		@response = 
+      RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {mode:"#{SharedLib::LoadConfigFromPC}" }.to_json, :content_type => :json, :accept => :json		
+		puts "Bbb responded with '#{@response}'"
 	end
 
 	def setToAllowedToRunMode()
@@ -1156,6 +1163,12 @@ class UserInterface
 		# End of 
 	end 
 	
+	def setBbbToStopMode()
+		@response = 
+      RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {mode:"#{SharedLib::StopFromPC}" }.to_json, :content_type => :json, :accept => :json
+		puts "Bbb responded with '#{@response}'"
+	end
+	
 	def setToRunMode()
 		#
 		# Send all info to BBB
@@ -1169,6 +1182,9 @@ class UserInterface
 		# When it's in run mode, set the button to stop.
 		#
 		getSlotProperties()[ButtonDisplay] = Stop
+		@response = 
+      RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {mode:"#{SharedLib::RunFromPC}" }.to_json, :content_type => :json, :accept => :json
+		puts "Bbb responded with '#{@response}'"
 	end	
 	
 	# End of class UserInterface
@@ -1216,6 +1232,7 @@ get '/TopBtnPressed' do
 		#
 		# The Stop button got pressed.
 		#
+		settings.ui.setBbbToStopMode()
 		settings.ui.setToAllowedToRunMode()
 		settings.ui.setTimeOfStop()
 		
@@ -1442,6 +1459,9 @@ post '/TopBtnPressed' do
 		settings.ui.setToAllowedToRunMode()
 		settings.ui.saveSlotState()
   end  
+  
+	settings.ui.setBbbConfigUpload()
+	
   redirect "../"
 end
 
