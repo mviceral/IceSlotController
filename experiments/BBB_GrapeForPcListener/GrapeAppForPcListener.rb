@@ -4,6 +4,7 @@ require 'grape'
 #require 'forwardable'
 require 'pp'
 require 'sqlite3'
+require_relative '../../lib/SharedLib'
 require_relative '../../BBB_Shared Memory Ruby/SharedMemory'
 
 # If you set this true, it will put out some debugging info to STDOUT
@@ -60,29 +61,34 @@ module PcListenerModule
 			# you will get the record with that id.
 			#
 			post "/" do
-				if params["mode"].nil? == false
+				if params["#{SharedLib::PcToBbbCmd}"].nil? == false
 					#
 					# Parse out the data sent from BBB
 					#
-					mode = params["mode"]
+					mode = params["#{SharedLib::PcToBbbCmd}"]
 					puts "PC told BBB to turn to this mode '#{mode}'"
 					
 					#
 					#	Tell sampler to Run if mode = run, Stop if mode = stop, etc.
 					#
+					puts "PC sent '#{mode}'"
 					case mode
 					when SharedLib::RunFromPC
+						SharedMemory.Initialize()
 						SharedMemory.SetMode(SharedMemory::SequenceUp)
 					when SharedLib::StopFromPC
+						SharedMemory.Initialize()
 						SharedMemory.SetMode(SharedMemory::SequenceDown)
 					when SharedLib::LoadConfigFromPC
-					  puts "You passed a string"
+						dataFromPc = params["#{SharedLib::PcToBbbData}"]
+					  puts "parameter '#{SharedLib::PcToBbbCmd}' = '#{dataFromPc}'"
 					else
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 					end						
-					{bbbResponding:"#{mode}"}
 				end
+				{bbbResponding:"#{mode}"}
 			end
 		end
 	end		
 end
+""
