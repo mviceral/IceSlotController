@@ -9,12 +9,14 @@ If there's a difference, update the data in BBB.
 To get images so it'll probably display on Sinatra
 http://stackoverflow.com/questions/3493505/ruby-sinatra-serving-up-css-javascript-or-image-files
 get '/notes/images/:file' do
-  send_file('/root/dev/notes/images/'+params[:file], :disposition => 'inline')
+  send_file('/root/dev/notes/images/'+SharedLib.uriToStr(params[:file]), :disposition => 'inline')
 end
 =end
 # Code to look at:
 # "The run duration is complete."
 # "BBB PcListener is down.  Need to handle this in production code level."
+# [***] - code not verified.
+# @ 1802
 require 'rubygems'
 require 'sinatra'
 require 'sqlite3'
@@ -99,6 +101,7 @@ class UserInterface
 	attr_accessor :upLoadConfigErrorName
 	attr_accessor :upLoadConfigErrorRow
 	attr_accessor :upLoadConfigErrorIndex
+	attr_accessor :upLoadConfigErrorInFile
 	attr_accessor :upLoadConfigTypeError
 	attr_accessor :upLoadConfigErrorCol
 	attr_accessor :upLoadConfigErrorColType
@@ -106,7 +109,21 @@ class UserInterface
 	attr_accessor :knownConfigRowNames
 	attr_accessor :upLoadConfigErrorGeneral
 	attr_accessor :upLoadConfigGoodUpload
+	attr_accessor :redirectWithError
+	attr_accessor :redirectErrorFaultyPsConfig	
+	
+	def redirectErrorFaultyPsConfig
+		@redirectErrorFaultyPsConfig
+	end
+	
+	def dirFileRepository
+		return "file repository"
+	end
 
+	def redirectWithError
+		@redirectWithError
+	end
+	
 	def getMaxColCt(configTemplateRows)
 		maxColCt = 0
 		rowCt = 0
@@ -184,6 +201,7 @@ class UserInterface
 		@upLoadConfigErrorColType = ""
 		@upLoadConfigErrorValue = ""
 		@upLoadConfigErrorGeneral = ""
+		@upLoadConfigErrorInFile = ""
 	end
 	
 	def upLoadConfigErrorGeneral
@@ -194,6 +212,10 @@ class UserInterface
 		@upLoadConfigTypeError
 	end
 	
+	def upLoadConfigErrorInFile
+		@upLoadConfigErrorInFile
+	end
+		
 	def upLoadConfigErrorIndex
 		@upLoadConfigErrorIndex
 	end
@@ -213,6 +235,46 @@ class UserInterface
 		return ",,,Comment,,Nom,Trip,Trip,FLAG,FLAG,Enable,IDLE,LOAD,START,RUN,STOP,CLEAR
 ,index,Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,control,,,,,,
 ,1,TDUT,DUT TEMPERATURE [1:24],C,125,25,135,118.75,131.25,YES,OFF,OFF,ON,ON,OFF,OFF"
+	end
+
+	def stepConfigFileTemplate
+		return ",,,,
+		Item,Name,Description,Type,Value
+		,Step Name,File Name A ,N,1
+		1,Power Supplies,PS File Name A,File,
+		2,Temperature,TMP File Name Z,File,
+		3,Step Name,Step Name,T,STRING
+		4,TIME,STEP TIME,M,2400
+		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10
+		6,Alarm Wait,WAIT TIME ON ALARM,M,1
+		7,Auto Restart,Auto restart,B,1
+		8,Stop on Tolerance,Stop on tolerance limit,B,0
+		9,Text Vector,Test Vector Name & Path,T,STRING
+		10,Next Step,Next Step Name 'B',T,STRING
+		,Step Name,File Name B,N,2
+		1,Power Supplies,PS File Name B,File,
+		2,Temperature,TMP File Name Z,File,
+		3,Step Name,Step Name,T,STRING
+		4,TIME,STEP TIME,M,2400
+		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10
+		6,Alarm Wait,WAIT TIME ON ALARM,M,1
+		7,Auto Restart,Auto restart,B,1
+		8,Stop on Tolerance,Stop on tolerance limit,B,0
+		9,Text Vector,Test Vector Name & Path,T,STRING
+		10,Next Step,Next Step Name 'C',T,STRING
+		,Step Name,File Name C,N,3
+		1,Power Supplies,PS File Name C,File,
+		2,Temperature,TMP File Name Z,File,
+		3,Step Name,Step Name,T,STRING
+		4,TIME,STEP TIME,M,2400
+		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10
+		6,Alarm Wait,WAIT TIME ON ALARM,M,1
+		7,Auto Restart,Auto restart,B,1
+		8,Stop on Tolerance,Stop on tolerance limit,B,0
+		9,Text Vector,Test Vector Name & Path,T,STRING
+		10,Next Step,Next Step Name 'END',T,STRING
+		,if Condition,Count >= 10 END,F,FUNCTION
+		,Count ++,incrament count,F,FUNCTION"
 	end
 	
 	def psConfigFileTemplate
@@ -1085,12 +1147,7 @@ class UserInterface
 		#
 		tbr = "
 		<html>
-			<body>
-<script type='text/javascript'>
-var yip2=java.net.InetAddress.getLocalHost();	
-var yip=yip2.getHostAddress();
-alert(\"your machine's local network IP is \"+yip);
-</script>			"
+			<body>"
 		tbr += "
 						<font size=\"3\">Uploaded Step Files</font><br>"
 		#
@@ -1170,8 +1227,6 @@ alert(\"your machine's local network IP is \"+yip);
 						<font size=\"1\">&nbsp;[&nbsp;Expected file fxtensions: *.step - for Step file;&nbsp;&nbsp;*.ps_config - for Power Supply sequence file;&nbsp;&nbsp;*.temp_config - for Temperature setting file.]</font>
 						<br>
 						<font size=\"2\">&nbsp;* Uploading files with similar names will over write old ones.</font>"
-		puts "@ loadFile A upLoadConfigGoodUpload=#{upLoadConfigGoodUpload} #{__LINE__}-#{__FILE__}"
-		puts "@ loadFile B upLoadConfigErrorGeneral=#{upLoadConfigErrorGeneral} #{__LINE__}-#{__FILE__}"
 		if upLoadConfigErrorGeneral.nil? == false && upLoadConfigErrorGeneral.length > 0
 				#
 				# There's an error, show it to the user.
@@ -1180,13 +1235,11 @@ alert(\"your machine's local network IP is \"+yip);
 				tbr += "<font color=\"red\">Configuration File Error : "
 				tbr += "#{upLoadConfigErrorGeneral}"
 				tbr += "</font><br>"
-				upLoadConfigErrorGeneral = ""  # Clear the message.
 		elsif upLoadConfigGoodUpload.nil? == false && upLoadConfigGoodUpload.length > 0
 				tbr += "<br><br>"
 				tbr += "<font color=\"green\"> "
 				tbr += "#{upLoadConfigGoodUpload}"
 				tbr += "</font><br>"
-				upLoadConfigGoodUpload = "" # Clear the message.
 		elsif (upLoadConfigErrorRow.nil? == false && upLoadConfigErrorRow.length > 0) ||
 			 (upLoadConfigErrorIndex.nil? == false && upLoadConfigErrorIndex.length > 0)
 			if upLoadConfigErrorColType.nil? == false && upLoadConfigErrorColType.length > 0
@@ -1209,7 +1262,7 @@ alert(\"your machine's local network IP is \"+yip);
 				end			
 
 				tbr += "<br><br>"
-				tbr += "<font color=\"red\">Configuration File Error : "
+				tbr += "<font color=\"red\">Configuration File Error '#{upLoadConfigErrorInFile}' : "
 				if errorType == "Index Column"
 					tbr += "Value '#{upLoadConfigErrorValue}' on Row (#{upLoadConfigErrorRow}), '#{errorType}' \"MUST BE UNIQUE\".<br><br>"
 				else 
@@ -1248,7 +1301,8 @@ alert(\"your machine's local network IP is \"+yip);
 						
 
 		if (upLoadConfigErrorRow.nil? == false && upLoadConfigErrorRow.length > 0) ||
-			 (upLoadConfigErrorIndex.nil? == false && upLoadConfigErrorIndex.length > 0)
+			 (upLoadConfigErrorIndex.nil? == false && upLoadConfigErrorIndex.length > 0) ||
+			 (upLoadConfigErrorGeneral.nil? == false && upLoadConfigErrorGeneral.length > 0)
 			#
 			# There's an error, show it to the user.
 			#
@@ -1258,19 +1312,16 @@ alert(\"your machine's local network IP is \"+yip);
 			#
 			if upLoadConfigTypeError == PSSeqFileTemplate
 				configTemplateRows = psConfigFileTemplate.split("\n")
+			elsif upLoadConfigTypeError == StepFileTemplate
+				configTemplateRows = stepConfigFileTemplate.split("\n")
 			else
 				configTemplateRows = tempConfigFileTemplate.split("\n")
 			end
 			rowCt = 0
-			maxColCt = settings.ui.getMaxColCt(configTemplateRows)
+			maxColCt = getMaxColCt(configTemplateRows)
 			
-			tbr += "<center>Below is a sample configuration template @@upLoadConfigTypeError=#{upLoadConfigTypeError}@@.  Column Name must be on column 'C',"
+			tbr += "<center>Below is a sample configuration template.  Column Name must be on column 'C',"
 			tbr += " and data must be in this given order and format.  Do not use comma in the data.</center><br><br>"
-			if upLoadConfigTypeError == PSSeqFileTemplate
-				configTemplateRows = psConfigFileTemplate.split("\n")
-			else
-				configTemplateRows = tempConfigFileTemplate.split("\n")
-			end
 			tbr += convertToTable(configTemplateRows,maxColCt)
 		end
 		tbr += "
@@ -1279,6 +1330,8 @@ alert(\"your machine's local network IP is \"+yip);
 		</html>
 		"
 		
+			upLoadConfigErrorGeneral = ""  # Clear the message.
+			upLoadConfigGoodUpload = "" # Clear the message.
 		return tbr
 		# end of 'def loadFile'
 	end	
@@ -1317,15 +1370,19 @@ alert(\"your machine's local network IP is \"+yip);
 	end
 	
 	def checkConfigValue(valueParam, colnameParam, indexParam, rowParam,fromLine,fromFile)
+		puts "redirectWithError=#{redirectWithError} #{__LINE__}-#{__FILE__}"
 		puts "checkConfigValue from #{fromLine}-#{fromFile}"
 		if (valueParam.length>0 && 
 				colnameParam != UserInterface::IndexCol &&
 				is_a_number?(valueParam) == false)
 			puts "Failed number test. rowParam='#{rowParam}' #{__LINE__}-#{__FILE__}"
-			redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
-			redirectWithError += "&ErrIndex=#{indexParam}"
-			redirectWithError += "&ErrColType=#{colnameParam}&ErrValue="+Addressable::URI.parse("#{valueParam}")
-			return Addressable::URI.parse(redirectWithError).to_s
+			puts "redirectWithError=#{redirectWithError}"
+			puts "redirectWithError=#{redirectWithError}"
+			puts "&indexParam=#{indexParam}"
+			hold = redirectWithError+"&ErrIndex=#{indexParam}&ErrColType=#{colnameParam}&ErrValue="+SharedLib.makeUriFriendly("#{valueParam}")
+			puts "paused - hold = #{hold} #{__LINE__}-#{__FILE__}"
+			gets			
+			return hold
 		elsif colnameParam == IndexCol
 			#
 			# Make sure that the index is unique, and not repeated.
@@ -1341,8 +1398,9 @@ alert(\"your machine's local network IP is \"+yip);
 				# gets 
 				if hashUniqueIndex[valueParam].nil? == false
 					redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
-					redirectWithError += "&ErrRow=#{rowParam}&ErrColType=#{colnameParam}&ErrValue="+Addressable::URI.parse("#{valueParam}")
-					return Addressable::URI.parse(redirectWithError).to_s
+					redirectWithError += "&ErrRow=#{rowParam}&ErrColType=#{colnameParam}&ErrValue="+
+						SharedLib.makeUriFriendly("#{valueParam}")
+					return redirectWithError
 				else
 					hashUniqueIndex[valueParam] = "u" # u for unique
 					puts "A No error in this function..."
@@ -1442,7 +1500,176 @@ alert(\"your machine's local network IP is \"+yip);
       RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPC}" }.to_json, :content_type => :json, :accept => :json
 		puts "Bbb responded with '#{@response}'"
 	end	
+
+	def checkFaultyPsConfig(fileNameParam,fromParam)
+		#
+		# Returns true if no fault, false if there is error
+		#
+		puts "fileNameParam=#{fileNameParam} from #{fromParam}"
+		gets
+		config = Array.new
+		File.open("#{dirFileRepository}/#{fileNameParam}", "r") do |f|
+			f.each_line do |line|
+				config.push(line)
+			end
+		end
+		
+		knownRowNames = getKnownRowNamesFor(upLoadConfigTypeError)			
+		#
+		# Make sure that each row have a column name that is found within the template which Mike provided.
+		#
+		ct = 0
+		while ct < config.length do
+			colContent = config[ct].split(",")[2].upcase
+			# puts "colContent='#{colContent}'"
+			if colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn")
+				#
+				# How are we going to inform the user that the file is not a good one?
+				#
+				redirectWithError += "&ErrFaultyFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
+				redirectErrorFaultyPsConfig = redirectWithError
+				return false
+			end
+			ct += 1
+		end
+
+		#
+		# Rows to skip checking if values for Nom Set, Trip Min, Trip Max, Flag Tol+, Flog Tol- are numbers or not.
+		skipNumCheckOnRows = Hash.new
+		skipNumCheckOnRows["VPS5".upcase] = "nn" # nn - not nil.
+		skipNumCheckOnRows["iPS5".upcase] = "nn"
+
+		ct = 0
+		indexCol = 1
+		nameCol = 2
+		unitCol = 4
+		nomSetCol = 5
+		tripMinCol = 6
+		tripMaxCol = 7
+		flagTolPCol = 8 # Flag Tolerance Positive
+		flagTolNCol = 9 # Flag Tolerance Negative
+		enableBitCol = 10 # Flag indicating that software can turn it on or off
+		idleStateCol = 11 # Flag indicating that software can turn it on or off
+		loadStateCol = 12 # Flag indicating that software can turn it on or off
+		startStateCol = 13 # Flag indicating that software can turn it on or off
+		runStateCol = 14 # Flag indicating that software can turn it on or off
+		stopStateCol = 15 # Flag indicating that software can turn it on or off
+		clearStateCol = 16 # Flag indicating that software can turn it on or off
+		locationCol = 17 # Flag indicating that software can turn it on or off
+
+		while ct < config.length do
+			columns = config[ct].split(",")
+			index = columns[indexCol].upcase 
+			name = columns[nameCol].upcase
+			unit = columns[unitCol].upcase
+
+			nomSet = columns[nomSetCol].upcase
+			tripMin = columns[tripMinCol].upcase
+			tripMax = columns[tripMaxCol].upcase
+			flagTolP = columns[flagTolPCol].upcase
+			flagTolN = columns[flagTolNCol].upcase
+			enableBit = columns[enableBitCol].upcase
+			idleState = columns[idleStateCol].upcase
+			loadState = columns[loadStateCol].upcase
+			startState = columns[startStateCol].upcase
+			runState = columns[runStateCol].upcase
+			stopState = columns[stopStateCol].upcase
+			clearState = columns[clearStateCol].upcase
+
+			if skipNumCheckOnRows[name].nil?
+				#
+				# The row with the given name is not to be skipped.
+				#
 	
+				#
+				# Make sure that the index in the index colum is a number and they're unique.
+				#
+				@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}"
+				@redirectWithError += "&BtnState=#{Load}"
+				@redirectWithError += "&ErrFaultyFile=#{SharedLib.makeUriFriendly(fileNameParam)}"
+				
+				error = checkConfigValue(
+					index,UserInterface::IndexCol,columns[indexCol],(ct+1),"#{__LINE__}","#{__FILE__}")				
+				if error.length > 0
+					@redirectErrorFaultyPsConfig = error
+					return false
+				end
+		
+				if unit == "M"
+					#
+					# Make sure that the following items -  nomSet,tripMin, tripMax, flagTolP, flagTolN are numbers
+					#					
+					error  = checkConfigValue(nomSet,"nomSetCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
+					if error.length > 0
+						@redirectErrorFaultyPsConfig = error
+						return false
+					else					
+						if "TIME".upcase == name
+							setDurationHours("00");
+							setDurationMinutes(nomSet);
+						end
+					end
+					# End of 'if unit == "M"'
+				elsif unit == "V" || unit == "A" || unit == "C"
+					#
+					# Make sure that the following items -  nomSet,tripMin, tripMax, flagTolP, flagTolN are numbers
+					#					
+					error = checkConfigValue(nomSet,"nomSetCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
+					if error.length > 0
+						@redirectErrorFaultyPsConfig = error
+						return false
+					end
+		
+					puts "redirectWithError=#{redirectWithError} #{__LINE__}-#{__FILE__}"
+					error = checkConfigValue(tripMin,"tripMinCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
+					if error.length > 0
+						puts "error=#{error} #{__LINE__}-#{__FILE__}"
+						@redirectErrorFaultyPsConfig = error
+						return false
+					end
+		
+					error = checkConfigValue(tripMax,"tripMaxCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
+					if error.length > 0
+						@redirectErrorFaultyPsConfig = error
+						return false
+					end
+		
+					error = checkConfigValue(flagTolP,"flagTolPCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
+					if error.length > 0
+						@redirectErrorFaultyPsConfig = error
+						return false
+					end
+		
+					error = checkConfigValue(flagTolN,"flagTolNCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
+					if error.length > 0
+						@redirectErrorFaultyPsConfig = error
+						return false
+					end
+					# End of 'elsif unit == "V" || unit == "A" || unit == "C"'
+				end								
+				#
+				# Get the data for processing
+				#
+				setDataSetup(
+					name,unit,nomSet,tripMin,tripMax,flagTolP,flagTolN,enableBit,idleState,
+					loadState,startState,runState,stopState,clearState
+				)
+				# end of 'if skipNumCheckOnRows[name].nil?'
+			end
+
+			# puts "colContent='#{colContent}'"
+			if colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn")
+				#
+				# How are we going to inform the user that the file is not a good one?
+				#
+				@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
+				@redirectWithError += "&ErrRow=#{ct+1}&ErrCol=3&ErrName=#{colContent}"
+				return false
+			end
+			ct += 1
+		end
+		return true
+	end
 	# End of class UserInterface
 end
 	
@@ -1457,9 +1684,8 @@ post '/ViewFile' do
 end
 
 get '/ViewFile' do
-	dirFileRepository = "file repository"
 	config = Array.new
-	File.open("#{dirFileRepository}/#{params[:File]}", "r") do |f|
+	File.open("#{settings.ui.dirFileRepository}/#{SharedLib.uriToStr(params[:File])}", "r") do |f|
 		f.each_line do |line|
 			config.push(line)
 		end
@@ -1467,7 +1693,7 @@ get '/ViewFile' do
 	tbr = ""; # tbr - to be returned
 	tbr += "
 	<FORM>"
-	tbr += "File content of '#{params[:File]}'&nbsp;
+	tbr += "File content of '#{SharedLib.uriToStr(params[:File])}'&nbsp;
 		<INPUT Type=\"button\" VALUE=\"Back\" onClick=\"history.go(-1);return true;\"><br>
 	"	
 	# 
@@ -1481,38 +1707,57 @@ get '/ViewFile' do
 end
 
 get '/TopBtnPressed' do
-	settings.ui.setSlotOwner("#{params[:slot]}")
-	puts "a1 #{__LINE__}-#{__FILE__}"
-	if params[:BtnState] == settings.ui.Load
-		puts "a2 #{__LINE__}-#{__FILE__}"
+	calledFrom = "#{__LINE__}-#{__FILE__}"
+	settings.ui.setSlotOwner("#{SharedLib.uriToStr(params[:slot])}")
+	if SharedLib.uriToStr(params[:BtnState]) == settings.ui.Load
 		#
 		# The Load button got pressed.
-		#
-		if (params[:ErrGeneral].nil? == false && params[:ErrGeneral] != "")
-			if params[:ErrGeneral] == "FileNotKnown"	
+		#		
+		if SharedLib.uriToStr(params[:ErrStepPsNotFound]).nil? == false && SharedLib.uriToStr(params[:ErrStepPsNotFound]) != ""
+			calledFrom = "#{__LINE__}-#{__FILE__}"
+			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"+
+			" Step Name, Power Supply configuration '#{SharedLib.uriToStr(params[:ErrStepPsNotFound])}' is not found."
+		elsif SharedLib.uriToStr(params[:ErrPsFileNotGiven]).nil? == false && SharedLib.uriToStr(params[:ErrPsFileNotGiven]) != ""
+			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "+
+			"Step Name, Power Supply configuration is not given."
+		elsif SharedLib.uriToStr(params[:ErrStepNameNotGiven]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameNotGiven]) != ""
+			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Row '#{SharedLib.uriToStr(params[:ErrRow])}' on step "+
+			"file requires a filename.."
+		elsif SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]) != ""
+			fileName = SharedLib.uriToStr(SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]))
+			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Duplicate filename '#{fileName}' "+
+			"in the step file list."
+		elsif SharedLib.uriToStr(params[:ErrStepFormat]).nil? == false && SharedLib.uriToStr(params[:ErrStepFormat]) != ""
+			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  "+
+			"Column labels must start on column A, row 2."
+		elsif (SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && SharedLib.uriToStr(params[:ErrGeneral]) != "")
+			if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
 				puts "a3 #{__LINE__}-#{__FILE__}"
-				settings.ui.upLoadConfigErrorGeneral = "Unknown file extension.  Must be one of these: *.step, *.ps_config, or *.temp_config"
-			elsif params[:ErrGeneral] == "bbbDown"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be "
+				"one of these: *.step, *.ps_config, or *.temp_config"
+			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
 				puts "a4 #{__LINE__}-#{__FILE__}"
-				settings.ui.upLoadConfigErrorGeneral = "BBB PcListener is down.  Need to handle this in production code level."
-			elsif params[:ErrGeneral] == "FileNotSelected"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', BBB PcListener is down.  Need to"+
+				" handle this in production code level."
+			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
 				puts "a5 #{__LINE__}-#{__FILE__}"
-				settings.ui.upLoadConfigErrorGeneral = "No file selected for upload."
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', No file selected for upload."
 			end
 			puts "a6 #{__LINE__}-#{__FILE__}"
-		elsif (params[:ErrRow].nil? == false && params[:ErrRow] != "") || 
-			 (params[:ErrIndex].nil? == false && params[:ErrIndex] != "")
+		elsif (SharedLib.uriToStr(params[:ErrRow]).nil? == false && SharedLib.uriToStr(params[:ErrRow]) != "") || 
+			 (SharedLib.uriToStr(params[:ErrIndex]).nil? == false && SharedLib.uriToStr(params[:ErrIndex]) != "")
 			puts "a7 #{__LINE__}-#{__FILE__}"
 			#puts "check #{__LINE__}-#{__FILE__}"
-			settings.ui.upLoadConfigErrorIndex = params[:ErrIndex]
-			settings.ui.upLoadConfigErrorRow = params[:ErrRow]
-			settings.ui.upLoadConfigErrorCol = params[:ErrCol]
-			settings.ui.upLoadConfigErrorName = params[:ErrName]
-			settings.ui.upLoadConfigErrorColType = params[:ErrColType]
-			settings.ui.upLoadConfigErrorValue = params[:ErrValue]
-		elsif params[:MsgFileUpload].nil? == false
+			settings.ui.upLoadConfigErrorInFile = SharedLib.uriToStr(params[:ErrFaultyFile])
+			settings.ui.upLoadConfigErrorIndex = SharedLib.uriToStr(params[:ErrIndex])
+			settings.ui.upLoadConfigErrorRow = SharedLib.uriToStr(params[:ErrRow])
+			settings.ui.upLoadConfigErrorCol = SharedLib.uriToStr(params[:ErrCol])
+			settings.ui.upLoadConfigErrorName = SharedLib.uriToStr(params[:ErrName])
+			settings.ui.upLoadConfigErrorColType = SharedLib.uriToStr(params[:ErrColType])
+			settings.ui.upLoadConfigErrorValue = SharedLib.uriToStr(params[:ErrValue])
+		elsif SharedLib.uriToStr(params[:MsgFileUpload]).nil? == false
 			puts "a8 #{__LINE__}-#{__FILE__}"
-			settings.ui.upLoadConfigGoodUpload = "File '#{params[:MsgFileUpload]}' has been uploaded."
+			settings.ui.upLoadConfigGoodUpload = "File '#{SharedLib.uriToStr(params[:MsgFileUpload])}' has been uploaded."
 			puts "check #{__LINE__}-#{__FILE__}"
 			settings.ui.upLoadConfigErrorName = ""
 		end
@@ -1520,7 +1765,7 @@ get '/TopBtnPressed' do
 		puts "check #{__LINE__}-#{__FILE__}"
 		puts "a8 #{__LINE__}-#{__FILE__}"
 		return settings.ui.loadFile
-	elsif params[:BtnState] == settings.ui.Run
+	elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Run
 		#
 		# The Run button got pressed.
 		#
@@ -1528,7 +1773,7 @@ get '/TopBtnPressed' do
 		settings.ui.setTimeOfRun()
 		settings.ui.saveSlotState();
 		redirect "../"
-	elsif params[:BtnState] == settings.ui.Stop
+	elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Stop
 		#
 		# The Stop button got pressed.
 		#
@@ -1543,7 +1788,7 @@ get '/TopBtnPressed' do
 		settings.ui.updateDurationTimeLeft()
 		settings.ui.saveSlotState();
 		redirect "../"
-	elsif params[:BtnState] == settings.ui.Clear
+	elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Clear
 		#
 		# The Clear button got pressed.
 		#
@@ -1552,7 +1797,7 @@ get '/TopBtnPressed' do
 		settings.ui.saveSlotState();
 		redirect "../"
 	end
-	puts "params[:BtnState]=#{params[:BtnState]} - don't know what to do."	
+	puts "SharedLib.uriToStr(params[:BtnState])=#{SharedLib.uriToStr(params[:BtnState])} - don't know what to do."	
 	gets
 end
 
@@ -1591,11 +1836,11 @@ post '/TopBtnPressed' do
 	#
 	# Setup the string for error
 	#
-	redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}&BtnState=#{settings.ui.Load}"	
+	settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}&BtnState=#{settings.ui.Load}"	
 	
 	if params['myfile'].nil?
-		redirectWithError += "&ErrGeneral=FileNotSelected"
-		redirect Addressable::URI.parse(redirectWithError).to_s
+		settings.ui.redirectWithError += "&ErrGeneral=FileNotSelected"
+		redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
 	end
 	
 	#
@@ -1619,8 +1864,8 @@ post '/TopBtnPressed' do
 	elsif tempFile == temperatureFileExtension
 		settings.ui.upLoadConfigTypeError = UserInterface::TempSetTemplate
 	else
-		redirectWithError += "&ErrGeneral=FileNotKnown"
-		redirect Addressable::URI.parse(redirectWithError).to_s
+		settings.ui.redirectWithError += "&ErrGeneral=FileNotKnown"
+		redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
 	end
 	
 	goodUpload = true
@@ -1653,159 +1898,137 @@ post '/TopBtnPressed' do
 		# Ideally, get the the known row names from the template above vice having a separate column names here.
 		#
 		if settings.ui.upLoadConfigTypeError == UserInterface::StepFileTemplate
+			puts "Working on '#{UserInterface::StepFileTemplate}'"
+			#
+			# We're going to parse a step file.  Hard code settings:  "Item","Name","Description","Type","Value" are
+			# starting on row 2, col A if viewed from Excel.
+			#
+			row = 1
+			colContent = config[row].split(",")
+			if (colContent[0].upcase.strip != "ITEM")
+				puts "Failed at '#{colContent[0].upcase}', suppose to be 'ITEM'"
+				settings.ui.redirectWithError += "&ErrStepFormat=A"
+				redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
+			elsif (colContent[1].upcase.strip != "NAME")
+				puts "Failed at '#{colContent[1].upcase}', suppose to be 'NAME'"
+				settings.ui.redirectWithError += "&ErrStepFormat=B"
+				redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
+			elsif (colContent[2].upcase.strip != "DESCRIPTION")
+				puts "Failed at '#{colContent[2].upcase}', suppose to be 'DESCRIPTION'"
+				settings.ui.redirectWithError += "&ErrStepFormat=C"
+				redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
+			elsif (colContent[3].upcase.strip != "TYPE")
+				puts "Failed at '#{colContent[3].upcase}', suppose to be 'TYPE'"
+				settings.ui.redirectWithError += "&ErrStepFormat=D"
+				redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
+			elsif (colContent[4].upcase.strip != "VALUE")
+				puts "Failed at '#{colContent[4].upcase}', suppose to be 'VALUE'"
+				settings.ui.redirectWithError += "&ErrStepFormat=E"
+				redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
+			end
+			
+			#
+			# Make sure that the step file has no two equal step names 
+			#			
+			uniqueStepNames = Hash.new
+			ct = 2
+			while ct < config.length do
+				colContent = config[ct].split(",")[2].strip
+				puts "uniqueStepNames[colContent].nil? = "+
+					"uniqueStepNames[#{colContent}].nil? = #{uniqueStepNames[colContent].nil?}"
+				if uniqueStepNames[colContent].nil? == false
+					#
+					# The condition says that the step name is already used.  Can't process the file...
+					#
+					puts "Step name ERROR = '#{colContent}' - duplicate."
+					
+					#
+					# Verify we print the duplicate name error...
+					#
+					settings.ui.redirectWithError += "&ErrStepNameAlreadyFound=#{colContent}"					
+					settings.ui.redirectWithError = SharedLib.makeUriFriendly(settings.ui.redirectWithError)
+					redirect settings.ui.redirectWithError
+				else
+					if colContent.nil? == true || colContent.length == 0
+						#
+						#  Step name is blank.  This is not right.
+						#
+						settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
+						settings.ui.redirectWithError += "&ErrStepNameNotGiven=Y"
+						settings.ui.redirectWithError += "&ErrRow=#{(ct+1)}"
+						redirect settings.ui.redirectWithError
+					else
+						#
+						# Add the column name into the hash table so it can be accounted.
+						#					
+						uniqueStepNames[colContent] = "nn" # nn - not nil.
+					end
+				end				
+				puts "Step name = '#{colContent}'"
+				ct += 11
+			end
+			
+			#
+			# Make sure Power Supply setup file name are given.
+			# [***] - code not verified.
+			ct = 3
+			while ct < config.length do
+				stepName = config[ct-1].split(",")[2].upcase.strip # Get the row data for file name.
+				colContent = config[ct].split(",")[2].strip
+				if colContent.nil? == true || colContent.length == 0
+					settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
+					settings.ui.redirectWithError += "&ErrPsFileNotGiven=Y"
+					settings.ui.redirectWithError = SharedLib.makeUriFriendly(settings.ui.redirectWithError)
+					redirect settings.ui.redirectWithError
+				else
+					#
+					# Make sure that the PS config file is present in the file system
+					#
+					if File.file?(dirFileRepository+"/"+colContent) == false
+						#
+						# The file does not exists.  Post an error.
+						#
+						settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
+						settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
+						settings.ui.redirectWithError += "&ErrStepPsNotFound=#{SharedLib.makeUriFriendly(colContent)}"
+						puts "settings.ui.redirectWithError = '#{settings.ui.redirectWithError}'"
+						redirect settings.ui.redirectWithError
+					else 
+						#
+						# Make sure the PS File config is good.
+						#
+						settings.ui.upLoadConfigTypeError = UserInterface::PSSeqFileTemplate
+						if settings.ui.checkFaultyPsConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
+							# puts "settings.ui.redirectErrorFaultyPsConfig=#{settings.ui.redirectErrorFaultyPsConfig}"+
+							# " #{__LINE__}-#{__FILE__}"
+							# gets;
+							redirect settings.ui.redirectErrorFaultyPsConfig
+						end
+					end
+				end
+				ct += 11
+			end
+			
+			#
+			# Make sure Power Supply setup file name are found in the file system.
+			#			
+			
+			# puts "paused at #{__LINE__}-#{__FILE__}"
+			# gets
+			#
+			# What's the next step?
+			#
 		elsif settings.ui.upLoadConfigTypeError == UserInterface::PSSeqFileTemplate ||
 					settings.ui.upLoadConfigTypeError == UserInterface::TempSetTemplate
-					
-			knownRowNames = settings.ui.getKnownRowNamesFor(settings.ui.upLoadConfigTypeError)
-			puts "settings.ui.upLoadConfigTypeError = #{settings.ui.upLoadConfigTypeError}"
-			puts "knownRowNames=#{knownRowNames}"
-			
-			#
-			# Make sure that each row have a column name that is found within the template which Mike provided.
-			#
-			ct = 0
-			while ct < config.length do
-				colContent = config[ct].split(",")[2].upcase
-				# puts "colContent='#{colContent}'"
-				if colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn")
-					#
-					# How are we going to inform the user that the file is not a good one?
-					#
-					redirectWithError += "&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
-					redirect Addressable::URI.parse(redirectWithError).to_s
-				end
-				ct += 1
+			settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}&BtnState=#{settings.ui.Load}"
+			if settings.ui.checkFaultyPsConfig("#{params['myfile'][:filename]}","#{__LINE__}-#{__FILE__}") == false
+				puts "settings.ui.redirectErrorFaultyPsConfig=#{settings.ui.redirectErrorFaultyPsConfig}"+
+					" #{__LINE__}-#{__FILE__}"
+				gets;
+				redirect settings.ui.redirectErrorFaultyPsConfig
 			end
-		
-			#
-			# Rows to skip checking if values for Nom Set, Trip Min, Trip Max, Flag Tol+, Flog Tol- are numbers or not.
-			skipNumCheckOnRows = Hash.new
-			skipNumCheckOnRows["VPS5".upcase] = "nn" # nn - not nil.
-			skipNumCheckOnRows["iPS5".upcase] = "nn"
-
-			ct = 0
-			indexCol = 1
-			nameCol = 2
-			unitCol = 4
-			nomSetCol = 5
-			tripMinCol = 6
-			tripMaxCol = 7
-			flagTolPCol = 8 # Flag Tolerance Positive
-			flagTolNCol = 9 # Flag Tolerance Negative
-			enableBitCol = 10 # Flag indicating that software can turn it on or off
-			idleStateCol = 11 # Flag indicating that software can turn it on or off
-			loadStateCol = 12 # Flag indicating that software can turn it on or off
-			startStateCol = 13 # Flag indicating that software can turn it on or off
-			runStateCol = 14 # Flag indicating that software can turn it on or off
-			stopStateCol = 15 # Flag indicating that software can turn it on or off
-			clearStateCol = 16 # Flag indicating that software can turn it on or off
-			locationCol = 17 # Flag indicating that software can turn it on or off
-		
-			while ct < config.length do
-				columns = config[ct].split(",")
-				index = columns[indexCol].upcase 
-				name = columns[nameCol].upcase
-				unit = columns[unitCol].upcase
-			
-				nomSet = columns[nomSetCol].upcase
-				tripMin = columns[tripMinCol].upcase
-				tripMax = columns[tripMaxCol].upcase
-				flagTolP = columns[flagTolPCol].upcase
-				flagTolN = columns[flagTolNCol].upcase
-				enableBit = columns[enableBitCol].upcase
-				idleState = columns[idleStateCol].upcase
-				loadState = columns[loadStateCol].upcase
-				startState = columns[startStateCol].upcase
-				runState = columns[runStateCol].upcase
-				stopState = columns[stopStateCol].upcase
-				clearState = columns[clearStateCol].upcase
-
-				if skipNumCheckOnRows[name].nil?
-					#
-					# The row with the given name is not to be skipped.
-					#
-				
-					#
-					# Make sure that the index in the index colum is a number and they're unique.
-					#
-					error = settings.ui.checkConfigValue(index,UserInterface::IndexCol,columns[indexCol],(ct+1),"#{__LINE__}","#{__FILE__}")
-					if error.length > 0
-						redirect Addressable::URI.parse(error).to_s
-					end
-					
-					if unit == "M"
-						#
-						# Make sure that the following items -  nomSet,tripMin, tripMax, flagTolP, flagTolN are numbers
-						#					
-						error = settings.ui.checkConfigValue(nomSet,"nomSetCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
-						if error.length > 0
-							redirect Addressable::URI.parse(error).to_s
-						else					
-							if "TIME".upcase == name
-								puts "in here -\"TIME\".upcase == name- #{__LINE__}-#{__FILE__}"
-								puts "nomSet = #{nomSet} #{__LINE__}-#{__FILE__}"
-								settings.ui.setDurationHours("00");
-								settings.ui.setDurationMinutes(nomSet);
-							end
-						end
-						# End of 'if unit == "M"'
-					elsif unit == "V" || unit == "A" || unit == "C"
-						#
-						# Make sure that the following items -  nomSet,tripMin, tripMax, flagTolP, flagTolN are numbers
-						#					
-						error = settings.ui.checkConfigValue(nomSet,"nomSetCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
-						if error.length > 0
-							redirect Addressable::URI.parse(error).to_s
-						end
-					
-						error = settings.ui.checkConfigValue(tripMin,"tripMinCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
-						if error.length > 0
-							redirect Addressable::URI.parse(error).to_s
-						end
-					
-						error = settings.ui.checkConfigValue(tripMax,"tripMaxCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
-						if error.length > 0
-							redirect Addressable::URI.parse(error).to_s
-						end
-					
-						error = settings.ui.checkConfigValue(flagTolP,"flagTolPCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
-						if error.length > 0
-							redirect Addressable::URI.parse(error).to_s
-						end
-					
-						error = settings.ui.checkConfigValue(flagTolN,"flagTolNCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
-						if error.length > 0
-							redirect Addressable::URI.parse(error).to_s
-						end					
-						# End of 'elsif unit == "V" || unit == "A" || unit == "C"'
-					end								
-					#
-					# Get the data for processing
-					#
-					settings.ui.setDataSetup(
-						name,unit,nomSet,tripMin,tripMax,flagTolP,flagTolN,enableBit,idleState,
-						loadState,startState,runState,stopState,clearState
-					)
-					puts "sip a1 #{__LINE__}-#{__FILE__}"
-					# end of 'if skipNumCheckOnRows[name].nil?'
-				end
-			
-				# puts "colContent='#{colContent}'"
-				if colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn")
-					#
-					# How are we going to inform the user that the file is not a good one?
-					#
-					puts "sip a2 #{__LINE__}-#{__FILE__}"
-					redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}&BtnState=#{settings.ui.Load}"
-					redirectWithError += "&ErrRow=#{ct+1}&ErrCol=3&ErrName=#{colContent}"
-					redirect Addressable::URI.parse(redirectWithError).to_s
-				end
-				ct += 1
-			end
-			puts "sip a2 #{__LINE__}-#{__FILE__}"
-			redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}&BtnState=#{settings.ui.Load}"
-			redirectWithError += "&MsgFileUpload=#{params['myfile'][:filename]}"
-			redirect Addressable::URI.parse(redirectWithError).to_s
+			settings.ui.redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
+			redirect settings.ui.redirectWithError
 		end		
 		
 		settings.ui.setConfigFileName("#{params['myfile'][:filename]}")
