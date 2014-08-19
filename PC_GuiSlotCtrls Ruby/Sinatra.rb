@@ -1762,7 +1762,7 @@ get '/TopBtnPressed' do
 		elsif SharedLib.uriToStr(params[:ErrStepNameNotGiven]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameNotGiven]) != ""
 			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Row '#{SharedLib.uriToStr(params[:ErrRow])}' on step file requires a filename.."
 		elsif SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]) != ""
-			fileName = SharedLib.uriToStr(SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]))
+			fileName = SharedLib.uriToStr(params[:ErrStepNameAlreadyFound])
 			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Duplicate filename '#{fileName}' in the step file list."
 		elsif SharedLib.uriToStr(params[:ErrStepFormat]).nil? == false && SharedLib.uriToStr(params[:ErrStepFormat]) != ""
 			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  Column labels must start on column A, row 2."
@@ -1925,22 +1925,27 @@ post '/TopBtnPressed' do
 			if (colContent[0].upcase.strip != "ITEM")
 				puts "Failed at '#{colContent[0].upcase}', suppose to be 'ITEM'"
 				settings.ui.redirectWithError += "&ErrStepFormat=A"
+				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 				redirect settings.ui.redirectWithError
 			elsif (colContent[1].upcase.strip != "NAME")
 				puts "Failed at '#{colContent[1].upcase}', suppose to be 'NAME'"
 				settings.ui.redirectWithError += "&ErrStepFormat=B"
+				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 				redirect settings.ui.redirectWithError
 			elsif (colContent[2].upcase.strip != "DESCRIPTION")
 				puts "Failed at '#{colContent[2].upcase}', suppose to be 'DESCRIPTION'"
 				settings.ui.redirectWithError += "&ErrStepFormat=C"
+				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 				redirect settings.ui.redirectWithError
 			elsif (colContent[3].upcase.strip != "TYPE")
 				puts "Failed at '#{colContent[3].upcase}', suppose to be 'TYPE'"
 				settings.ui.redirectWithError += "&ErrStepFormat=D"
+				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 				redirect settings.ui.redirectWithError
 			elsif (colContent[4].upcase.strip != "VALUE")
 				puts "Failed at '#{colContent[4].upcase}', suppose to be 'VALUE'"
 				settings.ui.redirectWithError += "&ErrStepFormat=E"
+				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 				redirect settings.ui.redirectWithError
 			end
 			
@@ -1962,8 +1967,8 @@ post '/TopBtnPressed' do
 					#
 					# Verify we print the duplicate name error...
 					#
-					settings.ui.redirectWithError += "&ErrStepNameAlreadyFound=#{colContent}"					
-					settings.ui.redirectWithError = SharedLib.makeUriFriendly(settings.ui.redirectWithError)
+					settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
+					settings.ui.redirectWithError += "&ErrStepNameAlreadyFound=#{SharedLib.makeUriFriendly(colContent)}"					
 					redirect settings.ui.redirectWithError
 				else
 					if colContent.nil? == true || colContent.length == 0
