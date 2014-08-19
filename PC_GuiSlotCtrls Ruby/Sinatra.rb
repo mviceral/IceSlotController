@@ -24,6 +24,7 @@ require 'json'
 require 'rest_client'
 require_relative '../lib/SharedLib'
 require 'addressable/uri'
+require 'pp' # Pretty print to see the hash values.
 
 class UserInterface
 	#
@@ -110,6 +111,7 @@ class UserInterface
 	attr_accessor :upLoadConfigErrorGeneral
 	attr_accessor :upLoadConfigGoodUpload
 	attr_accessor :redirectWithError
+	attr_accessor :stepName
 	attr_accessor :redirectErrorFaultyPsConfig	
 	
 	def redirectErrorFaultyPsConfig
@@ -142,6 +144,8 @@ class UserInterface
 				error += "'#{ct+1}' must be a boolean (1 or 0)."
 				@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 				return false
+			else
+				getSlotConfigStep(stepName)[itemNameParam] = stepTime
 			end
 			ct += 11
 			# End of 'while ct < config.length do' 
@@ -167,6 +171,8 @@ class UserInterface
 				error += "'#{ct+1}' must be a number."
 				@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 				return false
+			else				
+				getSlotConfigStep(stepName)[itemNameParam] = stepTime
 			end
 			ct += 11
 			# End of 'while ct < config.length do' 
@@ -247,6 +253,7 @@ class UserInterface
 	end
 	
 	def clearError
+		getSlotProperties()[TimeOfUpload] = 0 # = 0 to indicate that this slot is not good for processing	
 		@upLoadConfigErrorName = ""
 		@upLoadConfigErrorRow = ""
 		@upLoadConfigErrorIndex = ""
@@ -259,6 +266,10 @@ class UserInterface
 	
 	def upLoadConfigErrorGeneral
 		@upLoadConfigErrorGeneral
+	end
+	
+	def stepName
+		@stepName
 	end
 	
 	def configFileType
@@ -972,7 +983,16 @@ class UserInterface
 							<tr>
 								<td>
 									<center>
-									<font size=\"1.25\" style=\"font-style: italic;\">#{GetSlotFileName()}</font>								
+									<font size=\"1.25\" style=\"font-style: italic;\">#{GetSlotFileName()}</font>"
+		if GetSlotFileName() != BlankFileName
+		topTable+= "	<button 
+							style=\"height:20px; width:50px; font-size:10px\" 							
+							onclick=\"window.location='../ViewFile?File=#{GetSlotFileName()}'\" />
+							View
+									</button>"									
+		end									
+
+		topTable += "								
 									</center>
 								</td>
 							</tr>
@@ -1439,11 +1459,21 @@ class UserInterface
 				end
 			else
 				return ""
-			end
-		
+			end		
 		else
 			return ""
 		end
+	end
+	
+	def getSlotConfigStep(stepNameParam)
+		#
+		# configFileType can be ps_config, temp_config, or step
+		#
+		if getSlotProperties()[stepNameParam].nil? == true
+			getSlotProperties()[stepNameParam] = Hash.new
+		end
+		
+		return getSlotProperties()[stepNameParam]				
 	end
 	
 	def clearInternalSettings
@@ -1456,10 +1486,18 @@ class UserInterface
 	end
 	
 	def setItemParameter(nameParam, param, valueParam)
-		if getSlotProperties()[nameParam].nil?
-			getSlotProperties()[nameParam] = Hash.new
+		#
+		# Get the value as data for processing the slot.
+		#
+		if getSlotConfigStep(stepName)[configFileType].nil? == true
+			getSlotConfigStep(stepName)[configFileType] = Hash.new
+		end		
+		
+		if getSlotConfigStep(stepName)[configFileType][nameParam].nil?
+			getSlotConfigStep(stepName)[configFileType][nameParam] = Hash.new
 		end
-		getSlotProperties()[nameParam][param] = valueParam
+		
+		getSlotConfigStep(stepName)[configFileType][nameParam][param] = valueParam
 
 		# End of 'def setItemParameter(nameParam, param, valueParam)'
 	end
@@ -2001,7 +2039,7 @@ post '/TopBtnPressed' do
 			#
 			ct = 3
 			while ct < config.length do
-				stepName = config[ct-1].split(",")[2].strip # Get the row data for file name.
+				settings.ui.stepName = config[ct-1].split(",")[2].strip # Get the row data for file name.
 				colContent = config[ct].split(",")[2].strip
 				if colContent.nil? == true || colContent.length == 0
 					settings.ui.redirectWithError += "&ErrInFile="
@@ -2042,7 +2080,7 @@ post '/TopBtnPressed' do
 			#
 			ct = 4
 			while ct < config.length do
-				stepName = config[ct-2].split(",")[2].strip # Get the row data for the step file name.
+				settings.ui.stepName = config[ct-2].split(",")[2].strip # Get the row data for the step file name.
 				colContent = config[ct].split(",")[2].strip
 				if colContent.nil? == true || colContent.length == 0
 					fromHere = "#{__LINE__}-#{__FILE__}"
@@ -2118,6 +2156,7 @@ post '/TopBtnPressed' do
 		settings.ui.setTimeOfUpload()
 		settings.ui.setToAllowedToRunMode()
 		settings.ui.saveSlotState()
+		PP.pp(settings.ui.slotProperties)
   end  
   
 	settings.ui.setBbbConfigUpload()
