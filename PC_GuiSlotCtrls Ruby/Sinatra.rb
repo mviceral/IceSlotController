@@ -229,6 +229,11 @@ class UserInterface
 	def upLoadConfigGoodUpload
 		@upLoadConfigGoodUpload
 	end
+	
+	def slotOwnerThe
+		@slotOwnerThe
+	end
+	
 	def setSlotOwner(slotOwnerParam)
 		@slotOwnerThe = slotOwnerParam
 	end
@@ -1848,6 +1853,10 @@ post '/' do
 end
 
 post '/TopBtnPressed' do
+	if settings.ui.slotOwnerThe.nil? || settings.ui.slotOwnerThe == ""
+		settings.ui.getSlotsState
+		redirect "../"
+	end
 	settings.ui.clearError()
 	settings.ui.clearInternalSettings();
 
