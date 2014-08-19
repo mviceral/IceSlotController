@@ -1375,14 +1375,8 @@ class UserInterface
 		if (valueParam.length>0 && 
 				colnameParam != UserInterface::IndexCol &&
 				is_a_number?(valueParam) == false)
-			puts "Failed number test. rowParam='#{rowParam}' #{__LINE__}-#{__FILE__}"
-			puts "redirectWithError=#{redirectWithError}"
-			puts "redirectWithError=#{redirectWithError}"
-			puts "&indexParam=#{indexParam}"
-			hold = redirectWithError+"&ErrIndex=#{indexParam}&ErrColType=#{colnameParam}&ErrValue="+SharedLib.makeUriFriendly("#{valueParam}")
-			puts "paused - hold = #{hold} #{__LINE__}-#{__FILE__}"
-			gets			
-			return hold
+			return redirectWithError+"&ErrIndex=#{indexParam}&ErrColType=#{colnameParam}"
+							+"&ErrValue="+SharedLib.makeUriFriendly("#{valueParam}")
 		elsif colnameParam == IndexCol
 			#
 			# Make sure that the index is unique, and not repeated.
@@ -1501,12 +1495,10 @@ class UserInterface
 		puts "Bbb responded with '#{@response}'"
 	end	
 
-	def checkFaultyPsConfig(fileNameParam,fromParam)
+	def checkFaultyPsOrTempConfig(fileNameParam,fromParam)
 		#
 		# Returns true if no fault, false if there is error
 		#
-		puts "fileNameParam=#{fileNameParam} from #{fromParam}"
-		gets
 		config = Array.new
 		File.open("#{dirFileRepository}/#{fileNameParam}", "r") do |f|
 			f.each_line do |line|
@@ -1526,8 +1518,10 @@ class UserInterface
 				#
 				# How are we going to inform the user that the file is not a good one?
 				#
-				redirectWithError += "&ErrFaultyFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
-				redirectErrorFaultyPsConfig = redirectWithError
+				@redirectWithError += "&ErrFaultyFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
+				@redirectErrorFaultyPsConfig = redirectWithError
+				puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
+				gets
 				return false
 			end
 			ct += 1
@@ -1586,12 +1580,15 @@ class UserInterface
 				#
 				@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}"
 				@redirectWithError += "&BtnState=#{Load}"
+				fromHere="#{__LINE__}-#{__FILE__}"
 				@redirectWithError += "&ErrFaultyFile=#{SharedLib.makeUriFriendly(fileNameParam)}"
 				
 				error = checkConfigValue(
 					index,UserInterface::IndexCol,columns[indexCol],(ct+1),"#{__LINE__}","#{__FILE__}")				
 				if error.length > 0
 					@redirectErrorFaultyPsConfig = error
+					puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
+					gets
 					return false
 				end
 		
@@ -1602,6 +1599,8 @@ class UserInterface
 					error  = checkConfigValue(nomSet,"nomSetCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
+						puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
+						gets
 						return false
 					else					
 						if "TIME".upcase == name
@@ -1617,6 +1616,8 @@ class UserInterface
 					error = checkConfigValue(nomSet,"nomSetCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
+						puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
+						gets
 						return false
 					end
 		
@@ -1625,24 +1626,32 @@ class UserInterface
 					if error.length > 0
 						puts "error=#{error} #{__LINE__}-#{__FILE__}"
 						@redirectErrorFaultyPsConfig = error
+						puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
+						gets
 						return false
 					end
 		
 					error = checkConfigValue(tripMax,"tripMaxCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
+						puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
+						gets
 						return false
 					end
 		
 					error = checkConfigValue(flagTolP,"flagTolPCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
+						puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
+						gets
 						return false
 					end
 		
 					error = checkConfigValue(flagTolN,"flagTolNCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
+						puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
+						gets
 						return false
 					end
 					# End of 'elsif unit == "V" || unit == "A" || unit == "C"'
@@ -1664,11 +1673,14 @@ class UserInterface
 				#
 				@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 				@redirectWithError += "&ErrRow=#{ct+1}&ErrCol=3&ErrName=#{colContent}"
+				puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
+				gets
 				return false
 			end
 			ct += 1
 		end
 		return true
+		# End of 'checkFaultyPsOrTempConfig'
 	end
 	# End of class UserInterface
 end
@@ -1713,32 +1725,44 @@ get '/TopBtnPressed' do
 		#
 		# The Load button got pressed.
 		#		
-		if SharedLib.uriToStr(params[:ErrStepPsNotFound]).nil? == false && SharedLib.uriToStr(params[:ErrStepPsNotFound]) != ""
+		if SharedLib.uriToStr(params[:ErrStepTempNotFound]).nil? == false && 
+		SharedLib.uriToStr(params[:ErrStepTempNotFound]) != ""
 			calledFrom = "#{__LINE__}-#{__FILE__}"
-			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"+
-			" Step Name, Power Supply configuration '#{SharedLib.uriToStr(params[:ErrStepPsNotFound])}' is not found."
-		elsif SharedLib.uriToStr(params[:ErrPsFileNotGiven]).nil? == false && SharedLib.uriToStr(params[:ErrPsFileNotGiven]) != ""
-			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "+
-			"Step Name, Power Supply configuration is not given."
+			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
+			settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"
+			settings.ui.upLoadConfigErrorGeneral += " Step Name, Temperature configuration file"
+			settings.ui.upLoadConfigErrorGeneral += " '#{SharedLib.uriToStr(params[:ErrStepTempNotFound])}' is not found."
+		elsif SharedLib.uriToStr(params[:ErrStepPsNotFound]).nil? == false && 
+		SharedLib.uriToStr(params[:ErrStepPsNotFound]) != ""
+			calledFrom = "#{__LINE__}-#{__FILE__}"
+			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
+			settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"
+			settings.ui.upLoadConfigErrorGeneral += " Step Name, Power Supply configuration"
+			settings.ui.upLoadConfigErrorGeneral += " '#{SharedLib.uriToStr(params[:ErrStepPsNotFound])}' is not found."
+		elsif SharedLib.uriToStr(params[:ErrTempFileNotGiven]).nil? == false && 
+		SharedLib.uriToStr(params[:ErrTempFileNotGiven]) != ""
+			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
+			settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "
+			settings.ui.upLoadConfigErrorGeneral += "Step Name, Temperature configuration file is not given."
+		elsif SharedLib.uriToStr(params[:ErrPsFileNotGiven]).nil? == false && 
+		SharedLib.uriToStr(params[:ErrPsFileNotGiven]) != ""
+			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
+			settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "
+			settings.ui.upLoadConfigErrorGeneral += "Step Name, Power Supply configuration file is not given."
 		elsif SharedLib.uriToStr(params[:ErrStepNameNotGiven]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameNotGiven]) != ""
-			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Row '#{SharedLib.uriToStr(params[:ErrRow])}' on step "+
-			"file requires a filename.."
+			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Row '#{SharedLib.uriToStr(params[:ErrRow])}' on step file requires a filename.."
 		elsif SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]) != ""
 			fileName = SharedLib.uriToStr(SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]))
-			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Duplicate filename '#{fileName}' "+
-			"in the step file list."
+			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Duplicate filename '#{fileName}' in the step file list."
 		elsif SharedLib.uriToStr(params[:ErrStepFormat]).nil? == false && SharedLib.uriToStr(params[:ErrStepFormat]) != ""
-			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  "+
-			"Column labels must start on column A, row 2."
+			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  Column labels must start on column A, row 2."
 		elsif (SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && SharedLib.uriToStr(params[:ErrGeneral]) != "")
 			if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
 				puts "a3 #{__LINE__}-#{__FILE__}"
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be "
-				"one of these: *.step, *.ps_config, or *.temp_config"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, or *.temp_config"
 			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
 				puts "a4 #{__LINE__}-#{__FILE__}"
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', BBB PcListener is down.  Need to"+
-				" handle this in production code level."
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', BBB PcListener is down.  Need to handle this in production code level."
 			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
 				puts "a5 #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', No file selected for upload."
@@ -1797,8 +1821,6 @@ get '/TopBtnPressed' do
 		settings.ui.saveSlotState();
 		redirect "../"
 	end
-	puts "SharedLib.uriToStr(params[:BtnState])=#{SharedLib.uriToStr(params[:BtnState])} - don't know what to do."	
-	gets
 end
 
 get '/' do 
@@ -1840,7 +1862,7 @@ post '/TopBtnPressed' do
 	
 	if params['myfile'].nil?
 		settings.ui.redirectWithError += "&ErrGeneral=FileNotSelected"
-		redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
+		redirect settings.ui.redirectWithError
 	end
 	
 	#
@@ -1865,7 +1887,7 @@ post '/TopBtnPressed' do
 		settings.ui.upLoadConfigTypeError = UserInterface::TempSetTemplate
 	else
 		settings.ui.redirectWithError += "&ErrGeneral=FileNotKnown"
-		redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
+		redirect settings.ui.redirectWithError
 	end
 	
 	goodUpload = true
@@ -1908,23 +1930,23 @@ post '/TopBtnPressed' do
 			if (colContent[0].upcase.strip != "ITEM")
 				puts "Failed at '#{colContent[0].upcase}', suppose to be 'ITEM'"
 				settings.ui.redirectWithError += "&ErrStepFormat=A"
-				redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
+				redirect settings.ui.redirectWithError
 			elsif (colContent[1].upcase.strip != "NAME")
 				puts "Failed at '#{colContent[1].upcase}', suppose to be 'NAME'"
 				settings.ui.redirectWithError += "&ErrStepFormat=B"
-				redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
+				redirect settings.ui.redirectWithError
 			elsif (colContent[2].upcase.strip != "DESCRIPTION")
 				puts "Failed at '#{colContent[2].upcase}', suppose to be 'DESCRIPTION'"
 				settings.ui.redirectWithError += "&ErrStepFormat=C"
-				redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
+				redirect settings.ui.redirectWithError
 			elsif (colContent[3].upcase.strip != "TYPE")
 				puts "Failed at '#{colContent[3].upcase}', suppose to be 'TYPE'"
 				settings.ui.redirectWithError += "&ErrStepFormat=D"
-				redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
+				redirect settings.ui.redirectWithError
 			elsif (colContent[4].upcase.strip != "VALUE")
 				puts "Failed at '#{colContent[4].upcase}', suppose to be 'VALUE'"
 				settings.ui.redirectWithError += "&ErrStepFormat=E"
-				redirect SharedLib.makeUriFriendly(settings.ui.redirectWithError).to_s
+				redirect settings.ui.redirectWithError
 			end
 			
 			#
@@ -1970,12 +1992,13 @@ post '/TopBtnPressed' do
 			
 			#
 			# Make sure Power Supply setup file name are given.
-			# [***] - code not verified.
+			#
 			ct = 3
 			while ct < config.length do
 				stepName = config[ct-1].split(",")[2].upcase.strip # Get the row data for file name.
 				colContent = config[ct].split(",")[2].strip
 				if colContent.nil? == true || colContent.length == 0
+					settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
 					settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
 					settings.ui.redirectWithError += "&ErrPsFileNotGiven=Y"
 					settings.ui.redirectWithError = SharedLib.makeUriFriendly(settings.ui.redirectWithError)
@@ -1991,14 +2014,13 @@ post '/TopBtnPressed' do
 						settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
 						settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
 						settings.ui.redirectWithError += "&ErrStepPsNotFound=#{SharedLib.makeUriFriendly(colContent)}"
-						puts "settings.ui.redirectWithError = '#{settings.ui.redirectWithError}'"
 						redirect settings.ui.redirectWithError
 					else 
 						#
 						# Make sure the PS File config is good.
 						#
 						settings.ui.upLoadConfigTypeError = UserInterface::PSSeqFileTemplate
-						if settings.ui.checkFaultyPsConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
+						if settings.ui.checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 							# puts "settings.ui.redirectErrorFaultyPsConfig=#{settings.ui.redirectErrorFaultyPsConfig}"+
 							# " #{__LINE__}-#{__FILE__}"
 							# gets;
@@ -2010,21 +2032,56 @@ post '/TopBtnPressed' do
 			end
 			
 			#
-			# Make sure Power Supply setup file name are found in the file system.
-			#			
-			
-			# puts "paused at #{__LINE__}-#{__FILE__}"
-			# gets
+			# Make sure the Temp Config file is given
 			#
-			# What's the next step?
-			#
+			ct = 4
+			while ct < config.length do
+				stepName = config[ct-2].split(",")[2].upcase.strip # Get the row data for the step file name.
+				colContent = config[ct].split(",")[2].strip
+				if colContent.nil? == true || colContent.length == 0
+					fromHere = "#{__LINE__}-#{__FILE__}"
+					settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
+					settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
+					settings.ui.redirectWithError += "&ErrTempFileNotGiven=Y"
+					redirect settings.ui.redirectWithError
+				else
+					#
+					# Make sure that the Temperature config file is present in the file system
+					#
+						puts "at pause 'dirFileRepository+\"/\"+colContent'='#{dirFileRepository+"/"+colContent}'"
+						gets
+					if File.file?(dirFileRepository+"/"+colContent) == false
+						#
+						# The file does not exists.  Post an error.
+						#
+						settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
+						settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
+						settings.ui.redirectWithError += "&ErrStepTempNotFound=#{SharedLib.makeUriFriendly(colContent)}"
+						puts "settings.ui.redirectWithError=#{settings.ui.redirectWithError}"
+						puts "at pause"
+						gets
+						redirect settings.ui.redirectWithError
+					else 
+						#
+						# Make sure the PS File config is good.
+						#
+						settings.ui.upLoadConfigTypeError = UserInterface::PSSeqFileTemplate
+						if settings.ui.checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
+							puts "at pause #{__LINE__}-#{__FILE__} settings.ui.redirectErrorFaultyPsConfig"+
+							"=#{settings.ui.redirectErrorFaultyPsConfig}"
+							gets
+							redirect settings.ui.redirectErrorFaultyPsConfig
+						end
+					end
+				end
+				ct += 11
+			end
 		elsif settings.ui.upLoadConfigTypeError == UserInterface::PSSeqFileTemplate ||
 					settings.ui.upLoadConfigTypeError == UserInterface::TempSetTemplate
 			settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}&BtnState=#{settings.ui.Load}"
-			if settings.ui.checkFaultyPsConfig("#{params['myfile'][:filename]}","#{__LINE__}-#{__FILE__}") == false
+			if settings.ui.checkFaultyPsOrTempConfig("#{params['myfile'][:filename]}","#{__LINE__}-#{__FILE__}") == false
 				puts "settings.ui.redirectErrorFaultyPsConfig=#{settings.ui.redirectErrorFaultyPsConfig}"+
 					" #{__LINE__}-#{__FILE__}"
-				gets;
 				redirect settings.ui.redirectErrorFaultyPsConfig
 			end
 			settings.ui.redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
