@@ -124,6 +124,31 @@ class UserInterface
 		@redirectWithError
 	end
 	
+	def mustBeBoolean(configFileName,ctParam,config,itemNameParam)
+		#
+		# returns true if the 
+		#
+		ct = ctParam
+		while ct < config.length do
+			stepName = config[ct-4].split(",")[2].strip # Get the row data for the step file name.
+			stepTime = config[ct].split(",")[4].strip
+			if (stepTime=="1" || stepTime == "0") == false
+				#
+				# Given number is not good
+				#
+				@redirectWithError += "&ErrInFile="
+				@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
+				error = "Step File '#{configFileName}' - '#{itemNameParam}' '#{stepTime}' on line "
+				error += "'#{ct+1}' must be a boolean (1 or 0)."
+				@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+				return false
+			end
+			ct += 11
+			# End of 'while ct < config.length do' 
+		end
+		return true
+	end
+	
 	def mustBeNumber(configFileName,ctParam,config,itemNameParam)
 		#
 		# returns true if the 
@@ -2057,6 +2082,18 @@ post '/TopBtnPressed' do
 			if settings.ui.mustBeNumber(params['myfile'][:filename],8,config,"Alarm Wait") == false
 					redirect settings.ui.redirectWithError
 			end
+			
+			#
+			# Make sure that 'Auto Restart' and 'Stop on Tolerance' are boolean (1 or 0)
+			#
+			if settings.ui.mustBeBoolean(params['myfile'][:filename],9,config,"Auto Restart") == false
+					redirect settings.ui.redirectWithError
+			end
+			
+			if settings.ui.mustBeBoolean(params['myfile'][:filename],10,config,"Stop on Tolerance") == false
+					redirect settings.ui.redirectWithError
+			end
+			
 		elsif settings.ui.configFileType == UserInterface::PSSeqFileTemplate ||
 					settings.ui.configFileType == UserInterface::TempSetTemplate
 			settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}"
