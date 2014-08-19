@@ -102,7 +102,7 @@ class UserInterface
 	attr_accessor :upLoadConfigErrorRow
 	attr_accessor :upLoadConfigErrorIndex
 	attr_accessor :upLoadConfigErrorInFile
-	attr_accessor :upLoadConfigTypeError
+	attr_accessor :configFileType
 	attr_accessor :upLoadConfigErrorCol
 	attr_accessor :upLoadConfigErrorColType
 	attr_accessor :upLoadConfigErrorValue
@@ -208,8 +208,8 @@ class UserInterface
 		@upLoadConfigErrorGeneral
 	end
 	
-	def upLoadConfigTypeError
-		@upLoadConfigTypeError
+	def configFileType
+		@configFileType
 	end
 	
 	def upLoadConfigErrorInFile
@@ -1155,9 +1155,6 @@ class UserInterface
 		# 						
 		repoDir = "file\ repository"
 		files = Dir["#{repoDir}/*.step"]
-		# puts "files=#{files}"
-		# puts "Paused at #{__LINE__}-#{__FILE__}"
-		# gets
 		tbr += "<table style=\"border-collapse: collapse;	border: 1px solid black;\">"
 		fileIndex = 0;
 		totalColumns = 0
@@ -1207,9 +1204,6 @@ class UserInterface
 		#
 		# Create a list of Test Files, and display them in a table.
 		# 						
-		# puts "files=#{files}"
-		# puts "Paused at #{__LINE__}-#{__FILE__}"
-		# gets
 		tbr += "<table style=\"border-collapse: collapse;	border: 1px solid black;\">"
 		tbr += getRows(Dir["#{repoDir}/*.ps_config"])
 		tbr += getRows(Dir["#{repoDir}/*.temp_config"])
@@ -1304,15 +1298,22 @@ class UserInterface
 			 (upLoadConfigErrorIndex.nil? == false && upLoadConfigErrorIndex.length > 0) ||
 			 (upLoadConfigErrorGeneral.nil? == false && upLoadConfigErrorGeneral.length > 0)
 			#
+			# Set the proper config file type so proper template could be displayed on the file that is in error.
+			#
+			if @fileInError.nil? == false && @fileInError.length>0
+				setConfigFileType(@fileInError)
+			end
+			 
+			#
 			# There's an error, show it to the user.
 			#
 
 			#
 			# Get the max column in the template so we could draw our table correcty
 			#
-			if upLoadConfigTypeError == PSSeqFileTemplate
+			if configFileType == PSSeqFileTemplate
 				configTemplateRows = psConfigFileTemplate.split("\n")
-			elsif upLoadConfigTypeError == StepFileTemplate
+			elsif configFileType == StepFileTemplate
 				configTemplateRows = stepConfigFileTemplate.split("\n")
 			else
 				configTemplateRows = tempConfigFileTemplate.split("\n")
@@ -1370,26 +1371,17 @@ class UserInterface
 	end
 	
 	def checkConfigValue(valueParam, colnameParam, indexParam, rowParam,fromLine,fromFile)
-		puts "redirectWithError=#{redirectWithError} #{__LINE__}-#{__FILE__}"
-		puts "checkConfigValue from #{fromLine}-#{fromFile}"
 		if (valueParam.length>0 && 
 				colnameParam != UserInterface::IndexCol &&
 				is_a_number?(valueParam) == false)
-			return redirectWithError+"&ErrIndex=#{indexParam}&ErrColType=#{colnameParam}"
-							+"&ErrValue="+SharedLib.makeUriFriendly("#{valueParam}")
+			@redirectWithError+="&ErrIndex=#{indexParam}&ErrColType=#{colnameParam}"
+			@redirectWithError+="&ErrValue="+SharedLib.makeUriFriendly("#{valueParam}")
+			return @redirectWithError
 		elsif colnameParam == IndexCol
 			#
 			# Make sure that the index is unique, and not repeated.
 			#
 			if valueParam.length>0 && colnameParam==UserInterface::IndexCol
-				# puts "valueParam=#{valueParam}, colnameParam=#{colnameParam}, indexParam=#{indexParam}, 
-				# rowParam=#{rowParam}, UserInterface::IndexCol=#{UserInterface::IndexCol}"
-				# puts "valueParam.length>0 = #{valueParam.length>0}, 
-				# colnameParam != UserInterface::IndexCol = #{colnameParam != UserInterface::IndexCol}, 
-				# (is_a_number?(valueParam) == false)=#{is_a_number?(valueParam) == false}"
-				# puts "hashUniqueIndex[valueParam].nil = #{hashUniqueIndex[valueParam].nil?}"
-				# puts "At a pause... #{__LINE__}-#{__FILE__}"
-				# gets 
 				if hashUniqueIndex[valueParam].nil? == false
 					redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 					redirectWithError += "&ErrRow=#{rowParam}&ErrColType=#{colnameParam}&ErrValue="+
@@ -1506,7 +1498,7 @@ class UserInterface
 			end
 		end
 		
-		knownRowNames = getKnownRowNamesFor(upLoadConfigTypeError)			
+		knownRowNames = getKnownRowNamesFor(configFileType)			
 		#
 		# Make sure that each row have a column name that is found within the template which Mike provided.
 		#
@@ -1518,10 +1510,8 @@ class UserInterface
 				#
 				# How are we going to inform the user that the file is not a good one?
 				#
-				@redirectWithError += "&ErrFaultyFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
 				@redirectErrorFaultyPsConfig = redirectWithError
-				puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
-				gets
 				return false
 			end
 			ct += 1
@@ -1581,14 +1571,12 @@ class UserInterface
 				@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}"
 				@redirectWithError += "&BtnState=#{Load}"
 				fromHere="#{__LINE__}-#{__FILE__}"
-				@redirectWithError += "&ErrFaultyFile=#{SharedLib.makeUriFriendly(fileNameParam)}"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(fileNameParam)}"
 				
 				error = checkConfigValue(
 					index,UserInterface::IndexCol,columns[indexCol],(ct+1),"#{__LINE__}","#{__FILE__}")				
 				if error.length > 0
 					@redirectErrorFaultyPsConfig = error
-					puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
-					gets
 					return false
 				end
 		
@@ -1599,8 +1587,6 @@ class UserInterface
 					error  = checkConfigValue(nomSet,"nomSetCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
-						puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
-						gets
 						return false
 					else					
 						if "TIME".upcase == name
@@ -1616,8 +1602,6 @@ class UserInterface
 					error = checkConfigValue(nomSet,"nomSetCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
-						puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
-						gets
 						return false
 					end
 		
@@ -1626,32 +1610,24 @@ class UserInterface
 					if error.length > 0
 						puts "error=#{error} #{__LINE__}-#{__FILE__}"
 						@redirectErrorFaultyPsConfig = error
-						puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
-						gets
 						return false
 					end
 		
 					error = checkConfigValue(tripMax,"tripMaxCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
-						puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
-						gets
 						return false
 					end
 		
 					error = checkConfigValue(flagTolP,"flagTolPCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
-						puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
-						gets
 						return false
 					end
 		
 					error = checkConfigValue(flagTolN,"flagTolNCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
-						puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
-						gets
 						return false
 					end
 					# End of 'elsif unit == "V" || unit == "A" || unit == "C"'
@@ -1673,14 +1649,47 @@ class UserInterface
 				#
 				@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 				@redirectWithError += "&ErrRow=#{ct+1}&ErrCol=3&ErrName=#{colContent}"
-				puts "paused at #{__LINE__}-#{__FILE__} Called from #{fromParam}"
-				gets
 				return false
 			end
 			ct += 1
 		end
 		return true
 		# End of 'checkFaultyPsOrTempConfig'
+	end
+
+	def pause(paramA,paramLocation)
+		puts "Paused at #{paramLocation} - #{paramA}"
+		gets
+	end
+	
+	def setConfigFileType(uploadedFileName)
+		#
+		# Returns true if the file is recognizes as one of the config file names.  Returns false if not.
+		#
+		stepFileExtension = ".step"
+		psFileExtension = ".ps_config"
+		temperatureFileExtension = ".temp_config"
+	
+		stepFile = uploadedFileName[uploadedFileName.length-stepFileExtension.length..-1]
+		psFile  = uploadedFileName[uploadedFileName.length-psFileExtension.length..-1]
+		tempFile = uploadedFileName[uploadedFileName.length-temperatureFileExtension.length..-1]
+		
+		if stepFile == stepFileExtension
+			@configFileType = UserInterface::StepFileTemplate
+		elsif psFile == psFileExtension
+			@configFileType = UserInterface::PSSeqFileTemplate
+		elsif tempFile == temperatureFileExtension
+			@configFileType = UserInterface::TempSetTemplate
+		else
+			@redirectWithError += "&ErrGeneral=FileNotKnown&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+			return false
+		end
+		
+		return true
+	end	
+	
+	def setFileInError(fileInError)
+		@fileInError = fileInError
 	end
 	# End of class UserInterface
 end
@@ -1725,6 +1734,7 @@ get '/TopBtnPressed' do
 		#
 		# The Load button got pressed.
 		#		
+		settings.ui.setFileInError("#{SharedLib.uriToStr(params[:ErrInFile])}")
 		if SharedLib.uriToStr(params[:ErrStepTempNotFound]).nil? == false && 
 		SharedLib.uriToStr(params[:ErrStepTempNotFound]) != ""
 			calledFrom = "#{__LINE__}-#{__FILE__}"
@@ -1772,7 +1782,7 @@ get '/TopBtnPressed' do
 			 (SharedLib.uriToStr(params[:ErrIndex]).nil? == false && SharedLib.uriToStr(params[:ErrIndex]) != "")
 			puts "a7 #{__LINE__}-#{__FILE__}"
 			#puts "check #{__LINE__}-#{__FILE__}"
-			settings.ui.upLoadConfigErrorInFile = SharedLib.uriToStr(params[:ErrFaultyFile])
+			settings.ui.upLoadConfigErrorInFile = SharedLib.uriToStr(params[:ErrInFile])
 			settings.ui.upLoadConfigErrorIndex = SharedLib.uriToStr(params[:ErrIndex])
 			settings.ui.upLoadConfigErrorRow = SharedLib.uriToStr(params[:ErrRow])
 			settings.ui.upLoadConfigErrorCol = SharedLib.uriToStr(params[:ErrCol])
@@ -1872,21 +1882,7 @@ post '/TopBtnPressed' do
 	# *.temp_config - for Temperature setting file.
 	#
 	uploadedFileName = "#{params['myfile'][:filename]}"
-	stepFileExtension = ".step"
-	psFileExtension = ".ps_config"
-	temperatureFileExtension = ".temp_config"
-	
-	stepFile = uploadedFileName[uploadedFileName.length-stepFileExtension.length..-1]
-	psFile  = uploadedFileName[uploadedFileName.length-psFileExtension.length..-1]
-	tempFile = uploadedFileName[uploadedFileName.length-temperatureFileExtension.length..-1]
-	if stepFile == stepFileExtension
-		settings.ui.upLoadConfigTypeError = UserInterface::StepFileTemplate
-	elsif psFile == psFileExtension
-		settings.ui.upLoadConfigTypeError = UserInterface::PSSeqFileTemplate
-	elsif tempFile == temperatureFileExtension
-		settings.ui.upLoadConfigTypeError = UserInterface::TempSetTemplate
-	else
-		settings.ui.redirectWithError += "&ErrGeneral=FileNotKnown"
+	if settings.ui.setConfigFileType(uploadedFileName) == false
 		redirect settings.ui.redirectWithError
 	end
 	
@@ -1919,8 +1915,7 @@ post '/TopBtnPressed' do
 		# The following are the known rows
 		# Ideally, get the the known row names from the template above vice having a separate column names here.
 		#
-		if settings.ui.upLoadConfigTypeError == UserInterface::StepFileTemplate
-			puts "Working on '#{UserInterface::StepFileTemplate}'"
+		if settings.ui.configFileType == UserInterface::StepFileTemplate
 			#
 			# We're going to parse a step file.  Hard code settings:  "Item","Name","Description","Type","Value" are
 			# starting on row 2, col A if viewed from Excel.
@@ -2019,7 +2014,7 @@ post '/TopBtnPressed' do
 						#
 						# Make sure the PS File config is good.
 						#
-						settings.ui.upLoadConfigTypeError = UserInterface::PSSeqFileTemplate
+						settings.ui.configFileType = UserInterface::PSSeqFileTemplate
 						if settings.ui.checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 							# puts "settings.ui.redirectErrorFaultyPsConfig=#{settings.ui.redirectErrorFaultyPsConfig}"+
 							# " #{__LINE__}-#{__FILE__}"
@@ -2030,6 +2025,7 @@ post '/TopBtnPressed' do
 				end
 				ct += 11
 			end
+
 			
 			#
 			# Make sure the Temp Config file is given
@@ -2048,8 +2044,6 @@ post '/TopBtnPressed' do
 					#
 					# Make sure that the Temperature config file is present in the file system
 					#
-						puts "at pause 'dirFileRepository+\"/\"+colContent'='#{dirFileRepository+"/"+colContent}'"
-						gets
 					if File.file?(dirFileRepository+"/"+colContent) == false
 						#
 						# The file does not exists.  Post an error.
@@ -2057,27 +2051,21 @@ post '/TopBtnPressed' do
 						settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
 						settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
 						settings.ui.redirectWithError += "&ErrStepTempNotFound=#{SharedLib.makeUriFriendly(colContent)}"
-						puts "settings.ui.redirectWithError=#{settings.ui.redirectWithError}"
-						puts "at pause"
-						gets
 						redirect settings.ui.redirectWithError
 					else 
 						#
-						# Make sure the PS File config is good.
+						# Make sure the Temp File config is good.
 						#
-						settings.ui.upLoadConfigTypeError = UserInterface::PSSeqFileTemplate
+						settings.ui.configFileType = UserInterface::TempSetTemplate
 						if settings.ui.checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
-							puts "at pause #{__LINE__}-#{__FILE__} settings.ui.redirectErrorFaultyPsConfig"+
-							"=#{settings.ui.redirectErrorFaultyPsConfig}"
-							gets
 							redirect settings.ui.redirectErrorFaultyPsConfig
 						end
 					end
 				end
 				ct += 11
 			end
-		elsif settings.ui.upLoadConfigTypeError == UserInterface::PSSeqFileTemplate ||
-					settings.ui.upLoadConfigTypeError == UserInterface::TempSetTemplate
+		elsif settings.ui.configFileType == UserInterface::PSSeqFileTemplate ||
+					settings.ui.configFileType == UserInterface::TempSetTemplate
 			settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}&BtnState=#{settings.ui.Load}"
 			if settings.ui.checkFaultyPsOrTempConfig("#{params['myfile'][:filename]}","#{__LINE__}-#{__FILE__}") == false
 				puts "settings.ui.redirectErrorFaultyPsConfig=#{settings.ui.redirectErrorFaultyPsConfig}"+
