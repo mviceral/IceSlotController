@@ -124,6 +124,31 @@ class UserInterface
 		@redirectWithError
 	end
 	
+	def mustBeNumber(configFileName,ctParam,config,itemNameParam)
+		#
+		# returns true if the 
+		#
+		ct = ctParam
+		while ct < config.length do
+			stepName = config[ct-4].split(",")[2].strip # Get the row data for the step file name.
+			stepTime = config[ct].split(",")[4].strip
+			if is_a_number?(stepTime) == false
+				#
+				# Given number is not good
+				#
+				@redirectWithError += "&ErrInFile="
+				@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
+				error = "Step File '#{configFileName}' - '#{itemNameParam}' '#{stepTime}' on line "
+				error += "'#{ct+1}' must be a number."
+				@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+				return false
+			end
+			ct += 11
+			# End of 'while ct < config.length do' 
+		end
+		return true
+	end
+	
 	def getMaxColCt(configTemplateRows)
 		maxColCt = 0
 		rowCt = 0
@@ -185,9 +210,7 @@ class UserInterface
 
 	def getSlotOwner
 		if @slotOwnerThe.nil? || @slotOwnerThe == ""
-			puts "Calling getSlotsState #{__LINE__}-#{__FILE__}"
 			getSlotsState
-			puts "Calling - redirect \"../\" #{__LINE__}-#{__FILE__}"
 			redirect "../"
 		end
 		return @slotOwnerThe
@@ -487,13 +510,9 @@ class UserInterface
 		# How's that going to work?
 		# - Open up a file, and save the Slot Properties
 		#
-		# puts "slotProperties.to_json.nil?=#{slotProperties.to_json.nil?}"
-		# puts "slotProperties.to_json='#{slotProperties.to_json}'"
 		if slotProperties.to_json == "{}"
-			# puts "calling - getSlotsState()"
 			getSlotsState()
 		end		
-		# puts "slotProperties.to_json=#{slotProperties.to_json}"
 		File.open("SlotState_DoNotDeleteNorModify.json", "w") { |file| file.write(slotProperties.to_json) }
 	end
 	
@@ -533,7 +552,6 @@ class UserInterface
 		begin
 			@response = 
 		    RestClient.post "http://192.168.7.2:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPC}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
-			puts "Bbb responded with '#{@response}'"
 			rescue
 			redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 			redirectWithError += "&ErrGeneral=bbbDown"
@@ -1149,7 +1167,7 @@ class UserInterface
 		<html>
 			<body>"
 		tbr += "
-						<font size=\"3\">Uploaded Step Files</font><br>"
+						<font size=\"3\">Step Files</font><br>"
 		#
 		# Create a list of Test Files, and display them in a table.
 		# 						
@@ -1200,7 +1218,7 @@ class UserInterface
 						</table><br>
 		"
 		tbr += "
-						<font size=\"3\">Uploaded Temperature and Power Supply Power Sequence Configuration Files</font><br>"
+						<font size=\"3\">Temperature and Power Supply Power Sequence Configuration Files</font><br>"
 		#
 		# Create a list of Test Files, and display them in a table.
 		# 						
@@ -1276,8 +1294,6 @@ class UserInterface
 				tbr += "</font><br>"
 			end
 		end
-		puts "@ loadFile C upLoadConfigGoodUpload=#{upLoadConfigGoodUpload} #{__LINE__}-#{__FILE__}"
-		puts "@ loadFile D upLoadConfigErrorGeneral=#{upLoadConfigErrorGeneral} #{__LINE__}-#{__FILE__}"
 		tbr += "
 						<br>
 						<input type='file' name='myfile' />
@@ -1389,7 +1405,6 @@ class UserInterface
 					return redirectWithError
 				else
 					hashUniqueIndex[valueParam] = "u" # u for unique
-					puts "A No error in this function..."
 					return ""
 				end
 			else
@@ -1397,7 +1412,6 @@ class UserInterface
 			end
 		
 		else
-			puts "B No error in this function..."
 			return ""
 		end
 	end
@@ -1412,18 +1426,10 @@ class UserInterface
 	end
 	
 	def setItemParameter(nameParam, param, valueParam)
-		puts "setItemParameter nameParam=#{nameParam}, param=#{param}, valueParam=#{valueParam} #{__LINE__}-#{__FILE__}"
-		puts "getSlotProperties()[nameParam].nil? = #{getSlotProperties()[nameParam].nil?}"
-		puts "getSlotProperties()[nameParam] = #{getSlotProperties()[nameParam]}"
-		puts " #{__LINE__}-#{__FILE__}"
 		if getSlotProperties()[nameParam].nil?
-			puts "A #{__LINE__}-#{__FILE__}"
 			getSlotProperties()[nameParam] = Hash.new
-			puts "B #{__LINE__}-#{__FILE__}"
 		end
-		puts "C #{__LINE__}-#{__FILE__}"
 		getSlotProperties()[nameParam][param] = valueParam
-		puts "D #{__LINE__}-#{__FILE__}"
 
 		# End of 'def setItemParameter(nameParam, param, valueParam)'
 	end
@@ -1432,41 +1438,25 @@ class UserInterface
 					nameParam,unitParam,nomSetParam,tripMinParam,tripMaxParam,flagTolPParam,flagTolNParam,enableBitParam,
 					idleStateParam,loadStateParam,startStateParam,runStateParam,stopStateParam,clearStateParam
 				)
-		puts "setDataSetup function got called. #{__LINE__}-#{__FILE__}"
-		puts "SlotOwner = '#{getSlotOwner()}' #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,Unit,unitParam)
-		puts "sip a #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,NomSet,nomSetParam)
-		puts "sip b #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,TripMin,tripMinParam)
-		puts "sip c #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,TripMax,tripMaxParam)
-		puts "sip d #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,FlagTolP,flagTolPParam)
-		puts "sip e #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,FlagTolN,flagTolNParam)
-		puts "sip f #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,EnableBit,enableBitParam)
-		puts "sip g #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,IdleState,idleStateParam)
-		puts "sip h #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,LoadState,loadStateParam)
-		puts "sip i #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,StartState,startStateParam)
-		puts "sip j #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,RunState,runStateParam)
-		puts "sip k #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,StopState,stopStateParam)
-		puts "sip l #{__LINE__}-#{__FILE__}"
 		setItemParameter(nameParam,ClearState,clearStateParam)
-		puts "sip m #{__LINE__}-#{__FILE__}"
 		# End of 
 	end 
 	
 	def setBbbToStopMode()
 		@response = 
       RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPC}" }.to_json, :content_type => :json, :accept => :json
-		puts "Bbb responded with '#{@response}'"
 	end
 	
 	def setToRunMode()
@@ -1484,7 +1474,6 @@ class UserInterface
 		getSlotProperties()[ButtonDisplay] = Stop
 		@response = 
       RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPC}" }.to_json, :content_type => :json, :accept => :json
-		puts "Bbb responded with '#{@response}'"
 	end	
 
 	def checkFaultyPsOrTempConfig(fileNameParam,fromParam)
@@ -1505,7 +1494,6 @@ class UserInterface
 		ct = 0
 		while ct < config.length do
 			colContent = config[ct].split(",")[2].upcase
-			# puts "colContent='#{colContent}'"
 			if colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn")
 				#
 				# How are we going to inform the user that the file is not a good one?
@@ -1605,10 +1593,8 @@ class UserInterface
 						return false
 					end
 		
-					puts "redirectWithError=#{redirectWithError} #{__LINE__}-#{__FILE__}"
 					error = checkConfigValue(tripMin,"tripMinCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
-						puts "error=#{error} #{__LINE__}-#{__FILE__}"
 						@redirectErrorFaultyPsConfig = error
 						return false
 					end
@@ -1642,7 +1628,6 @@ class UserInterface
 				# end of 'if skipNumCheckOnRows[name].nil?'
 			end
 
-			# puts "colContent='#{colContent}'"
 			if colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn")
 				#
 				# How are we going to inform the user that the file is not a good one?
@@ -1768,20 +1753,17 @@ get '/TopBtnPressed' do
 			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  Column labels must start on column A, row 2."
 		elsif (SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && SharedLib.uriToStr(params[:ErrGeneral]) != "")
 			if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
-				puts "a3 #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, or *.temp_config"
 			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
-				puts "a4 #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', BBB PcListener is down.  Need to handle this in production code level."
 			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
-				puts "a5 #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', No file selected for upload."
+			elsif SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && 
+						SharedLib.uriToStr(params[:ErrGeneral]).length >0
+				settings.ui.upLoadConfigErrorGeneral = "#{SharedLib.uriToStr(params[:ErrGeneral])}"
 			end
-			puts "a6 #{__LINE__}-#{__FILE__}"
 		elsif (SharedLib.uriToStr(params[:ErrRow]).nil? == false && SharedLib.uriToStr(params[:ErrRow]) != "") || 
 			 (SharedLib.uriToStr(params[:ErrIndex]).nil? == false && SharedLib.uriToStr(params[:ErrIndex]) != "")
-			puts "a7 #{__LINE__}-#{__FILE__}"
-			#puts "check #{__LINE__}-#{__FILE__}"
 			settings.ui.upLoadConfigErrorInFile = SharedLib.uriToStr(params[:ErrInFile])
 			settings.ui.upLoadConfigErrorIndex = SharedLib.uriToStr(params[:ErrIndex])
 			settings.ui.upLoadConfigErrorRow = SharedLib.uriToStr(params[:ErrRow])
@@ -1790,14 +1772,12 @@ get '/TopBtnPressed' do
 			settings.ui.upLoadConfigErrorColType = SharedLib.uriToStr(params[:ErrColType])
 			settings.ui.upLoadConfigErrorValue = SharedLib.uriToStr(params[:ErrValue])
 		elsif SharedLib.uriToStr(params[:MsgFileUpload]).nil? == false
-			puts "a8 #{__LINE__}-#{__FILE__}"
 			settings.ui.upLoadConfigGoodUpload = "File '#{SharedLib.uriToStr(params[:MsgFileUpload])}' has been uploaded."
-			puts "check #{__LINE__}-#{__FILE__}"
 			settings.ui.upLoadConfigErrorName = ""
+		else
+			settings.ui.clearError
 		end
 		
-		puts "check #{__LINE__}-#{__FILE__}"
-		puts "a8 #{__LINE__}-#{__FILE__}"
 		return settings.ui.loadFile
 	elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Run
 		#
@@ -1834,12 +1814,10 @@ get '/TopBtnPressed' do
 end
 
 get '/' do 
-	puts "get / got called."
 	return settings.ui.display
 end
 
 post '/' do	
-	puts "post / got called."
 	settings.ui.saveSlotState() # Saves the state everytime the display gets refreshed.  10 second resolution...
 	return settings.ui.display
 end
@@ -1923,27 +1901,22 @@ post '/TopBtnPressed' do
 			row = 1
 			colContent = config[row].split(",")
 			if (colContent[0].upcase.strip != "ITEM")
-				puts "Failed at '#{colContent[0].upcase}', suppose to be 'ITEM'"
 				settings.ui.redirectWithError += "&ErrStepFormat=A"
 				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 				redirect settings.ui.redirectWithError
 			elsif (colContent[1].upcase.strip != "NAME")
-				puts "Failed at '#{colContent[1].upcase}', suppose to be 'NAME'"
 				settings.ui.redirectWithError += "&ErrStepFormat=B"
 				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 				redirect settings.ui.redirectWithError
 			elsif (colContent[2].upcase.strip != "DESCRIPTION")
-				puts "Failed at '#{colContent[2].upcase}', suppose to be 'DESCRIPTION'"
 				settings.ui.redirectWithError += "&ErrStepFormat=C"
 				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 				redirect settings.ui.redirectWithError
 			elsif (colContent[3].upcase.strip != "TYPE")
-				puts "Failed at '#{colContent[3].upcase}', suppose to be 'TYPE'"
 				settings.ui.redirectWithError += "&ErrStepFormat=D"
 				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 				redirect settings.ui.redirectWithError
 			elsif (colContent[4].upcase.strip != "VALUE")
-				puts "Failed at '#{colContent[4].upcase}', suppose to be 'VALUE'"
 				settings.ui.redirectWithError += "&ErrStepFormat=E"
 				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 				redirect settings.ui.redirectWithError
@@ -1956,26 +1929,26 @@ post '/TopBtnPressed' do
 			ct = 2
 			while ct < config.length do
 				colContent = config[ct].split(",")[2].strip
-				puts "uniqueStepNames[colContent].nil? = "+
-					"uniqueStepNames[#{colContent}].nil? = #{uniqueStepNames[colContent].nil?}"
 				if uniqueStepNames[colContent].nil? == false
 					#
 					# The condition says that the step name is already used.  Can't process the file...
 					#
-					puts "Step name ERROR = '#{colContent}' - duplicate."
 					
 					#
 					# Verify we print the duplicate name error...
 					#
-					settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
-					settings.ui.redirectWithError += "&ErrStepNameAlreadyFound=#{SharedLib.makeUriFriendly(colContent)}"					
+					settings.ui.redirectWithError += "&ErrInFile=#"
+					settings.ui.redirectWithError += "{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
+					settings.ui.redirectWithError += "&ErrStepNameAlreadyFound="
+					settings.ui.redirectWithError += "#{SharedLib.makeUriFriendly(colContent)}"					
 					redirect settings.ui.redirectWithError
 				else
 					if colContent.nil? == true || colContent.length == 0
 						#
 						#  Step name is blank.  This is not right.
 						#
-						settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
+						settings.ui.redirectWithError += "&ErrInFile="
+						settings.ui.redirectWithError += "#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
 						settings.ui.redirectWithError += "&ErrStepNameNotGiven=Y"
 						settings.ui.redirectWithError += "&ErrRow=#{(ct+1)}"
 						redirect settings.ui.redirectWithError
@@ -1986,7 +1959,6 @@ post '/TopBtnPressed' do
 						uniqueStepNames[colContent] = "nn" # nn - not nil.
 					end
 				end				
-				puts "Step name = '#{colContent}'"
 				ct += 11
 			end
 			
@@ -1995,10 +1967,11 @@ post '/TopBtnPressed' do
 			#
 			ct = 3
 			while ct < config.length do
-				stepName = config[ct-1].split(",")[2].upcase.strip # Get the row data for file name.
+				stepName = config[ct-1].split(",")[2].strip # Get the row data for file name.
 				colContent = config[ct].split(",")[2].strip
 				if colContent.nil? == true || colContent.length == 0
-					settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
+					settings.ui.redirectWithError += "&ErrInFile="
+					settings.ui.redirectWithError += "#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
 					settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
 					settings.ui.redirectWithError += "&ErrPsFileNotGiven=Y"
 					settings.ui.redirectWithError = SharedLib.makeUriFriendly(settings.ui.redirectWithError)
@@ -2011,7 +1984,8 @@ post '/TopBtnPressed' do
 						#
 						# The file does not exists.  Post an error.
 						#
-						settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
+						settings.ui.redirectWithError += "&ErrInFile="
+						settings.ui.redirectWithError += "#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
 						settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
 						settings.ui.redirectWithError += "&ErrStepPsNotFound=#{SharedLib.makeUriFriendly(colContent)}"
 						redirect settings.ui.redirectWithError
@@ -2021,9 +1995,6 @@ post '/TopBtnPressed' do
 						#
 						settings.ui.configFileType = UserInterface::PSSeqFileTemplate
 						if settings.ui.checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
-							# puts "settings.ui.redirectErrorFaultyPsConfig=#{settings.ui.redirectErrorFaultyPsConfig}"+
-							# " #{__LINE__}-#{__FILE__}"
-							# gets;
 							redirect settings.ui.redirectErrorFaultyPsConfig
 						end
 					end
@@ -2037,11 +2008,12 @@ post '/TopBtnPressed' do
 			#
 			ct = 4
 			while ct < config.length do
-				stepName = config[ct-2].split(",")[2].upcase.strip # Get the row data for the step file name.
+				stepName = config[ct-2].split(",")[2].strip # Get the row data for the step file name.
 				colContent = config[ct].split(",")[2].strip
 				if colContent.nil? == true || colContent.length == 0
 					fromHere = "#{__LINE__}-#{__FILE__}"
-					settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
+					settings.ui.redirectWithError += "&ErrInFile="
+					settings.ui.redirectWithError += "#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
 					settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
 					settings.ui.redirectWithError += "&ErrTempFileNotGiven=Y"
 					redirect settings.ui.redirectWithError
@@ -2053,7 +2025,8 @@ post '/TopBtnPressed' do
 						#
 						# The file does not exists.  Post an error.
 						#
-						settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
+						settings.ui.redirectWithError += "&ErrInFile="
+						settings.ui.redirectWithError += "#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
 						settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
 						settings.ui.redirectWithError += "&ErrStepTempNotFound=#{SharedLib.makeUriFriendly(colContent)}"
 						redirect settings.ui.redirectWithError
@@ -2069,12 +2042,26 @@ post '/TopBtnPressed' do
 				end
 				ct += 11
 			end
+						
+			#
+			# Make sure 'STEP TIME', 'Temp Wait Time', 'Alarm Wait Time' are numbers
+			#			
+			if settings.ui.mustBeNumber(params['myfile'][:filename],6,config,"Step Time") == false
+					redirect settings.ui.redirectWithError
+			end
+			
+			if settings.ui.mustBeNumber(params['myfile'][:filename],7,config,"TEMP WAIT") == false
+					redirect settings.ui.redirectWithError
+			end
+			
+			if settings.ui.mustBeNumber(params['myfile'][:filename],8,config,"Alarm Wait") == false
+					redirect settings.ui.redirectWithError
+			end
 		elsif settings.ui.configFileType == UserInterface::PSSeqFileTemplate ||
 					settings.ui.configFileType == UserInterface::TempSetTemplate
-			settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}&BtnState=#{settings.ui.Load}"
+			settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}"
+			settings.ui.redirectWithError += "&BtnState=#{settings.ui.Load}"
 			if settings.ui.checkFaultyPsOrTempConfig("#{params['myfile'][:filename]}","#{__LINE__}-#{__FILE__}") == false
-				puts "settings.ui.redirectErrorFaultyPsConfig=#{settings.ui.redirectErrorFaultyPsConfig}"+
-					" #{__LINE__}-#{__FILE__}"
 				redirect settings.ui.redirectErrorFaultyPsConfig
 			end
 			settings.ui.redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
