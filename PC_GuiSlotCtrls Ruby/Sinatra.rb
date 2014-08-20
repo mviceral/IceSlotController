@@ -214,7 +214,8 @@ class UserInterface
 								columns = configTemplateRows[rowCt].split(",")
 								colCt = 0
 								while colCt<columns.length do
-									tbr += "<td style=\"border: 1px solid black;\"><font size=\"1\">"+columns[colCt]+"</font></td>"		
+									tbr += "<td style=\"border: 1px solid black;\"><font size=\"1\">"+columns[colCt]
+									tbr += "</font></td>"		
 									colCt += 1
 								end
 					
@@ -1241,7 +1242,8 @@ class UserInterface
 		<html>
 			<body>"
 		tbr += "
-						<font size=\"3\">Step Files</font><br>"
+						<font size=\"3\">"
+		tbr += "Slot #{getSlotOwner()[getSlotOwner().length-1..-1]} Setup<br>Step Files</font><br>"
 		#
 		# Create a list of Test Files, and display them in a table.
 		# 						
@@ -1682,8 +1684,6 @@ class UserInterface
 						# Make sure the PS File config is good.
 						#
 						@configFileType = UserInterface::PSSeqFileTemplate
-						clearError()
-						clearInternalSettings();
 						if checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 							return false
 						end
@@ -1725,8 +1725,6 @@ class UserInterface
 						# Make sure the Temp File config is good.
 						#
 						@configFileType = UserInterface::TempSetTemplate
-						clearError()
-						clearInternalSettings();
 						if checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 							return false
 						end
@@ -1785,6 +1783,8 @@ class UserInterface
 		#
 		# Returns true if no fault, false if there is error
 		#
+		clearError()
+		clearInternalSettings();
 		config = Array.new
 		File.open("#{dirFileRepository}/#{fileNameParam}", "r") do |f|
 			f.each_line do |line|
@@ -2027,8 +2027,19 @@ class UserInterface
 					columns[seqDownDlyMsCol],seqDownDlyMsCol,"SEQ DN DLYms") == false
 					return false
 				end
-								
+				if getSlotConfigStep(stepName)[configFileType][columns[nameCol]].nil?
+					getSlotConfigStep(stepName)[configFileType][columns[nameCol]] = Hash.new
+				end
+				
+				getSlotConfigStep(stepName)[configFileType][columns[nameCol]]["EthernetOrSlotPcb"] = columns[5]
+				getSlotConfigStep(stepName)[configFileType][columns[nameCol]]["SeqUp"] = columns[6]
+				getSlotConfigStep(stepName)[configFileType][columns[nameCol]]["SUDlyms"] = columns[7]
+				getSlotConfigStep(stepName)[configFileType][columns[nameCol]]["SeqDown"] = columns[8]
+				getSlotConfigStep(stepName)[configFileType][columns[nameCol]]["SDDlyms"] = columns[9]
+				# End of 'if columns[unitCol] == "SEQ"'
 			end
+			
+			
 			ct += 1
 			# End of 'while ct < config.length do'
 		end
@@ -2037,6 +2048,17 @@ class UserInterface
 	end
 	
 	def setupBbbSlotProcess(fileNameParam)
+		#
+		# Find out what type of file we're dealing with:
+		# *.step - for Step file
+		# *.ps_config - for Power Supply sequence file
+		# *.temp_config - for Temperature setting file.
+		#
+		if setConfigFileType(fileNameParam) == false
+			return false
+		end
+	
+
 		config = Array.new
 		File.open("#{dirFileRepository}/#{fileNameParam}", "r") do |f|
 			f.each_line do |line|
@@ -2146,11 +2168,6 @@ get '/TopBtnPressed' do
 		settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}"
 		settings.ui.redirectWithError += "&BtnState=#{settings.ui.Load}"	
 		
-		uploadedFileName = "#{params[:File]}"
-		if settings.ui.setConfigFileType(uploadedFileName) == false
-			redirect settings.ui.redirectWithError
-		end
-	
 		if settings.ui.setupBbbSlotProcess("#{params[:File]}") == false
 				redirect settings.ui.redirectWithError
 		end
@@ -2295,17 +2312,6 @@ post '/TopBtnPressed' do
 	
 	if params['myfile'].nil?
 		settings.ui.redirectWithError += "&ErrGeneral=FileNotSelected"
-		redirect settings.ui.redirectWithError
-	end
-
-	#
-	# Find out what type of file we're dealing with:
-	# *.step - for Step file
-	# *.ps_config - for Power Supply sequence file
-	# *.temp_config - for Temperature setting file.
-	#
-	uploadedFileName = "#{params['myfile'][:filename]}"
-	if settings.ui.setConfigFileType(uploadedFileName) == false
 		redirect settings.ui.redirectWithError
 	end
 
