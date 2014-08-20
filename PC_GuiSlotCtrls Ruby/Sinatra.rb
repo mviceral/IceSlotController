@@ -25,7 +25,6 @@ require 'sqlite3'
 require 'json'
 require 'rest_client'
 require_relative '../lib/SharedLib'
-require 'addressable/uri'
 require 'pp' # Pretty print to see the hash values.
 
 class UserInterface
@@ -128,10 +127,11 @@ class UserInterface
 		@redirectWithError
 	end
 	
-	def mustBeBoolean(configFileName,ctParam,indexOfStepNameFromCt,config,itemNameParam)
+	def mustBeBoolean(configFileName,ctParam,config,itemNameParam)
 		#
 		# returns true if the 
 		#
+		indexOfStepNameFromCt = ctParam - 2
 		ct = ctParam #9 "Auto Restart"
 		while ct < config.length do
 			stepName = config[ct-indexOfStepNameFromCt].split(",")[2].strip # Get the row data for the step file name.
@@ -155,13 +155,14 @@ class UserInterface
 		return true
 	end
 	
-	def mustBeNumber(configFileName,ctParam,indexOfStepNameFromCt,config,itemNameParam)
+	def mustBeNumber(configFileName,ctParam,config,itemNameParam)
 		#
 		# returns true if the 
 		#
 		ct = ctParam
+		indexOfStepName = ctParam-2
 		while ct < config.length do
-			stepName = config[ct-indexOfStepNameFromCt].split(",")[2].strip # Get the row data for the step file name.
+			stepName = config[ct-indexOfStepName].split(",")[2].strip # Get the row data for the step file name.
 			stepTime = config[ct].split(",")[4].strip
 			if is_a_number?(stepTime) == false
 				#
@@ -1546,7 +1547,7 @@ class UserInterface
       RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPC}" }.to_json, :content_type => :json, :accept => :json
 	end	
 
-	def checkFaultyPsOrTempConfig(fileNameParam,fromParam)
+	def checkFaultyPsOrTempConfig(fileNameParam,fromParam)		
 		#
 		# Returns true if no fault, false if there is error
 		#
@@ -1727,22 +1728,37 @@ class UserInterface
 		sequenceUpHash = Hash.new
 		sequenceDownHash = Hash.new
 		@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
+		ct = 0
 		while ct < config.length do
 			columns = config[ct].split(",")
 			if columns[unitCol] == "SEQ"
-				if sequenceUpHash[columns[seqUpCol]].nil? && sequenceDownHash[columns[seqDownCol]].nil? 
-					sequenceUpHash[columns[seqUpCol]] = "sntia" # sntia - sequence number taken into account
-					sequenceDownHash[columns[seqDownCol]] = "sntia" 
-				else
-					#
-					# The sequence are not unique
-					#
-					error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', sequence number"
-					error += " '#{columns[seqUpCol]}' on row '#{(ct+1)}' is already accounted."
-					@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
-					return false
+				if columns[seqDownCol].to_i != 0
+					if sequenceDownHash[columns[seqDownCol]].nil? 
+						sequenceDownHash[columns[seqDownCol]] = "sntia" 
+					else						
+						error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', sequence number"
+						error += " '#{columns[seqDownCol]}' on index '#{columns[indexCol]}' is already accounted for"
+						error += " sequence down."
+						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+						return false
+					end
 				end
 				
+				if columns[seqUpCol].to_i != 0				 
+					if sequenceUpHash[columns[seqUpCol]].nil? 
+						sequenceUpHash[columns[seqUpCol]] = "sntia" # sntia - sequence number taken into account
+					else
+						#
+						# The sequence are not unique
+						#
+						error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', sequence number"
+						error += " '#{columns[seqUpCol]}' on index '#{columns[indexCol]}' is already accounted for" 
+						error += " sequence up."
+						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+						return false
+					end
+				end
+								
 				#
 				# Make sure that if a given PS is 0 in sequence UP, it must also be 0 on sequence DOWN. 
 				#
@@ -1751,42 +1767,52 @@ class UserInterface
 				#
 				# Make sure that all sequence column have a value, and must not be left blank.
 				#
-				if emptyOrNotNumberTest(columns[indexCol],seqUpCol,"SEQ UP") == false
+				if emptyOrNotNumberTest(indexCol,fileNameParam,columns,
+					columns[indexCol],seqUpCol,"SEQ UP") == false
 					return false
 				end
 				
-				if emptyOrNotNumberTest(columns[indexCol],seqUpDlyMsCol,"SEQ UP DLYms") == false
+				if emptyOrNotNumberTest(indexCol,fileNameParam,columns,
+					columns[indexCol],seqUpDlyMsCol,"SEQ UP DLYms") == false
+					pause("@H columns[unitCol]=#{columns[unitCol]}","#{__LINE__}-#{__FILE__}")
 					return false
 				end
 				
-				if emptyOrNotNumberTest(columns[indexCol],seqDownCol,"SEQ DN") == false
+				if emptyOrNotNumberTest(indexCol,fileNameParam,columns,
+					columns[indexCol],seqDownCol,"SEQ DN") == false
+					pause("@I columns[unitCol]=#{columns[unitCol]}","#{__LINE__}-#{__FILE__}")
 					return false
 				end
 				
-				if emptyOrNotNumberTest(columns[seqDownDlyMsCol],seqDownCol,"SEQ DN DLYms") == false
+				if emptyOrNotNumberTest(indexCol,fileNameParam,columns,
+					columns[seqDownDlyMsCol],seqDownCol,"SEQ DN DLYms") == false
+					pause("@J columns[unitCol]=#{columns[unitCol]}","#{__LINE__}-#{__FILE__}")
 					return false
 				end
 								
 			end
+			ct += 1
 			# End of 'while ct < config.length do'
 		end
+		
+		pause("@L columns[unitCol]=#{columns[unitCol]}","#{__LINE__}-#{__FILE__}")
 		
 		return true
 		# End of 'checkFaultyPsOrTempConfig'
 	end
 	
-	def emptyOrNotNumberTest(indexParam, colNumParam,colNameParam)
+	def emptyOrNotNumberTest(indexCol,fileNameParam,columns,indexParam, colNumParam,colNameParam)
 		if columns[colNumParam].nil?
 			error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', #{colNameParam} column"
 			error += " on index '#{indexParam}' must not be left blank."
 			@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 			return false
-		elsif columns[colNumParam].is_a? Integer == false				
+		elsif SharedLib.isInteger(columns[colNumParam]) == false				
 			#
 			# the indicated data is not a valid numbers.
 			#
 			error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', #{colNameParam} column"
-			error += " on index '#{columns[indexCol]}' must not be a valid number."
+			error += " on index '#{columns[indexCol]}' must be an integer."
 			@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 			return false
 		end
@@ -1863,9 +1889,8 @@ get '/ViewFile' do
 end
 
 get '/TopBtnPressed' do
-	calledFrom = "#{__LINE__}-#{__FILE__}"
 	settings.ui.setSlotOwner("#{SharedLib.uriToStr(params[:slot])}")
-	if SharedLib.uriToStr(params[:BtnState]) == settings.ui.Load
+	if SharedLib.uriToStr(params[:BtnState]) == settings.ui.Load	
 		#
 		# The Load button got pressed.
 		#		
@@ -2200,26 +2225,26 @@ post '/TopBtnPressed' do
 			#
 			# Make sure 'STEP TIME', 'Temp Wait Time', 'Alarm Wait Time' are numbers
 			#			
-			if settings.ui.mustBeNumber(params['myfile'][:filename],6,4,config,"Step Time") == false
+			if settings.ui.mustBeNumber(params['myfile'][:filename],6,config,"Step Time") == false
 					redirect settings.ui.redirectWithError
 			end
 			
-			if settings.ui.mustBeNumber(params['myfile'][:filename],7,5,config,"TEMP WAIT") == false
+			if settings.ui.mustBeNumber(params['myfile'][:filename],7,config,"TEMP WAIT") == false
 					redirect settings.ui.redirectWithError
 			end
 			
-			if settings.ui.mustBeNumber(params['myfile'][:filename],8,6,config,"Alarm Wait") == false
+			if settings.ui.mustBeNumber(params['myfile'][:filename],8,config,"Alarm Wait") == false
 					redirect settings.ui.redirectWithError
 			end
 			
 			#
 			# Make sure that 'Auto Restart' and 'Stop on Tolerance' are boolean (1 or 0)
 			#
-			if settings.ui.mustBeBoolean(params['myfile'][:filename],9,7,config,"Auto Restart") == false
+			if settings.ui.mustBeBoolean(params['myfile'][:filename],9,config,"Auto Restart") == false
 					redirect settings.ui.redirectWithError
 			end
 			
-			if settings.ui.mustBeBoolean(params['myfile'][:filename],10,8,config,"Stop on Tolerance") == false
+			if settings.ui.mustBeBoolean(params['myfile'][:filename],10,config,"Stop on Tolerance") == false
 					redirect settings.ui.redirectWithError
 			end
 			
@@ -2231,8 +2256,9 @@ post '/TopBtnPressed' do
 					settings.ui.configFileType == UserInterface::TempSetTemplate
 			settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}"
 			settings.ui.redirectWithError += "&BtnState=#{settings.ui.Load}"
-			if settings.ui.checkFaultyPsOrTempConfig("#{params['myfile'][:filename]}","#{__LINE__}-#{__FILE__}") == false
-				redirect settings.ui.redirectErrorFaultyPsConfig
+			if settings.ui.checkFaultyPsOrTempConfig("#{params['myfile'][:filename]}",
+				"#{__LINE__}-#{__FILE__}") == false				
+				redirect settings.ui.redirectWithError
 			end
 			settings.ui.redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
 			redirect settings.ui.redirectWithError
