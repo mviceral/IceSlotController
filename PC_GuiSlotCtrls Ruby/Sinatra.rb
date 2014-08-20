@@ -16,7 +16,9 @@ end
 # "The run duration is complete."
 # "BBB PcListener is down.  Need to handle this in production code level."
 # [***] - code not verified.
-# @ 1802
+#
+# make sure all the sequence code are working
+# 
 require 'rubygems'
 require 'sinatra'
 require 'sqlite3'
@@ -126,13 +128,13 @@ class UserInterface
 		@redirectWithError
 	end
 	
-	def mustBeBoolean(configFileName,ctParam,config,itemNameParam)
+	def mustBeBoolean(configFileName,ctParam,indexOfStepNameFromCt,config,itemNameParam)
 		#
 		# returns true if the 
 		#
-		ct = ctParam
+		ct = ctParam #9 "Auto Restart"
 		while ct < config.length do
-			stepName = config[ct-4].split(",")[2].strip # Get the row data for the step file name.
+			stepName = config[ct-indexOfStepNameFromCt].split(",")[2].strip # Get the row data for the step file name.
 			stepTime = config[ct].split(",")[4].strip
 			if (stepTime=="1" || stepTime == "0") == false
 				#
@@ -153,13 +155,13 @@ class UserInterface
 		return true
 	end
 	
-	def mustBeNumber(configFileName,ctParam,config,itemNameParam)
+	def mustBeNumber(configFileName,ctParam,indexOfStepNameFromCt,config,itemNameParam)
 		#
 		# returns true if the 
 		#
 		ct = ctParam
 		while ct < config.length do
-			stepName = config[ct-4].split(",")[2].strip # Get the row data for the step file name.
+			stepName = config[ct-indexOfStepNameFromCt].split(",")[2].strip # Get the row data for the step file name.
 			stepTime = config[ct].split(",")[4].strip
 			if is_a_number?(stepTime) == false
 				#
@@ -1686,13 +1688,16 @@ class UserInterface
 					end
 					# End of 'elsif unit == "V" || unit == "A" || unit == "C"'
 				end								
-				#
-				# Get the data for processing
-				#
-				setDataSetup(
-					name,unit,nomSet,tripMin,tripMax,flagTolP,flagTolN,enableBit,idleState,
-					loadState,startState,runState,stopState,clearState
-				)
+				
+				if unit == "V" || unit == "A" || unit == "C" || unit == "M"
+					#
+					# Get the data for processing
+					#
+					setDataSetup(
+						name,unit,nomSet,tripMin,tripMax,flagTolP,flagTolN,enableBit,idleState,
+						loadState,startState,runState,stopState,clearState
+					)
+				end
 				# end of 'if skipNumCheckOnRows[name].nil?'
 			end
 
@@ -1706,8 +1711,85 @@ class UserInterface
 			end
 			ct += 1
 		end
+		
+		#
+		# Get the sequence up and down order of power supplies.
+		#
+		
+		#
+		# Make sure that the sequence order are unique such that there are no same sequence number in the sequence
+		# vice it's a zero.
+		#
+		seqUpCol = 6
+		seqUpDlyMsCol = 7
+		seqDownCol = 8
+		seqDownDlyMsCol = 9
+		sequenceUpHash = Hash.new
+		sequenceDownHash = Hash.new
+		@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
+		while ct < config.length do
+			columns = config[ct].split(",")
+			if columns[unitCol] == "SEQ"
+				if sequenceUpHash[columns[seqUpCol]].nil? && sequenceDownHash[columns[seqDownCol]].nil? 
+					sequenceUpHash[columns[seqUpCol]] = "sntia" # sntia - sequence number taken into account
+					sequenceDownHash[columns[seqDownCol]] = "sntia" 
+				else
+					#
+					# The sequence are not unique
+					#
+					error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', sequence number"
+					error += " '#{columns[seqUpCol]}' on row '#{(ct+1)}' is already accounted."
+					@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+					return false
+				end
+				
+				#
+				# Make sure that if a given PS is 0 in sequence UP, it must also be 0 on sequence DOWN. 
+				#
+				# if columns[seqUpCol] == ].nil? && sequenceDownHash[columns[seqDownCol]
+				
+				#
+				# Make sure that all sequence column have a value, and must not be left blank.
+				#
+				if emptyOrNotNumberTest(columns[indexCol],seqUpCol,"SEQ UP") == false
+					return false
+				end
+				
+				if emptyOrNotNumberTest(columns[indexCol],seqUpDlyMsCol,"SEQ UP DLYms") == false
+					return false
+				end
+				
+				if emptyOrNotNumberTest(columns[indexCol],seqDownCol,"SEQ DN") == false
+					return false
+				end
+				
+				if emptyOrNotNumberTest(columns[seqDownDlyMsCol],seqDownCol,"SEQ DN DLYms") == false
+					return false
+				end
+								
+			end
+			# End of 'while ct < config.length do'
+		end
+		
 		return true
 		# End of 'checkFaultyPsOrTempConfig'
+	end
+	
+	def emptyOrNotNumberTest(indexParam, colNumParam,colNameParam)
+		if columns[colNumParam].nil?
+			error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', #{colNameParam} column"
+			error += " on index '#{indexParam}' must not be left blank."
+			@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+			return false
+		elsif columns[colNumParam].is_a? Integer == false				
+			#
+			# the indicated data is not a valid numbers.
+			#
+			error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', #{colNameParam} column"
+			error += " on index '#{columns[indexCol]}' must not be a valid number."
+			@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+			return false
+		end
 	end
 
 	def pause(paramA,paramLocation)
@@ -2118,28 +2200,32 @@ post '/TopBtnPressed' do
 			#
 			# Make sure 'STEP TIME', 'Temp Wait Time', 'Alarm Wait Time' are numbers
 			#			
-			if settings.ui.mustBeNumber(params['myfile'][:filename],6,config,"Step Time") == false
+			if settings.ui.mustBeNumber(params['myfile'][:filename],6,4,config,"Step Time") == false
 					redirect settings.ui.redirectWithError
 			end
 			
-			if settings.ui.mustBeNumber(params['myfile'][:filename],7,config,"TEMP WAIT") == false
+			if settings.ui.mustBeNumber(params['myfile'][:filename],7,5,config,"TEMP WAIT") == false
 					redirect settings.ui.redirectWithError
 			end
 			
-			if settings.ui.mustBeNumber(params['myfile'][:filename],8,config,"Alarm Wait") == false
+			if settings.ui.mustBeNumber(params['myfile'][:filename],8,6,config,"Alarm Wait") == false
 					redirect settings.ui.redirectWithError
 			end
 			
 			#
 			# Make sure that 'Auto Restart' and 'Stop on Tolerance' are boolean (1 or 0)
 			#
-			if settings.ui.mustBeBoolean(params['myfile'][:filename],9,config,"Auto Restart") == false
+			if settings.ui.mustBeBoolean(params['myfile'][:filename],9,7,config,"Auto Restart") == false
 					redirect settings.ui.redirectWithError
 			end
 			
-			if settings.ui.mustBeBoolean(params['myfile'][:filename],10,config,"Stop on Tolerance") == false
+			if settings.ui.mustBeBoolean(params['myfile'][:filename],10,8,config,"Stop on Tolerance") == false
 					redirect settings.ui.redirectWithError
 			end
+			
+			#
+			# Get the sequence up and sequence down of power supplies
+			#
 			
 		elsif settings.ui.configFileType == UserInterface::PSSeqFileTemplate ||
 					settings.ui.configFileType == UserInterface::TempSetTemplate
