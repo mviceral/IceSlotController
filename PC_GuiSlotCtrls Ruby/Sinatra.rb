@@ -742,9 +742,9 @@ class UserInterface
 		while fileIndex< files.length
 			rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
 							style=\"height:20px; width:50px; font-size:10px\" 							
-							onclick=\"window.location='../ViewFile?File=#{files[fileIndex][repoDir.length+1..-1]}'\" />
+							onclick=\"window.location='../ViewFile?File=#{files[fileIndex]}'\" />
 							View
-							</button>&nbsp;<font size=\"1\">"+files[fileIndex][repoDir.length+1..-1]+"</font>&nbsp;</td>"		
+							</button>&nbsp;<font size=\"1\">"+files[fileIndex]+"</font>&nbsp;</td>"		
 			totalColumns += 1
 			if totalColumns >= 4
 				tbr += "<tr>"+rowItems+"</tr>"
@@ -1212,6 +1212,28 @@ class UserInterface
 		# end of 'def display'
 	end
 	
+	def getListOfFiles(path, extentionParam)
+		listOfFiles = `cd "#{path}"; ls -lt #{extentionParam}`
+		fileRow = listOfFiles.split("\n")
+		ct = 0
+		while ct<fileRow.length
+			fileItem= fileRow[ct].split(" ")
+			puts "'0'=#{fileItem[0]}, '1'=#{fileItem[1]}, '2'=#{fileItem[2]}, '3'=#{fileItem[3]}, '4'=#{fileItem[4]}, '5'=#{fileItem[5]}, '6'=#{fileItem[6]}, '7'=#{fileItem[7]}, '8'=#{fileItem[8]}"
+			at = fileRow[ct].index(fileItem[7])+fileItem[7].length
+			ct += fileRow.length
+		end
+
+		puts "at=#{at}"
+		ct = 0
+		tbr = Array.new # tbr - to be returned
+		while ct<fileRow.length
+			tbr.push("#{fileRow[ct][(at+1)..-1]}")
+			# puts "#{(ct)} - #{fileRow[ct][at..-1]}"
+			ct += 1
+		end
+		return tbr
+	end
+	
 	def loadFile
 		#
 		# tbr - to be returned
@@ -1225,7 +1247,8 @@ class UserInterface
 		# Create a list of Test Files, and display them in a table.
 		# 						
 		repoDir = "file\ repository"
-		files = Dir["#{repoDir}/*.step"]
+		# files = Dir["#{repoDir}/*.step"]
+		files = getListOfFiles("#{repoDir}","*.step")
 		tbr += "<table style=\"border-collapse: collapse;	border: 1px solid black;\">"
 		fileIndex = 0;
 		totalColumns = 0
@@ -1233,13 +1256,13 @@ class UserInterface
 		while fileIndex< files.length
 			rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
 							style=\"height:20px; width:50px; font-size:10px\" 							
-							onclick=\"window.location='../TopBtnPressed?File=#{files[fileIndex][repoDir.length+1..-1]}'\" />
+							onclick=\"window.location='../TopBtnPressed?File=#{files[fileIndex]}'\" />
 							Select
 							</button><button 
 							style=\"height:20px; width:50px; font-size:10px\" 							
-							onclick=\"window.location='../ViewFile?File=#{files[fileIndex][repoDir.length+1..-1]}'\" />
+							onclick=\"window.location='../ViewFile?File=#{files[fileIndex]}'\" />
 							View
-							</button>&nbsp;<font size=\"1\">"+files[fileIndex][repoDir.length+1..-1]+"</font>&nbsp;</td>"		
+							</button>&nbsp;<font size=\"1\">"+files[fileIndex]+"</font>&nbsp;</td>"		
 			totalColumns += 1
 			if totalColumns >= 4
 				tbr += "<tr>"+rowItems+"</tr>"
@@ -1276,8 +1299,8 @@ class UserInterface
 		# Create a list of Test Files, and display them in a table.
 		# 						
 		tbr += "<table style=\"border-collapse: collapse;	border: 1px solid black;\">"
-		tbr += getRows(Dir["#{repoDir}/*.ps_config"])
-		tbr += getRows(Dir["#{repoDir}/*.temp_config"])
+		tbr += getRows(getListOfFiles("#{repoDir}","*.ps_config"))
+		tbr += getRows(getListOfFiles("#{repoDir}","*.temp_config"))
 		tbr += "		
 						</table><br>
 		"
@@ -1732,6 +1755,9 @@ class UserInterface
 		while ct < config.length do
 			columns = config[ct].split(",")
 			if columns[unitCol] == "SEQ"
+				#
+				# Make sure the sequence numbers are unique.
+				#
 				if columns[seqDownCol].to_i != 0
 					if sequenceDownHash[columns[seqDownCol]].nil? 
 						sequenceDownHash[columns[seqDownCol]] = "sntia" 
@@ -1748,9 +1774,6 @@ class UserInterface
 					if sequenceUpHash[columns[seqUpCol]].nil? 
 						sequenceUpHash[columns[seqUpCol]] = "sntia" # sntia - sequence number taken into account
 					else
-						#
-						# The sequence are not unique
-						#
 						error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', sequence number"
 						error += " '#{columns[seqUpCol]}' on index '#{columns[indexCol]}' is already accounted for" 
 						error += " sequence up."
@@ -1760,9 +1783,16 @@ class UserInterface
 				end
 								
 				#
-				# Make sure that if a given PS is 0 in sequence UP, it must also be 0 on sequence DOWN. 
+				# Make sure that if a given PS is 0 in sequence UP, it must also be 0 on sequence DOWN, and vice versa
 				#
-				# if columns[seqUpCol] == ].nil? && sequenceDownHash[columns[seqDownCol]
+				if (columns[seqUpCol].to_i == 0 && columns[seqDownCol].to_i != 0) ||
+					(columns[seqUpCol].to_i != 0 && columns[seqDownCol].to_i == 0) 
+					error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}' on"
+					error += " index '#{columns[indexCol]}', if PS is turned off on "
+					error += "power sequence (sequence order = 0), it must have a sequence = 0 for both SEQ UP and SEQ DN."
+					@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+					return false
+				end
 				
 				#
 				# Make sure that all sequence column have a value, and must not be left blank.
@@ -1785,7 +1815,7 @@ class UserInterface
 				end
 				
 				if emptyOrNotNumberTest(indexCol,fileNameParam,columns,
-					columns[seqDownDlyMsCol],seqDownCol,"SEQ DN DLYms") == false
+					columns[seqDownDlyMsCol],seqDownDlyMsCol,"SEQ DN DLYms") == false
 					pause("@J columns[unitCol]=#{columns[unitCol]}","#{__LINE__}-#{__FILE__}")
 					return false
 				end
@@ -1795,19 +1825,18 @@ class UserInterface
 			# End of 'while ct < config.length do'
 		end
 		
-		pause("@L columns[unitCol]=#{columns[unitCol]}","#{__LINE__}-#{__FILE__}")
-		
 		return true
 		# End of 'checkFaultyPsOrTempConfig'
 	end
 	
 	def emptyOrNotNumberTest(indexCol,fileNameParam,columns,indexParam, colNumParam,colNameParam)
-		if columns[colNumParam].nil?
-			error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', #{colNameParam} column"
-			error += " on index '#{indexParam}' must not be left blank."
-			@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
-			return false
-		elsif SharedLib.isInteger(columns[colNumParam]) == false				
+=begin	
+		pause("columns[colNumParam]='#{columns[colNumParam]}' length='#{columns[colNumParam].length}'","#{__LINE__}-#{__FILE__}")
+		pause("columns[colNumParam].nil?=#{columns[colNumParam].nil?}","#{__LINE__}-#{__FILE__}")
+		pause("SharedLib.isInteger(columns[colNumParam])=#{SharedLib.isInteger(columns[colNumParam])}",
+		"#{__LINE__}-#{__FILE__}")
+=end		
+		if columns[colNumParam].nil? || SharedLib.isInteger(columns[colNumParam]) == false	
 			#
 			# the indicated data is not a valid numbers.
 			#

@@ -15,8 +15,25 @@ class SharedLib
   #
   # Functions
   #
+  def isInteger(paramStr)  	
+  	# returns true is the parameter is an integer
+  	if paramStr.length > 0
+			ct = 0
+			while ct<paramStr.length
+				singleChar = paramStr[ct]
+				intValue = singleChar.to_i
+				if intValue.to_s != singleChar
+					return false
+				end
+				ct += 1
+			end
+			return true
+  	else
+  		return false
+  	end
+  end
+  
   def uriToStr(stringParam)
-  	puts "uriToStr #{__LINE__}-#{__FILE__} stringParam=#{stringParam}"
   	return makeUriFriendlySub(stringParam,false)
   end
   
@@ -25,7 +42,6 @@ class SharedLib
   end
   
   def makeUriFriendlySub(stringParam,trueFalseParam)
-  	puts "#{__LINE__}-#{__FILE__} stringParam=#{stringParam}"
   	tbr = replaceStr(stringParam," ","%20",trueFalseParam) # tbr - to be returned
   	tbr = replaceStr(tbr,"!","%21",trueFalseParam)
   	tbr = replaceStr(tbr,"\"","%22",trueFalseParam)
@@ -49,7 +65,6 @@ class SharedLib
   	tbr = replaceStr(tbr,">","%3E",trueFalseParam)
   	tbr = replaceStr(tbr,"?","%3F",trueFalseParam)
   	tbr = replaceStr(tbr,"@","%40",trueFalseParam)	
-  	puts "#{__LINE__}-#{__FILE__} tbr=#{tbr}"
   	return tbr
 	end
 	
