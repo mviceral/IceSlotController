@@ -1218,12 +1218,11 @@ class UserInterface
 		ct = 0
 		while ct<fileRow.length
 			fileItem= fileRow[ct].split(" ")
-			puts "'0'=#{fileItem[0]}, '1'=#{fileItem[1]}, '2'=#{fileItem[2]}, '3'=#{fileItem[3]}, '4'=#{fileItem[4]}, '5'=#{fileItem[5]}, '6'=#{fileItem[6]}, '7'=#{fileItem[7]}, '8'=#{fileItem[8]}"
+			# puts "'0'=#{fileItem[0]}, '1'=#{fileItem[1]}, '2'=#{fileItem[2]}, '3'=#{fileItem[3]}, '4'=#{fileItem[4]}, '5'=#{fileItem[5]}, '6'=#{fileItem[6]}, '7'=#{fileItem[7]}, '8'=#{fileItem[8]}"
 			at = fileRow[ct].index(fileItem[7])+fileItem[7].length
 			ct += fileRow.length
 		end
 
-		puts "at=#{at}"
 		ct = 0
 		tbr = Array.new # tbr - to be returned
 		while ct<fileRow.length
@@ -1570,6 +1569,211 @@ class UserInterface
       RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPC}" }.to_json, :content_type => :json, :accept => :json
 	end	
 
+	def parseTheConfigFile(config,configFileName)
+		#
+		# We got to parse the data.  Make sure that the data format is what Mike had provided by ensuring 
+		# that the column
+		# item matches the known rows.
+		#
+		
+		#
+		# The following are the known rows
+		# Ideally, get the the known row names from the template above vice having a separate column names here.
+		#
+		if @configFileType == UserInterface::StepFileTemplate
+			#
+			# We're going to parse a step file.  Hard code settings:  "Item","Name","Description","Type","Value" are
+			# starting on row 2, col A if viewed from Excel.
+			#
+			row = 1
+			colContent = config[row].split(",")
+			if (colContent[0].upcase.strip != "ITEM")
+				@redirectWithError += "&ErrStepFormat=A"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+				return false
+			elsif (colContent[1].upcase.strip != "NAME")
+				@redirectWithError += "&ErrStepFormat=B"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+				return false
+			elsif (colContent[2].upcase.strip != "DESCRIPTION")
+				@redirectWithError += "&ErrStepFormat=C"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+				return false
+			elsif (colContent[3].upcase.strip != "TYPE")
+				@redirectWithError += "&ErrStepFormat=D"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+				return false
+			elsif (colContent[4].upcase.strip != "VALUE")
+				@redirectWithError += "&ErrStepFormat=E"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+				return false
+			end
+			
+			#
+			# Make sure that the step file has no two equal step names 
+			#			
+			uniqueStepNames = Hash.new
+			ct = 2
+			while ct < config.length do
+				colContent = config[ct].split(",")[2].strip
+				if uniqueStepNames[colContent].nil? == false
+					#
+					# The condition says that the step name is already used.  Can't process the file...
+					#
+					
+					#
+					# Verify we print the duplicate name error...
+					#
+					@redirectWithError += "&ErrInFile=#"
+					@redirectWithError += "{SharedLib.makeUriFriendly(configFileName)}"
+					@redirectWithError += "&ErrStepNameAlreadyFound="
+					@redirectWithError += "#{SharedLib.makeUriFriendly(colContent)}"					
+					return false
+				else
+					if colContent.nil? == true || colContent.length == 0
+						#
+						#  Step name is blank.  This is not right.
+						#
+						@redirectWithError += "&ErrInFile="
+						@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
+						@redirectWithError += "&ErrStepNameNotGiven=Y"
+						@redirectWithError += "&ErrRow=#{(ct+1)}"
+						return false
+					else
+						#
+						# Add the column name into the hash table so it can be accounted.
+						#					
+						uniqueStepNames[colContent] = "nn" # nn - not nil.
+					end
+				end				
+				ct += 11
+			end
+			
+			#
+			# Make sure Power Supply setup file name are given.
+			#
+			ct = 3
+			while ct < config.length do
+				@stepName = config[ct-1].split(",")[2].strip # Get the row data for file name.
+				colContent = config[ct].split(",")[2].strip
+				if colContent.nil? == true || colContent.length == 0
+					@redirectWithError += "&ErrInFile="
+					@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
+					@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
+					@redirectWithError += "&ErrPsFileNotGiven=Y"
+					@redirectWithError = SharedLib.makeUriFriendly(@redirectWithError)
+					return false
+				else
+					#
+					# Make sure that the PS config file is present in the file system
+					#
+					if File.file?(dirFileRepository+"/"+colContent) == false
+						#
+						# The file does not exists.  Post an error.
+						#
+						@redirectWithError += "&ErrInFile="
+						@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
+						@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
+						@redirectWithError += "&ErrStepPsNotFound=#{SharedLib.makeUriFriendly(colContent)}"
+						return false
+					else 
+						#
+						# Make sure the PS File config is good.
+						#
+						@configFileType = UserInterface::PSSeqFileTemplate
+						if checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
+							return false
+						end
+					end
+				end
+				ct += 11
+			end
+
+			
+			#
+			# Make sure the Temp Config file is given
+			#
+			ct = 4
+			while ct < config.length do
+				@stepName = config[ct-2].split(",")[2].strip # Get the row data for the step file name.
+				colContent = config[ct].split(",")[2].strip
+				if colContent.nil? == true || colContent.length == 0
+					fromHere = "#{__LINE__}-#{__FILE__}"
+					@redirectWithError += "&ErrInFile="
+					@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
+					@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
+					@redirectWithError += "&ErrTempFileNotGiven=Y"
+					return false
+				else
+					#
+					# Make sure that the Temperature config file is present in the file system
+					#
+					if File.file?(dirFileRepository+"/"+colContent) == false
+						#
+						# The file does not exists.  Post an error.
+						#
+						@redirectWithError += "&ErrInFile="
+						@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
+						@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
+						@redirectWithError += "&ErrStepTempNotFound=#{SharedLib.makeUriFriendly(colContent)}"
+						return false
+					else 
+						#
+						# Make sure the Temp File config is good.
+						#
+						@configFileType = UserInterface::TempSetTemplate
+						if checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
+							return false
+						end
+					end
+				end
+				ct += 11
+			end
+						
+			#
+			# Make sure 'STEP TIME', 'Temp Wait Time', 'Alarm Wait Time' are numbers
+			#			
+			if mustBeNumber(configFileName,6,config,"Step Time") == false
+					return false
+			end
+			
+			if mustBeNumber(configFileName,7,config,"TEMP WAIT") == false
+					return false
+			end
+			
+			if mustBeNumber(configFileName,8,config,"Alarm Wait") == false
+					return false
+			end
+			
+			#
+			# Make sure that 'Auto Restart' and 'Stop on Tolerance' are boolean (1 or 0)
+			#
+			if mustBeBoolean(configFileName,9,config,"Auto Restart") == false
+					return false
+			end
+			
+			if mustBeBoolean(configFileName,10,config,"Stop on Tolerance") == false
+					return false
+			end
+			
+			#
+			# Get the sequence up and sequence down of power supplies
+			#
+			
+		elsif @configFileType == UserInterface::PSSeqFileTemplate ||
+					@configFileType == UserInterface::TempSetTemplate
+			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}"
+			@redirectWithError += "&BtnState=#{@Load}"
+			if checkFaultyPsOrTempConfig("#{configFileName}",
+				"#{__LINE__}-#{__FILE__}") == false				
+				return false
+			end
+			@redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(configFileName)}"
+			return false
+		end		
+		# End of def parseTheConfigFile(config)
+	end
+
 	def checkFaultyPsOrTempConfig(fileNameParam,fromParam)		
 		#
 		# Returns true if no fault, false if there is error
@@ -1804,19 +2008,16 @@ class UserInterface
 				
 				if emptyOrNotNumberTest(indexCol,fileNameParam,columns,
 					columns[indexCol],seqUpDlyMsCol,"SEQ UP DLYms") == false
-					pause("@H columns[unitCol]=#{columns[unitCol]}","#{__LINE__}-#{__FILE__}")
 					return false
 				end
 				
 				if emptyOrNotNumberTest(indexCol,fileNameParam,columns,
 					columns[indexCol],seqDownCol,"SEQ DN") == false
-					pause("@I columns[unitCol]=#{columns[unitCol]}","#{__LINE__}-#{__FILE__}")
 					return false
 				end
 				
 				if emptyOrNotNumberTest(indexCol,fileNameParam,columns,
 					columns[seqDownDlyMsCol],seqDownDlyMsCol,"SEQ DN DLYms") == false
-					pause("@J columns[unitCol]=#{columns[unitCol]}","#{__LINE__}-#{__FILE__}")
 					return false
 				end
 								
@@ -1830,12 +2031,6 @@ class UserInterface
 	end
 	
 	def emptyOrNotNumberTest(indexCol,fileNameParam,columns,indexParam, colNumParam,colNameParam)
-=begin	
-		pause("columns[colNumParam]='#{columns[colNumParam]}' length='#{columns[colNumParam].length}'","#{__LINE__}-#{__FILE__}")
-		pause("columns[colNumParam].nil?=#{columns[colNumParam].nil?}","#{__LINE__}-#{__FILE__}")
-		pause("SharedLib.isInteger(columns[colNumParam])=#{SharedLib.isInteger(columns[colNumParam])}",
-		"#{__LINE__}-#{__FILE__}")
-=end		
 		if columns[colNumParam].nil? || SharedLib.isInteger(columns[colNumParam]) == false	
 			#
 			# the indicated data is not a valid numbers.
@@ -2026,6 +2221,8 @@ post '/' do
 	return settings.ui.display
 end
 
+
+
 post '/TopBtnPressed' do
 	if settings.ui.slotOwnerThe.nil? || settings.ui.slotOwnerThe == ""
 		settings.ui.getSlotsState
@@ -2092,207 +2289,10 @@ post '/TopBtnPressed' do
 			end
 		end
 		
-		#
-		# We got to parse the data.  Make sure that the data format is what Mike had provided by ensuring that the column
-		# item matches the known rows.
-		#
-		
-		#
-		# The following are the known rows
-		# Ideally, get the the known row names from the template above vice having a separate column names here.
-		#
-		if settings.ui.configFileType == UserInterface::StepFileTemplate
-			#
-			# We're going to parse a step file.  Hard code settings:  "Item","Name","Description","Type","Value" are
-			# starting on row 2, col A if viewed from Excel.
-			#
-			row = 1
-			colContent = config[row].split(",")
-			if (colContent[0].upcase.strip != "ITEM")
-				settings.ui.redirectWithError += "&ErrStepFormat=A"
-				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+		if settings.ui.parseTheConfigFile(config,"#{params['myfile'][:filename]}") == false
 				redirect settings.ui.redirectWithError
-			elsif (colContent[1].upcase.strip != "NAME")
-				settings.ui.redirectWithError += "&ErrStepFormat=B"
-				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
-				redirect settings.ui.redirectWithError
-			elsif (colContent[2].upcase.strip != "DESCRIPTION")
-				settings.ui.redirectWithError += "&ErrStepFormat=C"
-				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
-				redirect settings.ui.redirectWithError
-			elsif (colContent[3].upcase.strip != "TYPE")
-				settings.ui.redirectWithError += "&ErrStepFormat=D"
-				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
-				redirect settings.ui.redirectWithError
-			elsif (colContent[4].upcase.strip != "VALUE")
-				settings.ui.redirectWithError += "&ErrStepFormat=E"
-				settings.ui.redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
-				redirect settings.ui.redirectWithError
-			end
-			
-			#
-			# Make sure that the step file has no two equal step names 
-			#			
-			uniqueStepNames = Hash.new
-			ct = 2
-			while ct < config.length do
-				colContent = config[ct].split(",")[2].strip
-				if uniqueStepNames[colContent].nil? == false
-					#
-					# The condition says that the step name is already used.  Can't process the file...
-					#
-					
-					#
-					# Verify we print the duplicate name error...
-					#
-					settings.ui.redirectWithError += "&ErrInFile=#"
-					settings.ui.redirectWithError += "{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
-					settings.ui.redirectWithError += "&ErrStepNameAlreadyFound="
-					settings.ui.redirectWithError += "#{SharedLib.makeUriFriendly(colContent)}"					
-					redirect settings.ui.redirectWithError
-				else
-					if colContent.nil? == true || colContent.length == 0
-						#
-						#  Step name is blank.  This is not right.
-						#
-						settings.ui.redirectWithError += "&ErrInFile="
-						settings.ui.redirectWithError += "#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
-						settings.ui.redirectWithError += "&ErrStepNameNotGiven=Y"
-						settings.ui.redirectWithError += "&ErrRow=#{(ct+1)}"
-						redirect settings.ui.redirectWithError
-					else
-						#
-						# Add the column name into the hash table so it can be accounted.
-						#					
-						uniqueStepNames[colContent] = "nn" # nn - not nil.
-					end
-				end				
-				ct += 11
-			end
-			
-			#
-			# Make sure Power Supply setup file name are given.
-			#
-			ct = 3
-			while ct < config.length do
-				settings.ui.stepName = config[ct-1].split(",")[2].strip # Get the row data for file name.
-				colContent = config[ct].split(",")[2].strip
-				if colContent.nil? == true || colContent.length == 0
-					settings.ui.redirectWithError += "&ErrInFile="
-					settings.ui.redirectWithError += "#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
-					settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
-					settings.ui.redirectWithError += "&ErrPsFileNotGiven=Y"
-					settings.ui.redirectWithError = SharedLib.makeUriFriendly(settings.ui.redirectWithError)
-					redirect settings.ui.redirectWithError
-				else
-					#
-					# Make sure that the PS config file is present in the file system
-					#
-					if File.file?(dirFileRepository+"/"+colContent) == false
-						#
-						# The file does not exists.  Post an error.
-						#
-						settings.ui.redirectWithError += "&ErrInFile="
-						settings.ui.redirectWithError += "#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
-						settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
-						settings.ui.redirectWithError += "&ErrStepPsNotFound=#{SharedLib.makeUriFriendly(colContent)}"
-						redirect settings.ui.redirectWithError
-					else 
-						#
-						# Make sure the PS File config is good.
-						#
-						settings.ui.configFileType = UserInterface::PSSeqFileTemplate
-						if settings.ui.checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
-							redirect settings.ui.redirectErrorFaultyPsConfig
-						end
-					end
-				end
-				ct += 11
-			end
-
-			
-			#
-			# Make sure the Temp Config file is given
-			#
-			ct = 4
-			while ct < config.length do
-				settings.ui.stepName = config[ct-2].split(",")[2].strip # Get the row data for the step file name.
-				colContent = config[ct].split(",")[2].strip
-				if colContent.nil? == true || colContent.length == 0
-					fromHere = "#{__LINE__}-#{__FILE__}"
-					settings.ui.redirectWithError += "&ErrInFile="
-					settings.ui.redirectWithError += "#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
-					settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
-					settings.ui.redirectWithError += "&ErrTempFileNotGiven=Y"
-					redirect settings.ui.redirectWithError
-				else
-					#
-					# Make sure that the Temperature config file is present in the file system
-					#
-					if File.file?(dirFileRepository+"/"+colContent) == false
-						#
-						# The file does not exists.  Post an error.
-						#
-						settings.ui.redirectWithError += "&ErrInFile="
-						settings.ui.redirectWithError += "#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
-						settings.ui.redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
-						settings.ui.redirectWithError += "&ErrStepTempNotFound=#{SharedLib.makeUriFriendly(colContent)}"
-						redirect settings.ui.redirectWithError
-					else 
-						#
-						# Make sure the Temp File config is good.
-						#
-						settings.ui.configFileType = UserInterface::TempSetTemplate
-						if settings.ui.checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
-							redirect settings.ui.redirectErrorFaultyPsConfig
-						end
-					end
-				end
-				ct += 11
-			end
-						
-			#
-			# Make sure 'STEP TIME', 'Temp Wait Time', 'Alarm Wait Time' are numbers
-			#			
-			if settings.ui.mustBeNumber(params['myfile'][:filename],6,config,"Step Time") == false
-					redirect settings.ui.redirectWithError
-			end
-			
-			if settings.ui.mustBeNumber(params['myfile'][:filename],7,config,"TEMP WAIT") == false
-					redirect settings.ui.redirectWithError
-			end
-			
-			if settings.ui.mustBeNumber(params['myfile'][:filename],8,config,"Alarm Wait") == false
-					redirect settings.ui.redirectWithError
-			end
-			
-			#
-			# Make sure that 'Auto Restart' and 'Stop on Tolerance' are boolean (1 or 0)
-			#
-			if settings.ui.mustBeBoolean(params['myfile'][:filename],9,config,"Auto Restart") == false
-					redirect settings.ui.redirectWithError
-			end
-			
-			if settings.ui.mustBeBoolean(params['myfile'][:filename],10,config,"Stop on Tolerance") == false
-					redirect settings.ui.redirectWithError
-			end
-			
-			#
-			# Get the sequence up and sequence down of power supplies
-			#
-			
-		elsif settings.ui.configFileType == UserInterface::PSSeqFileTemplate ||
-					settings.ui.configFileType == UserInterface::TempSetTemplate
-			settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}"
-			settings.ui.redirectWithError += "&BtnState=#{settings.ui.Load}"
-			if settings.ui.checkFaultyPsOrTempConfig("#{params['myfile'][:filename]}",
-				"#{__LINE__}-#{__FILE__}") == false				
-				redirect settings.ui.redirectWithError
-			end
-			settings.ui.redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(params['myfile'][:filename])}"
-			redirect settings.ui.redirectWithError
-		end		
-		
+		end
+				
 		settings.ui.setConfigFileName("#{params['myfile'][:filename]}")
 		settings.ui.setTimeOfUpload()
 		settings.ui.setToAllowedToRunMode()
