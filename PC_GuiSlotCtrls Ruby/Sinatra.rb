@@ -1253,8 +1253,7 @@ class UserInterface
 		totalColumns = 0
 		rowItems = ""
 		while fileIndex< files.length
-			rowItems += "<td style=\"border: 1px solid black;\">&nbsp;
-																	<button 
+			rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
 										style=\"height:20px; width:50px; font-size:10px\" 							
 										onclick=\"window.location='../TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}&File=#{SharedLib.makeUriFriendly(files[fileIndex])}'\" />
 										Select
@@ -1592,23 +1591,23 @@ class UserInterface
 			colContent = config[row].split(",")
 			if (colContent[0].upcase.strip != "ITEM")
 				@redirectWithError += "&ErrStepFormat=A"
-				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
 				return false
 			elsif (colContent[1].upcase.strip != "NAME")
 				@redirectWithError += "&ErrStepFormat=B"
-				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
 				return false
 			elsif (colContent[2].upcase.strip != "DESCRIPTION")
 				@redirectWithError += "&ErrStepFormat=C"
-				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
 				return false
 			elsif (colContent[3].upcase.strip != "TYPE")
 				@redirectWithError += "&ErrStepFormat=D"
-				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
 				return false
 			elsif (colContent[4].upcase.strip != "VALUE")
 				@redirectWithError += "&ErrStepFormat=E"
-				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
 				return false
 			end
 			
@@ -1683,6 +1682,8 @@ class UserInterface
 						# Make sure the PS File config is good.
 						#
 						@configFileType = UserInterface::PSSeqFileTemplate
+						clearError()
+						clearInternalSettings();
 						if checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 							return false
 						end
@@ -1724,6 +1725,8 @@ class UserInterface
 						# Make sure the Temp File config is good.
 						#
 						@configFileType = UserInterface::TempSetTemplate
+						clearError()
+						clearInternalSettings();
 						if checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 							return false
 						end
