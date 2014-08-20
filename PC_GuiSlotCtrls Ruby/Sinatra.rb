@@ -1253,15 +1253,18 @@ class UserInterface
 		totalColumns = 0
 		rowItems = ""
 		while fileIndex< files.length
-			rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
-							style=\"height:20px; width:50px; font-size:10px\" 							
-							onclick=\"window.location='../TopBtnPressed?File=#{files[fileIndex]}'\" />
-							Select
-							</button><button 
-							style=\"height:20px; width:50px; font-size:10px\" 							
-							onclick=\"window.location='../ViewFile?File=#{files[fileIndex]}'\" />
-							View
-							</button>&nbsp;<font size=\"1\">"+files[fileIndex]+"</font>&nbsp;</td>"		
+			rowItems += "<td style=\"border: 1px solid black;\">&nbsp;
+																	<button 
+										style=\"height:20px; width:50px; font-size:10px\" 							
+										onclick=\"window.location='../TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}&File=#{SharedLib.makeUriFriendly(files[fileIndex])}'\" />
+										Select
+										</button><button 
+										style=\"height:20px; width:50px; font-size:10px\" 							
+										onclick=\"window.location='../ViewFile?File=#{files[fileIndex]}'\" />
+										View
+										</button>&nbsp;<font size=\"1\">"+files[fileIndex]+"</font>
+
+							&nbsp;</td>"		
 			totalColumns += 1
 			if totalColumns >= 4
 				tbr += "<tr>"+rowItems+"</tr>"
@@ -1624,8 +1627,7 @@ class UserInterface
 					#
 					# Verify we print the duplicate name error...
 					#
-					@redirectWithError += "&ErrInFile=#"
-					@redirectWithError += "{SharedLib.makeUriFriendly(configFileName)}"
+					@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
 					@redirectWithError += "&ErrStepNameAlreadyFound="
 					@redirectWithError += "#{SharedLib.makeUriFriendly(colContent)}"					
 					return false
@@ -1771,6 +1773,8 @@ class UserInterface
 			@redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(configFileName)}"
 			return false
 		end		
+		
+		return true
 		# End of def parseTheConfigFile(config)
 	end
 
@@ -2025,9 +2029,28 @@ class UserInterface
 			ct += 1
 			# End of 'while ct < config.length do'
 		end
-		
 		return true
-		# End of 'checkFaultyPsOrTempConfig'
+		# End of 'checkFaultyPsOrTempConfig'	
+	end
+	
+	def setupBbbSlotProcess(fileNameParam)
+		config = Array.new
+		File.open("#{dirFileRepository}/#{fileNameParam}", "r") do |f|
+			f.each_line do |line|
+				config.push(line)
+			end
+		end
+			
+		if parseTheConfigFile(config,"#{fileNameParam}") == false
+			return false
+		end
+		
+		setConfigFileName("#{fileNameParam}")
+		setTimeOfUpload()
+		setToAllowedToRunMode()
+		saveSlotState()
+		PP.pp(slotProperties)
+		return true
 	end
 	
 	def emptyOrNotNumberTest(indexCol,fileNameParam,columns,indexParam, colNumParam,colNameParam)
@@ -2113,102 +2136,120 @@ get '/ViewFile' do
 end
 
 get '/TopBtnPressed' do
-	settings.ui.setSlotOwner("#{SharedLib.uriToStr(params[:slot])}")
-	if SharedLib.uriToStr(params[:BtnState]) == settings.ui.Load	
+	if params[:File].nil? == false
 		#
-		# The Load button got pressed.
-		#		
-		settings.ui.setFileInError("#{SharedLib.uriToStr(params[:ErrInFile])}")
-		if SharedLib.uriToStr(params[:ErrStepTempNotFound]).nil? == false && 
-		SharedLib.uriToStr(params[:ErrStepTempNotFound]) != ""
-			calledFrom = "#{__LINE__}-#{__FILE__}"
-			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
-			settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"
-			settings.ui.upLoadConfigErrorGeneral += " Step Name, Temperature configuration file"
-			settings.ui.upLoadConfigErrorGeneral += " '#{SharedLib.uriToStr(params[:ErrStepTempNotFound])}' is not found."
-		elsif SharedLib.uriToStr(params[:ErrStepPsNotFound]).nil? == false && 
-		SharedLib.uriToStr(params[:ErrStepPsNotFound]) != ""
-			calledFrom = "#{__LINE__}-#{__FILE__}"
-			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
-			settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"
-			settings.ui.upLoadConfigErrorGeneral += " Step Name, Power Supply configuration"
-			settings.ui.upLoadConfigErrorGeneral += " '#{SharedLib.uriToStr(params[:ErrStepPsNotFound])}' is not found."
-		elsif SharedLib.uriToStr(params[:ErrTempFileNotGiven]).nil? == false && 
-		SharedLib.uriToStr(params[:ErrTempFileNotGiven]) != ""
-			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
-			settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "
-			settings.ui.upLoadConfigErrorGeneral += "Step Name, Temperature configuration file is not given."
-		elsif SharedLib.uriToStr(params[:ErrPsFileNotGiven]).nil? == false && 
-		SharedLib.uriToStr(params[:ErrPsFileNotGiven]) != ""
-			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
-			settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "
-			settings.ui.upLoadConfigErrorGeneral += "Step Name, Power Supply configuration file is not given."
-		elsif SharedLib.uriToStr(params[:ErrStepNameNotGiven]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameNotGiven]) != ""
-			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Row '#{SharedLib.uriToStr(params[:ErrRow])}' on step file requires a filename.."
-		elsif SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]) != ""
-			fileName = SharedLib.uriToStr(params[:ErrStepNameAlreadyFound])
-			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Duplicate filename '#{fileName}' in the step file list."
-		elsif SharedLib.uriToStr(params[:ErrStepFormat]).nil? == false && SharedLib.uriToStr(params[:ErrStepFormat]) != ""
-			settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  Column labels must start on column A, row 2."
-		elsif (SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && SharedLib.uriToStr(params[:ErrGeneral]) != "")
-			if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, or *.temp_config"
-			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', BBB PcListener is down.  Need to handle this in production code level."
-			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', No file selected for upload."
-			elsif SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && 
-						SharedLib.uriToStr(params[:ErrGeneral]).length >0
-				settings.ui.upLoadConfigErrorGeneral = "#{SharedLib.uriToStr(params[:ErrGeneral])}"
-			end
-		elsif (SharedLib.uriToStr(params[:ErrRow]).nil? == false && SharedLib.uriToStr(params[:ErrRow]) != "") || 
-			 (SharedLib.uriToStr(params[:ErrIndex]).nil? == false && SharedLib.uriToStr(params[:ErrIndex]) != "")
-			settings.ui.upLoadConfigErrorInFile = SharedLib.uriToStr(params[:ErrInFile])
-			settings.ui.upLoadConfigErrorIndex = SharedLib.uriToStr(params[:ErrIndex])
-			settings.ui.upLoadConfigErrorRow = SharedLib.uriToStr(params[:ErrRow])
-			settings.ui.upLoadConfigErrorCol = SharedLib.uriToStr(params[:ErrCol])
-			settings.ui.upLoadConfigErrorName = SharedLib.uriToStr(params[:ErrName])
-			settings.ui.upLoadConfigErrorColType = SharedLib.uriToStr(params[:ErrColType])
-			settings.ui.upLoadConfigErrorValue = SharedLib.uriToStr(params[:ErrValue])
-		elsif SharedLib.uriToStr(params[:MsgFileUpload]).nil? == false
-			settings.ui.upLoadConfigGoodUpload = "File '#{SharedLib.uriToStr(params[:MsgFileUpload])}' has been uploaded."
-			settings.ui.upLoadConfigErrorName = ""
-		else
-			settings.ui.clearError
+		# Setup the string for error
+		#
+		settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}"
+		settings.ui.redirectWithError += "&BtnState=#{settings.ui.Load}"	
+		
+		uploadedFileName = "#{params[:File]}"
+		if settings.ui.setConfigFileType(uploadedFileName) == false
+			redirect settings.ui.redirectWithError
 		end
+	
+		if settings.ui.setupBbbSlotProcess("#{params[:File]}") == false
+				redirect settings.ui.redirectWithError
+		end
+		redirect "../"
+	else
+		settings.ui.setSlotOwner("#{SharedLib.uriToStr(params[:slot])}")
+		if SharedLib.uriToStr(params[:BtnState]) == settings.ui.Load	
+			#
+			# The Load button got pressed.
+			#		
+			settings.ui.setFileInError("#{SharedLib.uriToStr(params[:ErrInFile])}")
+			if SharedLib.uriToStr(params[:ErrStepTempNotFound]).nil? == false && 
+			SharedLib.uriToStr(params[:ErrStepTempNotFound]) != ""
+				calledFrom = "#{__LINE__}-#{__FILE__}"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
+				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"
+				settings.ui.upLoadConfigErrorGeneral += " Step Name, Temperature configuration file"
+				settings.ui.upLoadConfigErrorGeneral += " '#{SharedLib.uriToStr(params[:ErrStepTempNotFound])}' is not found."
+			elsif SharedLib.uriToStr(params[:ErrStepPsNotFound]).nil? == false && 
+			SharedLib.uriToStr(params[:ErrStepPsNotFound]) != ""
+				calledFrom = "#{__LINE__}-#{__FILE__}"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
+				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"
+				settings.ui.upLoadConfigErrorGeneral += " Step Name, Power Supply configuration"
+				settings.ui.upLoadConfigErrorGeneral += " '#{SharedLib.uriToStr(params[:ErrStepPsNotFound])}' is not found."
+			elsif SharedLib.uriToStr(params[:ErrTempFileNotGiven]).nil? == false && 
+			SharedLib.uriToStr(params[:ErrTempFileNotGiven]) != ""
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
+				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "
+				settings.ui.upLoadConfigErrorGeneral += "Step Name, Temperature configuration file is not given."
+			elsif SharedLib.uriToStr(params[:ErrPsFileNotGiven]).nil? == false && 
+			SharedLib.uriToStr(params[:ErrPsFileNotGiven]) != ""
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
+				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "
+				settings.ui.upLoadConfigErrorGeneral += "Step Name, Power Supply configuration file is not given."
+			elsif SharedLib.uriToStr(params[:ErrStepNameNotGiven]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameNotGiven]) != ""
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Row '#{SharedLib.uriToStr(params[:ErrRow])}' on step file requires a filename.."
+			elsif SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]) != ""
+				fileName = SharedLib.uriToStr(params[:ErrStepNameAlreadyFound])
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Duplicate filename '#{fileName}' in the step file list."
+			elsif SharedLib.uriToStr(params[:ErrStepFormat]).nil? == false && SharedLib.uriToStr(params[:ErrStepFormat]) != ""
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  Column labels must start on column A, row 2."
+			elsif (SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && SharedLib.uriToStr(params[:ErrGeneral]) != "")
+				if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
+					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, or *.temp_config"
+				elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
+					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', BBB PcListener is down.  Need to handle this in production code level."
+				elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
+					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', No file selected for upload."
+				elsif SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && 
+							SharedLib.uriToStr(params[:ErrGeneral]).length >0
+					settings.ui.upLoadConfigErrorGeneral = "#{SharedLib.uriToStr(params[:ErrGeneral])}"
+				end
+			elsif (SharedLib.uriToStr(params[:ErrRow]).nil? == false && SharedLib.uriToStr(params[:ErrRow]) != "") || 
+				 (SharedLib.uriToStr(params[:ErrIndex]).nil? == false && SharedLib.uriToStr(params[:ErrIndex]) != "")
+				settings.ui.upLoadConfigErrorInFile = SharedLib.uriToStr(params[:ErrInFile])
+				settings.ui.upLoadConfigErrorIndex = SharedLib.uriToStr(params[:ErrIndex])
+				settings.ui.upLoadConfigErrorRow = SharedLib.uriToStr(params[:ErrRow])
+				settings.ui.upLoadConfigErrorCol = SharedLib.uriToStr(params[:ErrCol])
+				settings.ui.upLoadConfigErrorName = SharedLib.uriToStr(params[:ErrName])
+				settings.ui.upLoadConfigErrorColType = SharedLib.uriToStr(params[:ErrColType])
+				settings.ui.upLoadConfigErrorValue = SharedLib.uriToStr(params[:ErrValue])
+			elsif SharedLib.uriToStr(params[:MsgFileUpload]).nil? == false
+				settings.ui.upLoadConfigGoodUpload = "File '#{SharedLib.uriToStr(params[:MsgFileUpload])}' has been uploaded."
+				settings.ui.upLoadConfigErrorName = ""
+			else
+				settings.ui.clearError
+			end
 		
-		return settings.ui.loadFile
-	elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Run
-		#
-		# The Run button got pressed.
-		#
-		settings.ui.setToRunMode()
-		settings.ui.setTimeOfRun()
-		settings.ui.saveSlotState();
-		redirect "../"
-	elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Stop
-		#
-		# The Stop button got pressed.
-		#
-		settings.ui.setBbbToStopMode()
-		settings.ui.setToAllowedToRunMode()
-		settings.ui.setTimeOfStop()
+			return settings.ui.loadFile
+		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Run
+			#
+			# The Run button got pressed.
+			#
+			settings.ui.setToRunMode()
+			settings.ui.setTimeOfRun()
+			settings.ui.saveSlotState();
+			redirect "../"
+		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Stop
+			#
+			# The Stop button got pressed.
+			#
+			settings.ui.setBbbToStopMode()
+			settings.ui.setToAllowedToRunMode()
+			settings.ui.setTimeOfStop()
 		
-		#
-		# Update the duration time
-		# Formula : Time now - Time of run, then convert to hours, mins, sec.
-		#
-		settings.ui.updateDurationTimeLeft()
-		settings.ui.saveSlotState();
-		redirect "../"
-	elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Clear
-		#
-		# The Clear button got pressed.
-		#
-		settings.ui.setToLoadMode()
-		settings.ui.setTimeOfClear()
-		settings.ui.saveSlotState();
-		redirect "../"
+			#
+			# Update the duration time
+			# Formula : Time now - Time of run, then convert to hours, mins, sec.
+			#
+			settings.ui.updateDurationTimeLeft()
+			settings.ui.saveSlotState();
+			redirect "../"
+		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Clear
+			#
+			# The Clear button got pressed.
+			#
+			settings.ui.setToLoadMode()
+			settings.ui.setTimeOfClear()
+			settings.ui.saveSlotState();
+			redirect "../"
+		end
 	end
 end
 
@@ -2234,10 +2275,6 @@ post '/TopBtnPressed' do
 	tbr = "" # To be returned.
 	
 	#
-	# Save the file in the upload folder.
-	#
-	
-	#
 	# Make sure that the "file repository" directory exists.
 	#
 	dirFileRepository = "file repository"
@@ -2257,7 +2294,7 @@ post '/TopBtnPressed' do
 		settings.ui.redirectWithError += "&ErrGeneral=FileNotSelected"
 		redirect settings.ui.redirectWithError
 	end
-	
+
 	#
 	# Find out what type of file we're dealing with:
 	# *.step - for Step file
@@ -2268,37 +2305,24 @@ post '/TopBtnPressed' do
 	if settings.ui.setConfigFileType(uploadedFileName) == false
 		redirect settings.ui.redirectWithError
 	end
-	
+
 	goodUpload = true
 	File.open("#{dirFileRepository}/#{params['myfile'][:filename]}" , "w") do |f|
 		begin
-		  f.write(params['myfile'][:tempfile].read)
-		  rescue
-		  	goodUpload = false
+			f.write(params['myfile'][:tempfile].read)
+			rescue
+				goodUpload = false
 		end
-  end
-  
-  if goodUpload
+	end
+	
+	if goodUpload
 		#
 		# Read the file into the server environment
 		#
-		config = Array.new
-		File.open("#{dirFileRepository}/#{params['myfile'][:filename]}", "r") do |f|
-			f.each_line do |line|
-				config.push(line)
-			end
-		end
-		
-		if settings.ui.parseTheConfigFile(config,"#{params['myfile'][:filename]}") == false
+		if settings.ui.setupBbbSlotProcess("#{params['myfile'][:filename]}") == false
 				redirect settings.ui.redirectWithError
 		end
-				
-		settings.ui.setConfigFileName("#{params['myfile'][:filename]}")
-		settings.ui.setTimeOfUpload()
-		settings.ui.setToAllowedToRunMode()
-		settings.ui.saveSlotState()
-		PP.pp(settings.ui.slotProperties)
-  end  
+	end  
   
 	settings.ui.setBbbConfigUpload()
 	
