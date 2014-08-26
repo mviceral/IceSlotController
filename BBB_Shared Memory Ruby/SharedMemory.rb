@@ -6,6 +6,7 @@ require_relative 'SharedMemoryExtension.so'
 require 'singleton'
 require 'forwardable'
 require 'json'
+require 'pp'
 
 # V1 - version 1
 # Adding the mode of the BBB
@@ -16,6 +17,7 @@ class SharedMemory
     
     Mode = "Mode"
     Data = "Data"
+    Cmd = "Cmd"
     
     InRunMode = "InRunMode"
     InStopMode = "InStopMode"
@@ -26,13 +28,23 @@ class SharedMemory
     TimeOfPcUpload = "TimeOfPcUpload"
     Configuration = "Configuration"
     TimeOfPcLastCmd = "TimeOfPcLastCmd"
+    Steps = "Steps"
+    TotalTimeLeft = "TotalTimeLeft"
+    TimeOfRun = "TimeOfRun"
+    TimeOfStop = "TimeOfStop"
+    StepTime = "Step Time"
+    StepNum = "Step Num"
     
     #
     # Known functions of SharedMemoryExtension
     #
-    def SetTimeOfPcLastCmd(timeOfPcLastCmdParam)
-        getDS()[TimeOfPcLastCmd] = timeOfPcLastCmdParam
-        return WriteDataV1(getDS().to_json)
+    def SetTimeOfPcLastCmd(timeOfPcLastCmdParam,fromParam)
+        puts "SetTimeOfPcLastCmd(timeOfPcLastCmdParam,fromParam) got called"
+        ds = getDS()
+        puts "ds.class=#{ds.class}"
+        ds[TimeOfPcLastCmd] = timeOfPcLastCmdParam
+        tbr =  WriteDataV1(ds.to_json)
+        return tbr
     end
     
     def GetTimeOfPcLastCmd()
@@ -44,14 +56,37 @@ class SharedMemory
     end
     
     def GetConfiguration()
-        return JSON.parse(getDS()[Configuration])
+        return getDS()[Configuration]
     end
     
-    def SetConfiguration(dataParam)
-        getDS()[TimeOfPcUpload] = Time.new.to_i
-        getDS()[Configuration] = dataParam
-        SetTimeOfPcLastCmd(Time.new.to_i)
-        return WriteDataV1(getDS().to_json)
+    def pause(paramA,fromParam)
+        puts "Paused - '#{paramA}' '#{fromParam}'"
+        gets
+    end
+    
+    def SetConfiguration(dataParam,fromParam)
+        ds = getDS()
+        ds[TimeOfPcUpload] = Time.new.to_i
+        hold = JSON.parse(dataParam)
+        #
+        # Setup the TotalTimeLeft in the steps, and make sure that the variables for TimeOfRun, and TimeOfStop
+        # are initialized per step also.
+        # 
+        hold[Steps].each do |key, array|
+            hold[Steps][key][TotalTimeLeft] = hold[Steps][key][StepTime].to_i
+            hold[Steps][key][TimeOfStop] = Time.now.to_i
+            hold[Steps][key][TimeOfRun] = hold[Steps][key][TimeOfStop]
+            # puts "hold[#{Steps}][#{key}][#{TotalTimeLeft}] = #{hold[Steps][key][TotalTimeLeft]}"
+            # puts "hold[#{Steps}][#{key}][#{TimeOfStop}] = #{hold[Steps][key][TimeOfStop]}"
+            # puts "hold[#{Steps}][#{key}][#{TimeOfRun}] = #{hold[Steps][key][TimeOfRun]}"
+        end
+        # pause("Checking contents of steps within SetConfiguration function.","#{__LINE__}-#{__FILE__}")
+        
+        ds[Configuration] = hold
+        tbr = WriteDataV1(ds.to_json) # tbr - to be returned
+        SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
+        return tbr
+        rescue
     end
     
     def Initialize()
@@ -68,10 +103,11 @@ class SharedMemory
         puts "param sent #{cmdParam}"
         oldCmdParam = getDS()[Cmd]
         print "Changing bbb mode from #{oldCmdParam} to "
-        getDS()[Cmd] = "#{cmdParam}"
+        ds = getDS()
+        ds[Cmd] = "#{cmdParam}"
         puts "#{cmdParam} [#{calledFrom}]"
-        SetTimeOfPcLastCmd(Time.new.to_i)
-        return WriteDataV1(getDS().to_json)
+        WriteDataV1(ds.to_json)
+        SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")        
     end
 	
 	def GetBbbMode()
@@ -82,24 +118,27 @@ class SharedMemory
         #
         # Get the DS - data structure
         #
-        if @ds.nil?
-            begin
-                @ds = JSON.parse(GetDataV1()) # ds = data structure.
-            rescue
-                @ds = Hash.new
-            end
+        # puts "fromParam=#{fromParam}"
+        # pause("within getDS()","#{__LINE__}-#{__FILE__}")
+        begin
+            ds = JSON.parse(GetDataV1()) # ds = data structure.
+            # puts "A getDS()"
+        rescue
+            ds = Hash.new
+            # puts "B getDS()"
         end
-        return @ds
+        return ds
     end
 
     def SetBbbMode(modeParam,calledFrom)
         puts "param sent #{modeParam}"
-        oldModeParam = getDS()[Mode]
+        ds = getDS()
+        oldModeParam = ds[Mode]
         print "Changing bbb mode from #{oldModeParam} to "
-        getDS()[Mode] = "#{modeParam}"
+        ds[Mode] = "#{modeParam}"
         puts "#{modeParam} [#{calledFrom}]"
-        SetTimeOfPcLastCmd(Time.new.to_i)
-        return WriteDataV1(getDS().to_json)
+        WriteDataV1(ds.to_json)
+        SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
     end
 	
     def GetData()
@@ -113,8 +152,9 @@ class SharedMemory
     end
     
     def WriteData(stringParam)
-        getDS()[Data] = stringParam 
-        WriteDataV1(getDS().to_json)
+        ds = getDS()
+        ds[Data] = stringParam 
+        WriteDataV1(ds.to_json)
     end
     
     def WriteDataV1(stringParam) # Changed function so other calls to it will fail and have to adhere to the new data 
