@@ -17,6 +17,7 @@ class TCUSampler
     PollIntervalInSeconds = "PollIntervalInSeconds"   
     HoldingTankFilename = "MachineState_DoNotDeleteNorModify.json"
     TimeOfPcLastCmd ="TimeOfPcLastCmd"
+    BbbMode = "BbbMode"
     
     # Special note regarding file openTtyO1Port_115200.exe, this comes from the folder BBB_openTtyO1Port c code, and 
     # it's compiled as an executable.
@@ -47,7 +48,7 @@ class TCUSampler
     end
     
     def setToMode(modeParam, calledFrom)
-        SharedMemory.SetBbbMode(modeParam)
+        SharedMemory.SetBbbMode(modeParam,"#{__LINE__}-#{__FILE__}")
         @boardData[BbbMode] = modeParam
         
         #
@@ -59,7 +60,8 @@ class TCUSampler
     
     def pause(msgParam,fromParam)
         puts "#{msgParam}"
-        puts "      o #{fromParam}"
+        puts "      o Paused at #{fromParam}"
+        gets
     end
     
     def setTimeOfPcLastCmd(timeOfPcLastCmdParam)
@@ -73,10 +75,8 @@ class TCUSampler
         return @boardData[TimeOfPcLastCmd]
     end
     
-    def getConfiguration(forParam,fromParam)
+    def getConfiguration()
         @boardData[Configuration]
-        PP.pp(@boardData[Configuration])
-        pause("getConfiguration got called. forParam=#{forParam} called from [#{fromParam}]","#{__LINE__}-#{__FILE__}")
     end
 
 
@@ -99,6 +99,8 @@ class TCUSampler
         #
         # Create log interval unit: hours
         #
+        SharedMemory.Initialize()
+        
         createLogInterval_UnitsInHours = 1 
         
         executeAllStty = "Yes" # "Yes" if you want to execute all...
@@ -134,7 +136,7 @@ class TCUSampler
 
         @boardData = Hash.new
         setTimeOfPcUpload(0)
-        setPollIntervalInSeconds(10)
+        setPollIntervalInSeconds(1)
         waitTime = Time.now+getPollIntervalInSeconds()
         #
         # Determine the state of the slot
@@ -166,7 +168,7 @@ class TCUSampler
     				bbbLog("There's no data in the holding tank.  Fresh machine starting up. #{__LINE__}-#{__FILE__}")
 		    end
 		end
-        
+		
         while true
 			case SharedMemory.GetBbbMode()
 			when SharedMemory::InRunMode
@@ -181,66 +183,97 @@ class TCUSampler
                 #
                 # Check any cmds from PC
                 #
-        		if getTimeOfPcLastCmd() <= SharedMemory.GetTimeOfPcLastCmd()
+        		if getTimeOfPcLastCmd() < SharedMemory.GetTimeOfPcLastCmd()
         		    setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
-        		    case SharedMemory.GetBbbMode()
+        		    case SharedMemory.GetPcCmd()
         		    when SharedLib::RunFromPc
             		    bbbLog("FATAL ERROR inconsistent - From BBB::InRunMode setting to BBB::InRunMode #{__LINE__}-#{__FILE__}")
             		    `echo "#{Time.new.inspect} : FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
         		    when SharedLib::StopFromPc
+        		        puts "within sampler code - PC says STOP #{__LINE__}-#{__FILE__}"
         		        setToMode(SharedMemory::SequenceDown, "#{__LINE__}-#{__FILE__}")
         		        setToMode(SharedLib::InIdleMode, "#{__LINE__}-#{__FILE__}")
+        		        setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
+        		        setPollIntervalInSeconds(1)
             		end
         		end
 			when SharedLib::InIdleMode
 				# Update the configuration setup for the process
-        		if (SharedMemory.GetTimeOfPcUpload().nil == false &&
-        		    @boardData[TimeOfPcUpload].to_i <= SharedMemory.GetTimeOfPcUpload() )
-        		    
+    		    puts "InIdleMode - SharedMemory.GetTimeOfPcUpload()=#{SharedMemory.GetTimeOfPcUpload()}"
+        		if (SharedMemory.GetTimeOfPcUpload().nil? == false &&
+        		    @boardData[TimeOfPcUpload].to_i < SharedMemory.GetTimeOfPcUpload() )
         		    @boardData[TimeOfPcUpload] = SharedMemory.GetTimeOfPcUpload()
         		    @boardData[Configuration] = SharedMemory.GetConfiguration()
-        		    
         		    saveBoardStateToHoldingTank()
-
+        		    SharedMemory.SetConfiguration("","#{__LINE__}-#{__FILE__}") # Empty out the shared memory now 
+        		        # that we got the configuration transferred into BBB.
         		    # End of 'if timeOfPcUpload <= SharedMemory.GetTimeOfPcUpload()'
         		end
         		
-        		if getTimeOfPcLastCmd() <= SharedMemory.GetTimeOfPcLastCmd()
+        		if getTimeOfPcLastCmd() < SharedMemory.GetTimeOfPcLastCmd()
+        		    puts "New command from PC - '#{SharedMemory.GetPcCmd()}' "
         		    setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
         		    case SharedMemory.GetPcCmd()
         		    when SharedLib::RunFromPc
-            		    setToMode(SharedMemory::SequenceUp)
-            		    #
-            		    # The goal in this code block is to sequence up the power supplies.
-            		    #
-            		    getConfiguration(ForPowerSupply,"#{__LINE__}-#{__FILE__}")
+        		        @stepToWorkOn = nil
+        		        setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
+            		    stepNumber = 0
+            		    while stepNumber<getConfiguration()["Steps"].length && @stepToWorkOn.nil?
+            		        if @stepToWorkOn.nil?
+                                getConfiguration()[SharedMemory::Steps].each do |key, array|
+                		            if @stepToWorkOn.nil?
+                                        getConfiguration()[SharedMemory::Steps][key].each do |key2, array2|
+                                            if key2 == SharedMemory::StepNum && 
+                                                getConfiguration()[SharedMemory::Steps][key][key2].to_i == (stepNumber+1) &&
+                                                getConfiguration()[SharedMemory::Steps][key][SharedMemory::TotalTimeLeft].to_i > 0
+                                                @stepToWorkOn = getConfiguration()[SharedMemory::Steps][key]
+                                            end
+                                        end
+                		            end
+                                end            		    
+            		        end
+            		        stepNumber += 1
+            		    end
             		    
-            		    #
-            		    # Once all the power supplies are all sequenced up, set the system to run mode.
-            		    #
-            		    setToMode(SharedMemory::InRunMode)
-        		    
+            		    if @stepToWorkOn.nil?
+            		        # All steps are done their run process.  Terminate the code.
+            		    else
+                		    setToMode(SharedMemory::SequenceUp,"#{__LINE__}-#{__FILE__}")
+                		    #
+                		    # The goal in this code block is to sequence up the power supplies on the step that the
+                		    # board is active on.
+                		    #
+                		    PP.pp(@stepToWorkOn)
+                		    #
+                		    # Once all the power supplies are all sequenced up, set the system to run mode.
+                		    #
+                		    setToMode(SharedMemory::InRunMode,"#{__LINE__}-#{__FILE__}")
+                		    setPollIntervalInSeconds(10)
+            		    end
+
         		    when SharedLib::StopFromPc
-            		    bbbModeAndTime("FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}")
+            		    bbbLog("FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}")
             		    `echo "#{Time.new.inspect} : FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
                     when SharedLib::PcCmdNotSet
                         #
                         # We're in idle mode, increase interval of monitoring of any commands coming from the Pc
                         #
-                        pollIntervalInSeconds = 1
+            		    bbbLog("Staying in Idle Mode - GetPcCmd() = '#{SharedMemory.GetPcCmd()}'")
             		else
-            		    SharedMemory.SetPcCmd(SharedLib::PcCmdNotSet)
-            		    bbbModeAndTime("Staying in Idle Mode - unknown PC Command '#{SharedMemory.GetPctCmd()}'")
-            		    `echo "#{Time.new.inspect} : mode='#{SharedMemory.GetMode()}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
+            		    SharedMemory.SetPcCmd(SharedLib::PcCmdNotSet,"#{__LINE__}-#{__FILE__}")
+            		    bbbLog("Staying in Idle Mode - unknown PC Command '#{SharedMemory.GetPcCmd()}'")
+            		    `echo "#{Time.new.inspect} : mode='#{SharedMemory.GetPcCmd()}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
             		end
         		end
-				puts ""
             else
-                
 			    SharedMemory.SetBbbMode(SharedLib::InIdleMode,"#{__LINE__}-#{__FILE__}")
                 `echo "#{Time.new.inspect} : mode='#{SharedMemory.GetBbbMode()}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
+                setPollIntervalInSeconds(1)
             end						
             
+            if SharedMemory.GetBbbMode() != SharedMemory::InRunMode
+                puts "In idle mode..."
+            end
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
             # The code ensures that the process is exactly going to take place at the given interval.  No lag that

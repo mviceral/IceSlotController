@@ -73,15 +73,16 @@ module PcListenerModule
 					#
 					puts "PC sent '#{mode}'"
 					case mode
-					when SharedLib::RunFromPC
+					when SharedLib::RunFromPc
 						SharedMemory.Initialize()
-						SharedMemory.SetMode(SharedMemory::SequenceUp)
-					when SharedLib::StopFromPC
+						SharedMemory.SetPcCmd(SharedLib::RunFromPc,"#{__LINE__}-#{__FILE__}")
+					when SharedLib::StopFromPc
 						SharedMemory.Initialize()
-						SharedMemory.SetMode(SharedMemory::SequenceDown)
-					when SharedLib::LoadConfigFromPC
+						SharedMemory.SetPcCmd(SharedLib::StopFromPc,"#{__LINE__}-#{__FILE__}")
+					when SharedLib::LoadConfigFromPc
 						SharedMemory.Initialize()
-						SharedMemory.SetConfiguration(params["#{SharedLib::PcToBbbData}"])
+						SharedMemory.SetConfiguration(params["#{SharedLib::PcToBbbData}"],"#{__LINE__}-#{__FILE__}")
+						SharedMemory.SetPcCmd(SharedLib::StopFromPc,"#{__LINE__}-#{__FILE__}")
 					else
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 					end						

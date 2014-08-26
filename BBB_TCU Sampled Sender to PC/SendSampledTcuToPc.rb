@@ -168,9 +168,11 @@ class SendSampledTcuToPC
         
         # puts "Check E"
         if dbaseFolder != NO_GOOD_DBASE_FOLDER
+            puts "Initlized C #{__LINE__}-#{__FILE__}"
             # puts "Check A #{__FILE__}-#{__LINE__}"
             # gets
             if @logCompletedAt.nil? 
+                puts "Initlized D #{__LINE__}-#{__FILE__}"
                 # puts "Check B #{__FILE__}-#{__LINE__}"
                 # puts "Pause here #{__FILE__}-#{__LINE__}"
                 # gets
@@ -194,6 +196,7 @@ class SendSampledTcuToPC
                 @logCompletedAt = getLastLogCompletedAt()
                 # End of 'if @logCompletedAt.nil? '
             else
+                puts "Initlized E #{__LINE__}-#{__FILE__}"
                 # puts "Check C #{__FILE__}-#{__LINE__}"
                 # gets
                 @nextLogCreation = @logCompletedAt+@createLogInterval_UnitsInHours*60   # *60*60 converts 
@@ -206,14 +209,17 @@ class SendSampledTcuToPC
         
                 timeNow = Time.now
                 if @nextLogCreation<timeNow
+                    puts "Initlized F #{__LINE__}-#{__FILE__}"
                     #
                     # Create new log.
                     #
                     createNewLog(timeNow)
             	    # End of 'if @nextLogCreation<Time.now'
                 end
+                puts "Initlized G #{__LINE__}-#{__FILE__}"
                 # End of 'if @logCompletedAt.nil? ELSE'
             end
+            puts "Initlized H #{__LINE__}-#{__FILE__}"
             # End of 'if dbaseFolder != NO_GOOD_DBASE_FOLDER'
         else
             # puts "Check D"
@@ -221,7 +227,7 @@ class SendSampledTcuToPC
              @db = nil
              # puts "@db to nil '#{@db}' #{__FILE__}-#{__LINE__}"
         end 
-    
+
         # End of 'def initialize()'
     end
 
@@ -296,6 +302,7 @@ class SendSampledTcuToPC
         # This way, there's lots of lee-way for recovery case something happens before the next polling.
         #
         sampledData = SharedMemory.GetData()
+        puts "sampledData=#{sampledData}"
         # puts "Test RunSender A #{__FILE__}-#{__LINE__}"
         SendDataToPC(sampledData)
         # puts "Test RunSender B #{__FILE__}-#{__LINE__}"

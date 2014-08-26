@@ -206,6 +206,7 @@ include Port2Interface
         parsed = Hash.new
         @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json)
   	end
+  	
   	fromSharedMem = @sharedBbbGpio2.GetData()
 
 	# End of 'def initialize'
