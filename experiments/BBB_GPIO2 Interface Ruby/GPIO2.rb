@@ -16,166 +16,167 @@ require 'beaglebone'
 # require 'forwardable'
 
 
-#
-# The following are the addresses of the registered names, along with their items
-#
-SLOT_ADDR_x0        = 0x0
-  # For Reading
-  # Gives 4 slots
-  # Gives you up to 64 systems - just basically get the whole value vice broken to little bits checking each
-  # state of bits.
-  #
-  # Scenario
-  # Step 1 , gets this address, assigns to the IP address of BBB.
-  # Config file must be available for the frist 3 address for the IP of the BBB.
-  #
-  R0_SYS7              = 0x80   # Read bit Sys7
-  R0_SYS6              = 0x40   # Read bit Sys6
-  R0_SYS5              = 0x20   # Read bit Sys5
-  R0_SYS4              = 0x10   # Read bit Sys4
-  R0_SYS3              = 0x08   # Read bit Sys3
-  R0_SYS2              = 0x04   # Read bit Sys2
-  R0_SYS1              = 0x02   # Read bit Sys1
-  R0_SYS0              = 0x01   # Read bit Sys0
-  W0_Reset             = 0x01   # Write to reset.
-  
-LED_STAT_x1         = 0x1
-  # Needs to be a X1_LEDEN = 1 to have the rest have a purpose.  For debugging.
-  W1_LEDEN            = 0x80    
-  X1_LED3             = 0x08
-  X1_LED2             = 0x04
-  X1_LED1             = 0x02
-  X1_LED0             = 0x01
-  
-EXT_INPUTS_x2       = 0x2
-  # Bitwise function, look for a 1 indicating that it's been activated (capture).
-  # Mainly reading bitwise
-  # XOR bit masking
-  R2_FANT2B           = 0x80
-  R2_FANT2A           = 0x40
-  R2_FANT1B           = 0x20
-  R2_FANT1A           = 0x10
-  R2_SENSR2           = 0x08
-  R2_SENSR1           = 0x04
-  R2_USRSW2           = 0x02
-  R2_USRSW1           = 0x01
-  # Writing - to clear the above bits.
-  # After reading, write the clear to reset all the bits.
-  # (Capture compare function)
-  W2_CLEAR            = 0x01
-  
-PS_ENABLE_x3        = 0x3
-  # For power supply sequencing.
-  # Bitwise for mainly for writing.
-  # XOR bit masking
-  W3_P12V             = 0x40
-  W3_N5V              = 0x20
-  W3_P5V              = 0x10
-  W3_PS6              = 0x08
-  W3_PS8              = 0x04
-  W3_PS9              = 0x02
-  W3_PS10             = 0x01
-  
-EXT_SLOT_CTRL_x4    = 0x4
-  # Bitwise for mainly for writing.
-  # XOR bit masking
-  X4_POWER            = 0x80
-  X4_FAN1             = 0x20
-  X4_FAN2             = 0x10
-  X4_BUZR             = 0x08
-  X4_LEDRED           = 0x04
-  X4_LEDYEL           = 0x02
-  X4_LEDGRN           = 0x01
-  
-SLOT_FAN_PWM_x5     = 0x5
-  # Mostly for setting, - write the whole byte.
-  
-ETS_ALM1_x6         = 0x6
-  # Bitwise only for reading.
-  # TCU alarm 
-  R6_ALM7             = 0x80
-  R6_ALM6             = 0x40
-  R6_ALM5             = 0x20
-  R6_ALM4             = 0x10
-  R6_ALM3             = 0x08
-  R6_ALM2             = 0x04
-  R6_ALM1             = 0x02
-  R6_ALM0             = 0x01
-
-ETS_ALM2_x7         = 0x7
-  # Bitwise only for reading.
-  R7_ALM15            = 0x80
-  R7_ALM14            = 0x40
-  R7_ALM13            = 0x20
-  R7_ALM12            = 0x10
-  R7_ALM11            = 0x08
-  R7_ALM10            = 0x04
-  R7_ALM9             = 0x02
-  R7_ALM8             = 0x01
-
-ETS_ALM3_x8         = 0x8
-  # Bitwise only for reading.
-  R8_ALM23            = 0x80
-  R8_ALM22            = 0x40
-  R8_ALM21            = 0x20
-  R8_ALM20            = 0x10
-  R8_ALM19            = 0x08
-  R8_ALM18            = 0x04
-  R8_ALM17            = 0x02
-  R8_ALM16            = 0x01
-
-ETS_ENA1_x9         = 0x9
-  # Bitwise mainly for writing.
-  # XOR bit mask
-  X9_ETS7             = 0x80
-  X9_ETS6             = 0x40
-  X9_ETS5             = 0x20
-  X9_ETS4             = 0x10
-  X9_ETS3             = 0x08
-  X9_ETS2             = 0x04
-  X9_ETS1             = 0x02
-  X9_ETS0             = 0x01
-
-ETS_ENA2_xA         = 0xA
-  # Bitwise mainly for writing.
-  # XOR bit mask
-  XA_ETS15            = 0x80
-  XA_ETS14            = 0x40
-  XA_ETS13            = 0x20
-  XA_ETS12            = 0x10
-  XA_ETS11            = 0x08
-  XA_ETS10            = 0x04
-  XA_ETS09            = 0x02
-  XA_ETS08            = 0x01
-
-ETS_ENA3_xB         = 0xB
-  # Bitwise mainly for writing.
-  # XOR bit mask
-  XB_ETS23            = 0x80
-  XB_ETS22            = 0x40
-  XB_ETS21            = 0x20
-  XB_ETS20            = 0x10
-  XB_ETS19            = 0x08
-  XB_ETS18            = 0x04
-  XB_ETS17            = 0x02
-  XB_ETS16            = 0x01
-
-ETS_RX_SEL_xC       = 0xC
-  # Just a number from 0 to 23, mostly writing
-  # The TCU (temp controller unit)
-
-ANA_MEAS4_SEL_xD    = 0xD
-  # Just a number from 0 to 48, mostly writing
-  # The item to measure analog channel 4.
-
-
-
+    
 
 class GPIO2
-#@Removed 2 comment to run on real machine
-include Beaglebone
-include Port2Interface
-# include Singleton
+    #@Removed 2 comment to run on real machine
+    include Beaglebone
+    include Port2Interface
+    # include Singleton
+  
+    #
+    # The following are the addresses of the registered names, along with their items
+    #
+    SLOT_ADDR_x0        = 0x0
+      # For Reading
+      # Gives 4 slots
+      # Gives you up to 64 systems - just basically get the whole value vice broken to little bits checking each
+      # state of bits.
+      #
+      # Scenario
+      # Step 1 , gets this address, assigns to the IP address of BBB.
+      # Config file must be available for the frist 3 address for the IP of the BBB.
+      #
+      R0_SYS7              = 0x80   # Read bit Sys7
+      R0_SYS6              = 0x40   # Read bit Sys6
+      R0_SYS5              = 0x20   # Read bit Sys5
+      R0_SYS4              = 0x10   # Read bit Sys4
+      R0_SYS3              = 0x08   # Read bit Sys3
+      R0_SYS2              = 0x04   # Read bit Sys2
+      R0_SYS1              = 0x02   # Read bit Sys1
+      R0_SYS0              = 0x01   # Read bit Sys0
+      W0_Reset             = 0x01   # Write to reset.
+      
+    LED_STAT_x1         = 0x1
+      # Needs to be a X1_LEDEN = 1 to have the rest have a purpose.  For debugging.
+      W1_LEDEN            = 0x80    
+      X1_LED3             = 0x08
+      X1_LED2             = 0x04
+      X1_LED1             = 0x02
+      X1_LED0             = 0x01
+      
+    EXT_INPUTS_x2       = 0x2
+      # Bitwise function, look for a 1 indicating that it's been activated (capture).
+      # Mainly reading bitwise
+      # XOR bit masking
+      R2_FANT2B           = 0x80
+      R2_FANT2A           = 0x40
+      R2_FANT1B           = 0x20
+      R2_FANT1A           = 0x10
+      R2_SENSR2           = 0x08
+      R2_SENSR1           = 0x04
+      R2_USRSW2           = 0x02
+      R2_USRSW1           = 0x01
+      # Writing - to clear the above bits.
+      # After reading, write the clear to reset all the bits.
+      # (Capture compare function)
+      W2_CLEAR            = 0x01
+      
+    PS_ENABLE_x3        = 0x3
+      # For power supply sequencing.
+      # Bitwise for mainly for writing.
+      # XOR bit masking
+      W3_P12V             = 0x40
+      W3_N5V              = 0x20
+      W3_P5V              = 0x10
+      W3_PS6              = 0x08
+      W3_PS8              = 0x04
+      W3_PS9              = 0x02
+      W3_PS10             = 0x01
+      
+    EXT_SLOT_CTRL_x4    = 0x4
+      # Bitwise for mainly for writing.
+      # XOR bit masking
+      X4_POWER            = 0x80
+      X4_FAN1             = 0x20
+      X4_FAN2             = 0x10
+      X4_BUZR             = 0x08
+      X4_LEDRED           = 0x04
+      X4_LEDYEL           = 0x02
+      X4_LEDGRN           = 0x01
+      
+    SLOT_FAN_PWM_x5     = 0x5
+      # Mostly for setting, - write the whole byte.
+      
+    ETS_ALM1_x6         = 0x6
+      # Bitwise only for reading.
+      # TCU alarm 
+      R6_ALM7             = 0x80
+      R6_ALM6             = 0x40
+      R6_ALM5             = 0x20
+      R6_ALM4             = 0x10
+      R6_ALM3             = 0x08
+      R6_ALM2             = 0x04
+      R6_ALM1             = 0x02
+      R6_ALM0             = 0x01
+    
+    ETS_ALM2_x7         = 0x7
+      # Bitwise only for reading.
+      R7_ALM15            = 0x80
+      R7_ALM14            = 0x40
+      R7_ALM13            = 0x20
+      R7_ALM12            = 0x10
+      R7_ALM11            = 0x08
+      R7_ALM10            = 0x04
+      R7_ALM9             = 0x02
+      R7_ALM8             = 0x01
+    
+    ETS_ALM3_x8         = 0x8
+      # Bitwise only for reading.
+      R8_ALM23            = 0x80
+      R8_ALM22            = 0x40
+      R8_ALM21            = 0x20
+      R8_ALM20            = 0x10
+      R8_ALM19            = 0x08
+      R8_ALM18            = 0x04
+      R8_ALM17            = 0x02
+      R8_ALM16            = 0x01
+    
+    ETS_ENA1_x9         = 0x9
+      # Bitwise mainly for writing.
+      # XOR bit mask
+      X9_ETS7             = 0x80
+      X9_ETS6             = 0x40
+      X9_ETS5             = 0x20
+      X9_ETS4             = 0x10
+      X9_ETS3             = 0x08
+      X9_ETS2             = 0x04
+      X9_ETS1             = 0x02
+      X9_ETS0             = 0x01
+    
+    ETS_ENA2_xA         = 0xA
+      # Bitwise mainly for writing.
+      # XOR bit mask
+      XA_ETS15            = 0x80
+      XA_ETS14            = 0x40
+      XA_ETS13            = 0x20
+      XA_ETS12            = 0x10
+      XA_ETS11            = 0x08
+      XA_ETS10            = 0x04
+      XA_ETS09            = 0x02
+      XA_ETS08            = 0x01
+    
+    ETS_ENA3_xB         = 0xB
+      # Bitwise mainly for writing.
+      # XOR bit mask
+      XB_ETS23            = 0x80
+      XB_ETS22            = 0x40
+      XB_ETS21            = 0x20
+      XB_ETS20            = 0x10
+      XB_ETS19            = 0x08
+      XB_ETS18            = 0x04
+      XB_ETS17            = 0x02
+      XB_ETS16            = 0x01
+    
+    ETS_RX_SEL_xC       = 0xC
+      # Just a number from 0 to 23, mostly writing
+      # The TCU (temp controller unit)
+    
+    ANA_MEAS4_SEL_xD    = 0xD
+      # Just a number from 0 to 48, mostly writing
+      # The item to measure analog channel 4.
+    
+    
   
   def initialize
 #@Removed comment to run on real machine
@@ -206,6 +207,7 @@ include Port2Interface
         parsed = Hash.new
         @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json)
   	end
+  	
   	fromSharedMem = @sharedBbbGpio2.GetData()
 
 	# End of 'def initialize'
@@ -237,7 +239,7 @@ include Port2Interface
         # This value turns off the state of a bit listed in 'dataParam' on a given register address 'addrParam'
         #
       inBits = getBits(dataParam)
-      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bit to turn off."
+      # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bit to turn off."
       hold = ~dataParam
 =begin      
       inBits = getBits(hold)
@@ -255,8 +257,9 @@ include Port2Interface
         #
         # This value turns on the state of a bit listed in 'dataParam' on a given register address 'addrParam'
         #
+        # puts "within setBitOn addrParam=#{addrParam}, dataParam=#{dataParam}"
       inBits = getBits(dataParam)
-      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bit to turn on."
+        # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bit to turn on."
 =begin      
       inBits = getBits(@regValues[addrParam])
       puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value of what to turn on."
@@ -335,11 +338,11 @@ include Port2Interface
 =end        
     end
     
-  def getForInitGetImagesOf16Addrs
+  def getForInitGetImagesOf16Addrs()
       #
       # This function must get called first in order the get the values of the registers.
       #
-      puts "within - getForInitGetImagesOf16Addrs #{__LINE__}-#{__FILE__}"
+      puts "within - getForInitGetImagesOf16Addrs #{__LINE__}-#{__FILE__} - called from ---"
       @regValues[SLOT_ADDR_x0] = getGPIO2(SLOT_ADDR_x0)
       @regValues[LED_STAT_x1] = getGPIO2(LED_STAT_x1)
       @regValues[EXT_INPUTS_x2] = getGPIO2(EXT_INPUTS_x2)

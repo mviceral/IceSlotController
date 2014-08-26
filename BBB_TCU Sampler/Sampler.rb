@@ -8,15 +8,54 @@ require_relative '../lib/SharedLib'
 require 'singleton'
 require 'forwardable'
 
+include Beaglebone
+
 TOTAL_DUTS_TO_LOOK_AT  = 24
 
 class TCUSampler
+    
+    class PsSeqItem
+        
+        EthernetOrSlotPcb = "EthernetOrSlotPcb"
+        EthernetOrSlotPcb_Ethernent = "Ethernent"
+        EthernetOrSlotPcb_SlotPcb = "Slot PCB"
+        SeqUp = "SeqUp"
+        SUDlyms = "SUDlyms"
+        SeqDown = "SeqDown"
+        SDDlyms = "SDDlyms"
+        
+        SPS6 = "SPS6"
+        SPS8 = "SPS8"
+        SPS9 = "SPS9"
+        SPS10 = "SPS10"
+
+        
+        def keyName
+            return @keyName
+        end
+        
+        def seqOrder
+            return @seqOrder
+        end
+        
+        def initialize keyHolderParam, seqOrderParam
+            @keyName = keyHolderParam
+            @seqOrder = seqOrderParam
+        end
+    end
+    
+    FIXNUM_MAX = (2**(0.size * 8 -2) -1)
+    
     TimeOfPcUpload = "TimeOfPcUpload"
     Configuration = "Configuration"
     ForPowerSupply = "ForPowerSupply"
     PollIntervalInSeconds = "PollIntervalInSeconds"   
     HoldingTankFilename = "MachineState_DoNotDeleteNorModify.json"
     TimeOfPcLastCmd ="TimeOfPcLastCmd"
+    BbbMode = "BbbMode"
+    SeqDownPsArr = "SeqDownPsArr"
+    SeqUpPsArr = "SeqUpPsArr"
+            
     
     # Special note regarding file openTtyO1Port_115200.exe, this comes from the folder BBB_openTtyO1Port c code, and 
     # it's compiled as an executable.
@@ -47,7 +86,7 @@ class TCUSampler
     end
     
     def setToMode(modeParam, calledFrom)
-        SharedMemory.SetBbbMode(modeParam)
+        SharedMemory.SetBbbMode(modeParam,"#{__LINE__}-#{__FILE__}")
         @boardData[BbbMode] = modeParam
         
         #
@@ -59,7 +98,8 @@ class TCUSampler
     
     def pause(msgParam,fromParam)
         puts "#{msgParam}"
-        puts "      o #{fromParam}"
+        puts "      o Paused at #{fromParam}"
+        gets
     end
     
     def setTimeOfPcLastCmd(timeOfPcLastCmdParam)
@@ -73,12 +113,108 @@ class TCUSampler
         return @boardData[TimeOfPcLastCmd]
     end
     
-    def getConfiguration(forParam,fromParam)
+    def getConfiguration()
         @boardData[Configuration]
-        PP.pp(@boardData[Configuration])
-        pause("getConfiguration got called. forParam=#{forParam} called from [#{fromParam}]","#{__LINE__}-#{__FILE__}")
     end
 
+    def psSeqDown()
+        doPsSeqPower(false)
+    end
+    
+    def psSeqUp()
+        doPsSeqPower(true)
+    end
+    
+    def doPsSeqPower(powerUpParam)
+        if @stepToWorkOn.nil?
+            #
+            # Setup the @stepToWorkOn
+            #
+            setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
+    	    stepNumber = 0
+    	    puts "getConfiguration().nil? = '#{getConfiguration().nil?}'"
+    	    puts "getConfiguration()[\"Steps\"].nil? = #{getConfiguration()["Steps"].nil?}"
+    	    while stepNumber<getConfiguration()["Steps"].length && @stepToWorkOn.nil?
+    	        if @stepToWorkOn.nil?
+                    getConfiguration()[SharedMemory::Steps].each do |key, array|
+    		            if @stepToWorkOn.nil?
+                            getConfiguration()[SharedMemory::Steps][key].each do |key2, array2|
+                                if key2 == SharedMemory::StepNum && 
+                                    getConfiguration()[SharedMemory::Steps][key][key2].to_i == (stepNumber+1) &&
+                                    getConfiguration()[SharedMemory::Steps][key][SharedMemory::TotalTimeLeft].to_i > 0
+                                    @stepToWorkOn = getConfiguration()[SharedMemory::Steps][key]
+                                end
+                            end
+    		            end
+                    end            		    
+    	        end
+    	        stepNumber += 1
+    	    end
+        end
+	    
+	    if @stepToWorkOn.nil? 
+	        # All steps are done their run process.  Terminate the code.
+	        return true
+	    end
+        
+        if powerUpParam
+            sortedUp = getSeqUpPsArr()
+            textDisp = "'UP'"
+        else
+            sortedUp = getSeqDownPsArr()
+            textDisp = "'DOWN'"
+        end
+        
+        sortedUp.each do |psItem|
+            puts "psItem.keyName=#{psItem.keyName}, psItem.seqOrder=#{psItem.seqOrder}"
+            if psItem.seqOrder != 0
+                # puts "Going to turn on this PS item '#{psItem.keyName}' #{@stepToWorkOn["PsConfig"][psItem.keyName]}"
+                if @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_Ethernent
+                    print "Sequencing #{textDisp} '#{psItem.keyName}' through 'ETHERNET' for "
+                elsif @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_SlotPcb
+                    print "Sequencing #{textDisp} '#{psItem.keyName}' through 'Slot PCB' for "
+                    case psItem.keyName
+                    when PsSeqItem::SPS6
+                        if powerUpParam
+                            gPIO2.setBitOn((GPIO2::PS_ENABLE_x3).to_i,(GPIO2::W3_PS6).to_i)
+                        else
+                            gPIO2.setBitOff((GPIO2::PS_ENABLE_x3).to_i,(GPIO2::W3_PS6).to_i)
+                        end
+                    when PsSeqItem::SPS8
+                        if powerUpParam
+                            gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS8)
+                        else
+                            gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS8)
+                        end
+                    when PsSeqItem::SPS9
+                        if powerUpParam
+                            gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS9)
+                        else
+                            gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS9)
+                        end
+                    when PsSeqItem::SPS10
+                        if powerUpParam
+                            gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS10)
+                        else
+                            gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS10)
+                        end
+                    else
+                        `echo "#{Time.new.inspect} : psItem.keyName='#{psItem.keyName}' not recognized.  #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
+                    end
+                    if powerUpParam
+                        puts "'#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SUDlyms]}' ms."
+                        sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SUDlyms].to_i)/1000)
+                    else
+                        puts "'#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms]}' ms."
+                        sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)/1000)
+                    end
+                    sleep(1)
+                else
+                    `echo "#{Time.new.inspect} : @stepToWorkOn[\"PsConfig\"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb]='#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb]}' not recognized.  #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
+                end
+            end
+        end
+    end
 
     def saveBoardStateToHoldingTank()
 	    # Write configuartion to holding tank case there's a power outage.
@@ -88,6 +224,9 @@ class TCUSampler
     end
 
     def getPollIntervalInSeconds()
+        if @boardData[PollIntervalInSeconds].nil?
+            @boardData[PollIntervalInSeconds] = 1
+        end
         return @boardData[PollIntervalInSeconds]
     end
     
@@ -95,10 +234,112 @@ class TCUSampler
         @boardData[PollIntervalInSeconds] = timeInSecParam
     end
     
+    def getSeqDownPsArr()
+        if @boardData[SeqDownPsArr].nil?
+            @boardData[SeqDownPsArr] = getSeqPs(false)
+        end
+        return @boardData[SeqDownPsArr]
+    end
+    
+    def getSeqUpPsArr()
+        if @boardData[SeqUpPsArr].nil?
+            @boardData[SeqUpPsArr] = getSeqPs(true)
+        end
+        return @boardData[SeqUpPsArr]
+    end
+    
+    def getSeqPs(dirUpParam)
+	    # Get all the objects that has SeqUp - then sort the objects
+	    objWithSeq = Hash.new
+	    if @stepToWorkOn.nil?
+	        puts "@stepToWorkOn is nil."
+        else
+	        puts "@stepToWorkOn is NOT nil."
+	    end
+	    
+	    @stepToWorkOn["PsConfig"].each do |key, array|
+            # puts "#{key}-----"
+	        @stepToWorkOn["PsConfig"][key].each do |key2, array|
+	            if key2 == "SeqUp"
+	                objWithSeq[key] = @stepToWorkOn["PsConfig"][key]
+	            end
+	            # puts "  #{key2}-----"
+	        end
+        end
+        
+	    if dirUpParam
+            largestSeqNum = 0
+        else
+            largestSeqNum = FIXNUM_MAX
+        end
+        
+        largestSeqNum = 0
+        puts "Checking isolated objects with sequences as sub parts."
+	    objWithSeq.each do |key, array|
+            # puts "#{key}-----"
+	        objWithSeq[key].each do |key2, array2|
+	            # puts "   #{key2}-----"
+	            # puts "      #{array2}"
+	            if dirUpParam
+    	            if key2 == "SeqUp"  && largestSeqNum < array2.to_i
+    	                largestSeqNum = array2.to_i
+    	            end
+	            else
+    	            if key2 == "SeqDown"  && largestSeqNum < array2.to_i
+    	                largestSeqNum = array2.to_i
+    	            end
+	            end
+	        end
+        end
+
+        # Sort the order of the sequence.
+        sortedUp = Array.new
+        largeHolder = largestSeqNum
+        while objWithSeq.length>0
+            keyHolder = nil
+            arrHolder = nil
+		    objWithSeq.each do |key, array|
+		        objWithSeq[key].each do |key2, array2|
+		            # puts "   #{key2}-----"
+		            # puts "      #{array2}"
+		            if dirUpParam
+    		            if key2 == "SeqUp" && largeHolder>=array2.to_i
+                            # puts "          #{key2} array2.to_i=#{array2.to_i}"
+                            # pause "          paused","#{__LINE__}-#{__FILE__}"
+    		                largeHolder = array2.to_i
+    		                keyHolder = key
+    		                arrHolder = array2
+    		            end
+		            else
+    		            if key2 == "SeqDown" && largeHolder>=array2.to_i
+                            # puts "          #{key2} array2.to_i=#{array2.to_i}"
+                            # pause "          paused","#{__LINE__}-#{__FILE__}"
+    		                largeHolder = array2.to_i
+    		                keyHolder = key
+    		                arrHolder = array2
+    		            end
+		            end
+		        end
+            end
+
+	        # We got the smallest sequp at this point
+	        if keyHolder.nil? == false
+		        sortedUp.push(PsSeqItem.new(keyHolder, arrHolder.to_i))
+                # pause("Isolated seqUp object for sortedUp = #{sortedUp}", "#{__LINE__}-#{__FILE__}")
+		        objWithSeq.delete(keyHolder)
+		        largeHolder = largestSeqNum
+	        end
+        end
+        
+        return sortedUp
+    end
+    
     def runTCUSampler
         #
         # Create log interval unit: hours
         #
+        SharedMemory.Initialize()
+        
         createLogInterval_UnitsInHours = 1 
         
         executeAllStty = "Yes" # "Yes" if you want to execute all...
@@ -131,21 +372,19 @@ class TCUSampler
         #
         ThermalSiteDevices.setTotalHoursToLogData(createLogInterval_UnitsInHours)
         switcher = 0
-
+        @stepToWorkOn = nil
         @boardData = Hash.new
         setTimeOfPcUpload(0)
-        setPollIntervalInSeconds(10)
-        waitTime = Time.now+getPollIntervalInSeconds()
         #
         # Determine the state of the slot
         #
         gPIO2.getForInitGetImagesOf16Addrs()
         bbbLog("Starting Sampler Code.")
-        if gPIO2.getGPIO2(PS_ENABLE_x3)>0
+        if gPIO2.getGPIO2(GPIO2::PS_ENABLE_x3)>0
             #
             # Some of the power supplies are on. The system probably had a power outage.
             # Set the board to run mode
-            bbbLog("PS_ENABLE_x3=0x#{gPIO2.getGPIO2(PS_ENABLE_x3).to_s(16)} > 0 - meaning some PS are ON.")
+            bbbLog("PS_ENABLE_x3=0x#{gPIO2.getGPIO2(GPIO2::PS_ENABLE_x3).to_s(16)} > 0 - meaning some PS are ON.")
             bbbLog("Set board to run mode. #{__LINE__}-#{__FILE__}")
             SharedMemory.SetBbbMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
             
@@ -164,9 +403,11 @@ class TCUSampler
     			rescue 
     				# File does not exists, so just continue with a blank slate.
     				bbbLog("There's no data in the holding tank.  Fresh machine starting up. #{__LINE__}-#{__FILE__}")
+    				setToMode(SharedLib::InIdleMode, "#{__LINE__}-#{__FILE__}")
 		    end
 		end
-        
+        waitTime = Time.now+getPollIntervalInSeconds()
+		
         while true
 			case SharedMemory.GetBbbMode()
 			when SharedMemory::InRunMode
@@ -181,66 +422,79 @@ class TCUSampler
                 #
                 # Check any cmds from PC
                 #
-        		if getTimeOfPcLastCmd() <= SharedMemory.GetTimeOfPcLastCmd()
+        		if getTimeOfPcLastCmd() < SharedMemory.GetTimeOfPcLastCmd()
         		    setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
-        		    case SharedMemory.GetBbbMode()
+        		    case SharedMemory.GetPcCmd()
         		    when SharedLib::RunFromPc
             		    bbbLog("FATAL ERROR inconsistent - From BBB::InRunMode setting to BBB::InRunMode #{__LINE__}-#{__FILE__}")
             		    `echo "#{Time.new.inspect} : FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
         		    when SharedLib::StopFromPc
+        		        puts "within sampler code - PC says STOP #{__LINE__}-#{__FILE__}"
         		        setToMode(SharedMemory::SequenceDown, "#{__LINE__}-#{__FILE__}")
+        		        psSeqDown()
         		        setToMode(SharedLib::InIdleMode, "#{__LINE__}-#{__FILE__}")
+        		        setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
+        		        setPollIntervalInSeconds(1)
             		end
         		end
 			when SharedLib::InIdleMode
 				# Update the configuration setup for the process
-        		if (SharedMemory.GetTimeOfPcUpload().nil == false &&
-        		    @boardData[TimeOfPcUpload].to_i <= SharedMemory.GetTimeOfPcUpload() )
-        		    
+    		    puts "InIdleMode - SharedMemory.GetTimeOfPcUpload()=#{SharedMemory.GetTimeOfPcUpload()}"
+        		if (SharedMemory.GetTimeOfPcUpload().nil? == false &&
+        		    @boardData[TimeOfPcUpload].to_i < SharedMemory.GetTimeOfPcUpload() )
         		    @boardData[TimeOfPcUpload] = SharedMemory.GetTimeOfPcUpload()
         		    @boardData[Configuration] = SharedMemory.GetConfiguration()
-        		    
         		    saveBoardStateToHoldingTank()
-
+        		    SharedMemory.SetConfiguration("","#{__LINE__}-#{__FILE__}") # Empty out the shared memory now 
+        		        # that we got the configuration transferred into BBB.
         		    # End of 'if timeOfPcUpload <= SharedMemory.GetTimeOfPcUpload()'
         		end
         		
-        		if getTimeOfPcLastCmd() <= SharedMemory.GetTimeOfPcLastCmd()
+        		if getTimeOfPcLastCmd() < SharedMemory.GetTimeOfPcLastCmd()
+        		    puts "New command from PC - '#{SharedMemory.GetPcCmd()}' "
         		    setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
         		    case SharedMemory.GetPcCmd()
         		    when SharedLib::RunFromPc
-            		    setToMode(SharedMemory::SequenceUp)
+        		        setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
+            		    setToMode(SharedMemory::SequenceUp,"#{__LINE__}-#{__FILE__}")
+
             		    #
-            		    # The goal in this code block is to sequence up the power supplies.
+            		    # The goal in this code block is to sequence up the power supplies on the step that the
+            		    # board is active on.
             		    #
-            		    getConfiguration(ForPowerSupply,"#{__LINE__}-#{__FILE__}")
-            		    
+            		    #PP.pp(@stepToWorkOn)
+            		    psSeqUp()
+                        # pause("Above are the listed PS sequence up order.","#{__LINE__}-#{__FILE__}")
             		    #
             		    # Once all the power supplies are all sequenced up, set the system to run mode.
             		    #
-            		    setToMode(SharedMemory::InRunMode)
-        		    
+            		    setToMode(SharedMemory::InRunMode,"#{__LINE__}-#{__FILE__}")
+            		    setPollIntervalInSeconds(10)
+            		    saveBoardStateToHoldingTank()
+
         		    when SharedLib::StopFromPc
-            		    bbbModeAndTime("FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}")
+            		    bbbLog("FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}")
             		    `echo "#{Time.new.inspect} : FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
                     when SharedLib::PcCmdNotSet
                         #
                         # We're in idle mode, increase interval of monitoring of any commands coming from the Pc
                         #
-                        pollIntervalInSeconds = 1
+            		    bbbLog("Staying in Idle Mode - GetPcCmd() = '#{SharedMemory.GetPcCmd()}'")
             		else
-            		    SharedMemory.SetPcCmd(SharedLib::PcCmdNotSet)
-            		    bbbModeAndTime("Staying in Idle Mode - unknown PC Command '#{SharedMemory.GetPctCmd()}'")
-            		    `echo "#{Time.new.inspect} : mode='#{SharedMemory.GetMode()}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
+            		    SharedMemory.SetPcCmd(SharedLib::PcCmdNotSet,"#{__LINE__}-#{__FILE__}")
+            		    bbbLog("Staying in Idle Mode - unknown PC Command '#{SharedMemory.GetPcCmd()}'")
+            		    `echo "#{Time.new.inspect} : mode='#{SharedMemory.GetPcCmd()}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
             		end
         		end
-				puts ""
             else
-                
 			    SharedMemory.SetBbbMode(SharedLib::InIdleMode,"#{__LINE__}-#{__FILE__}")
                 `echo "#{Time.new.inspect} : mode='#{SharedMemory.GetBbbMode()}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
+                setPollIntervalInSeconds(1)
             end						
             
+            if SharedMemory.GetBbbMode() != SharedMemory::InRunMode
+                puts "In idle mode..."
+            end
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
             # The code ensures that the process is exactly going to take place at the given interval.  No lag that

@@ -58,18 +58,21 @@ while (muxInput == "x" || muxInput == "X") == false
         retval = gpio2.getGPIO2(ANA_MEAS4_SEL_xD)
         readValue = pAin.read
         puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*4.01/1000.0).round(4)} V'"
-
+        sleep(2)
+        
         aMux = 41
         gpio2.setGPIO2(ANA_MEAS4_SEL_xD, aMux)
         retval = gpio2.getGPIO2(ANA_MEAS4_SEL_xD)
         readValue = pAin.read
         puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*4.01/1000.0).round(4)} V'"
+        sleep(2)
 
         aMux = 42
         gpio2.setGPIO2(ANA_MEAS4_SEL_xD, aMux)
         retval = gpio2.getGPIO2(ANA_MEAS4_SEL_xD)
         readValue = pAin.read
         puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*4.01/1000.0).round(4)} V'"
+        sleep(2)
 
 
         aMux = 43
@@ -77,24 +80,28 @@ while (muxInput == "x" || muxInput == "X") == false
         retval = gpio2.getGPIO2(ANA_MEAS4_SEL_xD)
         readValue = pAin.read
         puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*4.01/1000.0).round(4)} V'"
+        sleep(2)
 
         aMux = 44
         gpio2.setGPIO2(ANA_MEAS4_SEL_xD, aMux)
         retval = gpio2.getGPIO2(ANA_MEAS4_SEL_xD)
         readValue = pAin.read
         puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*4.01/1000.0).round(4)} V'"
+        sleep(2)
 
         aMux = 45
         gpio2.setGPIO2(ANA_MEAS4_SEL_xD, aMux)
         retval = gpio2.getGPIO2(ANA_MEAS4_SEL_xD)
         readValue = pAin.read
         puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*9.66/1000.0).round(4)} V'"
+        sleep(2)
 
         aMux = 46
         gpio2.setGPIO2(ANA_MEAS4_SEL_xD, aMux)
         retval = gpio2.getGPIO2(ANA_MEAS4_SEL_xD)
         readValue = pAin.read
         puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*9.66/1000.0).round(4)} V'"
+        sleep(2)
 
         aMux = 47
         gpio2.setGPIO2(ANA_MEAS4_SEL_xD, aMux)
@@ -106,22 +113,27 @@ while (muxInput == "x" || muxInput == "X") == false
     elsif  muxInput == "b" || muxInput == "B"
         pAin = AINPin.new(:P9_39)
         readValue = pAin.read
+        sleep(2)
         puts "AIN0 (P9_39) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue*4.01/1000.0).round(4)} V'"
         
         pAin = AINPin.new(:P9_40)
         readValue = pAin.read
+        sleep(2)
         puts "AIN1 (P9_40) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue*2.3/1000.0).round(4)} V'"
         
         pAin = AINPin.new(:P9_37)
         readValue = pAin.read
+        sleep(2)
         puts "AIN2 (P9_37) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue*2.3/1000.0).round(4)} V'"
         
         pAin = AINPin.new(:P9_38)
         readValue = pAin.read
+        sleep(2)
         puts "AIN3 (P9_38) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue/1000.0).round(4)} V'"
         
         pAin = AINPin.new(:P9_36)
         readValue = pAin.read
+        sleep(2)
         puts "AIN5 (P9_36) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue/1000.0).round(4)} V'"
         
         pAin = AINPin.new(:P9_35)
@@ -137,7 +149,7 @@ while (muxInput == "x" || muxInput == "X") == false
             gpio2.setGPIO2(ANA_MEAS4_SEL_xD, mux)
             sleep(0.001)
             readValue = AIN.read(:P9_33)
-            puts "AIN4 (P9_33) AMUX CH (#{mux}) = '#{readValue}'"
+            puts "AIN4 (P9_33) AMUX CH (#{mux}(#{mux.to_s(16)})) = '#{readValue}'"
             puts ""
             puts ""
         else

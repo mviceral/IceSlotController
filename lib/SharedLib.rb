@@ -13,6 +13,7 @@ class SharedLib
   InRunMode = "InRunMode"
   PcToBbbCmd = "PcToBbbCmd"
   PcToBbbData = "PcToBbbData"
+  PcCmdNotSet = "PcCmdNotSet"
   
   #
   # Functions

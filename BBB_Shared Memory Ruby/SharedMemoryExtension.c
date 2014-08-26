@@ -7,8 +7,9 @@
 
 /*  3*842 The size of the memory we want to allocate case there are long error messages in the ThermalSite firmware.  382 is the current
     size of the data retrieved from BBB.
+    changing to 50*842
 */
-#define SHMSZ 2526
+#define SHMSZ 42100
 
 unsigned char initialized = 0;
 key_t key;
@@ -111,7 +112,7 @@ void method_InitializeSharedMemory(VALUE self) {
      * We'll name our shared memory segment
      * "1234".
      */
-    key = 1234;
+    key = 4321;
 
     /*
      * Create the segment.
