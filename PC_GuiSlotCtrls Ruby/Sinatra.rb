@@ -31,9 +31,9 @@ class UserInterface
 	#
 	# Template flags
 	#
-	StepFileTemplate = "StepFileTemplate"
-	PSSeqFileTemplate = "PSSeqFileTemplate"
-	TempSetTemplate = "TempSetTemplate"
+	StepFileTemplate = "StepFileConfig"
+	PSSeqFileTemplate = "PsConfig"
+	TempSetTemplate = "TempConfig"
 
 	#
 	# Settings file constants
@@ -147,7 +147,8 @@ class UserInterface
 				@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 				return false
 			else
-				getSlotConfigStep(stepName)[itemNameParam] = stepTime
+				slotConfigStep = getSlotConfigStep(stepName)
+				slotConfigStep[itemNameParam] = stepTime
 			end
 			ct += 11
 			# End of 'while ct < config.length do' 
@@ -175,7 +176,8 @@ class UserInterface
 				@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 				return false
 			else				
-				getSlotConfigStep(stepName)[itemNameParam] = stepTime
+				slotConfigStep = getSlotConfigStep(stepName)
+				slotConfigStep[itemNameParam] = stepTime
 			end
 			ct += 11
 			# End of 'while ct < config.length do' 
@@ -594,13 +596,15 @@ class UserInterface
 
 	def setBbbConfigUpload()
 		slotData = getSlotProperties().to_json
+		PP.pp(getSlotProperties())
+		puts "Done doing a PP on sending config to board."
 		begin
 			@response = 
-		    RestClient.post "http://192.168.7.2:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPC}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
+		    RestClient.post "http://192.168.7.2:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 			rescue
-			redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
-			redirectWithError += "&ErrGeneral=bbbDown"
-			return redirectWithError
+			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
+			@redirectWithError += "&ErrGeneral=bbbDown"
+			return false
 		end
 	end
 
@@ -1498,11 +1502,17 @@ class UserInterface
 		#
 		# configFileType can be ps_config, temp_config, or step
 		#
-		if getSlotProperties()[stepNameParam].nil? == true
-			getSlotProperties()[stepNameParam] = Hash.new
+		puts "Within getSlotConfigStep, stepNameParam=#{stepNameParam}"
+		if getSlotProperties()["Steps"].nil? == true
+			getSlotProperties()["Steps"] = Hash.new
 		end
 		
-		return getSlotProperties()[stepNameParam]				
+		stepHash = getSlotProperties()["Steps"]
+		if stepHash[stepNameParam].nil? == true
+			stepHash[stepNameParam] = Hash.new
+		end
+		
+		return stepHash[stepNameParam]				
 	end
 	
 	def clearInternalSettings
@@ -1518,15 +1528,18 @@ class UserInterface
 		#
 		# Get the value as data for processing the slot.
 		#
-		if getSlotConfigStep(stepName)[configFileType].nil? == true
-			getSlotConfigStep(stepName)[configFileType] = Hash.new
+		slotConfigStep = getSlotConfigStep(stepName)
+		if slotConfigStep[configFileType].nil? == true
+			slotConfigStep[configFileType] = Hash.new
 		end		
 		
-		if getSlotConfigStep(stepName)[configFileType][nameParam].nil?
-			getSlotConfigStep(stepName)[configFileType][nameParam] = Hash.new
+		if slotConfigStep[configFileType][nameParam].nil?
+			slotConfigStep[configFileType][nameParam] = Hash.new
 		end
-		
-		getSlotConfigStep(stepName)[configFileType][nameParam][param] = valueParam
+		puts "stepName=#{stepName},configFileType=#{configFileType},nameParam=#{nameParam},param=#{param},valueParam=#{valueParam}"
+		slotConfigStep[configFileType][nameParam][param] = valueParam
+		# PP.pp(getSlotProperties()["Steps"])
+		# pause("checking the new \"Steps\" value","#{__LINE__}-#{__FILE__}")
 
 		# End of 'def setItemParameter(nameParam, param, valueParam)'
 	end
@@ -1553,7 +1566,7 @@ class UserInterface
 	
 	def setBbbToStopMode()
 		@response = 
-      RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPC}" }.to_json, :content_type => :json, :accept => :json
+      RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPc}" }.to_json, :content_type => :json, :accept => :json
 	end
 	
 	def setToRunMode()
@@ -1570,7 +1583,7 @@ class UserInterface
 		#
 		getSlotProperties()[ButtonDisplay] = Stop
 		@response = 
-      RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPC}" }.to_json, :content_type => :json, :accept => :json
+      RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}" }.to_json, :content_type => :json, :accept => :json
 	end	
 
 	def parseTheConfigFile(config,configFileName)
@@ -1611,6 +1624,53 @@ class UserInterface
 				@redirectWithError += "&ErrStepFormat=E"
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
 				return false
+			end
+			
+			#
+			# Make sure that the row "Step Name" column "Value" are unique and listed in order.
+			#
+			uniqueStepValue = Hash.new
+			ct = 2
+			valueCounter = 1
+			while ct < config.length do
+				columns = config[ct].split(",")
+				@stepName = config[ct].split(",")[2].strip # Get the row data for file name.
+				valueColumnOrStepNameRow = config[ct].split(",")[4].strip
+				#
+				# Must be a number test.
+				#
+				if is_a_number?(valueColumnOrStepNameRow) == false
+						error = "Error: In file '#{SharedLib.makeUriFriendly(configFileName)}', 'Value' "
+						error += "'#{valueColumnOrStepNameRow}'"
+						error += "on Step Name '#{columns[2]}' must be a number."
+						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+						return false
+				end
+				
+				#
+				# Must be unique test.
+				#
+				if uniqueStepValue[valueColumnOrStepNameRow].nil? == false
+						error = "Error: In file '#{SharedLib.makeUriFriendly(configFileName)}', 'Value' "
+						error += "'#{valueColumnOrStepNameRow}'"						
+						error += "on Step Name '#{columns[2]}' must be unique."
+						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+						return false
+				end
+				
+				#
+				# Must be in order test
+				#
+				if valueColumnOrStepNameRow.to_i != valueCounter
+						error = "Error: In file '#{SharedLib.makeUriFriendly(configFileName)}', 'Value' "
+						error += "'#{valueColumnOrStepNameRow}' valueColumnOrStepNameRow.to_i=#{valueColumnOrStepNameRow.to_i} valueCounter=#{valueCounter} ct=#{ct}"
+						error += "on Step Name '#{columns[2]}' must be listed in increasing order."
+						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+						return false
+				end
+				
+				valueCounter += 1
+				ct += 11
 			end
 			
 			#
@@ -1736,6 +1796,10 @@ class UserInterface
 			#
 			# Make sure 'STEP TIME', 'Temp Wait Time', 'Alarm Wait Time' are numbers
 			#			
+			if mustBeNumber(configFileName,2,config,"Step Num") == false
+					return false
+			end
+			
 			if mustBeNumber(configFileName,6,config,"Step Time") == false
 					return false
 			end
@@ -1779,7 +1843,11 @@ class UserInterface
 		# End of def parseTheConfigFile(config)
 	end
 
-	def checkFaultyPsOrTempConfig(fileNameParam,fromParam)		
+	def checkFaultyPsOrTempConfig(fileNameParam,fromParam)
+		puts "checkFaultyPsOrTempConfig got called."
+		puts "fileNameParam=#{fileNameParam}"
+		puts "fromParam=#{fromParam}"
+		puts "configFileType=#{configFileType}"
 		#
 		# Returns true if no fault, false if there is error
 		#
@@ -2027,15 +2095,16 @@ class UserInterface
 					columns[seqDownDlyMsCol],seqDownDlyMsCol,"SEQ DN DLYms") == false
 					return false
 				end
-				if getSlotConfigStep(stepName)[configFileType][columns[nameCol]].nil?
-					getSlotConfigStep(stepName)[configFileType][columns[nameCol]] = Hash.new
+				slotConfigStep = getSlotConfigStep(stepName)
+				if slotConfigStep[configFileType][columns[nameCol]].nil?
+					slotConfigStep[configFileType][columns[nameCol]] = Hash.new
 				end
 				
-				getSlotConfigStep(stepName)[configFileType][columns[nameCol]]["EthernetOrSlotPcb"] = columns[5]
-				getSlotConfigStep(stepName)[configFileType][columns[nameCol]]["SeqUp"] = columns[6]
-				getSlotConfigStep(stepName)[configFileType][columns[nameCol]]["SUDlyms"] = columns[7]
-				getSlotConfigStep(stepName)[configFileType][columns[nameCol]]["SeqDown"] = columns[8]
-				getSlotConfigStep(stepName)[configFileType][columns[nameCol]]["SDDlyms"] = columns[9]
+				slotConfigStep[configFileType][columns[nameCol]]["EthernetOrSlotPcb"] = columns[5]
+				slotConfigStep[configFileType][columns[nameCol]]["SeqUp"] = columns[6]
+				slotConfigStep[configFileType][columns[nameCol]]["SUDlyms"] = columns[7]
+				slotConfigStep[configFileType][columns[nameCol]]["SeqDown"] = columns[8]
+				slotConfigStep[configFileType][columns[nameCol]]["SDDlyms"] = columns[9]
 				# End of 'if columns[unitCol] == "SEQ"'
 			end
 			
@@ -2074,7 +2143,11 @@ class UserInterface
 		setTimeOfUpload()
 		setToAllowedToRunMode()
 		saveSlotState()
-		PP.pp(slotProperties)
+		# PP.pp(slotProperties)
+		if setBbbConfigUpload() == false
+			return false
+		end
+		
 		return true
 	end
 	
@@ -2333,8 +2406,6 @@ post '/TopBtnPressed' do
 		end
 	end  
   
-	settings.ui.setBbbConfigUpload()
-	
   redirect "../"
 end
 

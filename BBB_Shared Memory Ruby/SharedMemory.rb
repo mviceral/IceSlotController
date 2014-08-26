@@ -41,6 +41,10 @@ class SharedMemory
     def SetTimeOfPcLastCmd(timeOfPcLastCmdParam,fromParam)
         puts "SetTimeOfPcLastCmd(timeOfPcLastCmdParam,fromParam) got called"
         ds = getDS()
+<<<<<<< HEAD
+=======
+        puts "ds.class=#{ds.class}"
+>>>>>>> cd586661179d6232ae74fa997e2e9a16b36789eb
         ds[TimeOfPcLastCmd] = timeOfPcLastCmdParam
         tbr =  WriteDataV1(ds.to_json)
         return tbr

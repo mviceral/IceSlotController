@@ -53,9 +53,12 @@ class TCUSampler
     HoldingTankFilename = "MachineState_DoNotDeleteNorModify.json"
     TimeOfPcLastCmd ="TimeOfPcLastCmd"
     BbbMode = "BbbMode"
+<<<<<<< HEAD
     SeqDownPsArr = "SeqDownPsArr"
     SeqUpPsArr = "SeqUpPsArr"
             
+=======
+>>>>>>> cd586661179d6232ae74fa997e2e9a16b36789eb
     
     # Special note regarding file openTtyO1Port_115200.exe, this comes from the folder BBB_openTtyO1Port c code, and 
     # it's compiled as an executable.
@@ -375,6 +378,11 @@ class TCUSampler
         @stepToWorkOn = nil
         @boardData = Hash.new
         setTimeOfPcUpload(0)
+<<<<<<< HEAD
+=======
+        setPollIntervalInSeconds(1)
+        waitTime = Time.now+getPollIntervalInSeconds()
+>>>>>>> cd586661179d6232ae74fa997e2e9a16b36789eb
         #
         # Determine the state of the slot
         #
@@ -406,7 +414,10 @@ class TCUSampler
     				setToMode(SharedLib::InIdleMode, "#{__LINE__}-#{__FILE__}")
 		    end
 		end
+<<<<<<< HEAD
         waitTime = Time.now+getPollIntervalInSeconds()
+=======
+>>>>>>> cd586661179d6232ae74fa997e2e9a16b36789eb
 		
         while true
 			case SharedMemory.GetBbbMode()
@@ -455,6 +466,7 @@ class TCUSampler
         		    setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
         		    case SharedMemory.GetPcCmd()
         		    when SharedLib::RunFromPc
+<<<<<<< HEAD
         		        setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
             		    setToMode(SharedMemory::SequenceUp,"#{__LINE__}-#{__FILE__}")
 
@@ -471,6 +483,43 @@ class TCUSampler
             		    setToMode(SharedMemory::InRunMode,"#{__LINE__}-#{__FILE__}")
             		    setPollIntervalInSeconds(10)
             		    saveBoardStateToHoldingTank()
+=======
+        		        @stepToWorkOn = nil
+        		        setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
+            		    stepNumber = 0
+            		    while stepNumber<getConfiguration()["Steps"].length && @stepToWorkOn.nil?
+            		        if @stepToWorkOn.nil?
+                                getConfiguration()[SharedMemory::Steps].each do |key, array|
+                		            if @stepToWorkOn.nil?
+                                        getConfiguration()[SharedMemory::Steps][key].each do |key2, array2|
+                                            if key2 == SharedMemory::StepNum && 
+                                                getConfiguration()[SharedMemory::Steps][key][key2].to_i == (stepNumber+1) &&
+                                                getConfiguration()[SharedMemory::Steps][key][SharedMemory::TotalTimeLeft].to_i > 0
+                                                @stepToWorkOn = getConfiguration()[SharedMemory::Steps][key]
+                                            end
+                                        end
+                		            end
+                                end            		    
+            		        end
+            		        stepNumber += 1
+            		    end
+            		    
+            		    if @stepToWorkOn.nil?
+            		        # All steps are done their run process.  Terminate the code.
+            		    else
+                		    setToMode(SharedMemory::SequenceUp,"#{__LINE__}-#{__FILE__}")
+                		    #
+                		    # The goal in this code block is to sequence up the power supplies on the step that the
+                		    # board is active on.
+                		    #
+                		    PP.pp(@stepToWorkOn)
+                		    #
+                		    # Once all the power supplies are all sequenced up, set the system to run mode.
+                		    #
+                		    setToMode(SharedMemory::InRunMode,"#{__LINE__}-#{__FILE__}")
+                		    setPollIntervalInSeconds(10)
+            		    end
+>>>>>>> cd586661179d6232ae74fa997e2e9a16b36789eb
 
         		    when SharedLib::StopFromPc
             		    bbbLog("FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}")

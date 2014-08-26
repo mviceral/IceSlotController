@@ -97,7 +97,7 @@ def uiTest
 							"0x02",
 							"EXT_INPUTS/<br>WXT_CLEAR_LATCH","FANT2B|FANT2A|FANT1B|FANT1A|SENSR2|SENSR1|USRSW2|USRSW1/<br>CLEAR")
 						ui += settings.tpg.testItemBit("0x03","PS_ENABLE","P12V|N5V|P5V|PS6|PS8|PS9|PS10")	
-						ui += settings.tpg.testItemBit("0x04","SL_CNTL_EXT","POWER| |FAN1|FAN2|BUZR|LEDRED|LEDYEL|LEDGRN")	
+						ui += settings.tpg.testItemBit("0x04","SL_CNTL_EXT","POWER|BLINK|FAN1|FAN2|BUZR|LEDRED|LEDYEL|LEDGRN")	
 						ui += settings.tpg.testItemByte("0x05","SL_FAN_PWM","PWM7|PWM6|PWM5|PWM4|PWM3|PWM2|PWM1|PWM0")
 						ui += settings.tpg.readItemBit("0x06","ETS_ALM1","ALM7|ALM6|ALM5|ALM4|ALM3|ALM2|ALM1|ALM0")
 						ui += settings.tpg.readItemBit("0x07","ETS_ALM2","ALM15|ALM14|ALM13|ALM12|ALM11|ALM10|ALM9|ALM8")
@@ -131,11 +131,13 @@ def uiTest
 end
 
 post '/' do
+	puts "post '/' do - got called"
 	settings.tpg.doThePostThingy(params)
 	uiDisplay = uiTest
 end
 
 get '/' do
+	puts "get '/' do - got called"
 	settings.tpg.resetRowCount
 	uiDisplay = uiTest
 end
