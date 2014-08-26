@@ -53,13 +53,10 @@ class TCUSampler
     HoldingTankFilename = "MachineState_DoNotDeleteNorModify.json"
     TimeOfPcLastCmd ="TimeOfPcLastCmd"
     BbbMode = "BbbMode"
-<<<<<<< HEAD
     SeqDownPsArr = "SeqDownPsArr"
     SeqUpPsArr = "SeqUpPsArr"
-            
-=======
->>>>>>> cd586661179d6232ae74fa997e2e9a16b36789eb
-    
+
+
     # Special note regarding file openTtyO1Port_115200.exe, this comes from the folder BBB_openTtyO1Port c code, and 
     # it's compiled as an executable.
     #
@@ -378,11 +375,8 @@ class TCUSampler
         @stepToWorkOn = nil
         @boardData = Hash.new
         setTimeOfPcUpload(0)
-<<<<<<< HEAD
-=======
         setPollIntervalInSeconds(1)
         waitTime = Time.now+getPollIntervalInSeconds()
->>>>>>> cd586661179d6232ae74fa997e2e9a16b36789eb
         #
         # Determine the state of the slot
         #
@@ -414,11 +408,9 @@ class TCUSampler
     				setToMode(SharedLib::InIdleMode, "#{__LINE__}-#{__FILE__}")
 		    end
 		end
-<<<<<<< HEAD
+
         waitTime = Time.now+getPollIntervalInSeconds()
-=======
->>>>>>> cd586661179d6232ae74fa997e2e9a16b36789eb
-		
+
         while true
 			case SharedMemory.GetBbbMode()
 			when SharedMemory::InRunMode
@@ -466,7 +458,6 @@ class TCUSampler
         		    setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
         		    case SharedMemory.GetPcCmd()
         		    when SharedLib::RunFromPc
-<<<<<<< HEAD
         		        setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
             		    setToMode(SharedMemory::SequenceUp,"#{__LINE__}-#{__FILE__}")
 
@@ -483,7 +474,6 @@ class TCUSampler
             		    setToMode(SharedMemory::InRunMode,"#{__LINE__}-#{__FILE__}")
             		    setPollIntervalInSeconds(10)
             		    saveBoardStateToHoldingTank()
-=======
         		        @stepToWorkOn = nil
         		        setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
             		    stepNumber = 0
@@ -519,7 +509,6 @@ class TCUSampler
                 		    setToMode(SharedMemory::InRunMode,"#{__LINE__}-#{__FILE__}")
                 		    setPollIntervalInSeconds(10)
             		    end
->>>>>>> cd586661179d6232ae74fa997e2e9a16b36789eb
 
         		    when SharedLib::StopFromPc
             		    bbbLog("FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}")
