@@ -1,7 +1,7 @@
 require 'singleton'
 require 'forwardable'
 
-class SharedLib
+    class SharedLib
 	include Singleton
 	#
 	# Constants
@@ -16,7 +16,43 @@ class SharedLib
     StepName = "StepName"
     StepNumber = "StepNumber"
     StepTotalTime = "StepTotalTime"
+    SlotTime = "SlotTime"
     
+    class SlotInfo
+        initialize (stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, sampledDataParam,
+            slotIpAddrParam)
+            @stepName = stepNameParam
+            @stepNumber = stepNumberParam
+            @stepTotalTime = stepTotalTimeParam
+            @slotTime = slotTimeParam
+            @sampledData = sampledDataParam
+            @slotIpAddr = slotIpAddrParam
+        end
+    
+        def SlotIpAddr
+            @slotIpAddr
+        end
+        
+        def SampledData
+            @sampledData
+        end
+    
+        def StepName
+            @stepName
+        end
+        
+        def StepNumber
+            @stepNumber
+        end
+        
+        def StepTotalTime
+            @stepTotalTime
+        end
+        
+        def SlotTime
+            @slotTime
+        end
+    end
   
   #
   # Functions
