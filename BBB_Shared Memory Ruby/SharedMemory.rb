@@ -19,37 +19,12 @@ class SharedMemory
     Data = "Data"
     Cmd = "Cmd"
     
-    InRunMode = "InRunMode"
-    InStopMode = "InStopMode"
-    InIdleMode = "InIdleMode"
-    SequenceUp = "SequenceUp"
-    SequenceDown = "SequenceDown"
-    
     TimeOfPcUpload = "TimeOfPcUpload"
-    Configuration = "Configuration"
     TimeOfPcLastCmd = "TimeOfPcLastCmd"
-    Steps = "Steps"
-    TotalTimeLeft = "TotalTimeLeft"
-    TimeOfRun = "TimeOfRun"
-    TimeOfStop = "TimeOfStop"
-    StepTime = "Step Time"
-    StepNum = "Step Num"
     
     #
     # Known functions of SharedMemoryExtension
     #
-    def SetTimeOfPcLastCmd(timeOfPcLastCmdParam,fromParam)
-        puts "SetTimeOfPcLastCmd(timeOfPcLastCmdParam,fromParam) got called"
-        ds = getDS()
-        ds[TimeOfPcLastCmd] = timeOfPcLastCmdParam
-        tbr =  WriteDataV1(ds.to_json)
-        return tbr
-    end
-    
-    def GetTimeOfPcLastCmd()
-        return getDS()[TimeOfPcLastCmd]
-    end
-    
     def GetTimeOfPcUpload()
         return getDS()[TimeOfPcUpload]
     end
@@ -99,7 +74,7 @@ class SharedMemory
 	end
 	
     def SetPcCmd(cmdParam,calledFrom)
-        puts "param sent #{cmdParam}"
+        # puts "param sent #{cmdParam}"
         oldCmdParam = getDS()[Cmd]
         print "Changing bbb mode from #{oldCmdParam} to "
         ds = getDS()
@@ -118,26 +93,39 @@ class SharedMemory
         # Get the DS - data structure
         #
         # puts "fromParam=#{fromParam}"
-        # pause("within getDS()","#{__LINE__}-#{__FILE__}")
         begin
             ds = JSON.parse(GetDataV1()) # ds = data structure.
-            # puts "A getDS()"
+            # puts "A - good data #{__LINE__}-#{__FILE__}"
         rescue
             ds = Hash.new
-            # puts "B getDS()"
+            # puts "B - faulty data #{__LINE__}-#{__FILE__}"
         end
         return ds
     end
 
+
+    def SetTimeOfPcLastCmd(timeOfPcLastCmdParam,fromParam)
+        ds = getDS()
+        ds[TimeOfPcLastCmd] = timeOfPcLastCmdParam
+        tbr = WriteDataV1(ds.to_json)
+        return tbr
+    end
+    
+    def GetTimeOfPcLastCmd()
+        if getDS()[TimeOfPcLastCmd].nil?
+            SetTimeOfPcLastCmd(0,"#{__LINE__}-#{__FILE__}")
+        end
+        return getDS()[TimeOfPcLastCmd]
+    end
+
     def SetBbbMode(modeParam,calledFrom)
-        puts "param sent #{modeParam}"
+        # puts "param sent #{modeParam}"
         ds = getDS()
         oldModeParam = ds[Mode]
         print "Changing bbb mode from #{oldModeParam} to "
         ds[Mode] = "#{modeParam}"
         puts "#{modeParam} [#{calledFrom}]"
         WriteDataV1(ds.to_json)
-        SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
     end
 	
     def GetData()

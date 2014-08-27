@@ -13,6 +13,31 @@ include Beaglebone
 TOTAL_DUTS_TO_LOOK_AT  = 24
 
 class TCUSampler
+    Steps = "Steps"
+    
+    InRunMode = "InRunMode"
+    InStopMode = "InStopMode"
+    
+    Configuration = "Configuration"
+    TotalTimeLeft = "TotalTimeLeft"
+    TimeOfRun = "TimeOfRun"
+    TimeOfStop = "TimeOfStop"
+    StepTime = "Step Time"
+    StepNum = "Step Num"
+    
+    IntervalSecInStopMode = 1
+    IntervalSecInRunMode = 10
+    
+    FIXNUM_MAX = (2**(0.size * 8 -2) -1) # Had to get its value one time.  Might still be useful.
+    
+    TimeOfPcUpload = "TimeOfPcUpload"
+    ForPowerSupply = "ForPowerSupply"
+    PollIntervalInSeconds = "PollIntervalInSeconds"   
+    HoldingTankFilename = "MachineState_DoNotDeleteNorModify.json"
+    TimeOfPcLastCmd ="TimeOfPcLastCmd"
+    BbbMode = "BbbMode"
+    SeqDownPsArr = "SeqDownPsArr"
+    SeqUpPsArr = "SeqUpPsArr"
     
     class PsSeqItem
         
@@ -43,18 +68,6 @@ class TCUSampler
             @seqOrder = seqOrderParam
         end
     end
-    
-    FIXNUM_MAX = (2**(0.size * 8 -2) -1)
-    
-    TimeOfPcUpload = "TimeOfPcUpload"
-    Configuration = "Configuration"
-    ForPowerSupply = "ForPowerSupply"
-    PollIntervalInSeconds = "PollIntervalInSeconds"   
-    HoldingTankFilename = "MachineState_DoNotDeleteNorModify.json"
-    TimeOfPcLastCmd ="TimeOfPcLastCmd"
-    BbbMode = "BbbMode"
-    SeqDownPsArr = "SeqDownPsArr"
-    SeqUpPsArr = "SeqUpPsArr"
 
 
     # Special note regarding file openTtyO1Port_115200.exe, this comes from the folder BBB_openTtyO1Port c code, and 
@@ -75,6 +88,7 @@ class TCUSampler
 	def gPIO2
 	    if @gpio2.nil?
 	        @gpio2 = GPIO2.new
+	        @gpio2.getForInitGetImagesOf16Addrs
 	    end
 	    return @gpio2
 	end
@@ -93,13 +107,19 @@ class TCUSampler
         # The mode of the board change, log it and save the save of the machine to holding tank.
         #
         bbbLog("Changed to '#{modeParam}' called from [#{calledFrom}].  Saving state to holding tank.")
-        saveBoardStateToHoldingTank()
-    end
-    
-    def pause(msgParam,fromParam)
-        puts "#{msgParam}"
-        puts "      o Paused at #{fromParam}"
-        gets
+        if modeParam == InRunMode || modeParam == InStopMode
+            if modeParam == InRunMode
+                setPollIntervalInSeconds(IntervalSecInRunMode)
+            else
+                setPollIntervalInSeconds(IntervalSecInStopMode)
+            end
+            
+            saveBoardStateToHoldingTank()
+        else
+            bbbLog("Don't recognize modeParam=#{modeParam}, calledFrom=#{calledFrom}")
+            bbbLog("Exiting code.")
+            exit
+        end
     end
     
     def setTimeOfPcLastCmd(timeOfPcLastCmdParam)
@@ -126,32 +146,6 @@ class TCUSampler
     end
     
     def doPsSeqPower(powerUpParam)
-        if @stepToWorkOn.nil?
-            #
-            # Setup the @stepToWorkOn
-            #
-            setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
-    	    stepNumber = 0
-    	    puts "getConfiguration().nil? = '#{getConfiguration().nil?}'"
-    	    puts "getConfiguration()[\"Steps\"].nil? = #{getConfiguration()["Steps"].nil?}"
-    	    while stepNumber<getConfiguration()["Steps"].length && @stepToWorkOn.nil?
-    	        if @stepToWorkOn.nil?
-                    getConfiguration()[SharedMemory::Steps].each do |key, array|
-    		            if @stepToWorkOn.nil?
-                            getConfiguration()[SharedMemory::Steps][key].each do |key2, array2|
-                                if key2 == SharedMemory::StepNum && 
-                                    getConfiguration()[SharedMemory::Steps][key][key2].to_i == (stepNumber+1) &&
-                                    getConfiguration()[SharedMemory::Steps][key][SharedMemory::TotalTimeLeft].to_i > 0
-                                    @stepToWorkOn = getConfiguration()[SharedMemory::Steps][key]
-                                end
-                            end
-    		            end
-                    end            		    
-    	        end
-    	        stepNumber += 1
-    	    end
-        end
-	    
 	    if @stepToWorkOn.nil? 
 	        # All steps are done their run process.  Terminate the code.
 	        return true
@@ -164,28 +158,34 @@ class TCUSampler
             sortedUp = getSeqDownPsArr()
             textDisp = "'DOWN'"
         end
-        
+
+=begin        
         if sortedUp.nil?
             puts "sortedUp.nil? is nil #{__LINE__}-#{__FILE__}"
             exit
         else
             PP.pp(sortedUp)
         end
-        
+=end        
+
         sortedUp.each do |psItem|
-            puts psItem
-            puts "psItem.keyName=#{psItem.keyName}, psItem.seqOrder=#{psItem.seqOrder}"
+            # puts psItem
+            # puts "psItem.keyName=#{psItem.keyName}, psItem.seqOrder=#{psItem.seqOrder}"
             if psItem.seqOrder != 0
-                # puts "Going to turn on this PS item '#{psItem.keyName}' #{@stepToWorkOn["PsConfig"][psItem.keyName]}"
+                puts "Turning '#{textDisp}' PS item '#{psItem.keyName}' #{@stepToWorkOn["PsConfig"][psItem.keyName]}"
                 if @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_Ethernent
-                    print "Sequencing #{textDisp} '#{psItem.keyName}' through 'ETHERNET' for "
+                    #
+                    # Do ethernet power supply enabling/disabling here.
+                    #
                 elsif @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_SlotPcb
-                    print "Sequencing #{textDisp} '#{psItem.keyName}' through 'Slot PCB' for "
                     case psItem.keyName
                     when PsSeqItem::SPS6
+                        # SharedLib::pause "Called #{PsSeqItem::SPS6}", "#{__LINE__}-#{__FILE__}"
                         if powerUpParam
+                            # SharedLib::pause "Powering UP", "#{__LINE__}-#{__FILE__}"
                             gPIO2.setBitOn((GPIO2::PS_ENABLE_x3).to_i,(GPIO2::W3_PS6).to_i)
                         else
+                            # SharedLib::pause "Powering DOWN", "#{__LINE__}-#{__FILE__}"
                             gPIO2.setBitOff((GPIO2::PS_ENABLE_x3).to_i,(GPIO2::W3_PS6).to_i)
                         end
                     when PsSeqItem::SPS8
@@ -209,11 +209,10 @@ class TCUSampler
                     else
                         `echo "#{Time.new.inspect} : psItem.keyName='#{psItem.keyName}' not recognized.  #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
                     end
+                    
                     if powerUpParam
-                        puts "'#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SUDlyms]}' ms."
                         sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SUDlyms].to_i)/1000)
                     else
-                        puts "'#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms]}' ms."
                         sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)/1000)
                     end
                 else
@@ -269,14 +268,8 @@ class TCUSampler
 	        end
         end
         
-	    if dirUpParam
-            largestSeqNum = 0
-        else
-            largestSeqNum = FIXNUM_MAX
-        end
-        
         largestSeqNum = 0
-        puts "Checking isolated objects with sequences as sub parts."
+        # puts "Checking isolated objects with sequences as sub parts."
 	    objWithSeq.each do |key, array|
             # puts "#{key}-----"
 	        objWithSeq[key].each do |key2, array2|
@@ -336,17 +329,59 @@ class TCUSampler
         return sortedUp
     end
     
+    def initStepToWorkOnVar
+        @stepToWorkOn = nil
+        if @stepToWorkOn.nil?
+            #
+            # Setup the @stepToWorkOn
+            #
+    	    stepNumber = 0
+    	    # puts "getConfiguration().nil? = '#{getConfiguration().nil?}'"
+    	    # puts "getConfiguration()[\"Steps\"].nil? = #{getConfiguration()["Steps"].nil?}"
+    	    while stepNumber<getConfiguration()["Steps"].length && @stepToWorkOn.nil?
+    	        if @stepToWorkOn.nil?
+                    getConfiguration()[Steps].each do |key, array|
+    		            if @stepToWorkOn.nil?
+                            getConfiguration()[Steps][key].each do |key2, array2|
+                                if key2 == StepNum && 
+                                    getConfiguration()[Steps][key][key2].to_i == (stepNumber+1) &&
+                                    getConfiguration()[Steps][key][TotalTimeLeft].to_i > 0
+                                    @stepToWorkOn = getConfiguration()[Steps][key]
+                                end
+                            end
+    		            end
+                    end            		    
+    	        end
+    	        stepNumber += 1
+    	    end
+        end
+    end
+    
     def setBoardData(boardDataParam)
+        # The configuration was just loaded from file.  We must setup the system to be in a given state.
+        # For example, if the system is in runmode, when starting the system over, the PS must sequence up
+        # properly then set the system to run mode.
+        # if the system is in idle mode, make sure to run the sequence down on power supplies.
+        # The file in the hard drive only stores two states of the system: running or in idle.
         @boardData = boardDataParam
         
-        # These 3 items must be called when eve
         if getConfiguration().nil? == false
             @boardData[SeqDownPsArr] = nil
             @boardData[SeqUpPsArr] = nil
-            @stepToWorkOn = nil
-            doPsSeqPower(false) # Call this function so it'll fill in @stepToWorkOn variable
+            initStepToWorkOnVar()
             getSeqDownPsArr()
             getSeqUpPsArr()
+            
+            if @boardData[BbbMode] == InStopMode
+                # Run the sequence down process on the system
+                psSeqDown()
+                setPollIntervalInSeconds(IntervalSecInStopMode)
+            else
+                # Run the sequence up process on the system
+                psSeqUp()
+                setPollIntervalInSeconds(IntervalSecInRunMode)
+            end
+            SharedMemory.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
         end
     end
     
@@ -387,11 +422,6 @@ class TCUSampler
         # Do an infinite loop for this code.
         #
         ThermalSiteDevices.setTotalHoursToLogData(createLogInterval_UnitsInHours)
-        switcher = 0
-        setBoardData(Hash.new)
-        setTimeOfPcUpload(0)
-        setPollIntervalInSeconds(1)
-        waitTime = Time.now+getPollIntervalInSeconds()
         
         #
         # Get the board configuration
@@ -407,17 +437,18 @@ class TCUSampler
 			# puts fileRead
 			setBoardData(JSON.parse(fileRead))
 			
-			puts "Checking content of getConfiguration() function"
-			puts "getConfiguration().nil?='#{getConfiguration().nil?}'"
+			# puts "Checking content of getConfiguration() function"
+			# puts "getConfiguration().nil?='#{getConfiguration().nil?}'"
 			# PP.pp(getConfiguration())
-			if getConfiguration().nil? == false
-			end
-			rescue 
-				# File does not exists, so just continue with a blank slate.
+			# pause "Holding tank content was loaded.","#{__LINE__}-#{__FILE__}"
+			rescue Exception => e  
+                puts "e.message=#{e.message }"
+                puts "e.backtrace.inspect=#{e.backtrace.inspect}" 
 				bbbLog("There's no data in the holding tank.  Fresh machine starting up. #{__LINE__}-#{__FILE__}")
-				setToMode(SharedLib::InIdleMode, "#{__LINE__}-#{__FILE__}")
+				setToMode(InStopMode, "#{__LINE__}-#{__FILE__}")
 	    end
-        
+	    
+=begin        
         #
         # Determine the state of the slot
         #
@@ -429,18 +460,18 @@ class TCUSampler
             # Set the board to run mode
             bbbLog("PS_ENABLE_x3=0x#{gPIO2.getGPIO2(GPIO2::PS_ENABLE_x3).to_s(16)} > 0 - meaning some PS are ON.")
             bbbLog("Set board to run mode. #{__LINE__}-#{__FILE__}")
-            SharedMemory.SetBbbMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
+            SharedMemory.SetBbbMode(InRunMode,"#{__LINE__}-#{__FILE__}")
 		end
-
+=end
         waitTime = Time.now+getPollIntervalInSeconds()
 
         while true
 			case SharedMemory.GetBbbMode()
-			when SharedMemory::InRunMode
+			when InRunMode
                 #
                 # Gather data...
                 #
-                bbbLog("'#{SharedMemory::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
+                bbbLog("'#{InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
                 bbbLog("'   TCU not present.  Skipping pollDevices function. #{__LINE__}-#{__FILE__}")
                 # ThermalSiteDevices.pollDevices(uart1)
                 ThermalSiteDevices.logData
@@ -452,18 +483,13 @@ class TCUSampler
         		    setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
         		    case SharedMemory.GetPcCmd()
         		    when SharedLib::RunFromPc
-            		    bbbLog("FATAL ERROR inconsistent - From BBB::InRunMode setting to BBB::InRunMode #{__LINE__}-#{__FILE__}")
-            		    `echo "#{Time.new.inspect} : FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
+            		    bbbLog("PC says 'RunFromPc', BUT slot on that mode already #{__LINE__}-#{__FILE__}")
         		    when SharedLib::StopFromPc
-        		        puts "within sampler code - PC says STOP #{__LINE__}-#{__FILE__}"
-        		        setToMode(SharedMemory::SequenceDown, "#{__LINE__}-#{__FILE__}")
         		        psSeqDown()
-        		        setToMode(SharedLib::InIdleMode, "#{__LINE__}-#{__FILE__}")
-        		        setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
-        		        setPollIntervalInSeconds(1)
+        		        setToMode(InStopMode, "#{__LINE__}-#{__FILE__}")
             		end
         		end
-			when SharedLib::InIdleMode
+			when InStopMode
 				# Update the configuration setup for the process
         		if (SharedMemory.GetTimeOfPcUpload().nil? == false &&
         		    (@boardData[TimeOfPcUpload].nil? ||
@@ -486,56 +512,26 @@ class TCUSampler
         		    case SharedMemory.GetPcCmd()
         		    when SharedLib::RunFromPc
         		        setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
-            		    setToMode(SharedMemory::SequenceUp,"#{__LINE__}-#{__FILE__}")
-
-            		    #
-            		    # The goal in this code block is to sequence up the power supplies on the step that the
-            		    # board is active on.
-            		    #
-            		    #PP.pp(@stepToWorkOn)
             		    psSeqUp()
                         # pause("Above are the listed PS sequence up order.","#{__LINE__}-#{__FILE__}")
             		    #
             		    # Once all the power supplies are all sequenced up, set the system to run mode.
             		    #
-            		    setToMode(SharedMemory::InRunMode,"#{__LINE__}-#{__FILE__}")
-            		    setPollIntervalInSeconds(10)
-            		    saveBoardStateToHoldingTank()
-            		    
-            		    if @stepToWorkOn.nil?
-            		        # All steps are done their run process.  Terminate the code.
-            		    else
-                		    setToMode(SharedMemory::SequenceUp,"#{__LINE__}-#{__FILE__}")
-                		    #
-                		    # The goal in this code block is to sequence up the power supplies on the step that the
-                		    # board is active on.
-                		    #
-                		    # Once all the power supplies are all sequenced up, set the system to run mode.
-                		    #
-                		    setToMode(SharedMemory::InRunMode,"#{__LINE__}-#{__FILE__}")
-                		    setPollIntervalInSeconds(10)
-            		    end
-
-        		    when SharedLib::StopFromPc
-                    when SharedLib::PcCmdNotSet
-                        #
-                        # We're in idle mode, increase interval of monitoring of any commands coming from the Pc
-                        #
-            		    bbbLog("Idle Mode - GetPcCmd() = '#{SharedMemory.GetPcCmd()}'")
+            		    setToMode(InRunMode,"#{__LINE__}-#{__FILE__}")
             		else
-            		    SharedMemory.SetPcCmd(SharedLib::PcCmdNotSet,"#{__LINE__}-#{__FILE__}")
-            		    bbbLog("Staying in Idle Mode - unknown PC Command '#{SharedMemory.GetPcCmd()}'")
-            		    `echo "#{Time.new.inspect} : mode='#{SharedMemory.GetPcCmd()}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
+        		        setToMode(InStopMode, "#{__LINE__}-#{__FILE__}")
+            		    bbbLog("Staying in STOP Mode - PC Command '#{SharedMemory.GetPcCmd()}'")
             		end
         		end
             else
-			    SharedMemory.SetBbbMode(SharedLib::InIdleMode,"#{__LINE__}-#{__FILE__}")
-                `echo "#{Time.new.inspect} : mode='#{SharedMemory.GetBbbMode()}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
-                setPollIntervalInSeconds(1)
+                #
+                # Don't recognize the mode.  Setting to stop mode.
+                #
+			    SharedMemory.SetBbbMode(InStopMode,"#{__LINE__}-#{__FILE__}")
             end						
             
-            if SharedMemory.GetBbbMode() != SharedMemory::InRunMode
-                puts "In idle mode..."
+            if SharedMemory.GetBbbMode() != InRunMode
+                puts "In STOP mode..."
             end
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative

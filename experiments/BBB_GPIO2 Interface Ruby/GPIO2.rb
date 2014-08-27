@@ -195,15 +195,15 @@ class GPIO2
 
     # Shared memory for emulator.
     @emulatorEnabled = EMULATOR_STATE
-    puts "initializing @regValues #{__LINE__}-#{__FILE__}"
+    # puts "initializing @regValues #{__LINE__}-#{__FILE__}"
     @regValues = Hash.new
     @sharedBbbGpio2 = SharedMemoryBbbGpio2.new
   	fromSharedMem = @sharedBbbGpio2.GetData()
-  	if fromSharedMem[0.."BbbShared".length-1] != "BbbShared"
+  	if fromSharedMem.nil? || fromSharedMem[0.."BbbShared".length-1] != "BbbShared"
         #
         # The Shared memory is not initialized.  Set it up.
         #
-        puts "A.1 Initializing shared mem in BBB."
+        # puts "A.1 Initializing shared mem in BBB."
         parsed = Hash.new
         @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json)
   	end
@@ -214,7 +214,7 @@ class GPIO2
   end 
   
     def getBits(dataParam)
-        # puts "dataParam=#{dataParam} dataParam.class=#{dataParam.class} #{__LINE__}-#{__FILE__}"
+        puts "dataParam=#{dataParam} dataParam.class=#{dataParam.class} #{__LINE__}-#{__FILE__}"
         bits = dataParam.to_s(2)
         while bits.length < 8
             bits = "0"+bits
@@ -238,7 +238,7 @@ class GPIO2
         #
         # This value turns off the state of a bit listed in 'dataParam' on a given register address 'addrParam'
         #
-      inBits = getBits(dataParam)
+      # inBits = getBits(dataParam)
       # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bit to turn off."
       hold = ~dataParam
 =begin      
@@ -258,15 +258,16 @@ class GPIO2
         # This value turns on the state of a bit listed in 'dataParam' on a given register address 'addrParam'
         #
         # puts "within setBitOn addrParam=#{addrParam}, dataParam=#{dataParam}"
-      inBits = getBits(dataParam)
+      # inBits = getBits(dataParam)
         # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bit to turn on."
-=begin      
-      inBits = getBits(@regValues[addrParam])
-      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value of what to turn on."
-      @regValues[addrParam] = 
-      inBits = getBits(@regValues[addrParam])
-      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value after turning on."
-=end      
+        # SharedLib::pause "@regValues=#{@regValues}","#{__LINE__}-#{__FILE__}"
+        # inBits = getBits((@regValues[addrParam]).to_i)
+        # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value of what to turn on."
+        # @regValues[addrParam] = @regValues[addrParam]|dataParam
+        # inBits = getBits((@regValues[addrParam]).to_i)
+        # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value after turning on."
+        
+        # SharedLib::pause "SetbitOne", "#{__LINE__}-#{__FILE__}"
       setGPIO2(addrParam, @regValues[addrParam]|dataParam)
   end
   
@@ -275,7 +276,7 @@ class GPIO2
         # This function sets a value 'dataParam' on a given register address 'addrParam',
         #        
         fromSharedMem = @sharedBbbGpio2.GetData()
-        if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
+        if fromSharedMem.nil? == false && fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
             # The shared memory has some legit data in it.
             parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
         else
@@ -286,7 +287,7 @@ class GPIO2
         @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json)
         
         if @regValues[addrParam].nil? == false
-            inBits = getBits(@regValues[addrParam])
+            # inBits = getBits(@regValues[addrParam])
             # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : Current value."
         end
 =begin        
@@ -294,7 +295,7 @@ class GPIO2
         puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : Setting to."
 =end        
         @regValues[addrParam] = dataParam
-        inBits = getBits(@regValues[addrParam])
+        # inBits = getBits(@regValues[addrParam])
         # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : New value."
         
         #
@@ -342,24 +343,24 @@ class GPIO2
       #
       # This function must get called first in order the get the values of the registers.
       #
-      puts "within - getForInitGetImagesOf16Addrs #{__LINE__}-#{__FILE__} - called from ---"
-      @regValues[SLOT_ADDR_x0] = getGPIO2(SLOT_ADDR_x0)
-      @regValues[LED_STAT_x1] = getGPIO2(LED_STAT_x1)
-      @regValues[EXT_INPUTS_x2] = getGPIO2(EXT_INPUTS_x2)
-      @regValues[PS_ENABLE_x3] = getGPIO2(PS_ENABLE_x3)
-      @regValues[EXT_SLOT_CTRL_x4] = getGPIO2(EXT_SLOT_CTRL_x4)
-      @regValues[SLOT_FAN_PWM_x5] = getGPIO2(SLOT_FAN_PWM_x5)
-      @regValues[ETS_ALM1_x6] = getGPIO2(ETS_ALM1_x6)
-      @regValues[ETS_ALM2_x7] = getGPIO2(ETS_ALM2_x7)
-      @regValues[ETS_ALM3_x8] = getGPIO2(ETS_ALM3_x8)
-      @regValues[ETS_ENA1_x9] = getGPIO2(ETS_ENA1_x9)
-      @regValues[ETS_ENA2_xA] = getGPIO2(ETS_ENA2_xA)
-      @regValues[ETS_ENA3_xB] = getGPIO2(ETS_ENA3_xB)
-      @regValues[ETS_RX_SEL_xC] = getGPIO2(ETS_RX_SEL_xC)
-      @regValues[ANA_MEAS4_SEL_xD] = getGPIO2(ANA_MEAS4_SEL_xD)
+      # puts "within - getForInitGetImagesOf16Addrs #{__LINE__}-#{__FILE__} - called from ---"
+      @regValues[SLOT_ADDR_x0] = getGPIO2(SLOT_ADDR_x0).to_i
+      @regValues[LED_STAT_x1] = getGPIO2(LED_STAT_x1).to_i
+      @regValues[EXT_INPUTS_x2] = getGPIO2(EXT_INPUTS_x2).to_i
+      @regValues[PS_ENABLE_x3] = getGPIO2(PS_ENABLE_x3).to_i
+      @regValues[EXT_SLOT_CTRL_x4] = getGPIO2(EXT_SLOT_CTRL_x4).to_i
+      @regValues[SLOT_FAN_PWM_x5] = getGPIO2(SLOT_FAN_PWM_x5).to_i
+      @regValues[ETS_ALM1_x6] = getGPIO2(ETS_ALM1_x6).to_i
+      @regValues[ETS_ALM2_x7] = getGPIO2(ETS_ALM2_x7).to_i
+      @regValues[ETS_ALM3_x8] = getGPIO2(ETS_ALM3_x8).to_i
+      @regValues[ETS_ENA1_x9] = getGPIO2(ETS_ENA1_x9).to_i
+      @regValues[ETS_ENA2_xA] = getGPIO2(ETS_ENA2_xA).to_i
+      @regValues[ETS_ENA3_xB] = getGPIO2(ETS_ENA3_xB).to_i
+      @regValues[ETS_RX_SEL_xC] = getGPIO2(ETS_RX_SEL_xC).to_i
+      @regValues[ANA_MEAS4_SEL_xD] = getGPIO2(ANA_MEAS4_SEL_xD).to_i
 
         fromSharedMem = @sharedBbbGpio2.GetData()
-        if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
+        if fromSharedMem.nil? == false && fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
             # The shared memory has some legit data in it.
             parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
         else
@@ -381,7 +382,7 @@ class GPIO2
         parsed[ETS_RX_SEL_xC.to_s] = @regValues[ETS_RX_SEL_xC] 
         parsed[ANA_MEAS4_SEL_xD.to_s] = @regValues[ANA_MEAS4_SEL_xD] 
         @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json)
-
+=begin
       puts "@regValues[SLOT_ADDR_x0] = 0x#{@regValues[SLOT_ADDR_x0].to_s(16)}"
       puts "@regValues[LED_STAT_x1] = 0x#{@regValues[LED_STAT_x1].to_s(16)}"
       puts "@regValues[EXT_INPUTS_x2] = 0x#{@regValues[EXT_INPUTS_x2].to_s(16)}"
@@ -396,6 +397,7 @@ class GPIO2
       puts "@regValues[ETS_ENA3_xB] = 0x#{@regValues[ETS_ENA3_xB].to_s(16)}"
       puts "@regValues[ETS_RX_SEL_xC] = 0x#{@regValues[ETS_RX_SEL_xC].to_s(16)}"
       puts "@regValues[ANA_MEAS4_SEL_xD] = 0x#{@regValues[ANA_MEAS4_SEL_xD].to_s(16)}"
+=end      
       # puts "<at a pause>"
       # gets
   end
@@ -619,7 +621,7 @@ class GPIO2
             puts "failed on LedStatSet(0x#{ledState.to_s(16)}) #{__LINE__}-#{__FILE__}"
             puts "    - @regValues[LED_STAT_x1]&W1_LEDEN='#{@regValues[LED_STAT_x1]&W1_LEDEN}'"
             print "    - ~(X1_LED3|X1_LED2|X1_LED1|X1_LED0)&ledState="
-            print "'#{getBits(~(X1_LED3|X1_LED2|X1_LED1|X1_LED0))}&#{getBits(ledState)}'="
+            # print "'#{getBits(~(X1_LED3|X1_LED2|X1_LED1|X1_LED0))}&#{getBits(ledState)}'="
             print "#{~(X1_LED3|X1_LED2|X1_LED1|X1_LED0)&ledState}"
             puts
             return false
@@ -699,7 +701,7 @@ class GPIO2
         else
             puts "failed on SlotCntlExtSet(#{bitsParam.to_s(16)}) #{__LINE__}-#{__FILE__}"
             print "    ~(X4_POWER+X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN)&bitsParam = "
-            print "    #{getBits(~(X4_POWER+X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN))}&#{getBits(bitsParam)}"
+            # print "    #{getBits(~(X4_POWER+X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN))}&#{getBits(bitsParam)}"
             puts
             return false
         end

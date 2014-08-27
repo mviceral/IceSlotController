@@ -9,8 +9,6 @@ class SharedLib
   RunFromPc = "RunFromPc"
   StopFromPc = "StopFromPc"
   LoadConfigFromPc = "LoadConfigFromPc"
-  InIdleMode = "InIdleMode"
-  InRunMode = "InRunMode"
   PcToBbbCmd = "PcToBbbCmd"
   PcToBbbData = "PcToBbbData"
   PcCmdNotSet = "PcCmdNotSet"
@@ -44,31 +42,31 @@ class SharedLib
   	return makeUriFriendlySub(stringParam,true)
   end
   
-  def makeUriFriendlySub(stringParam,trueFalseParam)
-  	tbr = replaceStr(stringParam," ","%20",trueFalseParam) # tbr - to be returned
-  	tbr = replaceStr(tbr,"!","%21",trueFalseParam)
-  	tbr = replaceStr(tbr,"\"","%22",trueFalseParam)
-  	tbr = replaceStr(tbr,"#","%23",trueFalseParam)
-  	tbr = replaceStr(tbr,"$","%24",trueFalseParam)
-  	tbr = replaceStr(tbr,"%%","%25",trueFalseParam)
-  	tbr = replaceStr(tbr,"&","%26",trueFalseParam)
-  	tbr = replaceStr(tbr,"'","%27",trueFalseParam)
-  	tbr = replaceStr(tbr,"(","%28",trueFalseParam)
-  	tbr = replaceStr(tbr,")","%29",trueFalseParam)
-  	tbr = replaceStr(tbr,"*","%2A",trueFalseParam)
-  	tbr = replaceStr(tbr,"+","%2B",trueFalseParam)
-  	tbr = replaceStr(tbr,",","%2C",trueFalseParam)
-  	tbr = replaceStr(tbr,"-","%2D",trueFalseParam)
-  	tbr = replaceStr(tbr,".","%2E",trueFalseParam)
-  	tbr = replaceStr(tbr,"/","%2F",trueFalseParam)
-  	tbr = replaceStr(tbr,":","%3A",trueFalseParam)
-  	tbr = replaceStr(tbr,";","%3B",trueFalseParam)
-  	tbr = replaceStr(tbr,"<","%3C",trueFalseParam)
-  	tbr = replaceStr(tbr,"=","%3D",trueFalseParam)
-  	tbr = replaceStr(tbr,">","%3E",trueFalseParam)
-  	tbr = replaceStr(tbr,"?","%3F",trueFalseParam)
-  	tbr = replaceStr(tbr,"@","%40",trueFalseParam)	
-  	return tbr
+    def makeUriFriendlySub(stringParam,trueFalseParam)
+        tbr = replaceStr(stringParam," ","%20",trueFalseParam) # tbr - to be returned
+        tbr = replaceStr(tbr,"!","%21",trueFalseParam)
+        tbr = replaceStr(tbr,"\"","%22",trueFalseParam)
+        tbr = replaceStr(tbr,"#","%23",trueFalseParam)
+        tbr = replaceStr(tbr,"$","%24",trueFalseParam)
+        tbr = replaceStr(tbr,"%%","%25",trueFalseParam)
+        tbr = replaceStr(tbr,"&","%26",trueFalseParam)
+        tbr = replaceStr(tbr,"'","%27",trueFalseParam)
+        tbr = replaceStr(tbr,"(","%28",trueFalseParam)
+        tbr = replaceStr(tbr,")","%29",trueFalseParam)
+        tbr = replaceStr(tbr,"*","%2A",trueFalseParam)
+        tbr = replaceStr(tbr,"+","%2B",trueFalseParam)
+        tbr = replaceStr(tbr,",","%2C",trueFalseParam)
+        tbr = replaceStr(tbr,"-","%2D",trueFalseParam)
+        tbr = replaceStr(tbr,".","%2E",trueFalseParam)
+        tbr = replaceStr(tbr,"/","%2F",trueFalseParam)
+        tbr = replaceStr(tbr,":","%3A",trueFalseParam)
+        tbr = replaceStr(tbr,";","%3B",trueFalseParam)
+        tbr = replaceStr(tbr,"<","%3C",trueFalseParam)
+        tbr = replaceStr(tbr,"=","%3D",trueFalseParam)
+        tbr = replaceStr(tbr,">","%3E",trueFalseParam)
+        tbr = replaceStr(tbr,"?","%3F",trueFalseParam)
+        tbr = replaceStr(tbr,"@","%40",trueFalseParam)	
+        return tbr
 	end
 	
 	def replaceStr(stringParam,lookForParam,replaceWithParam,trueFalseParam)
@@ -85,12 +83,19 @@ class SharedLib
 			end
 		end
 		return stringParam 
-  end
+    end
   
-  class << self
-    extend Forwardable
-    def_delegators :instance, *SharedLib.instance_methods(false)
-  end
+    def pause(msgParam,fromParam)
+        puts "#{msgParam}"
+        puts "      o Paused at #{fromParam}"
+        gets
+    end
+    
+  
+    class << self
+        extend Forwardable
+        def_delegators :instance, *SharedLib.instance_methods(false)
+    end
   # End of 'class Constants'
 end
     
