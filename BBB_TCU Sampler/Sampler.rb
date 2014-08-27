@@ -165,7 +165,15 @@ class TCUSampler
             textDisp = "'DOWN'"
         end
         
+        if sortedUp.nil?
+            puts "sortedUp.nil? is nil #{__LINE__}-#{__FILE__}"
+            exit
+        else
+            PP.pp(sortedUp)
+        end
+        
         sortedUp.each do |psItem|
+            puts psItem
             puts "psItem.keyName=#{psItem.keyName}, psItem.seqOrder=#{psItem.seqOrder}"
             if psItem.seqOrder != 0
                 # puts "Going to turn on this PS item '#{psItem.keyName}' #{@stepToWorkOn["PsConfig"][psItem.keyName]}"
@@ -208,7 +216,6 @@ class TCUSampler
                         puts "'#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms]}' ms."
                         sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)/1000)
                     end
-                    sleep(1)
                 else
                     `echo "#{Time.new.inspect} : @stepToWorkOn[\"PsConfig\"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb]='#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb]}' not recognized.  #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
                 end
@@ -251,12 +258,7 @@ class TCUSampler
     def getSeqPs(dirUpParam)
 	    # Get all the objects that has SeqUp - then sort the objects
 	    objWithSeq = Hash.new
-	    if @stepToWorkOn.nil?
-	        puts "@stepToWorkOn is nil."
-        else
-	        puts "@stepToWorkOn is NOT nil."
-	    end
-	    
+
 	    @stepToWorkOn["PsConfig"].each do |key, array|
             # puts "#{key}-----"
 	        @stepToWorkOn["PsConfig"][key].each do |key2, array|
@@ -334,6 +336,20 @@ class TCUSampler
         return sortedUp
     end
     
+    def setBoardData(boardDataParam)
+        @boardData = boardDataParam
+        
+        # These 3 items must be called when eve
+        if getConfiguration().nil? == false
+            @boardData[SeqDownPsArr] = nil
+            @boardData[SeqUpPsArr] = nil
+            @stepToWorkOn = nil
+            doPsSeqPower(false) # Call this function so it'll fill in @stepToWorkOn variable
+            getSeqDownPsArr()
+            getSeqUpPsArr()
+        end
+    end
+    
     def runTCUSampler
         #
         # Create log interval unit: hours
@@ -372,11 +388,36 @@ class TCUSampler
         #
         ThermalSiteDevices.setTotalHoursToLogData(createLogInterval_UnitsInHours)
         switcher = 0
-        @stepToWorkOn = nil
-        @boardData = Hash.new
+        setBoardData(Hash.new)
         setTimeOfPcUpload(0)
         setPollIntervalInSeconds(1)
         waitTime = Time.now+getPollIntervalInSeconds()
+        
+        #
+        # Get the board configuration
+        #
+        bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
+        begin
+			fileRead = ""
+			File.open(HoldingTankFilename, "r") do |f|
+				f.each_line do |line|
+					fileRead += line
+				end
+			end
+			# puts fileRead
+			setBoardData(JSON.parse(fileRead))
+			
+			puts "Checking content of getConfiguration() function"
+			puts "getConfiguration().nil?='#{getConfiguration().nil?}'"
+			# PP.pp(getConfiguration())
+			if getConfiguration().nil? == false
+			end
+			rescue 
+				# File does not exists, so just continue with a blank slate.
+				bbbLog("There's no data in the holding tank.  Fresh machine starting up. #{__LINE__}-#{__FILE__}")
+				setToMode(SharedLib::InIdleMode, "#{__LINE__}-#{__FILE__}")
+	    end
+        
         #
         # Determine the state of the slot
         #
@@ -389,24 +430,6 @@ class TCUSampler
             bbbLog("PS_ENABLE_x3=0x#{gPIO2.getGPIO2(GPIO2::PS_ENABLE_x3).to_s(16)} > 0 - meaning some PS are ON.")
             bbbLog("Set board to run mode. #{__LINE__}-#{__FILE__}")
             SharedMemory.SetBbbMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
-            
-            #
-            # Get the board configuration
-            #
-            bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
-            begin
-    			fileRead = ""
-    			File.open(HoldingTankFilename, "r") do |f|
-    				f.each_line do |line|
-    					fileRead += line
-    				end
-    			end
-    			@boardData = JSON.parse(fileRead)
-    			rescue 
-    				# File does not exists, so just continue with a blank slate.
-    				bbbLog("There's no data in the holding tank.  Fresh machine starting up. #{__LINE__}-#{__FILE__}")
-    				setToMode(SharedLib::InIdleMode, "#{__LINE__}-#{__FILE__}")
-		    end
 		end
 
         waitTime = Time.now+getPollIntervalInSeconds()
@@ -442,11 +465,15 @@ class TCUSampler
         		end
 			when SharedLib::InIdleMode
 				# Update the configuration setup for the process
-    		    puts "InIdleMode - SharedMemory.GetTimeOfPcUpload()=#{SharedMemory.GetTimeOfPcUpload()}"
         		if (SharedMemory.GetTimeOfPcUpload().nil? == false &&
-        		    @boardData[TimeOfPcUpload].to_i < SharedMemory.GetTimeOfPcUpload() )
+        		    (@boardData[TimeOfPcUpload].nil? ||
+        		    @boardData[TimeOfPcUpload].to_i < SharedMemory.GetTimeOfPcUpload() ))
+        		    
+        		    # Start a new object.
+        		    setBoardData(Hash.new)
         		    @boardData[TimeOfPcUpload] = SharedMemory.GetTimeOfPcUpload()
         		    @boardData[Configuration] = SharedMemory.GetConfiguration()
+
         		    saveBoardStateToHoldingTank()
         		    SharedMemory.SetConfiguration("","#{__LINE__}-#{__FILE__}") # Empty out the shared memory now 
         		        # that we got the configuration transferred into BBB.
@@ -474,25 +501,6 @@ class TCUSampler
             		    setToMode(SharedMemory::InRunMode,"#{__LINE__}-#{__FILE__}")
             		    setPollIntervalInSeconds(10)
             		    saveBoardStateToHoldingTank()
-        		        @stepToWorkOn = nil
-        		        setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
-            		    stepNumber = 0
-            		    while stepNumber<getConfiguration()["Steps"].length && @stepToWorkOn.nil?
-            		        if @stepToWorkOn.nil?
-                                getConfiguration()[SharedMemory::Steps].each do |key, array|
-                		            if @stepToWorkOn.nil?
-                                        getConfiguration()[SharedMemory::Steps][key].each do |key2, array2|
-                                            if key2 == SharedMemory::StepNum && 
-                                                getConfiguration()[SharedMemory::Steps][key][key2].to_i == (stepNumber+1) &&
-                                                getConfiguration()[SharedMemory::Steps][key][SharedMemory::TotalTimeLeft].to_i > 0
-                                                @stepToWorkOn = getConfiguration()[SharedMemory::Steps][key]
-                                            end
-                                        end
-                		            end
-                                end            		    
-            		        end
-            		        stepNumber += 1
-            		    end
             		    
             		    if @stepToWorkOn.nil?
             		        # All steps are done their run process.  Terminate the code.
@@ -502,8 +510,6 @@ class TCUSampler
                 		    # The goal in this code block is to sequence up the power supplies on the step that the
                 		    # board is active on.
                 		    #
-                		    PP.pp(@stepToWorkOn)
-                		    #
                 		    # Once all the power supplies are all sequenced up, set the system to run mode.
                 		    #
                 		    setToMode(SharedMemory::InRunMode,"#{__LINE__}-#{__FILE__}")
@@ -511,13 +517,11 @@ class TCUSampler
             		    end
 
         		    when SharedLib::StopFromPc
-            		    bbbLog("FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}")
-            		    `echo "#{Time.new.inspect} : FATAL ERROR inconsistent - From BBB::IDLE setting to BBB::STOP #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
                     when SharedLib::PcCmdNotSet
                         #
                         # We're in idle mode, increase interval of monitoring of any commands coming from the Pc
                         #
-            		    bbbLog("Staying in Idle Mode - GetPcCmd() = '#{SharedMemory.GetPcCmd()}'")
+            		    bbbLog("Idle Mode - GetPcCmd() = '#{SharedMemory.GetPcCmd()}'")
             		else
             		    SharedMemory.SetPcCmd(SharedLib::PcCmdNotSet,"#{__LINE__}-#{__FILE__}")
             		    bbbLog("Staying in Idle Mode - unknown PC Command '#{SharedMemory.GetPcCmd()}'")
