@@ -6,12 +6,17 @@ class SharedLib
 	#
 	# Constants
 	#
-  RunFromPc = "RunFromPc"
-  StopFromPc = "StopFromPc"
-  LoadConfigFromPc = "LoadConfigFromPc"
-  PcToBbbCmd = "PcToBbbCmd"
-  PcToBbbData = "PcToBbbData"
-  PcCmdNotSet = "PcCmdNotSet"
+    RunFromPc = "RunFromPc"
+    StopFromPc = "StopFromPc"
+    LoadConfigFromPc = "LoadConfigFromPc"
+    PcToBbbCmd = "PcToBbbCmd"
+    PcToBbbData = "PcToBbbData"
+    PcCmdNotSet = "PcCmdNotSet"
+
+    StepName = "StepName"
+    StepNumber = "StepNumber"
+    StepTotalTime = "StepTotalTime"
+    
   
   #
   # Functions
