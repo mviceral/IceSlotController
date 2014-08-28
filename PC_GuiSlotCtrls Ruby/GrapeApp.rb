@@ -4,6 +4,7 @@ require 'singleton'
 require 'forwardable'
 require 'pp'
 require 'sqlite3'
+require_relative '../BBB_Shared Memory Ruby/SharedMemory'
 
 # If you set this true, it will put out some debugging info to STDOUT
 # (usually the termninal that you started rackup with)
@@ -59,7 +60,10 @@ module MigrationCount
 					# Parse out the data sent from BBB
 					#
 					receivedData = params['Duts']
-					# puts "1 receivedData = #{receivedData}" 
+					hash = JSON.parse(receivedData)
+					# SharedMemory.
+					puts "1 receivedData = #{receivedData}" 
+					return
 					receivedData = receivedData.partition("BBB")[2]
 					# puts "2 receivedData = #{receivedData}" 
 					timeOfData = receivedData.partition("|")

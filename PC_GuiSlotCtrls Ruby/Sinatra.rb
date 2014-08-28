@@ -31,9 +31,9 @@ class UserInterface
 	#
 	# Template flags
 	#
-	StepFileTemplate = "StepFileConfig"
-	PSSeqFileTemplate = "PsConfig"
-	TempSetTemplate = "TempConfig"
+	StepFileConfig = "StepFileConfig"
+	PsConfig = "PsConfig"
+	TempConfig = "TempConfig"
 
 	#
 	# Settings file constants
@@ -279,6 +279,11 @@ class UserInterface
 	end
 	
 	def configFileType
+		if (@configFileType == "TempSetTemplate" ||
+			 @configFileType == "PSSeqFileTemplate" )
+			puts "Paused - configFileType got called. configFileType=#{@configFileType}"
+			gets
+		end
 		@configFileType
 	end
 	
@@ -595,9 +600,10 @@ class UserInterface
 	end
 
 	def setBbbConfigUpload()
+		getSlotProperties()[SharedLib::ConfigDateUpload] = Time.now.to_f
 		slotData = getSlotProperties().to_json
-		PP.pp(getSlotProperties())
-		puts "Done doing a PP on sending config to board."
+		# PP.pp(getSlotProperties())
+		# puts "Done doing a PP on sending config to board."
 		begin
 			@response = 
 		    RestClient.post "http://192.168.7.2:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
@@ -1410,9 +1416,9 @@ class UserInterface
 			#
 			# Get the max column in the template so we could draw our table correcty
 			#
-			if configFileType == PSSeqFileTemplate
+			if configFileType == PsConfig
 				configTemplateRows = psConfigFileTemplate.split("\n")
-			elsif configFileType == StepFileTemplate
+			elsif configFileType == StepFileConfig
 				configTemplateRows = stepConfigFileTemplate.split("\n")
 			else
 				configTemplateRows = tempConfigFileTemplate.split("\n")
@@ -1445,9 +1451,10 @@ class UserInterface
 			@lastKnownFileType == fileTypeParam
 			@knownConfigRowNames = Hash.new
 			@hashUniqueIndex = Hash.new
-			if fileTypeParam == UserInterface::PSSeqFileTemplate				
+			
+			if fileTypeParam == UserInterface::PsConfig				
 				configTemplateRows = psConfigFileTemplate.split("\n")
-			elsif fileTypeParam  == UserInterface::TempSetTemplate							
+			elsif fileTypeParam  == UserInterface::TempConfig							
 				configTemplateRows = tempConfigFileTemplate.split("\n")
 			end
 			rowCt = 0
@@ -1537,7 +1544,7 @@ class UserInterface
 			slotConfigStep[configFileType][nameParam] = Hash.new
 		end
 		puts "stepName=#{stepName},configFileType=#{configFileType},nameParam=#{nameParam},param=#{param},valueParam=#{valueParam}"
-		slotConfigStep[configFileType][nameParam][param] = valueParam
+		slotConfigStep[configFileType][nameParam][param] = valueParam.to_f
 		# PP.pp(getSlotProperties()["Steps"])
 		# pause("checking the new \"Steps\" value","#{__LINE__}-#{__FILE__}")
 
@@ -1597,7 +1604,7 @@ class UserInterface
 		# The following are the known rows
 		# Ideally, get the the known row names from the template above vice having a separate column names here.
 		#
-		if @configFileType == UserInterface::StepFileTemplate
+		if @configFileType == UserInterface::StepFileConfig
 			#
 			# We're going to parse a step file.  Hard code settings:  "Item","Name","Description","Type","Value" are
 			# starting on row 2, col A if viewed from Excel.
@@ -1743,7 +1750,7 @@ class UserInterface
 						#
 						# Make sure the PS File config is good.
 						#
-						@configFileType = UserInterface::PSSeqFileTemplate
+						@configFileType = UserInterface::PsConfig
 						if checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 							return false
 						end
@@ -1784,7 +1791,7 @@ class UserInterface
 						#
 						# Make sure the Temp File config is good.
 						#
-						@configFileType = UserInterface::TempSetTemplate
+						@configFileType = UserInterface::TempConfig
 						if checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 							return false
 						end
@@ -1827,8 +1834,8 @@ class UserInterface
 			# Get the sequence up and sequence down of power supplies
 			#
 			
-		elsif @configFileType == UserInterface::PSSeqFileTemplate ||
-					@configFileType == UserInterface::TempSetTemplate
+		elsif @configFileType == UserInterface::PsConfig ||
+					@configFileType == UserInterface::TempConfig
 			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}"
 			@redirectWithError += "&BtnState=#{@Load}"
 			if checkFaultyPsOrTempConfig("#{configFileName}",
@@ -2181,11 +2188,11 @@ class UserInterface
 		tempFile = uploadedFileName[uploadedFileName.length-temperatureFileExtension.length..-1]
 		
 		if stepFile == stepFileExtension
-			@configFileType = UserInterface::StepFileTemplate
+			@configFileType = UserInterface::StepFileConfig
 		elsif psFile == psFileExtension
-			@configFileType = UserInterface::PSSeqFileTemplate
+			@configFileType = UserInterface::PsConfig
 		elsif tempFile == temperatureFileExtension
-			@configFileType = UserInterface::TempSetTemplate
+			@configFileType = UserInterface::TempConfig
 		else
 			@redirectWithError += "&ErrGeneral=FileNotKnown&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 			return false
