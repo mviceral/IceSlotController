@@ -4,26 +4,37 @@ require 'forwardable'
     class SharedLib
 	include Singleton
 	#
-	# Constants
+	# Constants used for sending data to the slot
 	#
-    RunFromPc = "RunFromPc"
-    StopFromPc = "StopFromPc"
-    LoadConfigFromPc = "LoadConfigFromPc"
     PcToBbbCmd = "PcToBbbCmd"
-    PcToBbbData = "PcToBbbData"
-    PcCmdNotSet = "PcCmdNotSet"
+    RunFromPc = "RunFromPc" # Command
+    StopFromPc = "StopFromPc" # Command
+    LoadConfigFromPc = "LoadConfigFromPc" # Command
+    PcToBbbData = "PcToBbbData" # Data flag
 
+	#
+	# Constants used for sending data to PC
+	#
+    ConfigurationFileName = "ConfigurationFileName"
+    ConfigDateUpload = "ConfigDateUpload"
+    AllStepsDone_YesNo = "AllStepsDone_YesNo"
     StepName = "StepName"
     StepNumber = "StepNumber"
     StepTotalTime = "StepTotalTime"
     SlotTime = "SlotTime"
     Data = "Data"
     SlotIpAddress = "SlotIpAddress"
-
-  #
-  # Functions
-  #
-  def isInteger(paramStr)  	
+    
+    #
+    # Constants
+    #
+    Yes = "Yes"
+    No = "No"
+    
+    #
+    # Functions
+    #
+    def isInteger(paramStr)  	
   	# returns true is the parameter is an integer
   	if paramStr.length > 0
 			ct = 0
