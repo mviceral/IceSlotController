@@ -292,6 +292,10 @@ class SendSampledTcuToPC
         # End of 'def runSampler'
     end
     
+    def GetSlotIpAddress()
+        return `ifconfig eth0 | grep "inet addr" | awk -F: '{print $2}' | awk '{print $1}'`
+    end
+    
     def RunSender
         @pollIntervalInSeconds = 10 
         SharedMemory.Initialize()
@@ -301,13 +305,10 @@ class SendSampledTcuToPC
         # like send data to PC for immediate display and for saving it, and saving the data into BBB local storage.
         # This way, there's lots of lee-way for recovery case something happens before the next polling.
         #
-        sampledData = SharedMemory.GetData()
-        puts "sampledData=#{sampledData}"
-        # puts "Test RunSender A #{__FILE__}-#{__LINE__}"
-        SendDataToPC(sampledData)
-        # puts "Test RunSender B #{__FILE__}-#{__LINE__}"
+        @timeOfData = SharedMemory.GetSlotTime()
+        SendDataToPC()
         waitTime = Time.now+@pollIntervalInSeconds
-        while SharedMemory.GetData() == sampledData
+        while SharedMemory.GetSlotTime() == @timeOfData
             sleep(0.01) 
             # puts("Data is the same!!!")
             # puts "Test RunSender G #{__FILE__}-#{__LINE__}"
@@ -322,15 +323,14 @@ class SendSampledTcuToPC
         # puts "Test RunSender H #{__FILE__}-#{__LINE__}"
         
         waitTime = Time.now+@pollIntervalInSeconds
-        sentSampledData = sampledData
+        sentSampledData = @timeOfData
         while true
             # puts "Test RunSender C #{__FILE__}-#{__LINE__}"
-            sampledData = SharedMemory.GetData()
-            if (sentSampledData != sampledData)
-                # puts "Test RunSender D #{__FILE__}-#{__LINE__}"
-                SendDataToPC(sampledData)
+            @timeOfData = SharedMemory.GetSlotTime()
+            if (sentSampledData != @timeOfData)
+                SendDataToPC()
                 # puts "Test RunSender E #{__FILE__}-#{__LINE__}"
-                sentSampledData = sampledData
+                sentSampledData = @timeOfData
             else
                 #
                 # Data is still the same?  Perhaps the sampler died?  Run the sampler.
@@ -363,33 +363,32 @@ class SendSampledTcuToPC
         end
     end
 
-    def SendDataToPC(sampledDataParam)
-        # puts "SendDataToPC A #{__FILE__}-#{__LINE__}"
-        # db = SQLite3::Database.open "NotSentData.db"
-    	# db.results_as_hash = true
-    	# ary = db.execute "select * from NotSentData"
-    	# puts "SendSampleDataToLinuxBox got called. sampledDataParam=#{sampledDataParam}"
-        # response = RestClient.get 'http://192.168.7.1:9292/v1/migrations/'
+    def SendDataToPC()
+        slotInfo = Hash.new()
+        receivedData = SharedMemory.GetData()
+        slotInfo[SharedLib::ConfigurationFileName] = SharedMemory.GetConfigurationFileName()
+        slotInfo[SharedLib::ConfigDateUpload] = SharedMemory.GetConfigDateUpload()
+        slotInfo[SharedLib::AllStepsDone_YesNo] = SharedMemory.GetAllStepsDone_YesNo()
+
+        slotInfo[SharedLib::StepName] = SharedMemory.GetStepName()
+        slotInfo[SharedLib::StepNumber] = SharedMemory.GetStepNumber()
+        slotInfo[SharedLib::StepTotalTime] = SharedMemory.GetStepTotalTime()
+        slotInfo[SharedLib::SlotTime] = @timeOfData
+        slotInfo[SharedLib::Data] = receivedData
+        slotInfo[SharedLib::SlotIpAddress] = GetSlotIpAddress()
+        slotInfoJson = slotInfo.to_json
+        puts "slotInfoJson=#{slotInfoJson}"
         begin
-            #
-            # Parse the data, get the time in the data.
-            #
-			receivedData = sampledDataParam.partition("BBB")[2]
-            # puts "SendDataToPC B #{__FILE__}-#{__LINE__}"
-			timeOfData = receivedData.partition("|")[0]
-            # puts "SendDataToPC C #{__FILE__}-#{__LINE__}"
-			# puts "receivedData within 'Send' process='#{receivedData}'"
-            response = 
-                RestClient.post "http://192.168.7.1:9292/v1/migrations/Duts", {Duts:"#{sampledDataParam}" }.to_json, :content_type => :json, :accept => :json
+            resp = 
+                RestClient.post "http://192.168.7.1:9292/v1/migrations/Duts", {Duts:"#{slotInfo}" }.to_json, :content_type => :json, :accept => :json
                 
-            if timeOfData = response.to_str
-                # puts "SendDataToPC E #{__FILE__}-#{__LINE__}"
-                # puts "The PC acknowledged the sent data.  It was saved locally."
+            if @timeOfData = resp.to_str
                 saveDataToDb(receivedData)
-                # puts "SendDataToPC F #{__FILE__}-#{__LINE__}"
             end
+=begin            
             rescue => e
                 e.response
+=end                
         end
     end
 

@@ -80,9 +80,10 @@ module PcListenerModule
 						SharedMemory.Initialize()
 						SharedMemory.SetPcCmd(SharedLib::StopFromPc,"#{__LINE__}-#{__FILE__}")
 					when SharedLib::LoadConfigFromPc
+						puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
 						SharedMemory.Initialize()
 						SharedMemory.SetConfiguration(params["#{SharedLib::PcToBbbData}"],"#{__LINE__}-#{__FILE__}")
-						SharedMemory.SetPcCmd(SharedLib::StopFromPc,"#{__LINE__}-#{__FILE__}")
+						SharedMemory.SetPcCmd(SharedLib::LoadConfigFromPc,"#{__LINE__}-#{__FILE__}")
 					else
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 					end						

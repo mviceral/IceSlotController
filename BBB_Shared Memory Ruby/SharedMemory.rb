@@ -3,6 +3,7 @@
 # clear; ruby extconf.rb ; make; ruby myRubyTest.rb
 #
 require_relative 'SharedMemoryExtension.so'
+require_relative '../lib/SharedLib'
 require 'singleton'
 require 'forwardable'
 require 'json'
@@ -16,7 +17,6 @@ class SharedMemory
     include Singleton
     
     Mode = "Mode"
-    Data = "Data"
     Cmd = "Cmd"
     
     TimeOfPcUpload = "TimeOfPcUpload"
@@ -25,39 +25,118 @@ class SharedMemory
     #
     # Known functions of SharedMemoryExtension
     #
+    def GetSlotTime()
+        return getDS()[SharedLib::SlotTime]
+    end
+    
+    def GetStepTotalTime()
+        return getDS()[SharedLib::StepTotalTime]
+    end
+
+    def SetSlotTime(slotTimeParam)
+        ds = getDS()
+        ds[SharedLib::SlotTime] = slotTimeParam
+        WriteDataV1(ds.to_json)
+    end
+    
+    def SetStepTotalTime(stepTotalTimeParam)
+        ds = getDS()
+        ds[SharedLib::StepTotalTime] = stepTotalTimeParam
+        WriteDataV1(ds.to_json)
+    end
+    
+    def GetStepName()
+        return getDS()[SharedLib::StepName]
+    end
+    
+    def SetStepName(stepNameParam)
+        ds = getDS()
+        ds[SharedLib::StepName] = stepNameParam
+        WriteDataV1(ds.to_json)
+    end
+    
+    def GetStepNumber()
+        return getDS()[SharedLib::StepNumber]
+    end
+    
+    def SetStepNumber(stepNumberParam)
+        ds = getDS()
+        ds[SharedLib::StepNumber] = stepNumberParam
+        WriteDataV1(ds.to_json)
+    end
+    
     def GetTimeOfPcUpload()
         return getDS()[TimeOfPcUpload]
     end
     
     def GetConfiguration()
-        return getDS()[Configuration]
+        return getDS()["Configuration"]
     end
     
     def pause(paramA,fromParam)
         puts "Paused - '#{paramA}' '#{fromParam}'"
         gets
     end
+
+    def SetConfigurationFileName(configurationFileNameParam)
+        ds = getDS()
+        ds[SharedLib::ConfigurationFileName] = configurationFileNameParam
+        WriteDataV1(ds.to_json)
+    end
+
+    def GetConfigurationFileName()
+        return getDS()[SharedLib::ConfigurationFileName]
+    end
     
+    def SetConfigDateUpload(configDateUploadParam)
+        ds = getDS()
+        puts "configDateUploadParam=#{configDateUploadParam} #{__LINE__}-#{__FILE__}"
+        ds[SharedLib::ConfigDateUpload] = configDateUploadParam
+        WriteDataV1(ds.to_json)
+    end
+
+    def GetConfigDateUpload()
+        return getDS()[SharedLib::ConfigDateUpload]
+    end
+    
+    def SetAllStepsDone_YesNo(allStepsDone_YesNoParam)
+        ds = getDS()
+        ds[SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
+        WriteDataV1(ds.to_json)
+    end
+    
+    def GetAllStepsDone_YesNo()
+        return getDS()[SharedLib::AllStepsDone_YesNo]
+    end
+
     def SetConfiguration(dataParam,fromParam)
         ds = getDS()
+        puts "SetConfiguration got called #{fromParam}"
+        puts "A Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         ds[TimeOfPcUpload] = Time.new.to_i
+        puts "A.1 #{__LINE__}-#{__FILE__}"
         hold = JSON.parse(dataParam)
+        puts "A.2 #{__LINE__}-#{__FILE__}"
         #
-        # Setup the TotalTimeLeft in the steps, and make sure that the variables for TimeOfRun, and TimeOfStop
+        # Setup the TotalTimeLeft in the steps, and make sure that the variables for TimeOfRun
         # are initialized per step also.
         # 
-        hold[Steps].each do |key, array|
-            hold[Steps][key][TotalTimeLeft] = hold[Steps][key][StepTime].to_i
-            hold[Steps][key][TimeOfStop] = Time.now.to_i
-            hold[Steps][key][TimeOfRun] = hold[Steps][key][TimeOfStop]
-            # puts "hold[#{Steps}][#{key}][#{TotalTimeLeft}] = #{hold[Steps][key][TotalTimeLeft]}"
-            # puts "hold[#{Steps}][#{key}][#{TimeOfStop}] = #{hold[Steps][key][TimeOfStop]}"
+        # PP.pp(hold["Steps"])
+        hold["Steps"].each do |key, array|
+            puts "A.3 #{__LINE__}-#{__FILE__}"
+            hold["Steps"][key]["TotalTimeLeft"] = 60.0*hold["Steps"][key]["Step Time"].to_f
+            puts "hold[\"Steps\"][key][\"TotalTimeLeft\"] = #{hold["Steps"][key]["TotalTimeLeft"]}"
+            puts "hold[\"Steps\"][key][\"StepTime\"] = #{hold["Steps"][key]["Step Time"]}"
             # puts "hold[#{Steps}][#{key}][#{TimeOfRun}] = #{hold[Steps][key][TimeOfRun]}"
         end
+        puts "A.4 #{__LINE__}-#{__FILE__}"
         # pause("Checking contents of steps within SetConfiguration function.","#{__LINE__}-#{__FILE__}")
         
-        ds[Configuration] = hold
+        ds["Configuration"] = hold
+        puts "A.5 #{__LINE__}-#{__FILE__}"
         tbr = WriteDataV1(ds.to_json) # tbr - to be returned
+        puts "A.6 #{__LINE__}-#{__FILE__}"
+        puts "B Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
         return tbr
         rescue

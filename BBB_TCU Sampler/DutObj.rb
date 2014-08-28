@@ -10,6 +10,8 @@ class DutObj
     end
     
     def poll(dutNumParam, uart1Param)
+        @statusResponse[dutNumParam] = "dummyData"
+        return
         #puts "within poll. dutNumParam=#{dutNumParam}"
         # gets
         uartStatusCmd = "S?\n"
