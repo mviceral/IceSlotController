@@ -369,6 +369,7 @@ class SendSampledTcuToPC
         slotInfo[SharedLib::ConfigurationFileName] = SharedMemory.GetConfigurationFileName()
         slotInfo[SharedLib::ConfigDateUpload] = SharedMemory.GetConfigDateUpload()
         slotInfo[SharedLib::AllStepsDone_YesNo] = SharedMemory.GetAllStepsDone_YesNo()
+        slotInfo[SharedLib::BbbMode] = SharedMemory.GetBbbMode()
 
         slotInfo[SharedLib::StepName] = SharedMemory.GetStepName()
         slotInfo[SharedLib::StepNumber] = SharedMemory.GetStepNumber()

@@ -24,6 +24,7 @@ require 'forwardable'
     SlotTime = "SlotTime"
     Data = "Data"
     SlotIpAddress = "SlotIpAddress"
+    BbbMode = "BbbMode"
     
     #
     # Constants

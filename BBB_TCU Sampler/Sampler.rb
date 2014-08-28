@@ -130,7 +130,7 @@ class TCUSampler
                 if @stepToWorkOn.nil? == false
                     @stepToWorkOn[TotalTimeLeft] = @stepToWorkOn[TotalTimeLeft]-(Time.now.to_f-getTimeOfRun())
                 end
-                psSeqDown()
+                psSeqDown("#{__LINE__}-#{__FILE__}")
             end
             
             saveBoardStateToHoldingTank()
@@ -156,7 +156,8 @@ class TCUSampler
         @boardData[Configuration]
     end
 
-    def psSeqDown()
+    def psSeqDown(fromParam)
+        puts "psSeqDown fromParam= #{fromParam}"
         doPsSeqPower(false)
     end
     
@@ -165,6 +166,13 @@ class TCUSampler
     end
     
     def doPsSeqPower(powerUpParam)
+        # PS sequence gets called twice sometimes.
+        puts "@boardData[\"LastPsSeqStateCall\"]=#{@boardData["LastPsSeqStateCall"]}, powerUpParam=#{powerUpParam} #{__LINE__}-#{__FILE__}" 
+        if @boardData["LastPsSeqStateCall"] == powerUpParam
+            return
+        else
+            @boardData["LastPsSeqStateCall"] = powerUpParam
+        end
 	    if @stepToWorkOn.nil? 
 	        # All steps are done their run process.  Terminate the code.
 	        return true
@@ -425,7 +433,7 @@ class TCUSampler
         
         if @boardData[BbbMode] == InStopMode
             # Run the sequence down process on the system
-            psSeqDown()
+            psSeqDown("#{__LINE__}-#{__FILE__}")
             setPollIntervalInSeconds(IntervalSecInStopMode,"#{__LINE__}-#{__FILE__}")
         else
             # Run the sequence up process on the system
@@ -652,7 +660,7 @@ class TCUSampler
                  @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false
                 puts "We're in limbo @boardData[SharedLib::AllStepsDone_YesNo]='#{@boardData[SharedLib::AllStepsDone_YesNo]}' #{__LINE__}-#{__FILE__}"
                 loadConfigurationFromHoldingTank()
-                initStepToWorkOnVar()
+                setBoardStateForCurrentStep()
             end
             
             #
