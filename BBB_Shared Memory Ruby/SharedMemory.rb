@@ -34,7 +34,7 @@ class SharedMemory
     end
     
     def SetDispBoardData(configurationFileNameParam, configDateUploadParam, allStepsDone_YesNoParam, bbbModeParam,
-      stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotIpAddressParam )
+      stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotIpAddressParam, allStepsCompletedAtParam )
       
     	ds = getDS()
     	if ds[SharedLib::PC].nil?
@@ -50,9 +50,14 @@ class SharedMemory
       ds[SharedLib::PC][SharedLib::StepTotalTime] = stepTotalTimeParam
       ds[SharedLib::PC][SharedLib::SlotTime] = slotTimeParam
       ds[SharedLib::PC][SharedLib::SlotIpAddress] = slotIpAddressParam
+      ds[SharedLib::PC][SharedLib::AllStepsCompletedAt] = allStepsCompletedAtParam
       WriteDataV1(ds.to_json)
 		end
 
+		def GetDispAllStepsCompletedAt
+			return getPCShared()[SharedLib::AllStepsCompletedAt]
+		end
+		
     def GetDispConfigurationFileName
 			return getPCShared()[SharedLib::ConfigurationFileName]
     end
@@ -164,7 +169,8 @@ class SharedMemory
     end
 
 		def	SetDataBoardToPc(hashParam)
-			hash = JSON.parse(hashParam)
+			# hash = JSON.parse(hashParam)
+			hash = hashParam
 			PP.pp(hash)
 			SetDispBoardData(
 				hash[SharedLib::ConfigurationFileName],
@@ -175,7 +181,8 @@ class SharedMemory
 				hash[SharedLib::StepNumber],
 				hash[SharedLib::StepTotalTime],
 				hash[SharedLib::SlotTime],
-				hash[SharedLib::SlotIpAddress])
+				hash[SharedLib::SlotIpAddress],
+				hash[SharedLib::AllStepsCompletedAt])
 		end
 
     def GetConfigDateUpload()
@@ -343,4 +350,4 @@ class SharedMemory
       def_delegators :instance, *SharedMemory.instance_methods(false)
     end
 end
-# 236
+# allStepsCompletedAtParam
