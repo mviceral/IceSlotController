@@ -31,7 +31,7 @@ require 'pp' # Pretty print to see the hash values.
 class UserInterface
 	BbbPcListener = 'http://192.168.7.2'
 	LinuxBoxPcListener = "localhost"
-	PcListener = LinuxBoxPcListener
+	PcListener = BbbPcListener # Chose which ethernet address the PcListener is sitting on.
 	#
 	# Template flags
 	#
