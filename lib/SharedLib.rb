@@ -26,6 +26,7 @@ class SharedLib
     Data = "Data"
     SlotIpAddress = "SlotIpAddress"
     BbbMode = "BbbMode"
+    AllStepsCompletedAt = "AllStepsCompletedAt"
     
     #
     # Constants
