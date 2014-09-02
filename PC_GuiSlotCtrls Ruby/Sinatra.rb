@@ -25,9 +25,13 @@ require 'sqlite3'
 require 'json'
 require 'rest_client'
 require_relative '../lib/SharedLib'
+require_relative '../BBB_Shared Memory Ruby/SharedMemory'
 require 'pp' # Pretty print to see the hash values.
 
 class UserInterface
+	BbbPcListener = 'http://192.168.7.2'
+	LinuxBoxPcListener = "localhost"
+	PcListener = LinuxBoxPcListener
 	#
 	# Template flags
 	#
@@ -596,6 +600,21 @@ class UserInterface
 		setConfigFileName(BlankFileName)
 		setDurationHours("00")
 		setDurationMinutes("00")
+		begin
+			# puts "Clearing board #{__LINE__}-#{__FILE__}"
+			@response = 
+		    RestClient.post "#{PcListener}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::ClearConfigFromPc}" }.to_json, :content_type => :json, :accept => :json
+			rescue
+			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
+			@redirectWithError += "&ErrGeneral=bbbDown"
+			return false
+		end
+		hash1 = JSON.parse(@response)
+		hash2 = hash1["bbbResponding"]
+  	SharedMemory.Initialize()
+  	SharedMemory.SetDataBoardToPc(hash2)
+		# puts "@response = #{@response} #{__LINE__}-#{__FILE__}"	
+		# puts "hash2 = #{hash2}"
 		getSlotProperties()[ButtonDisplay] = Load
 	end
 
@@ -606,7 +625,13 @@ class UserInterface
 		# puts "Done doing a PP on sending config to board."
 		begin
 			@response = 
-		    RestClient.post "http://192.168.7.2:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
+		    RestClient.post "#{PcListener}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
+			puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
+			hash1 = JSON.parse(@response)
+			hash2 = hash1["bbbResponding"]
+			SharedMemory.Initialize()
+			SharedMemory.SetDataBoardToPc(hash2)
+			return true
 			rescue
 			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 			@redirectWithError += "&ErrGeneral=bbbDown"
@@ -627,7 +652,8 @@ class UserInterface
 	end
 
 	def SlotCell(temp1Param, temp2Param)
-		toBeReturned = "<table bgcolor=\"#ffaa77\" width=\"#{cellWidth}\">"
+		bkcolor = setBkColor("#ffaa77")
+		toBeReturned = "<table bgcolor=\"#{bkcolor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">SLOT</font></td></tr>"
 		toBeReturned += "	<tr>
 							<td>
@@ -644,7 +670,8 @@ class UserInterface
 	end
 
 	def PNPCell(posVolt, negVolt, largeVolt)
-		toBeReturned = "<table bgcolor=\"#6699aa\" width=\"#{cellWidth}\">"
+		bkcolor = setBkColor("#6699aa")
+		toBeReturned = "<table bgcolor=\"#{bkcolor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">P5V</font></td><td><font size=\"1\">#{posVolt}V</font></td></tr>"
 		toBeReturned += "<tr><td><font size=\"1\">N5V</font></td><td><font size=\"1\">#{negVolt}V</font></td></tr>"
 		toBeReturned += "<tr><td><font size=\"1\">P12V</font></td><td><font size=\"1\">#{largeVolt}V</font></td></tr>"
@@ -653,12 +680,23 @@ class UserInterface
 		# End of 'DutCell("S20",dut20[2])'
 	end
 
+	def setBkColor(defColorParam)
+		if SharedMemory.GetDispConfigurationFileName().nil? == false &&  SharedMemory.GetDispConfigurationFileName().length > 0
+			# puts "printing GREEN (#{SharedMemory.GetDispConfigurationFileName().length})- #{__LINE__} #{__FILE__}"
+			cellColor = defColorParam
+		else
+			# puts "printing GRAY - #{__LINE__} #{__FILE__}"
+			cellColor = "#cccccc"			
+		end
+	end
+
 	def PsCell(labelParam,rawDataParam)
 		rawDataParam = rawDataParam[0].partition("@")
 		isRunning = rawDataParam[2].partition(",")
 		ambientTemp = isRunning[2].partition(",")
 		dutTemp = ambientTemp[2].partition(",")
-		toBeReturned = "<table bgcolor=\"#6699aa\" width=\"#{cellWidth}\">"
+		cellColor = setBkColor("#6699aa")
+		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
 		toBeReturned += "<tr>"
 		if labelParam == "S8"
@@ -684,7 +722,10 @@ class UserInterface
 		isRunning = rawDataParam[2].partition(",")
 		ambientTemp = isRunning[2].partition(",")
 		dutTemp = ambientTemp[2].partition(",")
-		toBeReturned = "<table bgcolor=\"#99bb11\" width=\"#{cellWidth}\">"
+		
+		cellColor = setBkColor("#99bb11")
+		
+		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
 		toBeReturned += "<tr>"
 		if labelParam == "S8"
@@ -1086,6 +1127,7 @@ class UserInterface
 	end
 	
 	def display
+		SharedMemory.Initialize()
 		displayForm = ""
 		displayForm =  "	
 	<style>
@@ -1095,23 +1137,9 @@ class UserInterface
 	border-collapse:collapse;
 	}
 	</style>
+	
 	<script type=\"text/javascript\">
 	ct = 0;
-	function updateCountDowns() {
-	/*
-		For the blinky blinky
-		updateBtnColor(\"SLOT1\",ct);
-		if (ct>3) {
-			ct = 0;
-	*/
-			updateCountDownsSub(\"SLOT1\");
-			updateCountDownsSub(\"SLOT2\");
-			updateCountDownsSub(\"SLOT3\");
-/*
-		}
-		ct++;
-*/					
-	}
 	function updateBtnColor(SlotParam,ct) {
 		var btn = document.getElementById(\"btn_\"+SlotParam);
 		if (ct == 0)
@@ -1123,66 +1151,7 @@ class UserInterface
 		if (ct == 3)
 			btn.style=\"background: #00aa77 no-repeat left;\"
 	}
-	function updateCountDownsSub(SlotParam) {
-		var btnSlot1 = document.getElementById(\"btn_\"+SlotParam).innerHTML;
-		btnSlot1 = btnSlot1.trim();
-			var durationLeftHidden = document.getElementsByName(\"hiddenDurationLeft_\"+SlotParam)
-			durationLeftHidden = durationLeftHidden[0];
-			durationLeft = durationLeftHidden.value.trim();
-			
-			/*
-				Reverse parsing, get the seconds, then the minutes, then the hours.  The goal is to get the total time
-				and add it to the current time to show that the 'Step Completion' is moving forward while it's not in
-				play mode.
-			*/
-			var colonBeforeSeconds = durationLeft.lastIndexOf(\":\");
-			var secondsLeft = durationLeft.substring((colonBeforeSeconds+1),durationLeft.length);
-			var seconds = parseInt(secondsLeft);
-			var hoursAndMins = durationLeft.substring(0,colonBeforeSeconds);
-			
-			var colonBeforeMin = hoursAndMins.lastIndexOf(\":\");
-			var minsLeft = durationLeft.substring((colonBeforeMin+1),hoursAndMins.length);
-			var minutes = 60*parseInt(minsLeft);
-
-			var hoursLeft = durationLeft.substring(0,colonBeforeMin);
-			var hours = 60*60*parseInt(hoursLeft);
-
-			var sc;
-			var timeOfRun = 0;
-			if (btnSlot1 == \"#{Stop}\") {
-				sc = document.getElementsByName(\"hiddenTimeOfRun_\"+SlotParam);			
-				timeOfRun = parseInt(sc[0].value)*1000;
-				sc.innerHTML = stepCompletionDisplay;
-			}					
-			
-			var currentdate = new Date();
-			var stepCompletion = new Date(currentdate.getTime() + (hours+minutes+seconds)*1000);
-			var stepCompletionDisplay = 
-				(stepCompletion.getMonth()+1) + \"/\" + 
-				stepCompletion.getDate() + \"/\" + 
-				stepCompletion.getFullYear() + \"  \" + 
-				stepCompletion.getHours() + \":\" + 
-				stepCompletion.getMinutes() + \":\" + stepCompletion.getSeconds();
-				
-		if (btnSlot1 == \"#{Run}\") {
-			sc = document.getElementById(\"stepCompletion_\"+SlotParam);			
-			sc.innerHTML = stepCompletionDisplay;
-		}
-		else if (btnSlot1 == \"#{Stop}\") {
-			var diff = (hours+minutes+seconds)*1000-(currentdate.getTime()-timeOfRun);
-			hours = Math.floor(diff / (1000 * 60 * 60));
-			diff -= hours * (1000 * 60 * 60);
-
-			mins = Math.floor(diff / (1000 * 60));
-			diff -= mins * (1000 * 60);
-
-			seconds = Math.floor(diff / (1000));
-			diff -= seconds * (1000);
-			sc = document.getElementById(\"durationLeft_\"+SlotParam);			
-			sc.innerHTML = \"\"+hours+\":\"+mins+\":\"+seconds
-		}		
-	}
-	
+		
 	function loadXMLDoc()
 	{
 		var xmlhttp;
@@ -1509,7 +1478,6 @@ class UserInterface
 		#
 		# configFileType can be ps_config, temp_config, or step
 		#
-		puts "Within getSlotConfigStep, stepNameParam=#{stepNameParam}"
 		if getSlotProperties()["Steps"].nil? == true
 			getSlotProperties()["Steps"] = Hash.new
 		end
@@ -1573,7 +1541,7 @@ class UserInterface
 	
 	def setBbbToStopMode()
 		@response = 
-      RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPc}" }.to_json, :content_type => :json, :accept => :json
+      RestClient.post "#{PcListener}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPc}" }.to_json, :content_type => :json, :accept => :json
 	end
 	
 	def setToRunMode()
@@ -1590,7 +1558,7 @@ class UserInterface
 		#
 		getSlotProperties()[ButtonDisplay] = Stop
 		@response = 
-      RestClient.post "http://192.168.7.2:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}" }.to_json, :content_type => :json, :accept => :json
+      RestClient.post "#{PcListener}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}" }.to_json, :content_type => :json, :accept => :json
 	end	
 
 	def parseTheConfigFile(config,configFileName)

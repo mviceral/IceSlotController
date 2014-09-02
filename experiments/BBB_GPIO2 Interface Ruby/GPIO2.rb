@@ -11,7 +11,7 @@ require 'socket'      # Sockets are in standard library
 EMULATOR_STATE = false
 
 #@Removed comment to run on real machine
-require 'beaglebone'
+####require 'beaglebone'
 # require 'singleton'
 # require 'forwardable'
 
@@ -20,7 +20,7 @@ require 'beaglebone'
 
 class GPIO2
     #@Removed 2 comment to run on real machine
-    include Beaglebone
+####    include Beaglebone
     include Port2Interface
     # include Singleton
   

@@ -1,6 +1,6 @@
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 require 'timeout'
-require 'beaglebone'
+### require 'beaglebone'
 require_relative 'DutObj'
 require_relative 'ThermalSiteDevices'
 require_relative "../experiments/BBB_GPIO2 Interface Ruby/GPIO2"
@@ -8,12 +8,12 @@ require_relative '../lib/SharedLib'
 require 'singleton'
 require 'forwardable'
 
-include Beaglebone
+#### include Beaglebone
 
 TOTAL_DUTS_TO_LOOK_AT  = 24
 
 class TCUSampler
-    Steps = "Steps"
+	Steps = "Steps"
     FileName = "FileName"
     Configuration = "Configuration"
     TotalTimeLeft = "TotalTimeLeft"
@@ -74,7 +74,7 @@ class TCUSampler
     #
     # system("./openTtyO1Port_115200.exe")
     include Singleton
-    include Beaglebone
+####     include Beaglebone
     
     def getTimeOfPcUpload()
         return @boardData[TimeOfPcUpload].to_i
@@ -95,7 +95,7 @@ class TCUSampler
 	def bbbLog(sentMessage)
 	    log = "#{Time.new.inspect} : #{sentMessage}"
 	    puts "#{log}"
-        `echo "#{log}">>/var/lib/cloud9/slot-controller/bbbActivity.log`
+        `echo "#{log}">>../bbbActivity.log`
     end
     
     def getTimeOfRun
@@ -205,6 +205,7 @@ class TCUSampler
                     # Do ethernet power supply enabling/disabling here.
                     #
                 elsif @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_SlotPcb
+									if @setupAtHome == false
                     case psItem.keyName
                     when PsSeqItem::SPS6
                         # SharedLib::pause "Called #{PsSeqItem::SPS6}", "#{__LINE__}-#{__FILE__}"
@@ -242,6 +243,7 @@ class TCUSampler
                     else
                         sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)/1000)
                     end
+                  end
                 else
                     `echo "#{Time.new.inspect} : @stepToWorkOn[\"PsConfig\"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb]='#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb]}' not recognized.  #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
                 end
@@ -293,13 +295,12 @@ class TCUSampler
     end
     
     def getSeqPs(dirUpParam)
-	    # Get all the objects that has SeqUp - then sort the objects
+	    # Get all the objects that has SeqUp - then sort the objects	    
         if @stepToWorkOn.nil?
             return nil # All steps are done.
         end
         
 	    objWithSeq = Hash.new
-	    
 	    @stepToWorkOn["PsConfig"].each do |key, array|
             # puts "#{key}-----"
 	        @stepToWorkOn["PsConfig"][key].each do |key2, array|
@@ -381,9 +382,11 @@ class TCUSampler
             # Setup the @stepToWorkOn
             #
     	    stepNumber = 0
-    	    # puts "getConfiguration().nil? = '#{getConfiguration().nil?}'"
-    	    # puts "getConfiguration()[\"Steps\"].nil? = #{getConfiguration()["Steps"].nil?}"
-    	    while stepNumber<getConfiguration()["Steps"].length && @stepToWorkOn.nil?
+    	    puts "getConfiguration().nil? = '#{getConfiguration().nil?}'"
+    	    puts "getConfiguration()[\"Steps\"].nil? = #{getConfiguration()["Steps"].nil?}"
+    	    while getConfiguration()["Steps"].nil? == false && 
+    	    	stepNumber<getConfiguration()["Steps"].length && 
+    	    	@stepToWorkOn.nil?
     	        if @stepToWorkOn.nil?
                     getConfiguration()[Steps].each do |key, array|
     		            if @stepToWorkOn.nil?
@@ -493,12 +496,14 @@ class TCUSampler
 			rescue Exception => e  
                 puts "e.message=#{e.message }"
                 puts "e.backtrace.inspect=#{e.backtrace.inspect}" 
-				bbbLog("There's no data in the holding tank.  Fresh machine starting up. #{__LINE__}-#{__FILE__}")
-				setToMode(InStopMode, "#{__LINE__}-#{__FILE__}")
+		bbbLog("There's no data in the holding tank.  New machine starting up. #{__LINE__}-#{__FILE__}")
+		setBoardData(Hash.new)
+		setToMode(InStopMode, "#{__LINE__}-#{__FILE__}")
 	    end
     end
     
     def runTCUSampler
+    	@setupAtHome = true
         runThreadForSavingSlotStateEvery10Mins()
         SharedMemory.Initialize()
         createLogInterval_UnitsInHours = 1 
@@ -526,7 +531,7 @@ class TCUSampler
     	# End of 'if (executeAllStty == "Yes")'
     
         # puts "Check 6 of 7 - uart1 = UARTDevice.new(:UART1, #{baudrateToUse})"
-        uart1 = UARTDevice.new(:UART1, baudrateToUse)
+        #### uart1 = UARTDevice.new(:UART1, baudrateToUse)
         
         #
         # Do an infinite loop for this code.
@@ -578,9 +583,11 @@ class TCUSampler
                             # Gather data...
                             #
                             bbbLog("'#{InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
-                            ThermalSiteDevices.pollDevices(uart1)
-                            ThermalSiteDevices.logData
-                            SharedMemory.SetStepTotalTime(@stepToWorkOn[TotalTimeLeft]-(Time.now.to_f-getTimeOfRun))
+                            if @setupAtHome == false
+		                          ThermalSiteDevices.pollDevices(uart1)
+		                          ThermalSiteDevices.logData
+                            end
+                            SharedMemory.SetStepTotalTime(@stepToWorkOn[TotalTimeLeft]-(Time.now.to_f-getTimeOfRun()))
         			    else
         			        # Step just finished.
                             setToMode(InStopMode, "#{__LINE__}-#{__FILE__}")
@@ -636,11 +643,12 @@ class TCUSampler
         		    setToMode(InRunMode,"#{__LINE__}-#{__FILE__}")
     		    when SharedLib::StopFromPc
     		        setToMode(InStopMode, "#{__LINE__}-#{__FILE__}")
+    		    when SharedLib::ClearConfigFromPc
     		    when SharedLib::LoadConfigFromPc
         		    bbbLog("New configuration step file uploaded.")
     		        setToMode(InStopMode, "#{__LINE__}-#{__FILE__}")
     		        initStepToWorkOnVar()
-                    setBoardStateForCurrentStep()
+    		        setBoardStateForCurrentStep()
         		else
         		    bbbLog("Unknown PC command SharedMemory.GetPcCmd()='#{SharedMemory.GetPcCmd()}'.")
         		end

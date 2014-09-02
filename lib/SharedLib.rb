@@ -1,7 +1,7 @@
 require 'singleton'
 require 'forwardable'
 
-    class SharedLib
+class SharedLib
 	include Singleton
 	#
 	# Constants used for sending data to the slot
@@ -10,6 +10,7 @@ require 'forwardable'
     RunFromPc = "RunFromPc" # Command
     StopFromPc = "StopFromPc" # Command
     LoadConfigFromPc = "LoadConfigFromPc" # Command
+    ClearConfigFromPc = "ClearConfigFromPc"
     PcToBbbData = "PcToBbbData" # Data flag
 
 	#
@@ -31,7 +32,9 @@ require 'forwardable'
     #
     Yes = "Yes"
     No = "No"
-    
+
+	# Shared memory for PC side.
+		PC = "Pc"
     #
     # Functions
     #

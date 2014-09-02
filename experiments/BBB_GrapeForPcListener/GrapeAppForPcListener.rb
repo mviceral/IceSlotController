@@ -6,6 +6,7 @@ require 'pp'
 require 'sqlite3'
 require_relative '../../lib/SharedLib'
 require_relative '../../BBB_Shared Memory Ruby/SharedMemory'
+require_relative '../../BBB_TCU Sampled Sender to PC/SendSampledTcuToPcLib'
 
 # If you set this true, it will put out some debugging info to STDOUT
 # (usually the termninal that you started rackup with)
@@ -48,12 +49,12 @@ module PcListenerModule
 		# The namespace becomes the resource name and is in the path after
 		# the version
 		#
-        namespace :pclistener do
-            # GET /vi/pclistener
-            get "/" do
-              	{registers:@@bbbSetter.gPIO2.forTesting_getGpio2State()}
-            end		
-        end
+    namespace :pclistener do
+        # GET /vi/pclistener
+        get "/" do
+          	{registers:@@bbbSetter.gPIO2.forTesting_getGpio2State()}
+        end		
+    end
     
 		namespace :pclistener do
 			# POST /vi/pclistener
@@ -73,6 +74,11 @@ module PcListenerModule
 					#
 					puts "PC sent '#{mode}'"
 					case mode
+					when SharedLib::ClearConfigFromPc
+						SharedMemory.Initialize()
+						SharedMemory.ClearConfiguration("#{__LINE__}-#{__FILE__}")
+						SharedMemory.SetPcCmd(SharedLib::ClearConfigFromPc,"#{__LINE__}-#{__FILE__}")
+						return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc()}"}						
 					when SharedLib::RunFromPc
 						SharedMemory.Initialize()
 						SharedMemory.SetPcCmd(SharedLib::RunFromPc,"#{__LINE__}-#{__FILE__}")
@@ -82,8 +88,10 @@ module PcListenerModule
 					when SharedLib::LoadConfigFromPc
 						puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
 						SharedMemory.Initialize()
+						# PP.pp(JSON.parse(params["#{SharedLib::PcToBbbData}"]))
 						SharedMemory.SetConfiguration(params["#{SharedLib::PcToBbbData}"],"#{__LINE__}-#{__FILE__}")
 						SharedMemory.SetPcCmd(SharedLib::LoadConfigFromPc,"#{__LINE__}-#{__FILE__}")
+						return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc()}"}						
 					else
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 					end						

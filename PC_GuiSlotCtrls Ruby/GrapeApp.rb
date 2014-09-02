@@ -60,11 +60,33 @@ module MigrationCount
 					# Parse out the data sent from BBB
 					#
 					receivedData = params['Duts']
-					hash = JSON.parse(receivedData)
+					begin
+						hash = JSON.parse(receivedData)
+						rescue Exception => e
+							puts e.message  
+							puts e.backtrace.inspect  						
+					end
 					# SharedMemory.
-					puts "1 receivedData = #{receivedData}" 
+					puts "1 receivedData = #{receivedData}"
+					
+        	SharedMemory.Initialize()
+        	SharedMemory.SetDataBoardToPc(hash)
+					
+					receivedData = hash[SharedMemory::Data]
+					
+					puts "ConfigurationFileName = #{SharedMemory::GetDispConfigurationFileName()}"
+					puts "ConfigDateUpload = #{SharedMemory::GetDispConfigDateUpload()}"
+					puts "AllStepsDone_YesNo = #{SharedMemory::GetDispAllStepsDone_YesNo()}"
+					puts "BbbMode = #{SharedMemory::GetDispBbbMode()}"
+					puts "StepName = #{SharedMemory::GetDispStepName()}"
+					puts "StepNumber = #{SharedMemory::GetDispStepNumber()}"
+					puts "StepTotalTime = #{SharedMemory::GetDispStepTotalTime()}"
+					puts "SlotTime = #{SharedMemory::GetDispSlotTime()}"
+					puts "SlotIpAddress = #{SharedMemory::GetDispSlotIpAddress()}"
+					puts "SlotTime = #{Time.at(SharedMemory::GetDispSlotTime().to_i).inspect}"
+					puts "receivedData = #{hash[SharedLib::Data]}"
 					return
-					receivedData = receivedData.partition("BBB")[2]
+
 					# puts "2 receivedData = #{receivedData}" 
 					timeOfData = receivedData.partition("|")
 					dutData = timeOfData[2]
