@@ -84,7 +84,9 @@ module MigrationCount
 					puts "SlotTime = #{SharedMemory::GetDispSlotTime()}"
 					puts "SlotIpAddress = #{SharedMemory::GetDispSlotIpAddress()}"
 					puts "SlotTime = #{Time.at(SharedMemory::GetDispSlotTime().to_i).inspect}"
-					puts "receivedData = #{hash[SharedLib::Data]}"
+					puts "Data = #{receivedData}"
+					puts "AllStepsCompletedAt = #{SharedMemory::GetDispAllStepsCompletedAt()}"
+					puts "TotalStepDuration = #{SharedMemory::GetDispTotalStepDuration()}"
 					return
 
 					# puts "2 receivedData = #{receivedData}" 

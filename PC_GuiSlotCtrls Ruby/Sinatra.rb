@@ -59,15 +59,6 @@ class UserInterface
 	Clear = "Clear"
 	
 	#
-	# Duration time labels
-	#
-	DurationHours = 	"DurationHours"
-	DurationMins = "DurationMins"
-	DurationHoursLeft = 	"DurationHoursLeft"
-	DurationMinsLeft = "DurationMinsLeft"
-	DurationSecsLeft = "DurationSecsLeft"
-	
-	#
 	# Accessor for what's displayed on the top button of a slot
 	#
 	ButtonDisplay = "ButtonDisplay"
@@ -412,50 +403,11 @@ class UserInterface
 		@upLoadConfigErrorName
 	end
 	
-	def updateDurationTimeLeft()
-		dl = GetSlotDurationHoursLeft().to_i*60*60 # dl - duration left
-		dl += GetSlotDurationMinsLeft().to_i*60
-		dl += GetSlotDurationSecsLeft().to_i
-		dl -= (getSlotProperties()[TimeOfStop].to_i-getSlotProperties()[TimeOfRun].to_i) # dl is duration left
-		
-		hours = (dl/3600).to_i
-		dl -= hours*3600
-		mins = (dl/60).to_i
-		dl -= (mins*60).to_i
-		getSlotProperties()[DurationHoursLeft] = hours
-		getSlotProperties()[DurationMinsLeft] = mins
-		getSlotProperties()[DurationSecsLeft] = dl.to_i
-	end
-
 	def GetDurationLeft()
 		# If the button state is Stop, subtract the total time between now and TimeOfRun, then 
-		if getSlotProperties()[ButtonDisplay] == Stop
-			#
-			# What does it return?
-			#
-			dl = GetSlotDurationHoursLeft().to_i*60*60 # dl - duration left
-			dl += GetSlotDurationMinsLeft().to_i*60
-			dl += GetSlotDurationSecsLeft().to_i
-			if getSlotProperties()[TimeOfRun].nil?
-				"00:00:00"
-			else
-				dl -= (Time.new.to_i - getSlotProperties()[TimeOfRun].to_i)
-				hours = (dl/3600).to_i
-				dl -= hours*3600
-				mins = (dl/60).to_i
-				dl -= (mins*60).to_i
-		
-				if dl<0
-					#
-					# The run duration is complete.
-					#
-				end
-		
-				return "#{hours}:#{mins}:#{dl.to_i}"
-			end
-		elsif getSlotProperties()[ButtonDisplay] == Run
-				return "#{GetSlotDurationHoursLeft()}:#{GetSlotDurationMinsLeft()}:#{GetSlotDurationSecsLeft()}"
-		end
+		totalMins = SharedMemory.GetDispStepTotalTime().to_i/60
+		totalSec = SharedMemory.GetDispStepTotalTime().to_i-60*totalMins
+		return "#{totalMins}:#{totalSec} (mm:ss)"
 	end 
 
 	def make2Digits(paramDigit)
@@ -476,37 +428,6 @@ class UserInterface
 			@slotProperties = JSON.parse(fileRead)
 			rescue 
 				# File does not exists, so just continue with a blank slate.
-		end
-	end
-	
-	def getStepCompletion()	
-		if slotProperties.to_json == "{}"
-			getSlotsState()
-		end		
-		
-		if getSlotProperties()[ButtonDisplay] == Load 
-			return BlankFileName
-		else
-			if getSlotProperties()[ButtonDisplay] == Run
-				d = Time.now
-				d += GetSlotDurationHoursLeft().to_i*60*60
-				d += GetSlotDurationMinsLeft().to_i*60
-				d += GetSlotDurationSecsLeft().to_i
-			else
-				d = getSlotProperties()[TimeOfRun].to_i
-				d += GetSlotDurationHoursLeft().to_i*60*60 # dl - duration left
-				d += GetSlotDurationMinsLeft().to_i*60
-				d += GetSlotDurationSecsLeft().to_i			
-				d = Time.at(d)
-			end
-		
-			month = d.month.to_s # make2Digits(d.month.to_s)
-			day = d.day.to_s # make2Digits(d.day.to_s)
-			year = d.year.to_s
-			hour = make2Digits(d.hour.to_s)
-			min = make2Digits(d.min.to_s)
-			sec = make2Digits(d.sec.to_s)
-			return month+"/"+day+"/"+year+" "+hour+":"+min+":"+sec
 		end
 	end
 
@@ -543,11 +464,6 @@ class UserInterface
 		getSlotProperties()[FileName] = fileNameParam
 	end
 	
-	def setDurationHours(durationHoursParam)
-		getSlotProperties()[DurationHours] = durationHoursParam
-		getSlotProperties()[DurationHoursLeft] = durationHoursParam
-	end
-	
 	def setTimeOfRun()
 		getSlotProperties()[TimeOfRun] = Time.now.to_i
 	end
@@ -576,11 +492,6 @@ class UserInterface
 		getSlotProperties()[TimeOfUpload] = Time.now
 	end
 	
-	def setDurationMinutes(totalMinutesParam)
-		getSlotProperties()[DurationMins] = totalMinutesParam
-		getSlotProperties()[DurationMinsLeft] = totalMinutesParam		
-	end
-	
 	def getButtonImage()
 		if getSlotProperties()[BtnDisplayImg].nil?
 			getSlotProperties()[BtnDisplayImg] = LoadImg
@@ -593,13 +504,18 @@ class UserInterface
 		if getSlotProperties()[ButtonDisplay].nil?
 			getSlotProperties()[ButtonDisplay] = Load
 		end
-		return getSlotProperties()[ButtonDisplay]
+		
+		if SharedMemory.GetDispAllStepsDone_YesNo() == SharedLib::Yes && 
+			SharedMemory.GetDispConfigurationFileName().nil?  == false &&
+			SharedMemory.GetDispConfigurationFileName().length > 0
+			return Clear
+		else
+			return getSlotProperties()[ButtonDisplay]
+		end
 	end
 	
 	def setToLoadMode()
 		setConfigFileName(BlankFileName)
-		setDurationHours("00")
-		setDurationMinutes("00")
 		begin
 			# puts "Clearing board #{__LINE__}-#{__FILE__}"
 			@response = 
@@ -682,8 +598,12 @@ class UserInterface
 
 	def setBkColor(defColorParam)
 		if SharedMemory.GetDispConfigurationFileName().nil? == false &&  SharedMemory.GetDispConfigurationFileName().length > 0
-			# puts "printing GREEN (#{SharedMemory.GetDispConfigurationFileName().length})- #{__LINE__} #{__FILE__}"
-			cellColor = defColorParam
+			if SharedMemory.GetDispAllStepsDone_YesNo() == SharedLib::Yes
+				cellColor = "#04B404"
+			else
+				# puts "printing GREEN (#{SharedMemory.GetDispConfigurationFileName().length})- #{__LINE__} #{__FILE__}"
+				cellColor = defColorParam
+			end
 		else
 			# puts "printing GRAY - #{__LINE__} #{__FILE__}"
 			cellColor = "#cccccc"			
@@ -747,43 +667,6 @@ class UserInterface
 		# End of 'DutCell("S20",dut20[2])'
 	end
 
-	def GetSlotDurationSecsLeft()
-		if getSlotProperties()[DurationSecsLeft].nil?
-			getSlotProperties()[DurationSecsLeft] = "00"
-		end
-		return getSlotProperties()[DurationSecsLeft]
-	end
-
-	def GetSlotDurationMinsLeft()
-		if getSlotProperties()[DurationMinsLeft].nil?
-			getSlotProperties()[DurationMinsLeft] = "00"
-		end
-		return getSlotProperties()[DurationMinsLeft]
-	end
-	
-	def GetSlotDurationHoursLeft()
-		if getSlotProperties()[DurationHoursLeft].nil?
-			getSlotProperties()[DurationHoursLeft] = "00"
-		end
-		return getSlotProperties()[DurationHoursLeft]
-	end
-	
-	def GetSlotDurationHours()
-		if getSlotProperties()[DurationHours].nil?
-			return "00"
-		else
-			return getSlotProperties()[DurationHours]
-		end
-	end 
-	
-	def GetSlotDurationMins()
-		if getSlotProperties()[DurationMins].nil?
-			return "00"
-		else
-			return getSlotProperties()[DurationMins]
-		end
-	end 
-	
 	def getRows(dirParam)
 		repoDir = "file\ repository"
 		tbr = "" # tbr - to be returned
@@ -822,7 +705,24 @@ class UserInterface
 		end
 		return tbr
 	end
-		
+	
+	def getStepCompletion()		
+		if getSlotProperties()[ButtonDisplay] == Load
+			return BlankFileName
+		else
+			d = Time.now
+			d += SharedMemory.GetDispStepTotalTime().to_i
+			
+			month = d.month.to_s # make2Digits(d.month.to_s)
+			day = d.day.to_s # make2Digits(d.day.to_s)
+			year = d.year.to_s
+			hour = make2Digits(d.hour.to_s)
+			min = make2Digits(d.min.to_s)
+			sec = make2Digits(d.sec.to_s)
+			return month+"/"+day+"/"+year+" "+hour+":"+min+":"+sec
+		end
+	end
+	
 	def GetSlotFileName ()
 		if getSlotProperties()[FileName].nil?
 			return BlankFileName
@@ -990,17 +890,31 @@ class UserInterface
 						</table>
 					</td>
 					<td valign=\"top\" rowspan=\"2\">
-				 		<table>
-				 			<!-- 
-				 			<tr bgcolor=\"#00FF00\">
-				 				<td 
-				 					align=\"center\" 
-				 					style=\"border-collapse : collapse; border : 1px solid black;\">				 						
-				 						<font size=\"4\">LOADING</font>
+				 		<table>"
+				 		
+		if SharedMemory.GetDispAllStepsDone_YesNo() == SharedLib::Yes &&
+				SharedMemory.GetDispConfigurationFileName().nil? == false &&
+				SharedMemory.GetDispConfigurationFileName().length > 0
+			topTable += "
+				 			<tr><td align=\"center\"><font size=\"1.75\"/>ALL STEPS COMPLETE</td></tr>
+				 			<tr>
+				 				<td align=\"center\">
+				 					<font 				 						
+				 						size=\"2\" 
+				 						style=\"font-style: italic;\">
+				 							<label 
+				 								id=\"stepCompletion_#{slotLabel2Param}\">
+				 									Date: "
+				 									time = Time.at(SharedMemory.GetDispAllStepsCompletedAt().to_i)				 									
+			topTable += "
+				 									#{time.strftime("%m/%d/%Y %H:%M:%S")}
+				 							</label>
+				 					</font>
 				 				</td>
-				 			</tr>
-				 			-->
-				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP COMPLETION</td></tr>
+				 			</tr>"
+		else
+			topTable += "
+				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{SharedMemory::GetDispStepNumber()}' COMPLETION</td></tr>
 				 			<tr>
 				 				<td align=\"center\">
 				 					<font 				 						
@@ -1012,7 +926,9 @@ class UserInterface
 				 							</label>
 				 					</font>
 				 				</td>
-				 			</tr>
+				 			</tr>"
+		end
+		topTable += "
 				 			<tr>
 				 				<td>
 				 					<hr>
@@ -1050,46 +966,50 @@ class UserInterface
 		topTable += "								
 									</center>
 								</td>
-							</tr>
-							<tr>
-								<td align=\"left\">
-										<font size=\"1\">Step Duration (HH:MM):</font>
-								</td>
-							</tr>
-							<tr>
-								<td align = \"center\">
-									<font size=\"1.25\" style=\"font-style: italic;\">
-										#{GetSlotDurationHours()}:#{GetSlotDurationMins()}
-									</font>								
-								</td>
-							</tr>
-							<tr>
-								<td align=\"left\">
-										<font size=\"1\">Duration Left:</font>
-								</td>
-							</tr>
-							<tr>
-								<td align = \"center\">
-									<font
-										size=\"1.25\" 
-										style=\"font-style: italic;\"
-									>
-										<label 
-											id=\"durationLeft_#{slotLabel2Param}\"
-										>
-											#{GetDurationLeft()}
-										</label>
-										<input 
-											type=\"hidden\"
-											name=\"hiddenTimeOfRun_#{slotLabel2Param}\"
-											value=\"#{getSlotProperties()[TimeOfRun].to_i}\" />
-										<input 
-											type=\"hidden\"
-											name=\"hiddenDurationLeft_#{slotLabel2Param}\"
-											value=\"#{GetSlotDurationHoursLeft()}:#{GetSlotDurationMinsLeft()}:#{GetSlotDurationSecsLeft()}\" />
-									</font>
-								</td>
-							</tr>
+							</tr>"
+		if SharedMemory::GetDispConfigurationFileName().nil? == false && 
+			SharedMemory::GetDispConfigurationFileName().length > 0
+			topTable += "								
+				<tr>
+					<td align=\"left\">
+							<font size=\"1\">Total Step Duration:</font>
+					</td>
+				</tr>
+				<tr>
+					<td align = \"center\">
+						<font size=\"1.25\" style=\"font-style: italic;\">"
+							min = SharedMemory.GetDispTotalStepDuration().to_i/60
+							sec = SharedMemory.GetDispTotalStepDuration().to_i - (min*60)
+			topTable += "		#{min}:#{sec} (mm:ss)
+						</font>								
+					</td>
+				</tr>"
+		end							
+		
+		if SharedMemory.GetDispBbbMode() == SharedLib::InRunMode
+			topTable += "								
+					<tr>
+						<td align=\"left\">
+								<font size=\"1\">Duration Left:</font>
+						</td>
+					</tr>
+					<tr>
+						<td align = \"center\">
+							<font
+								size=\"1.25\" 
+								style=\"font-style: italic;\"
+							>
+								<label 
+									id=\"durationLeft_#{slotLabel2Param}\"
+								>
+									#{GetDurationLeft()}
+								</label>
+							</font>
+						</td>
+					</tr>"
+    end
+							
+					topTable += "								
 							<tr>
 								<td>
 								</td>
@@ -1492,11 +1412,6 @@ class UserInterface
 	
 	def clearInternalSettings
 		getSlotProperties()[FileName] = ""
-		getSlotProperties()[DurationHours] = "00"
-		getSlotProperties()[DurationHoursLeft] = "00"
-		getSlotProperties()[DurationMins] = "00"
-		getSlotProperties()[DurationMinsLeft] = "00"
-		getSlotProperties()[DurationSecsLeft] = "00"
 	end
 	
 	def setItemParameter(nameParam, param, valueParam)
@@ -1924,11 +1839,6 @@ class UserInterface
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
 						return false
-					else					
-						if "TIME".upcase == name
-							setDurationHours("00");
-							setDurationMinutes(nomSet);
-						end
 					end
 					# End of 'if unit == "M"'
 				elsif unit == "V" || unit == "A" || unit == "C"
@@ -2306,7 +2216,6 @@ get '/TopBtnPressed' do
 			# Update the duration time
 			# Formula : Time now - Time of run, then convert to hours, mins, sec.
 			#
-			settings.ui.updateDurationTimeLeft()
 			settings.ui.saveSlotState();
 			redirect "../"
 		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Clear
@@ -2383,4 +2292,4 @@ post '/TopBtnPressed' do
   
   redirect "../"
 end
-
+# 510
