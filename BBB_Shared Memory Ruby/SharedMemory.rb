@@ -464,8 +464,3 @@ class SharedMemory
       def_delegators :instance, *SharedMemory.instance_methods(false)
     end
 end
-<<<<<<< HEAD
-# 434
-=======
-# 434
->>>>>>> ba7980c772e7a1fcf7050f8563978dd4ec20b977
