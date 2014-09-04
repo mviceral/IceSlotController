@@ -67,13 +67,11 @@ module MigrationCount
 							puts e.backtrace.inspect  						
 					end
 					# SharedMemory.
-					puts "1 receivedData = #{receivedData}"
+					# puts "1 receivedData = #{receivedData}"
 					
         	SharedMemory.Initialize()
         	SharedMemory.SetDataBoardToPc(hash)
-					
-					receivedData = hash[SharedMemory::Data]
-					
+										
 					puts "ConfigurationFileName = #{SharedMemory::GetDispConfigurationFileName()}"
 					puts "ConfigDateUpload = #{SharedMemory::GetDispConfigDateUpload()}"
 					puts "AllStepsDone_YesNo = #{SharedMemory::GetDispAllStepsDone_YesNo()}"
@@ -83,8 +81,12 @@ module MigrationCount
 					puts "StepTotalTime = #{SharedMemory::GetDispStepTotalTime()}"
 					puts "SlotTime = #{SharedMemory::GetDispSlotTime()}"
 					puts "SlotIpAddress = #{SharedMemory::GetDispSlotIpAddress()}"
-					puts "SlotTime = #{Time.at(SharedMemory::GetDispSlotTime().to_i).inspect}"
-					puts "receivedData = #{hash[SharedLib::Data]}"
+					puts "SlotTime = #{SharedMemory::GetDispSlotTime()}"
+					puts "AdcInput = #{SharedMemory::GetDispAdcInput()}"
+					puts "MuxData = #{SharedMemory::GetDispMuxData()}"
+					puts "Tcu = #{Time.at(SharedMemory::GetDispTcu().to_i).inspect}"
+					puts "AllStepsCompletedAt = #{SharedMemory::GetDispAllStepsCompletedAt()}"
+					puts "TotalStepDuration = #{SharedMemory::GetDispTotalStepDuration()}"
 					return
 
 					# puts "2 receivedData = #{receivedData}" 
