@@ -225,8 +225,11 @@ class SharedMemory
         return getDS()[SharedLib::ConfigDateUpload]
     end
     
-    def SetAllStepsDone_YesNo(allStepsDone_YesNoParam)
+    def SetAllStepsDone_YesNo(allStepsDone_YesNoParam,fromParam)
         ds = getDS()
+        if allStepsDone_YesNoParam == SharedLib::Yes
+            pause "Bingo! Called from #{fromParam}","#{__LINE__}-#{__FILE__}"
+        end
         ds[SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
@@ -267,7 +270,7 @@ class SharedMemory
         puts "A Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         ds[TimeOfPcUpload] = Time.new.to_i
         puts "A.1 #{__LINE__}-#{__FILE__}"
-        hold = JSON.parse(dataParam)
+        hold = dataParam
         puts "A.2 #{__LINE__}-#{__FILE__}"
         #
         # Setup the TotalTimeLeft in the steps, and make sure that the variables for TimeOfRun

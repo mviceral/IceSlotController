@@ -379,6 +379,7 @@ class TCUSampler
         # Setup the @stepToWorkOn
         #
 	    stepNumber = 0
+	    puts "getConfiguration().nil? = #{getConfiguration().nil?}"
 	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
 	    	stepNumber<getConfiguration()["Steps"].length && 
 	    	@stepToWorkOn.nil?
@@ -392,7 +393,7 @@ class TCUSampler
                             if key2 == StepNum && 
                                 getConfiguration()[Steps][key][key2].to_i == (stepNumber+1) &&
                                 getConfiguration()[Steps][key][StepTimeLeft].to_i > 0
-                                setAllStepsDone_YesNo(SharedLib::No)
+                                setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                 @stepToWorkOn = getConfiguration()[Steps][key]
                                 SharedMemory.SetStepName("#{key}")
                                 SharedMemory.SetStepNumber("#{stepNumber+1}")
@@ -414,13 +415,15 @@ class TCUSampler
 	    # puts "H #{__LINE__}-#{__FILE__}"
         # puts "I #{__LINE__}-#{__FILE__}"
         
-        if @stepToWorkOn.nil?
-            setAllStepsDone_YesNo(SharedLib::Yes)
-        else
-            setAllStepsDone_YesNo(SharedLib::No)
-        end
+        # if @stepToWorkOn.nil?
+        #   setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
+        # else
+            # In principle, once it's loaded, the YesNo is set too
+            # puts caller # Kernel#caller returns an array of strings
+        #    setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
+        # end
     end
-    
+
     def setBoardStateForCurrentStep
         @boardData[SeqDownPsArr] = nil
         @boardData[SeqUpPsArr] = nil
@@ -466,9 +469,12 @@ class TCUSampler
         end
     end
     
-    def setAllStepsDone_YesNo(allStepsDone_YesNoParam)
-        @boardData[SharedLib::AllStepsDone_YesNo] == allStepsDone_YesNoParam
-        SharedMemory.SetAllStepsDone_YesNo(allStepsDone_YesNoParam)
+    def setAllStepsDone_YesNo(allStepsDone_YesNoParam,calledFrom)
+        # if allStepsDone_YesNoParam == SharedLib::Yes
+        #    SharedLib.pause "Bingo! caled from #{calledFrom}","#{__LINE__}-#{__FILE__}"
+        # end
+        @boardData[SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
+        SharedMemory.SetAllStepsDone_YesNo(allStepsDone_YesNoParam,"#{__LINE__}-#{__FILE__}")
     end    
 
     def loadConfigurationFromHoldingTank()
@@ -481,7 +487,7 @@ class TCUSampler
 			end
 			# puts fileRead
 			setBoardData(JSON.parse(fileRead))
-			@boardData[SharedLib::AllStepsDone_YesNo] = SharedLib::No
+			# @boardData[SharedLib::AllStepsDone_YesNo] = SharedLib::No
 			
 			# puts "Checking content of getConfiguration() function"
 			# puts "getConfiguration().nil?='#{getConfiguration().nil?}'"
@@ -675,9 +681,9 @@ class TCUSampler
         end
 
         if @boardData[SharedLib::AllStepsDone_YesNo].nil? == false
-            SharedMemory.SetAllStepsDone_YesNo(@boardData[SharedLib::AllStepsDone_YesNo])
+            SharedMemory.SetAllStepsDone_YesNo(@boardData[SharedLib::AllStepsDone_YesNo],"#{__LINE__}-#{__FILE__}")
         else
-            SharedMemory.SetAllStepsDone_YesNo(SharedLib::Yes) # so it will not run
+            SharedMemory.SetAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # so it will not run
         end
 
         
@@ -698,7 +704,7 @@ class TCUSampler
     			        # There are no more steps to process.
     			        # All the steps are done processing.
     			        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-    			        setAllStepsDone_YesNo(SharedLib::Yes)
+    			        setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
     			    else
 			            puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
         			    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
@@ -740,19 +746,18 @@ class TCUSampler
                         
 			when SharedLib::InStopMode
 				# Update the configuration setup for the process
-				# puts "@boardData[TimeOfPcUpload].to_i = #{@boardData[TimeOfPcUpload].to_i} #{__LINE__}-#{__FILE__}"
-				# puts "SharedMemory.GetTimeOfPcUpload() = #{SharedMemory.GetTimeOfPcUpload()} #{__LINE__}-#{__FILE__}"
+				puts "@boardData[TimeOfPcUpload].to_i = #{Time.at(@boardData[TimeOfPcUpload].to_i).inspect} #{__LINE__}-#{__FILE__}"
+				puts "SharedMemory.GetTimeOfPcUpload() = #{Time.at(SharedMemory.GetTimeOfPcUpload()).inspect} #{__LINE__}-#{__FILE__}"
         		if (SharedMemory.GetTimeOfPcUpload().nil? == false &&
         		    (@boardData[TimeOfPcUpload].nil? ||
         		    @boardData[TimeOfPcUpload].to_i < SharedMemory.GetTimeOfPcUpload() ))
-        		    
         		    # Start a new object.
         		    setBoardData(Hash.new)
         		    @boardData[TimeOfPcUpload] = SharedMemory.GetTimeOfPcUpload()
         		    @boardData[Configuration] = SharedMemory.GetConfiguration()
         		    SharedMemory.SetConfigurationFileName(@boardData[Configuration][FileName])
         		    SharedMemory.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
-                    setAllStepsDone_YesNo(SharedLib::No)
+                    setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                     
         		    saveBoardStateToHoldingTank()
         		    
@@ -803,6 +808,7 @@ class TCUSampler
                 puts "We're in limbo @boardData[SharedLib::AllStepsDone_YesNo]='#{@boardData[SharedLib::AllStepsDone_YesNo]}' #{__LINE__}-#{__FILE__}"
                 loadConfigurationFromHoldingTank()
                 setBoardStateForCurrentStep()
+                setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
             end
             
             #
@@ -860,5 +866,5 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 505
+# 809
 

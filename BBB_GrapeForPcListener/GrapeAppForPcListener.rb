@@ -4,9 +4,9 @@ require 'grape'
 #require 'forwardable'
 require 'pp'
 require 'sqlite3'
-require_relative '../../lib/SharedLib'
-require_relative '../../BBB_Shared Memory Ruby/SharedMemory'
-require_relative '../../BBB_TCU Sampled Sender to PC/SendSampledTcuToPcLib'
+require_relative '../lib/SharedLib'
+require_relative '../BBB_Shared Memory Ruby/SharedMemory'
+require_relative '../BBB_TCU Sampled Sender to PC/SendSampledTcuToPcLib'
 
 # If you set this true, it will put out some debugging info to STDOUT
 # (usually the termninal that you started rackup with)
@@ -89,7 +89,14 @@ module PcListenerModule
 						puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
 						SharedMemory.Initialize()
 						# PP.pp(JSON.parse(params["#{SharedLib::PcToBbbData}"]))
-						SharedMemory.SetConfiguration(params["#{SharedLib::PcToBbbData}"],"#{__LINE__}-#{__FILE__}")
+						hash = JSON.parse(params["#{SharedLib::PcToBbbData}"])
+						date = Time.at(hash[SharedLib::ConfigDateUpload])
+						#puts "PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
+						# Sync the board time with the pc time
+						`echo date before setting:;date`
+						`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}"`
+						`echo date after setting:;date`
+						SharedMemory.SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
 						SharedMemory.SetPcCmd(SharedLib::LoadConfigFromPc,"#{__LINE__}-#{__FILE__}")
 						return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc()}"}						
 					else
