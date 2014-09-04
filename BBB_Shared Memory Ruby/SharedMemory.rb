@@ -139,13 +139,13 @@ class SharedMemory
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
     
-    def GetStepTotalTime
-    	return getDS()[SharedLib::StepTotalTime]
+    def GetStepTimeLeft
+    	return getDS()[SharedLib::StepTimeLeft]
     end 
     
-    def SetStepTotalTime(stepTotalTimeParam)
+    def SetStepTimeLeft(stepTotalTimeParam)
         ds = getDS()
-        ds[SharedLib::StepTotalTime] = stepTotalTimeParam
+        ds[SharedLib::StepTimeLeft] = stepTotalTimeParam
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
     

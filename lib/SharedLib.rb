@@ -21,7 +21,7 @@ class SharedLib
     AllStepsDone_YesNo = "AllStepsDone_YesNo"
     StepName = "StepName"
     StepNumber = "StepNumber"
-    StepTotalTime = "StepTotalTime"
+    StepTimeLeft = "StepTimeLeft"
     SlotTime = "SlotTime"
     Data = "Data"
     SlotIpAddress = "SlotIpAddress"

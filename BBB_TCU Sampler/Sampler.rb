@@ -16,7 +16,7 @@ class TCUSampler
 	Steps = "Steps"
     FileName = "FileName"
     Configuration = "Configuration"
-    TotalTimeLeft = "TotalTimeLeft"
+    StepTimeLeft = "StepTimeLeft"
     TimeOfRun = "TimeOfRun"
     StepTime = "Step Time"
     StepNum = "Step Num"
@@ -124,7 +124,7 @@ class TCUSampler
                 # Calculate the total time left before sequencing down.
                 #
                 if @stepToWorkOn.nil? == false
-                    @stepToWorkOn[TotalTimeLeft] = @stepToWorkOn[TotalTimeLeft]-(Time.now.to_f-getTimeOfRun())
+                    @stepToWorkOn[StepTimeLeft] = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun())
                 end
                 psSeqDown("#{__LINE__}-#{__FILE__}")
             end
@@ -253,7 +253,7 @@ class TCUSampler
 	    if @stepToWorkOn.nil? == false
 	        # PP.pp(@stepToWorkOn)
             SharedMemory.SetStepNumber(@stepToWorkOn["Step Num"])
-            SharedMemory.SetStepTotalTime(@stepToWorkOn[TotalTimeLeft])
+            SharedMemory.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
         else
             SharedMemory.SetAllStepsCompletedAt(@boardData[SharedLib::AllStepsCompletedAt])
 	        # SharedLib.pause "PP @stepToWorkOn","#{__LINE__}-#{__FILE__}"
@@ -371,7 +371,7 @@ class TCUSampler
     end
     
     def initStepToWorkOnVar
-        SharedMemory.SetStepTotalTime("")
+        SharedMemory.SetStepTimeLeft("")
         SharedMemory.SetStepName("")
         SharedMemory.SetStepNumber("")
         @stepToWorkOn = nil
@@ -379,9 +379,7 @@ class TCUSampler
         # Setup the @stepToWorkOn
         #
 	    stepNumber = 0
-	    puts "getConfiguration().nil? = '#{getConfiguration().nil?}'"
-	    puts "getConfiguration()[\"Steps\"].nil? = #{getConfiguration()["Steps"].nil?}"
-	    while getConfiguration()["Steps"].nil? == false && 
+	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
 	    	stepNumber<getConfiguration()["Steps"].length && 
 	    	@stepToWorkOn.nil?
 	        if @stepToWorkOn.nil?
@@ -389,11 +387,11 @@ class TCUSampler
 		            if @stepToWorkOn.nil?
                         getConfiguration()[Steps][key].each do |key2, array2|
                             # if key2 == StepNum && getConfiguration()[Steps][key][key2].to_i == (stepNumber+1)
-                            #    SharedLib.pause "getConfiguration()[Steps][key][TotalTimeLeft] = #{getConfiguration()[Steps][key][TotalTimeLeft]}", "#{__LINE__}-#{__FILE__}"
+                            #    SharedLib.pause "getConfiguration()[Steps][key][StepTimeLeft] = #{getConfiguration()[Steps][key][StepTimeLeft]}", "#{__LINE__}-#{__FILE__}"
                             # end
                             if key2 == StepNum && 
                                 getConfiguration()[Steps][key][key2].to_i == (stepNumber+1) &&
-                                getConfiguration()[Steps][key][TotalTimeLeft].to_i > 0
+                                getConfiguration()[Steps][key][StepTimeLeft].to_i > 0
                                 setAllStepsDone_YesNo(SharedLib::No)
                                 @stepToWorkOn = getConfiguration()[Steps][key]
                                 SharedMemory.SetStepName("#{key}")
@@ -663,11 +661,31 @@ class TCUSampler
         #
         bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
         loadConfigurationFromHoldingTank()
-	    
+        
+        if @boardData[Configuration].nil? == false && @boardData[Configuration][FileName].nil? == false
+	        SharedMemory.SetConfigurationFileName(@boardData[Configuration][FileName])
+	    else
+	        SharedMemory.SetConfigurationFileName("")
+        end
+        
+        if @boardData[Configuration].nil? == false && @boardData[Configuration]["ConfigDateUpload"].nil? == false
+    	    SharedMemory.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
+    	else
+    	    SharedMemory.SetConfigDateUpload("")
+        end
+
+        if @boardData[SharedLib::AllStepsDone_YesNo].nil? == false
+            SharedMemory.SetAllStepsDone_YesNo(@boardData[SharedLib::AllStepsDone_YesNo])
+        else
+            SharedMemory.SetAllStepsDone_YesNo(SharedLib::Yes) # so it will not run
+        end
+
+        
+	    initStepToWorkOnVar()
         waitTime = Time.now+getPollIntervalInSeconds()
 
         while true
-            puts "ping SharedMemory.GetBbbMode()=#{SharedMemory.GetBbbMode()} @boardData[SharedLib::AllStepsDone_YesNo]=#{@boardData[SharedLib::AllStepsDone_YesNo]} #{__LINE__}-#{__FILE__}"
+            puts "ping SharedMemory.GetBbbMode()=#{SharedMemory.GetBbbMode()} SharedMemory.GetAllStepsDone_YesNo()=#{SharedMemory.GetAllStepsDone_YesNo()} #{__LINE__}-#{__FILE__} SharedMemory.GetConfigurationFileName()=#{SharedMemory.GetConfigurationFileName()}"
             SharedMemory.SetSlotTime(Time.now.to_i)
 			case SharedMemory.GetBbbMode()
 			when SharedLib::InRunMode
@@ -682,8 +700,8 @@ class TCUSampler
     			        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     			        setAllStepsDone_YesNo(SharedLib::Yes)
     			    else
-			            puts "@stepToWorkOn[TotalTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[TotalTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
-        			    if @stepToWorkOn[TotalTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
+			            puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
+        			    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
                             #
                             # Gather data...
                             #
@@ -695,7 +713,7 @@ class TCUSampler
                                 ThermalSiteDevices.pollDevices(uart1)
                                 ThermalSiteDevices.logData
                             end
-                            SharedMemory.SetStepTotalTime(@stepToWorkOn[TotalTimeLeft]-(Time.now.to_f-getTimeOfRun()))
+                            SharedMemory.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
         			    else
         			        # Step just finished.
                             setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
@@ -809,7 +827,7 @@ class TCUSampler
                     end
                 else
                     # The step time might finish sooner than the 10 sec interval so do the time out on that case it is.
-                    aTime = @stepToWorkOn[TotalTimeLeft]-(Time.now.to_f-getTimeOfRun)
+                    aTime = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)
                     bTime = waitTime.to_f-Time.now.to_f
                     if aTime > bTime
                         useThisTime = bTime
