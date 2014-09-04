@@ -2172,7 +2172,7 @@ get '/TopBtnPressed' do
 				if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
 					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, or *.temp_config"
 				elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
-					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', BBB PcListener is down.  Need to handle this in production code level."
+					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Board PcListener is down."
 				elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
 					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', No file selected for upload."
 				elsif SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && 

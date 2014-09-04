@@ -84,7 +84,7 @@ module MigrationCount
 					puts "SlotTime = #{SharedMemory::GetDispSlotTime()}"
 					puts "AdcInput = #{SharedMemory::GetDispAdcInput()}"
 					puts "MuxData = #{SharedMemory::GetDispMuxData()}"
-					puts "Tcu = #{Time.at(SharedMemory::GetDispTcu().to_i).inspect}"
+					puts "Tcu = #{SharedMemory::GetDispTcu()}"
 					puts "AllStepsCompletedAt = #{SharedMemory::GetDispAllStepsCompletedAt()}"
 					puts "TotalStepDuration = #{SharedMemory::GetDispTotalStepDuration()}"
 					return
