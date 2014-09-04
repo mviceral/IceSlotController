@@ -12,7 +12,7 @@ class SendSampledTcuToPCLib
     ITS_MOUNTED = "It's mounted."
     BbbToPc = 'http://192.168.7.1'
     PcToSamePc = "localhost"
-    SendToPc = BbbToPc
+    SendToPc = PcToSamePc
 
     def refreshDbHandler
         # puts "refreshDbHandler got called."
@@ -371,7 +371,6 @@ class SendSampledTcuToPCLib
 
 	def GetDataToSendPc()
         slotInfo = Hash.new()
-        receivedData = SharedMemory.GetData()
         slotInfo[SharedLib::ConfigurationFileName] = SharedMemory.GetConfigurationFileName()
         slotInfo[SharedLib::ConfigDateUpload] = SharedMemory.GetConfigDateUpload()
         slotInfo[SharedLib::AllStepsDone_YesNo] = SharedMemory.GetAllStepsDone_YesNo()
@@ -381,7 +380,9 @@ class SendSampledTcuToPCLib
         slotInfo[SharedLib::StepNumber] = SharedMemory.GetStepNumber()
         slotInfo[SharedLib::StepTotalTime] = SharedMemory.GetStepTotalTime()
         slotInfo[SharedLib::SlotTime] = @timeOfData
-        slotInfo[SharedLib::Data] = receivedData
+        slotInfo[SharedLib::AdcInput] = SharedMemory.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
+        slotInfo[SharedLib::MuxData] = SharedMemory.GetDataMuxData("#{__LINE__}-#{__FILE__}")
+        slotInfo[SharedLib::Tcu] = SharedMemory.GetDataTcu("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::SlotIpAddress] = GetSlotIpAddress()
         slotInfo[SharedLib::AllStepsCompletedAt] = SharedMemory.GetAllStepsCompletedAt()
         slotInfo[SharedLib::TotalStepDuration] = SharedMemory.GetTotalStepDuration();
@@ -392,7 +393,7 @@ class SendSampledTcuToPCLib
     def SendDataToPC(fromParam)
     	puts "called from #{fromParam}"
     	slotInfoJson = GetDataToSendPc()
-        puts "#{__LINE__}-#{__FILE__} slotInfoJson=#{slotInfoJson}"
+        # puts "#{__LINE__}-#{__FILE__} slotInfoJson=#{slotInfoJson}"
         begin
             resp = 
                 RestClient.post "#{SendToPc}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
