@@ -78,7 +78,7 @@ module MigrationCount
 					puts "BbbMode = #{SharedMemory::GetDispBbbMode()}"
 					puts "StepName = #{SharedMemory::GetDispStepName()}"
 					puts "StepNumber = #{SharedMemory::GetDispStepNumber()}"
-					puts "StepTotalTime = #{SharedMemory::GetDispStepTotalTime()}"
+					puts "StepTotalTime = #{SharedMemory::GetDispStepTimeLeft()}"
 					puts "SlotTime = #{SharedMemory::GetDispSlotTime()}"
 					puts "SlotIpAddress = #{SharedMemory::GetDispSlotIpAddress()}"
 					puts "SlotTime = #{SharedMemory::GetDispSlotTime()}"

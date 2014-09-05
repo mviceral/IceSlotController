@@ -710,7 +710,7 @@ class UserInterface
 			return BlankFileName
 		else
 			d = Time.now
-			d += SharedMemory.GetDispStepTotalTime().to_i
+			d += SharedMemory.GetDispStepTimeLeft().to_i 
 			
 			month = d.month.to_s # make2Digits(d.month.to_s)
 			day = d.day.to_s # make2Digits(d.day.to_s)

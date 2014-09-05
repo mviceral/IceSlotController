@@ -47,7 +47,7 @@ class SharedMemory
       ds[SharedLib::PC][SharedLib::BbbMode] = bbbModeParam
       ds[SharedLib::PC][SharedLib::StepName] = stepNameParam
       ds[SharedLib::PC][SharedLib::StepNumber] = stepNumberParam
-      ds[SharedLib::PC][SharedLib::StepTotalTime] = stepTotalTimeParam
+      ds[SharedLib::PC][SharedLib::StepTimeLeft] = stepTotalTimeParam
       ds[SharedLib::PC][SharedLib::SlotTime] = slotTimeParam
       ds[SharedLib::PC][SharedLib::SlotIpAddress] = slotIpAddressParam
       ds[SharedLib::PC][SharedLib::AllStepsCompletedAt] = allStepsCompletedAtParam
@@ -99,8 +99,8 @@ class SharedMemory
 			return getPCShared()[SharedLib::StepNumber]
     end
 
-	def GetDispStepTotalTime
-		return getPCShared()[SharedLib::StepTotalTime]
+	def GetDispStepTimeLeft
+		return getPCShared()[SharedLib::StepTimeLeft]
 	end
 	
 	def GetDispTotalStepDuration
@@ -210,7 +210,7 @@ class SharedMemory
 			hash[SharedLib::BbbMode],
 			hash[SharedLib::StepName],
 			hash[SharedLib::StepNumber],
-			hash[SharedLib::StepTotalTime],
+			hash[SharedLib::StepTimeLeft],
 			hash[SharedLib::SlotTime],
 			hash[SharedLib::SlotIpAddress],
 			hash[SharedLib::AllStepsCompletedAt],
