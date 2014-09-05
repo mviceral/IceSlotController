@@ -227,9 +227,9 @@ class SharedMemory
     
     def SetAllStepsDone_YesNo(allStepsDone_YesNoParam,fromParam)
         ds = getDS()
-        if allStepsDone_YesNoParam == SharedLib::Yes
-            pause "Bingo! Called from #{fromParam}","#{__LINE__}-#{__FILE__}"
-        end
+        #if allStepsDone_YesNoParam == SharedLib::Yes
+        #    pause "Bingo! Called from #{fromParam}","#{__LINE__}-#{__FILE__}"
+        #end
         ds[SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
@@ -239,16 +239,16 @@ class SharedMemory
     end
 
     def ClearConfiguration(fromParam)
-    	puts "called from #{fromParam}"
-      puts "Start 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
-    	SharedMemory.SetConfigurationFileName("")
-    	SharedMemory.SetConfigDateUpload("")
-    	ds = getDS()
+        # puts "called from #{fromParam}"
+        # puts "Start 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
+        SharedMemory.SetConfigurationFileName("")
+        SharedMemory.SetConfigDateUpload("")
+        ds = getDS()
     	ds["Configuration"] = "" # Clears the configuration.
     	ds[TimeOfPcUpload] = Time.new.to_i
-      tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}") # tbr - to be returned
-      SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
-      puts "Done 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
+        tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}") # tbr - to be returned
+        SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
+        # puts "Done 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
     end
     
     def GetTotalStepDuration()
@@ -266,12 +266,12 @@ class SharedMemory
         
     def SetConfiguration(dataParam,fromParam)
         ds = getDS()
-        puts "SetConfiguration got called #{fromParam}"
-        puts "A Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
+        # puts "SetConfiguration got called #{fromParam}"
+        # puts "A Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         ds[TimeOfPcUpload] = Time.new.to_i
-        puts "A.1 #{__LINE__}-#{__FILE__}"
+        # puts "A.1 #{__LINE__}-#{__FILE__}"
         hold = dataParam
-        puts "A.2 #{__LINE__}-#{__FILE__}"
+        # puts "A.2 #{__LINE__}-#{__FILE__}"
         #
         # Setup the TotalTimeLeft in the steps, and make sure that the variables for TimeOfRun
         # are initialized per step also.
@@ -279,20 +279,20 @@ class SharedMemory
         # PP.pp(hold["Steps"])
         totalStepDuration = 0
         hold["Steps"].each do |key, array|
-            puts "A.3 #{__LINE__}-#{__FILE__}"
-            hold["Steps"][key]["TotalTimeLeft"] = 60.0*hold["Steps"][key]["Step Time"].to_f
-            totalStepDuration += hold["Steps"][key]["TotalTimeLeft"]
-            puts "hold[\"Steps\"][key][\"TotalTimeLeft\"] = #{hold["Steps"][key]["TotalTimeLeft"]}"
-            puts "hold[\"Steps\"][key][\"StepTime\"] = #{hold["Steps"][key]["Step Time"]}"
+            # puts "A.3 #{__LINE__}-#{__FILE__}"
+            hold["Steps"][key]["StepTimeLeft"] = 60.0*hold["Steps"][key]["Step Time"].to_f
+            totalStepDuration += hold["Steps"][key]["StepTimeLeft"]
+            # puts "hold[\"Steps\"][key][\"TotalTimeLeft\"] = #{hold["Steps"][key]["TotalTimeLeft"]}"
+            # puts "hold[\"Steps\"][key][\"StepTime\"] = #{hold["Steps"][key]["Step Time"]}"
             # puts "hold[#{Steps}][#{key}][#{TimeOfRun}] = #{hold[Steps][key][TimeOfRun]}"
         end
-        puts "A.4 #{__LINE__}-#{__FILE__}"
+        # puts "A.4 #{__LINE__}-#{__FILE__}"
         # pause("Checking contents of steps within SetConfiguration function.","#{__LINE__}-#{__FILE__}")
         
         
         ds["Configuration"] = hold
         ds["Configuration"][SharedLib::TotalStepDuration] = totalStepDuration
-        puts "A.5 #{__LINE__}-#{__FILE__}"
+        # puts "A.5 #{__LINE__}-#{__FILE__}"
         tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}") # tbr - to be returned        
         SharedMemory.SetConfigDateUpload(SharedMemory.GetConfiguration()["ConfigDateUpload"])
         SharedMemory.SetConfigurationFileName(SharedMemory.GetConfiguration()["FileName"])
@@ -314,7 +314,7 @@ class SharedMemory
 	end
 	
     def SetPcCmd(cmdParam,calledFrom)
-        # puts "param sent #{cmdParam}"
+        puts "param sent #{cmdParam} calledFrom=#{calledFrom} #{__LINE__}-#{__FILE__}"
         oldCmdParam = getDS()[Cmd]
         print "Changing bbb mode from #{oldCmdParam} to "
         ds = getDS()

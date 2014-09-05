@@ -73,21 +73,16 @@ module PcListenerModule
 					#	Tell sampler to Run if mode = run, Stop if mode = stop, etc.
 					#
 					puts "PC sent '#{mode}'"
+					SharedMemory.Initialize()
+					SharedMemory.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
 					case mode
 					when SharedLib::ClearConfigFromPc
-						SharedMemory.Initialize()
 						SharedMemory.ClearConfiguration("#{__LINE__}-#{__FILE__}")
-						SharedMemory.SetPcCmd(SharedLib::ClearConfigFromPc,"#{__LINE__}-#{__FILE__}")
 						return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc()}"}						
 					when SharedLib::RunFromPc
-						SharedMemory.Initialize()
-						SharedMemory.SetPcCmd(SharedLib::RunFromPc,"#{__LINE__}-#{__FILE__}")
 					when SharedLib::StopFromPc
-						SharedMemory.Initialize()
-						SharedMemory.SetPcCmd(SharedLib::StopFromPc,"#{__LINE__}-#{__FILE__}")
 					when SharedLib::LoadConfigFromPc
 						puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
-						SharedMemory.Initialize()
 						# PP.pp(JSON.parse(params["#{SharedLib::PcToBbbData}"]))
 						hash = JSON.parse(params["#{SharedLib::PcToBbbData}"])
 						date = Time.at(hash[SharedLib::ConfigDateUpload])
@@ -97,11 +92,11 @@ module PcListenerModule
 						`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}"`
 						`echo date after setting:;date`
 						SharedMemory.SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
-						SharedMemory.SetPcCmd(SharedLib::LoadConfigFromPc,"#{__LINE__}-#{__FILE__}")
 						return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc()}"}						
 					else
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
-					end						
+					end
+					puts "PcCmd=#{mode} #{__LINE__}-#{__FILE__}"
 				end
 				{bbbResponding:"#{mode}"}
 			end
