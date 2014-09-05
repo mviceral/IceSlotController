@@ -25,7 +25,7 @@ require 'sqlite3'
 require 'json'
 require 'rest_client'
 require_relative '../lib/SharedLib'
-require_relative '../BBB_Shared Memory Ruby/SharedMemory'
+require_relative '../lib/SharedMemory'
 require 'pp' # Pretty print to see the hash values.
 
 class UserInterface
@@ -738,138 +738,99 @@ class UserInterface
 	def GetSlotDisplay (slotLabelParam,slotLabel2Param)
 		setSlotOwner(slotLabel2Param)
 		getSlotDisplay_ToBeReturned = ""
-		begin
-			SharedMemory::Initialize()
-			db = SQLite3::Database.open "latest.db"
-			db.results_as_hash = true
-			ary = db.execute "SELECT * FROM latest where idData = 1"    
-			ary.each do |row|				
-				dut0 = row['slotData'].partition("|")
-				dut1 = dut0[2].partition("|")
-				dut2 = dut1[2].partition("|")
-				dut3 = dut2[2].partition("|")
-				dut4 = dut3[2].partition("|")
-				dut5 = dut4[2].partition("|")
-				dut6 = dut5[2].partition("|")
-				dut7 = dut6[2].partition("|")
-				dut8 = dut7[2].partition("|")
-				dut9 = dut8[2].partition("|")
-				dut10 = dut9[2].partition("|")
-				dut11 = dut10[2].partition("|")
-				dut12 = dut11[2].partition("|")
-				dut13 = dut12[2].partition("|")
-				dut14 = dut13[2].partition("|")
-				dut15 = dut14[2].partition("|")
-				dut16 = dut15[2].partition("|")
-				dut17 = dut16[2].partition("|")
-				dut18 = dut17[2].partition("|")
-				dut19 = dut18[2].partition("|")
-				dut20 = dut19[2].partition("|")
-				dut21 = dut20[2].partition("|")
-				dut22 = dut21[2].partition("|")
-				dut23 = dut22[2].partition("|")
-
-				getSlotDisplay_ToBeReturned += 	
-				"<table style=\"border-collapse : collapse; border : 1px solid black;\"  bgcolor=\"#000000\">"
-				getSlotDisplay_ToBeReturned += 	"<tr>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S20","20")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S16","16")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S12","12")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S8","8")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S4","4")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S0","0")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS0",SharedMemory::GetDispMuxData()["32"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS4",SharedMemory::GetDispMuxData()["36"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS8",SharedMemory::GetDispMuxData()["40"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("5V","???")+"</td>"
-				getSlotDisplay_ToBeReturned += 	"</tr>"
-				getSlotDisplay_ToBeReturned += 	"<tr>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S21","21")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S17","17")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S13","13")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S9","9")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S5","5")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S1","1")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS1",SharedMemory::GetDispMuxData()["33"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS5",SharedMemory::GetDispMuxData()["35"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS9",SharedMemory::GetDispMuxData()["41"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("12V",SharedMemory::GetDispMuxData()["46"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	"</tr>"
-				getSlotDisplay_ToBeReturned += 	"<tr>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S22","22")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S18","18")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S14","14")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S10","10")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S6","6")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S2","2")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS2",SharedMemory::GetDispMuxData()["32"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS6",SharedMemory::GetDispMuxData()["38"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS10",SharedMemory::GetDispMuxData()["42"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("24V",SharedMemory::GetDispMuxData()["47"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	"</tr>"
-				getSlotDisplay_ToBeReturned += 	"<tr>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S23","23")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S19","19")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S15","15")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S11","11")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S7","7")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S3","3")+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS3",SharedMemory::GetDispMuxData()["35"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS7",SharedMemory::GetDispMuxData()["39"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : 
-					collapse; border : 1px solid black;\">"+PNPCell(SharedMemory::GetDispMuxData()["43"],SharedMemory::GetDispMuxData()["44"],SharedMemory::GetDispMuxData()["45"])+"</td>"
-				getSlotDisplay_ToBeReturned += 	
-				"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell()+"</td>"
-				getSlotDisplay_ToBeReturned += 	"</tr>"
-				getSlotDisplay_ToBeReturned += 	"</table>"
-			end
-		
-			rescue SQLite3::Exception => e 
-				  puts "Exception occured"
-				  puts e
-
-			ensure
-				  db.close if db		
-		end
+		SharedMemory::Initialize()
+		getSlotDisplay_ToBeReturned += 	
+		"<table style=\"border-collapse : collapse; border : 1px solid black;\"  bgcolor=\"#000000\">"
+		getSlotDisplay_ToBeReturned += 	"<tr>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S20","20")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S16","16")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S12","12")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S8","8")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S4","4")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S0","0")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS0",SharedMemory::GetDispMuxData()["32"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS4",SharedMemory::GetDispMuxData()["36"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS8",SharedMemory::GetDispMuxData()["40"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("5V","???")+"</td>"
+		getSlotDisplay_ToBeReturned += 	"</tr>"
+		getSlotDisplay_ToBeReturned += 	"<tr>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S21","21")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S17","17")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S13","13")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S9","9")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S5","5")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S1","1")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS1",SharedMemory::GetDispMuxData()["33"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS5",SharedMemory::GetDispMuxData()["35"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS9",SharedMemory::GetDispMuxData()["41"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("12V",SharedMemory::GetDispMuxData()["46"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	"</tr>"
+		getSlotDisplay_ToBeReturned += 	"<tr>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S22","22")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S18","18")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S14","14")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S10","10")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S6","6")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S2","2")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS2",SharedMemory::GetDispMuxData()["32"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS6",SharedMemory::GetDispMuxData()["38"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS10",SharedMemory::GetDispMuxData()["42"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("24V",SharedMemory::GetDispMuxData()["47"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	"</tr>"
+		getSlotDisplay_ToBeReturned += 	"<tr>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S23","23")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S19","19")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S15","15")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S11","11")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S7","7")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S3","3")+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS3",SharedMemory::GetDispMuxData()["35"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS7",SharedMemory::GetDispMuxData()["39"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : 
+			collapse; border : 1px solid black;\">"+PNPCell(SharedMemory::GetDispMuxData()["43"],SharedMemory::GetDispMuxData()["44"],SharedMemory::GetDispMuxData()["45"])+"</td>"
+		getSlotDisplay_ToBeReturned += 	
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell()+"</td>"
+		getSlotDisplay_ToBeReturned += 	"</tr>"
+		getSlotDisplay_ToBeReturned += 	"</table>"		
 		
 		topTable = "
 			<table>
