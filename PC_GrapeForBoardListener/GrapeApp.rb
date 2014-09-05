@@ -4,7 +4,7 @@ require 'singleton'
 require 'forwardable'
 require 'pp'
 require 'sqlite3'
-require_relative '../BBB_Shared Memory Ruby/SharedMemory'
+require_relative '../lib/SharedMemory'
 
 # If you set this true, it will put out some debugging info to STDOUT
 # (usually the termninal that you started rackup with)
@@ -65,6 +65,7 @@ module MigrationCount
 						rescue Exception => e
 							puts e.message  
 							puts e.backtrace.inspect  						
+						ensure
 					end
 					# SharedMemory.
 					# puts "1 receivedData = #{receivedData}"
