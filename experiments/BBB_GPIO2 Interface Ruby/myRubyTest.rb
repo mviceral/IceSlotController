@@ -9,10 +9,24 @@ include Beaglebone
 
 
 class TestBench
+    def readRawAin(pAin)
+        @lastReading = "RawAin"
+        return pAin.read
+    end
+
     def getMuxValue(aMuxParam)
         a=0
         @gpio2.setGPIO2(GPIO2::ANA_MEAS4_SEL_xD, aMuxParam)
-        while a<5
+        
+        numTimes = 5
+        if @lastReading != "Mux"
+            @lastReading = "Mux"
+            numTimes = 10
+        else
+            numTimes = 1
+        end
+        
+        while a<numTimes
             readValue = @pAinMux.read
             a += 1
         end
@@ -84,6 +98,7 @@ class TestBench
             puts "'x' - to exit:"
             muxInput = gets.chomp  
             if  muxInput == "a" || muxInput == "A"
+                beginT = Time.now
                 aMux = 0
                 @pAinMux = AINPin.new(:P9_33)
                 while aMux<48
@@ -92,36 +107,31 @@ class TestBench
                     # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*aMuxMultiplier[aMux]/1000.0).round(4)} V'"
                     aMux += 1
                 end
+                puts "Total time = #{Time.now.to_f-beginT.to_f}"
                 puts ""
                 puts ""
             elsif  muxInput == "b" || muxInput == "B"
-                pAin = AINPin.new(:P9_39)
-                readValue = pAin.read
+                readValue = readRawAin(AINPin.new(:P9_39))
                 # sleep(2)
                 puts "AIN0 (P9_39) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue*4.01/1000.0).round(4)} V'"
                 
-                pAin = AINPin.new(:P9_40)
-                readValue = pAin.read
+                readValue = readRawAin(AINPin.new(:P9_40))
                 # sleep(2)
                 puts "AIN1 (P9_40) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue*2.3/1000.0).round(4)} V'"
                 
-                pAin = AINPin.new(:P9_37)
-                readValue = pAin.read
+                readValue = readRawAin(AINPin.new(:P9_37))
                 # sleep(2)
                 puts "AIN2 (P9_37) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue*2.3/1000.0).round(4)} V'"
                 
-                pAin = AINPin.new(:P9_38)
-                readValue = pAin.read
+                readValue = readRawAin(AINPin.new(:P9_38))
                 # sleep(2)
                 puts "AIN3 (P9_38) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue*2.3/1000.0).round(4)} V'"
                 
-                pAin = AINPin.new(:P9_36)
-                readValue = pAin.read
+                readValue = readRawAin(AINPin.new(:P9_36))
                 # sleep(2)
                 puts "AIN5 (P9_36) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue*2.3/1000.0).round(4)} V'"
                 
-                pAin = AINPin.new(:P9_35)
-                readValue = pAin.read
+                readValue = readRawAin(AINPin.new(:P9_35))
                 puts "AIN6 (P9_35) = '#{readValue/1000.0} V' - Adjusted: '#{(readValue*2.3/1000.0).round(4)} V'"
                 puts ""
                 puts ""

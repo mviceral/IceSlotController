@@ -191,7 +191,17 @@ class SharedMemory
     def GetConfigurationFileName()
         return getDS()[SharedLib::ConfigurationFileName]
     end
+
+    def GetDBaseFileName()    
+        return getDS()[SharedLib::DBaseFileName]
+    end
     
+    def SetDBaseFileName(dBaseFileName)    
+        ds = getDS()
+        ds[SharedLib::DBaseFileName] = dBaseFileName
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+    end
+        
     def SetConfigDateUpload(configDateUploadParam)
         ds = getDS()
         puts "configDateUploadParam=#{configDateUploadParam} #{__LINE__}-#{__FILE__}"
@@ -294,10 +304,29 @@ class SharedMemory
         ds["Configuration"][SharedLib::TotalStepDuration] = totalStepDuration
         # puts "A.5 #{__LINE__}-#{__FILE__}"
         tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}") # tbr - to be returned        
+    	puts "Check 1 #{__LINE__}-#{__FILE__}"
         SharedMemory.SetConfigDateUpload(SharedMemory.GetConfiguration()["ConfigDateUpload"])
+    	puts "Check 2 #{__LINE__}-#{__FILE__}"
         SharedMemory.SetConfigurationFileName(SharedMemory.GetConfiguration()["FileName"])
-        puts "A.6 #{__LINE__}-#{__FILE__}"
-        puts "B Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
+    	puts "Check 3 #{__LINE__}-#{__FILE__}"
+        # puts "A.6 #{__LINE__}-#{__FILE__}"
+        # puts "B Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
+        configDateUpload = Time.at(SharedMemory.GetConfigDateUpload().to_i)
+    	puts "Check 4 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
+    	dBaseFileName = "#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{SharedMemory.GetConfigurationFileName()}.db"
+    	puts "A Creating dbase '/mnt/card/#{dBaseFileName}' #{__LINE__}-#{__FILE__}"
+    	SetDBaseFileName(dBaseFileName)
+    	puts "B Creating dbase '/mnt/card/#{GetDBaseFileName()}' #{__LINE__}-#{__FILE__}"
+        db = SQLite3::Database.new( "/mnt/card/#{GetDBaseFileName()}" )
+        if db.nil?
+            puts "db is nil. #{__LINE__}-#{__FILE__}"
+        else
+            puts "Creating table. #{__LINE__}-#{__FILE__}"
+                db.execute("create table log ("+
+            "idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
+            ");")
+        end
+        
         SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
         return tbr
         rescue
@@ -428,10 +457,6 @@ class SharedMemory
         return tbr
     end 
     
-    def DoneSettingData() 
-        # Write the value of @setData into shared memory
-    end
-    
     def SetupData
         ds = getDS()
         if ds[SharedLib::AdcInput].nil?
@@ -448,14 +473,18 @@ class SharedMemory
     end
     
     def SetData(dataTypeParam,indexParam,dataValueParam,multiplierParam)
+        puts "check A #{__LINE__}-#{__FILE__}"
         ds = getDS()
+        puts "check B #{__LINE__}-#{__FILE__}"
         if ds[dataTypeParam].nil?
             puts "ds[#{dataTypeParam}] is nil #{__LINE__}-#{__FILE__}"
             ds[dataTypeParam] = Hash.new
         end
+        puts "check C #{__LINE__}-#{__FILE__}"
         
         ds[dataTypeParam][indexParam.to_s] = (dataValueParam*multiplierParam[indexParam]).to_s
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        puts "check D #{__LINE__}-#{__FILE__}"
         # PP.pp(ds)
         # puts "@setData.length=#{@setData.length}"
         # gets
@@ -467,3 +496,4 @@ class SharedMemory
       def_delegators :instance, *SharedMemory.instance_methods(false)
     end
 end
+# 267

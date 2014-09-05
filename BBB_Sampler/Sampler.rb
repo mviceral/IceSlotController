@@ -83,13 +83,7 @@ class TCUSampler
 	    return @gpio2
 	end
 	
-	def bbbLog(sentMessage)
-	    log = "#{Time.new.inspect} : #{sentMessage}"
-	    puts "#{log}"
-        `echo "#{log}">>../bbbActivity.log`
-    end
-    
-    def getTimeOfRun
+	def getTimeOfRun
         if @boardData[TimeOfRun].nil?
             @boardData[TimeOfRun] = Time.now.to_i
         end
@@ -103,11 +97,13 @@ class TCUSampler
     def setToMode(modeParam, calledFrom)
         SharedMemory.SetBbbMode(modeParam,"#{__LINE__}-#{__FILE__}")
         @boardData[BbbMode] = modeParam
+        @boardMode = modeParam
+
         
         #
         # The mode of the board change, log it and save the save of the machine to holding tank.
         #
-        bbbLog("Changed to '#{modeParam}' called from [#{calledFrom}].  Saving state to holding tank.")
+        SharedLib.bbbLog("Changed to '#{modeParam}' called from [#{calledFrom}].  Saving state to holding tank.")
         if modeParam == SharedLib::InRunMode || modeParam == SharedLib::InStopMode
             if modeParam == SharedLib::InRunMode
                 psSeqUp()
@@ -126,8 +122,8 @@ class TCUSampler
             
             saveBoardStateToHoldingTank()
         else
-            bbbLog("Don't recognize modeParam=#{modeParam}, calledFrom=#{calledFrom}")
-            bbbLog("Exiting code.")
+            SharedLib.bbbLog("Don't recognize modeParam=#{modeParam}, calledFrom=#{calledFrom}")
+            SharedLib.bbbLog("Exiting code.")
             exit
         end
     end
@@ -501,7 +497,7 @@ class TCUSampler
 			rescue Exception => e  
                 puts "e.message=#{e.message }"
                 puts "e.backtrace.inspect=#{e.backtrace.inspect}" 
-		bbbLog("There's no data in the holding tank.  New machine starting up. #{__LINE__}-#{__FILE__}")
+		SharedLib.bbbLog("There's no data in the holding tank.  New machine starting up. #{__LINE__}-#{__FILE__}")
 		setBoardData(Hash.new)
 		setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
 	    end
@@ -518,25 +514,40 @@ class TCUSampler
     end
     
     def pollAdcInput()
+        puts "E #{__LINE__}-#{__FILE__}"
         if @initpollAdcInputFunc
+            puts "f #{__LINE__}-#{__FILE__}"
             pAin = AINPin.new(:P9_39)
+            puts "g #{__LINE__}-#{__FILE__}"
+            puts "pAin.read=#{pAin.read}"
+            puts "g.1 #{__LINE__}-#{__FILE__}"
             SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SLOTP5V,pAin.read,@multiplier)
+            puts "h #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_40)
+            puts "i #{__LINE__}-#{__FILE__}"
             SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SLOTP3V3,pAin.read,@multiplier)
+            puts "j #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_37)
+            puts "k #{__LINE__}-#{__FILE__}"
             SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SLOTP1V8,pAin.read,@multiplier)
+            puts "l #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_38)
+            puts "m #{__LINE__}-#{__FILE__}"
             SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SlotTemp1,pAin.read,@multiplier)
+            puts "n #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_36)
+            puts "o #{__LINE__}-#{__FILE__}"
             SharedMemory.SetData(SharedLib::AdcInput,SharedLib::CALREF,pAin.read,@multiplier)
+            puts "p #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_35)
+            puts "q #{__LINE__}-#{__FILE__}"
             SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SlotTemp2,pAin.read,@multiplier)
-            SharedMemory.DoneSettingData()
+            puts "r #{__LINE__}-#{__FILE__}"
         else
             # The code is not initialized to run this function
             puts "The code is not initialized to run this function - #{__LINE__}-#{__FILE__}"
@@ -670,7 +681,7 @@ class TCUSampler
         #
         # Get the board configuration
         #
-        bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
+        SharedLib.bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
         loadConfigurationFromHoldingTank()
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration][FileName].nil? == false
@@ -723,13 +734,19 @@ class TCUSampler
                             #
                             # Gather data...
                             #
-                            bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
+                            SharedLib.bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
                             if @setupAtHome == false
+                                puts "A #{__LINE__}-#{__FILE__}"
                                 pollAdcInput()
+                                puts "B #{__LINE__}-#{__FILE__}"
                                 pollMuxValues()
+                                puts "C #{__LINE__}-#{__FILE__}"
                                 SharedMemory.DoneSettingData() 
+                                puts "D #{__LINE__}-#{__FILE__}"
                                 ThermalSiteDevices.pollDevices(uart1)
+                                puts "E #{__LINE__}-#{__FILE__}"
                                 ThermalSiteDevices.logData
+                                puts "F #{__LINE__}-#{__FILE__}"
                             end
                             SharedMemory.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
         			    else
@@ -753,8 +770,8 @@ class TCUSampler
                             end
                         end
     			    end
-    			# else
-    			#    PP.pp(@stepToWorkOn)
+    			elsif @boardMode == SharedLib::InRunMode
+    			    setToMode(SharedLib::InStopMode,"#{__LINE__}-#{__FILE__}")
 			    end
             end
             
@@ -769,7 +786,7 @@ class TCUSampler
     		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     		    when SharedLib::ClearConfigFromPc
     		    when SharedLib::LoadConfigFromPc
-        		    bbbLog("New configuration step file uploaded.")
+        		    SharedLib.bbbLog("New configuration step file uploaded.")
         		    setBoardData(Hash.new)
         		    @boardData[Configuration] = SharedMemory.GetConfiguration()
     		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
@@ -784,7 +801,7 @@ class TCUSampler
         		    SharedMemory.SetConfiguration("","#{__LINE__}-#{__FILE__}") 
     		        setBoardStateForCurrentStep()
         		else
-        		    bbbLog("Unknown PC command SharedMemory.GetPcCmd()='#{SharedMemory.GetPcCmd()}'.")
+        		    SharedLib.bbbLog("Unknown PC command SharedMemory.GetPcCmd()='#{SharedMemory.GetPcCmd()}'.")
         		end
         		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
     		    setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())

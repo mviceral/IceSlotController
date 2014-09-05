@@ -42,6 +42,9 @@ class SharedLib
 	# Shared memory for PC side.
 	PC = "Pc"
 	
+	#  Shared memory for Boad side
+	DBaseFileName = "DBaseFileName"
+	
 	# The constants used for referencing mux values, and adc input
 	IDUT1 = 0
 	IDUT2 = 1
@@ -182,7 +185,14 @@ class SharedLib
         puts "      o Paused at #{fromParam}"
         gets
     end
+
+    def bbbLog(sentMessage)
+	    log = "#{Time.new.inspect} : #{sentMessage}"
+	    puts "#{log}"
+        `echo "#{log}">>../bbbActivity.log`
+    end
     
+        
   
     class << self
         extend Forwardable
