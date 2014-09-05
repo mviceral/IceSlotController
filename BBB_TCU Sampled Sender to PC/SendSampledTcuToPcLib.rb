@@ -12,7 +12,7 @@ class SendSampledTcuToPCLib
     ITS_MOUNTED = "It's mounted."
     BbbToPc = 'http://192.168.7.1'
     PcToSamePc = "localhost"
-    SendToPc = PcToSamePc
+    SendToPc = BbbToPc
 
     def refreshDbHandler
         # puts "refreshDbHandler got called."
@@ -378,7 +378,7 @@ class SendSampledTcuToPCLib
 
         slotInfo[SharedLib::StepName] = SharedMemory.GetStepName()
         slotInfo[SharedLib::StepNumber] = SharedMemory.GetStepNumber()
-        slotInfo[SharedLib::StepTotalTime] = SharedMemory.GetStepTotalTime()
+        slotInfo[SharedLib::StepTimeLeft] = SharedMemory.GetStepTimeLeft()
         slotInfo[SharedLib::SlotTime] = @timeOfData
         slotInfo[SharedLib::AdcInput] = SharedMemory.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::MuxData] = SharedMemory.GetDataMuxData("#{__LINE__}-#{__FILE__}")
@@ -391,9 +391,9 @@ class SendSampledTcuToPCLib
 	end
 		
     def SendDataToPC(fromParam)
-    	puts "called from #{fromParam}"
+    	# puts "called from #{fromParam}"
     	slotInfoJson = GetDataToSendPc()
-        # puts "#{__LINE__}-#{__FILE__} slotInfoJson=#{slotInfoJson}"
+        puts "#{__LINE__}-#{__FILE__} slotInfoJson=#{slotInfoJson}"
         begin
             resp = 
                 RestClient.post "#{SendToPc}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
@@ -403,7 +403,10 @@ class SendSampledTcuToPCLib
             end
              => e
                 e.response
-=end                
+=end
+            rescue Exception => e  
+                puts e.message  
+                puts e.backtrace.inspect
         end
     end
 
