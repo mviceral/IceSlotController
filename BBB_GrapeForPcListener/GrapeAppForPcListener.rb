@@ -5,8 +5,8 @@ require 'grape'
 require 'pp'
 require 'sqlite3'
 require_relative '../lib/SharedLib'
-require_relative '../BBB_Shared Memory Ruby/SharedMemory'
-require_relative '../BBB_TCU Sampled Sender to PC/SendSampledTcuToPcLib'
+require_relative '../lib/SharedMemory'
+require_relative '../BBB_Sender to PC/SendSampledTcuToPcLib'
 
 # If you set this true, it will put out some debugging info to STDOUT
 # (usually the termninal that you started rackup with)

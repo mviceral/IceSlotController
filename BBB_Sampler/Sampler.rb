@@ -369,32 +369,32 @@ class TCUSampler
         SharedMemory.SetStepTimeLeft("")
         SharedMemory.SetStepName("")
         SharedMemory.SetStepNumber("")
-        puts "\n\n\ninitStepToWorkOnVar got called."
-        puts caller
+        # puts "\n\n\ninitStepToWorkOnVar got called."
+        # puts caller
         @stepToWorkOn = nil
         #
         # Setup the @stepToWorkOn
         #
 	    stepNumber = 0
-	    puts "getConfiguration().nil? = #{getConfiguration().nil?}"
+	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}"
 	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
 	    	stepNumber<getConfiguration()["Steps"].length && 
 	    	@stepToWorkOn.nil?
 	        if @stepToWorkOn.nil?
-	            puts "A #{__LINE__}-#{__FILE__}"
+	            # puts "A #{__LINE__}-#{__FILE__}"
                 getConfiguration()[Steps].each do |key, array|
 		            if @stepToWorkOn.nil?
                         getConfiguration()[Steps][key].each do |key2, array2|
                             # if key2 == StepNum && getConfiguration()[Steps][key][key2].to_i == (stepNumber+1)
                             #    SharedLib.pause "getConfiguration()[Steps][key][StepTimeLeft] = #{getConfiguration()[Steps][key][StepTimeLeft]}", "#{__LINE__}-#{__FILE__}"
                             # end
-	                        puts "A2 key2=#{key2} StepNum=#{StepNum} #{__LINE__}-#{__FILE__}"
+	                        # puts "A2 key2=#{key2} StepNum=#{StepNum} #{__LINE__}-#{__FILE__}"
                             if key2 == StepNum 
                                 if getConfiguration()[Steps][key][key2].to_i == (stepNumber+1) 
-                                    puts "A3 getConfiguration()[Steps][key][key2].to_i=#{getConfiguration()[Steps][key][key2].to_i} (stepNumber+1) =#{(stepNumber+1) } #{__LINE__}-#{__FILE__}"
-                                    puts "A4 getConfiguration()[Steps][key][StepTimeLeft].to_i=#{getConfiguration()[Steps][key][StepTimeLeft].to_i} #{__LINE__}-#{__FILE__}"
+                                    # puts "A3 getConfiguration()[Steps][key][key2].to_i=#{getConfiguration()[Steps][key][key2].to_i} (stepNumber+1) =#{(stepNumber+1) } #{__LINE__}-#{__FILE__}"
+                                    # puts "A4 getConfiguration()[Steps][key][StepTimeLeft].to_i=#{getConfiguration()[Steps][key][StepTimeLeft].to_i} #{__LINE__}-#{__FILE__}"
                                     if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0
-                                        puts "B #{__LINE__}-#{__FILE__}"
+                                        # puts "B #{__LINE__}-#{__FILE__}"
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
                                         SharedMemory.SetStepName("#{key}")
@@ -474,10 +474,10 @@ class TCUSampler
     end
     
     def setAllStepsDone_YesNo(allStepsDone_YesNoParam,calledFrom)
-        if allStepsDone_YesNoParam == SharedLib::Yes
-            puts caller # Kernel#caller returns an array of strings
-            SharedLib.pause "Bingo! caled from #{calledFrom}","#{__LINE__}-#{__FILE__}"
-        end
+        #if allStepsDone_YesNoParam == SharedLib::Yes
+        #    puts caller # Kernel#caller returns an array of strings
+        #    SharedLib.pause "Bingo! caled from #{calledFrom}","#{__LINE__}-#{__FILE__}"
+        #end
         @boardData[SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
         SharedMemory.SetAllStepsDone_YesNo(allStepsDone_YesNoParam,"#{__LINE__}-#{__FILE__}")
     end    
@@ -693,17 +693,24 @@ class TCUSampler
 
         
 	    initStepToWorkOnVar()
-        waitTime = Time.now+getPollIntervalInSeconds()
+        waitTime = Time.now
 
         while true
-            puts "ping Mode()=#{SharedMemory.GetBbbMode()} AllStepsDone_YesNo()=#{SharedMemory.GetAllStepsDone_YesNo()} ConfigFileName()=#{SharedMemory.GetConfigurationFileName()} @stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
+            waitTime += getPollIntervalInSeconds()
+            stepNum = ""
+            if @stepToWorkOn.nil? == false
+                # PP.pp(@stepToWorkOn)
+                # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
+                stepNum = @stepToWorkOn[StepNum]
+            end
+            puts "ping Mode()=#{SharedMemory.GetBbbMode()} AllStepsDone_YesNo()=#{SharedMemory.GetAllStepsDone_YesNo()} ConfigFileName()=#{SharedMemory.GetConfigurationFileName()} stepNum=#{stepNum} #{__LINE__}-#{__FILE__}"
             SharedMemory.SetSlotTime(Time.now.to_i)
 			case SharedMemory.GetBbbMode()
 			when SharedLib::InRunMode
 			    # puts "InRunMode #{__LINE__}-#{__FILE__}"
-			    puts "@boardData[SharedLib::AllStepsDone_YesNo]=#{@boardData[SharedLib::AllStepsDone_YesNo]} #{__LINE__}-#{__FILE__}"
+			    # puts "@boardData[SharedLib::AllStepsDone_YesNo]=#{@boardData[SharedLib::AllStepsDone_YesNo]} #{__LINE__}-#{__FILE__}"
 			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No
-			        puts "@boardData[SharedLib::AllStepsDone_YesNo]=#{@boardData[SharedLib::AllStepsDone_YesNo]}  #{__LINE__}-#{__FILE__}"
+			        # puts "@boardData[SharedLib::AllStepsDone_YesNo]=#{@boardData[SharedLib::AllStepsDone_YesNo]}  #{__LINE__}-#{__FILE__}"
     			    if @stepToWorkOn.nil?
 			            # puts "@stepToWorkOn.nil? is NIL #{__LINE__}-#{__FILE__}"
     			        # There are no more steps to process.
@@ -736,6 +743,7 @@ class TCUSampler
                             else
                                 # puts "A @boardData[SharedLib::AllStepsCompletedAt] = #{@boardData[SharedLib::AllStepsCompletedAt]} #{__LINE__}-#{__FILE__}"
                                 @boardData[SharedLib::AllStepsCompletedAt] = Time.new.to_i
+                                setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
                                 # puts "B @boardData[SharedLib::AllStepsCompletedAt] = #{@boardData[SharedLib::AllStepsCompletedAt]} #{__LINE__}-#{__FILE__}"
                                 
                                 # Done processing all steps listed in configuration.step file
@@ -750,7 +758,7 @@ class TCUSampler
 			    end
             end
             
-    		puts "A getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} SharedMemory.GetTimeOfPcLastCmd()=#{SharedMemory.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - SharedMemory.GetTimeOfPcLastCmd()}"
+    		# puts "A getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} SharedMemory.GetTimeOfPcLastCmd()=#{SharedMemory.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - SharedMemory.GetTimeOfPcLastCmd()}"
     		if getTimeOfPcLastCmd() < SharedMemory.GetTimeOfPcLastCmd()
     		    puts "\n\n\nNew command from PC - '#{SharedMemory.GetPcCmd()}' #{__LINE__}-#{__FILE__}"
     		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} SharedMemory.GetTimeOfPcLastCmd()=#{SharedMemory.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - SharedMemory.GetTimeOfPcLastCmd()}"
@@ -839,7 +847,6 @@ class TCUSampler
                     end
                 end
             end
-            waitTime += getPollIntervalInSeconds()
         end
 
         # End of 'def runTCUSampler'
@@ -855,5 +862,5 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# TimeOfPcUpload
+# 748 431
 

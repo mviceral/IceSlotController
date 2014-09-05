@@ -1,5 +1,5 @@
 # require_relative 'AllDuts'
-require_relative '../BBB_Shared Memory Ruby/SharedMemory'
+require_relative '../lib/SharedMemory'
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 class DutObj
 

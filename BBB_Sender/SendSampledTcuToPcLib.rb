@@ -2,7 +2,7 @@ require 'sqlite3'
 require 'rest_client'
 require 'singleton'
 require 'forwardable'
-require_relative '../BBB_Shared Memory Ruby/SharedMemory'
+require_relative '../lib/SharedMemory'
 
 class SendSampledTcuToPCLib
     include Singleton
@@ -290,7 +290,7 @@ class SendSampledTcuToPCLib
     
     def runSampler
         # puts "Running the sampler."
-        system('cd ../"BBB_TCU Sampler"; bash runTcuSampler.sh &')
+        system('cd ../"BBB_Sampler"; bash runTcuSampler.sh &')
         # puts "Done executing the runTcuSampler.sh script."
         # End of 'def runSampler'
     end
