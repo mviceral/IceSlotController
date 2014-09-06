@@ -175,7 +175,7 @@ class SendSampledTcuToPCLib
             rescue Exception => e  
                 puts e.message  
                 puts e.backtrace.inspect
-                `echo "#{@timeOfData}" >> PcDown.BackLog`
+                `echo "#{@timeOfData},#{@dBaseFileName}" >> PcDown.BackLog`
         end
     end
 

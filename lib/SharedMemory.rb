@@ -473,18 +473,18 @@ class SharedMemory
     end
     
     def SetData(dataTypeParam,indexParam,dataValueParam,multiplierParam)
-        puts "check A #{__LINE__}-#{__FILE__}"
+        # puts "check A #{__LINE__}-#{__FILE__}"
         ds = getDS()
-        puts "check B #{__LINE__}-#{__FILE__}"
+        # puts "check B #{__LINE__}-#{__FILE__}"
         if ds[dataTypeParam].nil?
-            puts "ds[#{dataTypeParam}] is nil #{__LINE__}-#{__FILE__}"
+            # puts "ds[#{dataTypeParam}] is nil #{__LINE__}-#{__FILE__}"
             ds[dataTypeParam] = Hash.new
         end
-        puts "check C #{__LINE__}-#{__FILE__}"
+        # puts "check C #{__LINE__}-#{__FILE__}"
         
         ds[dataTypeParam][indexParam.to_s] = (dataValueParam*multiplierParam[indexParam]).to_s
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
-        puts "check D #{__LINE__}-#{__FILE__}"
+        # puts "check D #{__LINE__}-#{__FILE__}"
         # PP.pp(ds)
         # puts "@setData.length=#{@setData.length}"
         # gets

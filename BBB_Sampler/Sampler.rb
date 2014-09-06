@@ -462,8 +462,7 @@ class TCUSampler
         	while true
                 sleep(waitTime.to_f-Time.now.to_f)
                 waitTime += 60*10
-                if SharedMemory.GetBbbMode() == SharedLib::InRunMode && @stepToWorkOn.nil? == false
-                    saveBoardStateToHoldingTank()
+                if SharedMemory.GetBbbMode() == SharedLib::InRunMode && SharedMemory.GetAllStepsDone_YesNo() == SharedLib::No
                 end
         	end
         end
@@ -514,40 +513,40 @@ class TCUSampler
     end
     
     def pollAdcInput()
-        puts "E #{__LINE__}-#{__FILE__}"
+        # puts "E #{__LINE__}-#{__FILE__}"
         if @initpollAdcInputFunc
-            puts "f #{__LINE__}-#{__FILE__}"
+            # puts "f #{__LINE__}-#{__FILE__}"
             pAin = AINPin.new(:P9_39)
-            puts "g #{__LINE__}-#{__FILE__}"
-            puts "pAin.read=#{pAin.read}"
-            puts "g.1 #{__LINE__}-#{__FILE__}"
+            # puts "g #{__LINE__}-#{__FILE__}"
+            # puts "pAin.read=#{pAin.read}"
+            # puts "g.1 #{__LINE__}-#{__FILE__}"
             SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SLOTP5V,pAin.read,@multiplier)
-            puts "h #{__LINE__}-#{__FILE__}"
+            # puts "h #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_40)
-            puts "i #{__LINE__}-#{__FILE__}"
+            # puts "i #{__LINE__}-#{__FILE__}"
             SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SLOTP3V3,pAin.read,@multiplier)
-            puts "j #{__LINE__}-#{__FILE__}"
+            # puts "j #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_37)
-            puts "k #{__LINE__}-#{__FILE__}"
+            # puts "k #{__LINE__}-#{__FILE__}"
             SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SLOTP1V8,pAin.read,@multiplier)
-            puts "l #{__LINE__}-#{__FILE__}"
+            # puts "l #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_38)
-            puts "m #{__LINE__}-#{__FILE__}"
+            # puts "m #{__LINE__}-#{__FILE__}"
             SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SlotTemp1,pAin.read,@multiplier)
-            puts "n #{__LINE__}-#{__FILE__}"
+            # puts "n #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_36)
-            puts "o #{__LINE__}-#{__FILE__}"
+            # puts "o #{__LINE__}-#{__FILE__}"
             SharedMemory.SetData(SharedLib::AdcInput,SharedLib::CALREF,pAin.read,@multiplier)
-            puts "p #{__LINE__}-#{__FILE__}"
+            # puts "p #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_35)
-            puts "q #{__LINE__}-#{__FILE__}"
+            # puts "q #{__LINE__}-#{__FILE__}"
             SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SlotTemp2,pAin.read,@multiplier)
-            puts "r #{__LINE__}-#{__FILE__}"
+            # puts "r #{__LINE__}-#{__FILE__}"
         else
             # The code is not initialized to run this function
             puts "The code is not initialized to run this function - #{__LINE__}-#{__FILE__}"
@@ -564,7 +563,6 @@ class TCUSampler
                 # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*aMuxMultiplier[aMux]/1000.0).round(4)} V'"
                 aMux += 1
             end
-            SharedMemory.DoneSettingData()
         else
             # The code is not initialized to run this function
             puts "The code is not initialized to run this function - #{__LINE__}-#{__FILE__}"
@@ -736,17 +734,15 @@ class TCUSampler
                             #
                             SharedLib.bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
                             if @setupAtHome == false
-                                puts "A #{__LINE__}-#{__FILE__}"
+                                # puts "A #{__LINE__}-#{__FILE__}"
                                 pollAdcInput()
-                                puts "B #{__LINE__}-#{__FILE__}"
+                                # puts "B #{__LINE__}-#{__FILE__}"
                                 pollMuxValues()
-                                puts "C #{__LINE__}-#{__FILE__}"
-                                SharedMemory.DoneSettingData() 
-                                puts "D #{__LINE__}-#{__FILE__}"
+                                # puts "C #{__LINE__}-#{__FILE__}"
                                 ThermalSiteDevices.pollDevices(uart1)
-                                puts "E #{__LINE__}-#{__FILE__}"
+                                # puts "E #{__LINE__}-#{__FILE__}"
                                 ThermalSiteDevices.logData
-                                puts "F #{__LINE__}-#{__FILE__}"
+                                # puts "F #{__LINE__}-#{__FILE__}"
                             end
                             SharedMemory.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
         			    else
