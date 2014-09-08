@@ -129,6 +129,10 @@ class SharedLib
   	end
   end
   
+    def is_a_number?(s)
+        s.to_s.match(/\A[+-]?\d+?(\.\d+)?\Z/) == nil ? false : true
+    end
+
   def uriToStr(stringParam)
   	return makeUriFriendlySub(stringParam,false)
   end
@@ -187,9 +191,12 @@ class SharedLib
     end
 
     def bbbLog(sentMessage)
-	    log = "#{Time.new.inspect} : #{sentMessage}"
-	    puts "#{log}"
-        `echo "#{log}">>../bbbActivity.log`
+        if @oldMessage != sentMessage
+            @oldMessage = sentMessage
+    	    log = "#{Time.new.inspect} : #{sentMessage}"
+    	    puts "#{log}"
+            `echo "#{log}">>../bbbActivity.log`
+        end
     end
     
         
