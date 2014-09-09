@@ -103,30 +103,30 @@ class SendSampledTcuToPCLib
         end
     end
 
-	def GetDataToSendPc()
+	def GetDataToSendPc(sharedMemParam)
         slotInfo = Hash.new()
-        slotInfo[SharedLib::ConfigurationFileName] = @sharedMem.GetConfigurationFileName()
-        slotInfo[SharedLib::ConfigDateUpload] = @sharedMem.GetConfigDateUpload()
-        slotInfo[SharedLib::AllStepsDone_YesNo] = @sharedMem.GetAllStepsDone_YesNo()
-        slotInfo[SharedLib::BbbMode] = @sharedMem.GetBbbMode()
+        slotInfo[SharedLib::ConfigurationFileName] = sharedMemParam.GetConfigurationFileName()
+        slotInfo[SharedLib::ConfigDateUpload] = sharedMemParam.GetConfigDateUpload()
+        slotInfo[SharedLib::AllStepsDone_YesNo] = sharedMemParam.GetAllStepsDone_YesNo()
+        slotInfo[SharedLib::BbbMode] = sharedMemParam.GetBbbMode()
 
-        slotInfo[SharedLib::StepName] = @sharedMem.GetStepName()
-        slotInfo[SharedLib::StepNumber] = @sharedMem.GetStepNumber()
-        slotInfo[SharedLib::StepTimeLeft] = @sharedMem.GetStepTimeLeft()
+        slotInfo[SharedLib::StepName] = sharedMemParam.GetStepName()
+        slotInfo[SharedLib::StepNumber] = sharedMemParam.GetStepNumber()
+        slotInfo[SharedLib::StepTimeLeft] = sharedMemParam.GetStepTimeLeft()
         slotInfo[SharedLib::SlotTime] = @timeOfData
-        slotInfo[SharedLib::AdcInput] = @sharedMem.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
-        slotInfo[SharedLib::MuxData] = @sharedMem.GetDataMuxData("#{__LINE__}-#{__FILE__}")
-        slotInfo[SharedLib::Tcu] = @sharedMem.GetDataTcu("#{__LINE__}-#{__FILE__}")
+        slotInfo[SharedLib::AdcInput] = sharedMemParam.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
+        slotInfo[SharedLib::MuxData] = sharedMemParam.GetDataMuxData("#{__LINE__}-#{__FILE__}")
+        slotInfo[SharedLib::Tcu] = sharedMemParam.GetDataTcu("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::SlotIpAddress] = GetSlotIpAddress()
-        slotInfo[SharedLib::AllStepsCompletedAt] = @sharedMem.GetAllStepsCompletedAt()
-        slotInfo[SharedLib::TotalStepDuration] = @sharedMem.GetTotalStepDuration();
+        slotInfo[SharedLib::AllStepsCompletedAt] = sharedMemParam.GetAllStepsCompletedAt()
+        slotInfo[SharedLib::TotalStepDuration] = sharedMemParam.GetTotalStepDuration();
         slotInfoJson = slotInfo.to_json
 		return slotInfoJson
 	end
 		
     def SendDataToPC(fromParam)
     	# puts "called from #{fromParam}"
-    	slotInfoJson = GetDataToSendPc()
+    	slotInfoJson = GetDataToSendPc(@sharedMem)
     	
     	
     	# Save data into dbase if @sharedMem.GetAllStepsDone_YesNo() == SharedLib::No && 

@@ -73,12 +73,12 @@ module PcListenerModule
 					#	Tell sampler to Run if mode = run, Stop if mode = stop, etc.
 					#
 					puts "PC sent '#{mode}'"
-					SharedMemory.Initialize()
-					SharedMemory.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
+					sharedMem = SharedMemory.new()
+					sharedMem.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
 					case mode
 					when SharedLib::ClearConfigFromPc
-						SharedMemory.ClearConfiguration("#{__LINE__}-#{__FILE__}")
-						return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc()}"}						
+						sharedMem.ClearConfiguration("#{__LINE__}-#{__FILE__}")
+						return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
 					when SharedLib::RunFromPc
 					when SharedLib::StopFromPc
 					when SharedLib::LoadConfigFromPc
@@ -91,8 +91,8 @@ module PcListenerModule
 						`echo date before setting:;date`
 						`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}"`
 						`echo date after setting:;date`
-						SharedMemory.SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
-						return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc()}"}						
+						sharedMem.SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
+						return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
 					else
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 					end

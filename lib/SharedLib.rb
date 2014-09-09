@@ -107,6 +107,7 @@ class SharedLib
 	AdcInput = "A" # for AdcInput
 	MuxData = "M" # for MuxData
     Tcu	= "T" # for TCU
+    Gpio = "G"
     
     #
     # Functions

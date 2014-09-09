@@ -199,17 +199,17 @@ class GPIO2
     # puts "initializing @regValues #{__LINE__}-#{__FILE__}"
     @regValues = Hash.new
     @sharedBbbGpio2 = SharedMemory.new
-  	fromSharedMem = @sharedBbbGpio2.GetData()
+  	fromSharedMem = @sharedBbbGpio2.GetDataGpio()
   	if fromSharedMem.nil? || fromSharedMem[0.."BbbShared".length-1] != "BbbShared"
         #
         # The Shared memory is not initialized.  Set it up.
         #
         # puts "A.1 Initializing shared mem in BBB."
         parsed = Hash.new
-        @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json,"#{__LINE__}-#{__FILE__}")
+        @sharedBbbGpio2.WriteDataGpio("BbbShared"+parsed.to_json,"#{__LINE__}-#{__FILE__}")
   	end
   	
-  	fromSharedMem = @sharedBbbGpio2.GetData()
+  	fromSharedMem = @sharedBbbGpio2.GetDataGpio()
   	# puts "fromSharedMem=#{fromSharedMem}"
   	# puts "Paused #{__LINE__}-#{__FILE__}"
   	# gets
@@ -228,7 +228,7 @@ class GPIO2
 
     def forTesting_getGpio2State
         getForInitGetImagesOf16Addrs
-        fromSharedMem = @sharedBbbGpio2.GetData()
+        fromSharedMem = @sharedBbbGpio2.GetDataGpio()
         if fromSharedMem.nil? == false && 
             fromSharedMem.length > 0 && 
             fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
@@ -281,7 +281,7 @@ class GPIO2
         #
         # This function sets a value 'dataParam' on a given register address 'addrParam',
         #        
-        fromSharedMem = @sharedBbbGpio2.GetData()
+        fromSharedMem = @sharedBbbGpio2.GetDataGpio()
         if fromSharedMem.nil? == false && fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
             # The shared memory has some legit data in it.
             parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
@@ -290,7 +290,7 @@ class GPIO2
         end
         
         parsed[addrParam.to_s] = dataParam
-        @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json,"#{__LINE__}-#{__FILE__}")
+        @sharedBbbGpio2.WriteDataGpio("BbbShared"+parsed.to_json,"#{__LINE__}-#{__FILE__}")
         
         if @regValues[addrParam].nil? == false
             # inBits = getBits(@regValues[addrParam])
@@ -328,7 +328,7 @@ class GPIO2
         #
 =begin
         if @emulatorEnabled == true
-            fromSharedMem = @sharedBbbGpio2.GetData()
+            fromSharedMem = @sharedBbbGpio2.GetDataGpio()
             if fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
                 # The shared memory has some legit data in it.
                 parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
@@ -365,7 +365,7 @@ class GPIO2
       @regValues[ETS_RX_SEL_xC] = getGPIO2(ETS_RX_SEL_xC).to_i
       @regValues[ANA_MEAS4_SEL_xD] = getGPIO2(ANA_MEAS4_SEL_xD).to_i
 
-        fromSharedMem = @sharedBbbGpio2.GetData()
+        fromSharedMem = @sharedBbbGpio2.GetDataGpio()
         if fromSharedMem.nil? == false && fromSharedMem[0.."BbbShared".length-1] == "BbbShared"
             # The shared memory has some legit data in it.
             parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
@@ -387,7 +387,7 @@ class GPIO2
         parsed[ETS_ENA3_xB.to_s] = @regValues[ETS_ENA3_xB] 
         parsed[ETS_RX_SEL_xC.to_s] = @regValues[ETS_RX_SEL_xC] 
         parsed[ANA_MEAS4_SEL_xD.to_s] = @regValues[ANA_MEAS4_SEL_xD] 
-        @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json,"#{__LINE__}-#{__FILE__}")
+        @sharedBbbGpio2.WriteDataGpio("BbbShared"+parsed.to_json,"#{__LINE__}-#{__FILE__}")
 =begin
       puts "@regValues[SLOT_ADDR_x0] = 0x#{@regValues[SLOT_ADDR_x0].to_s(16)}"
       puts "@regValues[LED_STAT_x1] = 0x#{@regValues[LED_STAT_x1].to_s(16)}"

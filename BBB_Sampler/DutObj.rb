@@ -70,6 +70,7 @@ class DutObj
         #puts "within poll. dutNumParam=#{dutNumParam}"
         # gets
         @statusResponse[dutNumParam] = getTcuStatus(dutNumParam, uart1Param,gPIO2)
+        puts "dutNumParam=#{dutNumParam} @statusResponse[dutNumParam]=#{@statusResponse[dutNumParam]} #{__LINE__}-#{__FILE__}"
         #puts "Leaving poll. dutNumParam=#{dutNumParam}"
     end
 
@@ -81,16 +82,16 @@ class DutObj
             # Get the string index [1..-1] because we're skipping the first character '@'
             # Parse the data out.
             #
-            if @statusResponse[dutNum].nil? == true
-                #
+            if @statusResponse[dutNum].nil? == false
+                # Old code
                 # SD card just got plugged in.  DutObj got re-initialized.
                 #
                 # puts "@statusResponse[dutNum].nil? == true - skipping out of town. #{__FILE__} - #{__LINE__}"
-                return
+                # return
+                allDutData += "|#{dutNum}"
+                allDutData += @statusResponse[dutNum]
             end
             # puts "@statusResponse[#{dutNum}] = #{@statusResponse[dutNum]}"
-            allDutData += "|#{dutNum}"
-            allDutData += @statusResponse[dutNum]
             dutNum +=1;
             # End of 'while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do'
         end            
@@ -98,7 +99,7 @@ class DutObj
         timeNow = Time.now.to_i
 		allDutData = "-BBB#{timeNow}"+allDutData
 		# puts "Poll A #{Time.now.inspect}"
-        @sharedMem.WriteData(allDutData,"#{__LINE__}-#{__FILE__}")
+        @sharedMem.WriteDataTcu(allDutData,"#{__LINE__}-#{__FILE__}")
 		# puts "Poll B #{Time.now.inspect}"
         
         # End of 'def poll()'

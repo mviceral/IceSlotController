@@ -265,8 +265,8 @@ class SharedMemory
     def ClearConfiguration(fromParam)
         # puts "called from #{fromParam}"
         # puts "Start 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
-        SharedMemory.SetConfigurationFileName("")
-        SharedMemory.SetConfigDateUpload("")
+        SetConfigurationFileName("")
+        SetConfigDateUpload("")
         ds = getDS()
     	ds["Configuration"] = "" # Clears the configuration.
     	ds[TimeOfPcUpload] = Time.new.to_i
@@ -319,15 +319,15 @@ class SharedMemory
         # puts "A.5 #{__LINE__}-#{__FILE__}"
         tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}") # tbr - to be returned        
     	puts "Check 1 #{__LINE__}-#{__FILE__}"
-        SharedMemory.SetConfigDateUpload(SharedMemory.GetConfiguration()["ConfigDateUpload"])
+        SetConfigDateUpload(GetConfiguration()["ConfigDateUpload"])
     	puts "Check 2 #{__LINE__}-#{__FILE__}"
-        SharedMemory.SetConfigurationFileName(SharedMemory.GetConfiguration()["FileName"])
+        SetConfigurationFileName(GetConfiguration()["FileName"])
     	puts "Check 3 #{__LINE__}-#{__FILE__}"
         # puts "A.6 #{__LINE__}-#{__FILE__}"
         # puts "B Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
-        configDateUpload = Time.at(SharedMemory.GetConfigDateUpload().to_i)
+        configDateUpload = Time.at(GetConfigDateUpload().to_i)
     	puts "Check 4 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
-    	dBaseFileName = "#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{SharedMemory.GetConfigurationFileName()}.db"
+    	dBaseFileName = "#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{GetConfigurationFileName()}.db"
     	puts "A Creating dbase '/mnt/card/#{dBaseFileName}' #{__LINE__}-#{__FILE__}"
     	SetDBaseFileName(dBaseFileName)
     	puts "B Creating dbase '/mnt/card/#{GetDBaseFileName()}' #{__LINE__}-#{__FILE__}"
@@ -407,11 +407,6 @@ class SharedMemory
         return getDS()[TimeOfPcLastCmd]
     end
 
-    def GetData()
-        return getDS()[SharedLib::Data]
-    end
-
-
     def SetBbbMode(modeParam,calledFrom)
         # puts "param sent #{modeParam}"
         ds = getDS()
@@ -456,8 +451,22 @@ class SharedMemory
         return GetDataFromSharedMemory()
     end
     
-    def WriteData(stringParam,fromParam)
-        puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
+    def GetDataGpio
+        return getDS()[SharedLib::Gpio]
+    end
+    
+    def WriteDataGpio(stringParam, fromParam)
+        ds = getDS()
+        if ds[SharedLib::Gpio].nil?
+            ds[SharedLib::Gpio] = Hash.new
+        end
+        
+        ds[SharedLib::Gpio] = stringParam 
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+    end
+    
+    def WriteDataTcu(stringParam,fromParam)
+        # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
         ds = getDS()
         if ds[SharedLib::Tcu].nil?
             ds[SharedLib::Tcu] = Hash.new
@@ -517,7 +526,7 @@ class SharedMemory
 =begin    
     class << self
       extend Forwardable
-      def_delegators :instance, *SharedMemory.instance_methods(false)
+      def_delegators :instance, *instance_methods(false)
     end
 =end    
 end
