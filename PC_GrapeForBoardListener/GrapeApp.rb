@@ -70,24 +70,24 @@ module MigrationCount
 					# SharedMemory.
 					# puts "1 receivedData = #{receivedData}"
 					
-        	SharedMemory.Initialize()
-        	SharedMemory.SetDataBoardToPc(hash)
+        	sharedMem = SharedMemory.new()
+        	sharedMem.SetDataBoardToPc(hash)
 										
-					puts "ConfigurationFileName = #{SharedMemory::GetDispConfigurationFileName()}"
-					puts "ConfigDateUpload = #{SharedMemory::GetDispConfigDateUpload()}"
-					puts "AllStepsDone_YesNo = #{SharedMemory::GetDispAllStepsDone_YesNo()}"
-					puts "BbbMode = #{SharedMemory::GetDispBbbMode()}"
-					puts "StepName = #{SharedMemory::GetDispStepName()}"
-					puts "StepNumber = #{SharedMemory::GetDispStepNumber()}"
-					puts "StepTotalTime = #{SharedMemory::GetDispStepTimeLeft()}"
-					puts "SlotTime = #{SharedMemory::GetDispSlotTime()}"
-					puts "SlotIpAddress = #{SharedMemory::GetDispSlotIpAddress()}"
-					puts "SlotTime = #{SharedMemory::GetDispSlotTime()}"
-					puts "AdcInput = #{SharedMemory::GetDispAdcInput()}"
-					puts "MuxData = #{SharedMemory::GetDispMuxData()}"
-					puts "Tcu = #{SharedMemory::GetDispTcu()}"
-					puts "AllStepsCompletedAt = #{SharedMemory::GetDispAllStepsCompletedAt()}"
-					puts "TotalStepDuration = #{SharedMemory::GetDispTotalStepDuration()}"
+					puts "ConfigurationFileName = #{sharedMem.GetDispConfigurationFileName()}"
+					puts "ConfigDateUpload = #{sharedMem.GetDispConfigDateUpload()}"
+					puts "AllStepsDone_YesNo = #{sharedMem.GetDispAllStepsDone_YesNo()}"
+					puts "BbbMode = #{sharedMem.GetDispBbbMode()}"
+					puts "StepName = #{sharedMem.GetDispStepName()}"
+					puts "StepNumber = #{sharedMem.GetDispStepNumber()}"
+					puts "StepTotalTime = #{sharedMem.GetDispStepTimeLeft()}"
+					puts "SlotTime = #{sharedMem.GetDispSlotTime()}"
+					puts "SlotIpAddress = #{sharedMem.GetDispSlotIpAddress()}"
+					puts "SlotTime = #{sharedMem.GetDispSlotTime()}"
+					puts "AdcInput = #{sharedMem.GetDispAdcInput()}"
+					puts "MuxData = #{sharedMem.GetDispMuxData()}"
+					puts "Tcu = #{sharedMem.GetDispTcu()}"
+					puts "AllStepsCompletedAt = #{sharedMem.GetDispAllStepsCompletedAt()}"
+					puts "TotalStepDuration = #{sharedMem.GetDispTotalStepDuration()}"
 					return
 
 					# puts "2 receivedData = #{receivedData}" 

@@ -28,6 +28,8 @@ require_relative '../lib/SharedLib'
 require_relative '../lib/SharedMemory'
 require 'pp' # Pretty print to see the hash values.
 
+# set :sharedMem, SharedMemory.new()
+
 class UserInterface
 	BbbPcListener = 'http://192.168.7.2'
 	LinuxBoxPcListener = "localhost"
@@ -405,9 +407,9 @@ class UserInterface
 	
 	def GetDurationLeft()
 		# If the button state is Stop, subtract the total time between now and TimeOfRun, then 
-		if SharedMemory.GetDispStepTimeLeft().nil? == false
-			totalMins = SharedMemory.GetDispStepTimeLeft().to_i/60
-			totalSec = SharedMemory.GetDispStepTimeLeft().to_i-60*totalMins
+		if @sharedMem.GetDispStepTimeLeft().nil? == false
+			totalMins = @sharedMem.GetDispStepTimeLeft().to_i/60
+			totalSec = @sharedMem.GetDispStepTimeLeft().to_i-60*totalMins
 			return "#{totalMins}:#{totalSec} (mm:ss)"
 		else 
 		end
@@ -508,9 +510,9 @@ class UserInterface
 			getSlotProperties()[ButtonDisplay] = Load
 		end
 		
-		if SharedMemory.GetDispAllStepsDone_YesNo() == SharedLib::Yes && 
-			SharedMemory.GetDispConfigurationFileName().nil?  == false &&
-			SharedMemory.GetDispConfigurationFileName().length > 0
+		if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::Yes && 
+			@sharedMem.GetDispConfigurationFileName().nil?  == false &&
+			@sharedMem.GetDispConfigurationFileName().length > 0
 			return Clear
 		else
 			return getSlotProperties()[ButtonDisplay]
@@ -530,8 +532,7 @@ class UserInterface
 		end
 		hash1 = JSON.parse(@response)
 		hash2 = hash1["bbbResponding"]
-  	SharedMemory.Initialize()
-  	SharedMemory.SetDataBoardToPc(hash2)
+  	@sharedMem.SetDataBoardToPc(hash2)
 		# puts "@response = #{@response} #{__LINE__}-#{__FILE__}"	
 		# puts "hash2 = #{hash2}"
 		getSlotProperties()[ButtonDisplay] = Load
@@ -548,8 +549,7 @@ class UserInterface
 			puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
 			hash1 = JSON.parse(@response)
 			hash2 = hash1["bbbResponding"]
-			SharedMemory.Initialize()
-			SharedMemory.SetDataBoardToPc(hash2)
+			@sharedMem.SetDataBoardToPc(hash2)
 			return true
 			rescue
 			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
@@ -567,12 +567,13 @@ class UserInterface
 	end
 
 	def initialize		
+		@sharedMem = SharedMemory.new
 		# end of 'def initialize'
 	end
 
 	def SlotCell()
-		temp1Param = (SharedMemory::GetDispAdcInput()[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3)
-		temp2Param = (SharedMemory::GetDispAdcInput()[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3)
+		temp1Param = (@sharedMem.GetDispAdcInput()[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3)
+		temp2Param = (@sharedMem.GetDispAdcInput()[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3)
 		bkcolor = setBkColor("#ffaa77")
 		toBeReturned = "<table bgcolor=\"#{bkcolor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">SLOT</font></td></tr>"
@@ -605,11 +606,11 @@ class UserInterface
 	end
 
 	def setBkColor(defColorParam)
-		if SharedMemory.GetDispConfigurationFileName().nil? == false &&  SharedMemory.GetDispConfigurationFileName().length > 0
-			if SharedMemory.GetDispAllStepsDone_YesNo() == SharedLib::Yes
+		if @sharedMem.GetDispConfigurationFileName().nil? == false &&  @sharedMem.GetDispConfigurationFileName().length > 0
+			if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::Yes
 				cellColor = "#04B404"
 			else
-				# puts "printing GREEN (#{SharedMemory.GetDispConfigurationFileName().length})- #{__LINE__} #{__FILE__}"
+				# puts "printing GREEN (#{@sharedMem.GetDispConfigurationFileName().length})- #{__LINE__} #{__FILE__}"
 				cellColor = defColorParam
 			end
 		else
@@ -643,8 +644,8 @@ class UserInterface
 	end
 
 	def DutCell(labelParam,rawDataParam)
-		current = (SharedMemory::GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
-		tcuData = SharedMemory::GetDispTcu()["#{rawDataParam}"]
+		current = (@sharedMem.GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
+		tcuData = @sharedMem.GetDispTcu()["#{rawDataParam}"]
 		cellColor = setBkColor("#99bb11")
 		if tcuData.nil?
 			cellColor = "#B6B6B4"
@@ -719,7 +720,7 @@ class UserInterface
 			return BlankFileName
 		else
 			d = Time.now
-			d += SharedMemory.GetDispStepTimeLeft().to_i 
+			d += @sharedMem.GetDispStepTimeLeft().to_i 
 			
 			month = d.month.to_s # make2Digits(d.month.to_s)
 			day = d.day.to_s # make2Digits(d.day.to_s)
@@ -747,7 +748,6 @@ class UserInterface
 	def GetSlotDisplay (slotLabelParam,slotLabel2Param)
 		setSlotOwner(slotLabel2Param)
 		getSlotDisplay_ToBeReturned = ""
-		SharedMemory::Initialize()
 		getSlotDisplay_ToBeReturned += 	
 		"<table style=\"border-collapse : collapse; border : 1px solid black;\"  bgcolor=\"#000000\">"
 		getSlotDisplay_ToBeReturned += 	"<tr>"
@@ -764,11 +764,11 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S0","0")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS0",SharedMemory::GetDispMuxData()["32"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS0",@sharedMem.GetDispMuxData()["32"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS4",SharedMemory::GetDispMuxData()["36"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS4",@sharedMem.GetDispMuxData()["36"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS8",SharedMemory::GetDispMuxData()["40"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS8",@sharedMem.GetDispMuxData()["40"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("5V","???")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
@@ -786,13 +786,13 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S1","1")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS1",SharedMemory::GetDispMuxData()["33"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS1",@sharedMem.GetDispMuxData()["33"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS5",SharedMemory::GetDispMuxData()["35"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS5",@sharedMem.GetDispMuxData()["35"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS9",SharedMemory::GetDispMuxData()["41"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS9",@sharedMem.GetDispMuxData()["41"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("12V",SharedMemory::GetDispMuxData()["46"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("12V",@sharedMem.GetDispMuxData()["46"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
 		getSlotDisplay_ToBeReturned += 	"<tr>"
 		getSlotDisplay_ToBeReturned += 	
@@ -808,13 +808,13 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S2","2")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS2",SharedMemory::GetDispMuxData()["32"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS2",@sharedMem.GetDispMuxData()["32"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS6",SharedMemory::GetDispMuxData()["38"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS6",@sharedMem.GetDispMuxData()["38"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS10",SharedMemory::GetDispMuxData()["42"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS10",@sharedMem.GetDispMuxData()["42"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("24V",SharedMemory::GetDispMuxData()["47"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("24V",@sharedMem.GetDispMuxData()["47"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
 		getSlotDisplay_ToBeReturned += 	"<tr>"
 		getSlotDisplay_ToBeReturned += 	
@@ -830,12 +830,12 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S3","3")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS3",SharedMemory::GetDispMuxData()["35"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS3",@sharedMem.GetDispMuxData()["35"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS7",SharedMemory::GetDispMuxData()["39"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS7",@sharedMem.GetDispMuxData()["39"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : 
-			collapse; border : 1px solid black;\">"+PNPCell(SharedMemory::GetDispMuxData()["43"],SharedMemory::GetDispMuxData()["44"],SharedMemory::GetDispMuxData()["45"])+"</td>"
+			collapse; border : 1px solid black;\">"+PNPCell(@sharedMem.GetDispMuxData()["43"],@sharedMem.GetDispMuxData()["44"],@sharedMem.GetDispMuxData()["45"])+"</td>"
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell()+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
@@ -862,9 +862,9 @@ class UserInterface
 					<td valign=\"top\" rowspan=\"2\">
 				 		<table>"
 				 		
-		if SharedMemory.GetDispAllStepsDone_YesNo() == SharedLib::Yes &&
-				SharedMemory.GetDispConfigurationFileName().nil? == false &&
-				SharedMemory.GetDispConfigurationFileName().length > 0
+		if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::Yes &&
+				@sharedMem.GetDispConfigurationFileName().nil? == false &&
+				@sharedMem.GetDispConfigurationFileName().length > 0
 			topTable += "
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>ALL STEPS COMPLETE</td></tr>
 				 			<tr>
@@ -875,7 +875,7 @@ class UserInterface
 				 							<label 
 				 								id=\"stepCompletion_#{slotLabel2Param}\">
 				 									Date: "
-				 									time = Time.at(SharedMemory.GetDispAllStepsCompletedAt().to_i)				 									
+				 									time = Time.at(@sharedMem.GetDispAllStepsCompletedAt().to_i)				 									
 			topTable += "
 				 									#{time.strftime("%m/%d/%Y %H:%M:%S")}
 				 							</label>
@@ -884,7 +884,7 @@ class UserInterface
 				 			</tr>"
 		else
 			topTable += "
-				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{SharedMemory::GetDispStepNumber()}' COMPLETION</td></tr>
+				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{@sharedMem.GetDispStepNumber()}' COMPLETION</td></tr>
 				 			<tr>
 				 				<td align=\"center\">
 				 					<font 				 						
@@ -937,8 +937,8 @@ class UserInterface
 									</center>
 								</td>
 							</tr>"
-		if SharedMemory::GetDispConfigurationFileName().nil? == false && 
-			SharedMemory::GetDispConfigurationFileName().length > 0
+		if @sharedMem.GetDispConfigurationFileName().nil? == false && 
+			@sharedMem.GetDispConfigurationFileName().length > 0
 			topTable += "								
 				<tr>
 					<td align=\"left\">
@@ -948,15 +948,15 @@ class UserInterface
 				<tr>
 					<td align = \"center\">
 						<font size=\"1.25\" style=\"font-style: italic;\">"
-							min = SharedMemory.GetDispTotalStepDuration().to_i/60
-							sec = SharedMemory.GetDispTotalStepDuration().to_i - (min*60)
+							min = @sharedMem.GetDispTotalStepDuration().to_i/60
+							sec = @sharedMem.GetDispTotalStepDuration().to_i - (min*60)
 			topTable += "		#{min}:#{sec} (mm:ss)
 						</font>								
 					</td>
 				</tr>"
 		end							
 		
-		if SharedMemory.GetDispBbbMode() == SharedLib::InRunMode && SharedMemory.GetDispConfigurationFileName.nil? == false && SharedMemory.GetDispConfigurationFileName.length > 0
+		if @sharedMem.GetDispBbbMode() == SharedLib::InRunMode && @sharedMem.GetDispConfigurationFileName.nil? == false && @sharedMem.GetDispConfigurationFileName.length > 0
 			topTable += "								
 					<tr>
 						<td align=\"left\">
@@ -1017,7 +1017,6 @@ class UserInterface
 	end
 	
 	def display
-		SharedMemory.Initialize()
 		displayForm = ""
 		displayForm =  "	
 	<style>

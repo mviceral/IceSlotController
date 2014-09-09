@@ -54,7 +54,7 @@ class SharedMemory
       ds[SharedLib::PC][SharedLib::TotalStepDuration] = dispTotalStepDurationParam
       ds[SharedLib::PC][SharedLib::AdcInput] = adcInputParam
       ds[SharedLib::PC][SharedLib::MuxData] = muxDataParam
-      tcuData = "-BBB1410220744|0@1,23.398,22.848,0,20,Ok|1@1,25.575,24.241,0,10,Ok|2@0,25.833,24.687,1,101,Ok|3@0,25.240,23.619,1,101,Ok"
+      tcuData = tcuParam
       datArr = Array.new
       ct = 1
       while ct<tcuData.split('|').length
