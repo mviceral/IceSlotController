@@ -23,7 +23,7 @@ class TCUSampler
     ForPowerSupply = "ForPowerSupply"
     PollIntervalInSeconds = "PollIntervalInSeconds"   
     HoldingTankFilename = "MachineState_DoNotDeleteNorModify.json"
-    FaultyTcuList_SkipPolling = "../DisabledSites.txt"
+    FaultyTcuList_SkipPolling = "../TcuDisabledSites.txt"
     TimeOfPcLastCmd ="TimeOfPcLastCmd"
     BbbMode = "BbbMode"
     SeqDownPsArr = "SeqDownPsArr"
@@ -732,7 +732,8 @@ class TCUSampler
             if tcusToSkip[ct].nil? == true
                 if 0<=ct && ct <=7  
                     SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna1Set('#{ct}').  #{__LINE__}-#{__FILE__}"
-                    gPIO2.etsEna1Set(ct)
+                    bitToUse = etsEnaBit(ct)
+                    gPIO2.etsEna1SetOn(bitToUse)
                 elsif 8<=ct && ct <=15
                     forSetting = ct-8
                     SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna2Set('#{forSetting}').  #{__LINE__}-#{__FILE__}"
