@@ -54,10 +54,28 @@ class SharedMemory
       ds[SharedLib::PC][SharedLib::TotalStepDuration] = dispTotalStepDurationParam
       ds[SharedLib::PC][SharedLib::AdcInput] = adcInputParam
       ds[SharedLib::PC][SharedLib::MuxData] = muxDataParam
-      ds[SharedLib::PC][SharedLib::Tcu] = tcuParam
+      tcuData = "-BBB1410220744|0@1,23.398,22.848,0,20,Ok|1@1,25.575,24.241,0,10,Ok|2@0,25.833,24.687,1,101,Ok|3@0,25.240,23.619,1,101,Ok"
+      datArr = Array.new
+      ct = 1
+      while ct<tcuData.split('|').length
+      	datArr.push(tcuData.split('|')[ct])
+      	ct += 1
+      end
+      
+      hash = Hash.new
+      ct = 0
+      while ct<datArr.length
+      	hold = datArr[ct].split('@')
+      	hash[hold[0]] = hold[1]
+      	ct += 1
+      end
+      ds[SharedLib::PC][SharedLib::Tcu] = hash
       WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
 	end
 
+	def GetDispStepTimeLeft      
+		return getPCShared()[SharedLib::StepTimeLeft]
+	end
 
 	def GetDispAdcInput()
 		return getPCShared()[SharedLib::AdcInput]
@@ -99,10 +117,6 @@ class SharedMemory
 			return getPCShared()[SharedLib::StepNumber]
     end
 
-	def GetDispStepTimeLeft
-		return getPCShared()[SharedLib::StepTimeLeft]
-	end
-	
 	def GetDispTotalStepDuration
 		return getPCShared()[SharedLib::TotalStepDuration]
 	end

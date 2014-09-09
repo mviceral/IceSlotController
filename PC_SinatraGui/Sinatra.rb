@@ -405,9 +405,9 @@ class UserInterface
 	
 	def GetDurationLeft()
 		# If the button state is Stop, subtract the total time between now and TimeOfRun, then 
-		if SharedMemory.GetDispStepTotalTime().nil? == false
-			totalMins = SharedMemory.GetDispStepTotalTime().to_i/60
-			totalSec = SharedMemory.GetDispStepTotalTime().to_i-60*totalMins
+		if SharedMemory.GetDispStepTimeLeft().nil? == false
+			totalMins = SharedMemory.GetDispStepTimeLeft().to_i/60
+			totalSec = SharedMemory.GetDispStepTimeLeft().to_i-60*totalMins
 			return "#{totalMins}:#{totalSec} (mm:ss)"
 		else 
 		end
@@ -644,9 +644,14 @@ class UserInterface
 
 	def DutCell(labelParam,rawDataParam)
 		current = (SharedMemory::GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
-		tcuData = (SharedMemory::GetDispTcu()[rawDataParam])
-		puts "rawDataParam=#{rawDataParam}, tcuData=#{tcuData} #{__LINE__}-#{__FILE__}"
+		tcuData = SharedMemory::GetDispTcu()["#{rawDataParam}"]
 		cellColor = setBkColor("#99bb11")
+		if tcuData.nil?
+			cellColor = "#B6B6B4"
+		else
+			temperature = tcuData.split(',')[2]
+		end
+		puts "rawDataParam=#{rawDataParam}, tcuData=#{tcuData} #{__LINE__}-#{__FILE__}"
 		
 		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
@@ -661,10 +666,10 @@ class UserInterface
 				<font size=\"1\">Temp</font>
 			</td>
 			<td #{bgcolor} >
-				<font size=\"1\">???C</font>
+				<font size=\"1\">#{temperature} C</font>
 			</td>"
 		toBeReturned += "</tr>"
-		toBeReturned += "<tr><td><font size=\"1\">Current</font></td><td><font size=\"1\">#{current}A</font></td></tr>"
+		toBeReturned += "<tr><td><font size=\"1\">Current</font></td><td><font size=\"1\">#{current} A</font></td></tr>"
 		toBeReturned += "</table>"
 		return toBeReturned
 		# End of 'DutCell("S20",dut20[2])'
