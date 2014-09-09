@@ -644,7 +644,8 @@ class UserInterface
 
 	def DutCell(labelParam,rawDataParam)
 		current = (SharedMemory::GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
-		
+		tcuData = (SharedMemory::GetDispTcu()[rawDataParam])
+		puts "rawDataParam=#{rawDataParam}, tcuData=#{tcuData} #{__LINE__}-#{__FILE__}"
 		cellColor = setBkColor("#99bb11")
 		
 		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
