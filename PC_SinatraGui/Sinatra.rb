@@ -160,7 +160,7 @@ class UserInterface
 		while ct < config.length do
 			stepName = config[ct-indexOfStepName].split(",")[2].strip # Get the row data for the step file name.
 			stepTime = config[ct].split(",")[4].strip
-			if is_a_number?(stepTime) == false
+			if SharedLib.is_a_number?(stepTime) == false
 				#
 				# Given number is not good
 				#
@@ -405,9 +405,12 @@ class UserInterface
 	
 	def GetDurationLeft()
 		# If the button state is Stop, subtract the total time between now and TimeOfRun, then 
-		totalMins = SharedMemory.GetDispStepTotalTime().to_i/60
-		totalSec = SharedMemory.GetDispStepTotalTime().to_i-60*totalMins
-		return "#{totalMins}:#{totalSec} (mm:ss)"
+		if SharedMemory.GetDispStepTotalTime().nil? == false
+			totalMins = SharedMemory.GetDispStepTotalTime().to_i/60
+			totalSec = SharedMemory.GetDispStepTotalTime().to_i-60*totalMins
+			return "#{totalMins}:#{totalSec} (mm:ss)"
+		else 
+		end
 	end 
 
 	def make2Digits(paramDigit)
@@ -947,7 +950,7 @@ class UserInterface
 				</tr>"
 		end							
 		
-		if SharedMemory.GetDispBbbMode() == SharedLib::InRunMode
+		if SharedMemory.GetDispBbbMode() == SharedLib::InRunMode && SharedMemory.GetDispConfigurationFileName.nil? == false && SharedMemory.GetDispConfigurationFileName.length > 0
 			topTable += "								
 					<tr>
 						<td align=\"left\">
@@ -1292,10 +1295,6 @@ class UserInterface
 		# end of 'def loadFile'
 	end	
 	
-	def is_a_number?(s)
-  	s.to_s.match(/\A[+-]?\d+?(\.\d+)?\Z/) == nil ? false : true
-	end
-
 	def getKnownRowNamesFor(fileTypeParam)
 		if @lastKnownFileType != fileTypeParam
 			@lastKnownFileType == fileTypeParam
@@ -1329,7 +1328,7 @@ class UserInterface
 	def checkConfigValue(valueParam, colnameParam, indexParam, rowParam,fromLine,fromFile)
 		if (valueParam.length>0 && 
 				colnameParam != UserInterface::IndexCol &&
-				is_a_number?(valueParam) == false)
+				SharedLib.is_a_number?(valueParam) == false)
 			@redirectWithError+="&ErrIndex=#{indexParam}&ErrColType=#{colnameParam}"
 			@redirectWithError+="&ErrValue="+SharedLib.makeUriFriendly("#{valueParam}")
 			return @redirectWithError
@@ -1490,7 +1489,7 @@ class UserInterface
 				#
 				# Must be a number test.
 				#
-				if is_a_number?(valueColumnOrStepNameRow) == false
+				if SharedLib.is_a_number?(valueColumnOrStepNameRow) == false
 						error = "Error: In file '#{SharedLib.makeUriFriendly(configFileName)}', 'Value' "
 						error += "'#{valueColumnOrStepNameRow}'"
 						error += "on Step Name '#{columns[2]}' must be a number."
