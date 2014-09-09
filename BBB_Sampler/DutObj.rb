@@ -6,7 +6,7 @@ class DutObj
 
     def initialize()
         @statusResponse = Array.new(TOTAL_DUTS_TO_LOOK_AT)
-        SharedMemory.Initialize()
+        @sharedMem = SharedMemory.new()
         # End of 'def initialize()'
     end
     
@@ -98,7 +98,7 @@ class DutObj
         timeNow = Time.now.to_i
 		allDutData = "-BBB#{timeNow}"+allDutData
 		# puts "Poll A #{Time.now.inspect}"
-        SharedMemory.WriteData(allDutData,"#{__LINE__}-#{__FILE__}")
+        @sharedMem.WriteData(allDutData,"#{__LINE__}-#{__FILE__}")
 		# puts "Poll B #{Time.now.inspect}"
         
         # End of 'def poll()'

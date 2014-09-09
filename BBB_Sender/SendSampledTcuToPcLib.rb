@@ -37,17 +37,17 @@ class SendSampledTcuToPCLib
     	end
     
         @pollIntervalInSeconds = 10 
-        SharedMemory.Initialize()
+        @sharedMem = SharedMemory.new()
         # initialize
         #
         # The goal is - the moment the new data becomes available from the sampler, that's when you start processing
         # like send data to PC for immediate display and for saving it, and saving the data into BBB local storage.
         # This way, there's lots of lee-way for recovery case something happens before the next polling.
         #
-        @timeOfData = SharedMemory.GetSlotTime("#{__LINE__}-#{__FILE__}")
+        @timeOfData = @sharedMem.GetSlotTime("#{__LINE__}-#{__FILE__}")
         SendDataToPC("#{__LINE__} #{__FILE__}")
         waitTime = Time.now+@pollIntervalInSeconds
-        while SharedMemory.GetSlotTime("#{__LINE__}-#{__FILE__}") == @timeOfData
+        while @sharedMem.GetSlotTime("#{__LINE__}-#{__FILE__}") == @timeOfData
             sleep(0.01) 
             # puts("Data is the same!!!")
             # puts "Test RunSender G #{__FILE__}-#{__LINE__}"
@@ -65,7 +65,7 @@ class SendSampledTcuToPCLib
         sentSampledData = @timeOfData
         while true
             # puts "Test RunSender C #{__FILE__}-#{__LINE__}"
-            @timeOfData = SharedMemory.GetSlotTime("#{__LINE__}-#{__FILE__}")
+            @timeOfData = @sharedMem.GetSlotTime("#{__LINE__}-#{__FILE__}")
             if (sentSampledData != @timeOfData)
                 SendDataToPC("#{__LINE__}-#{__FILE__}")
                 # puts "Test RunSender E #{__FILE__}-#{__LINE__}"
@@ -105,21 +105,21 @@ class SendSampledTcuToPCLib
 
 	def GetDataToSendPc()
         slotInfo = Hash.new()
-        slotInfo[SharedLib::ConfigurationFileName] = SharedMemory.GetConfigurationFileName()
-        slotInfo[SharedLib::ConfigDateUpload] = SharedMemory.GetConfigDateUpload()
-        slotInfo[SharedLib::AllStepsDone_YesNo] = SharedMemory.GetAllStepsDone_YesNo()
-        slotInfo[SharedLib::BbbMode] = SharedMemory.GetBbbMode()
+        slotInfo[SharedLib::ConfigurationFileName] = @sharedMem.GetConfigurationFileName()
+        slotInfo[SharedLib::ConfigDateUpload] = @sharedMem.GetConfigDateUpload()
+        slotInfo[SharedLib::AllStepsDone_YesNo] = @sharedMem.GetAllStepsDone_YesNo()
+        slotInfo[SharedLib::BbbMode] = @sharedMem.GetBbbMode()
 
-        slotInfo[SharedLib::StepName] = SharedMemory.GetStepName()
-        slotInfo[SharedLib::StepNumber] = SharedMemory.GetStepNumber()
-        slotInfo[SharedLib::StepTimeLeft] = SharedMemory.GetStepTimeLeft()
+        slotInfo[SharedLib::StepName] = @sharedMem.GetStepName()
+        slotInfo[SharedLib::StepNumber] = @sharedMem.GetStepNumber()
+        slotInfo[SharedLib::StepTimeLeft] = @sharedMem.GetStepTimeLeft()
         slotInfo[SharedLib::SlotTime] = @timeOfData
-        slotInfo[SharedLib::AdcInput] = SharedMemory.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
-        slotInfo[SharedLib::MuxData] = SharedMemory.GetDataMuxData("#{__LINE__}-#{__FILE__}")
-        slotInfo[SharedLib::Tcu] = SharedMemory.GetDataTcu("#{__LINE__}-#{__FILE__}")
+        slotInfo[SharedLib::AdcInput] = @sharedMem.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
+        slotInfo[SharedLib::MuxData] = @sharedMem.GetDataMuxData("#{__LINE__}-#{__FILE__}")
+        slotInfo[SharedLib::Tcu] = @sharedMem.GetDataTcu("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::SlotIpAddress] = GetSlotIpAddress()
-        slotInfo[SharedLib::AllStepsCompletedAt] = SharedMemory.GetAllStepsCompletedAt()
-        slotInfo[SharedLib::TotalStepDuration] = SharedMemory.GetTotalStepDuration();
+        slotInfo[SharedLib::AllStepsCompletedAt] = @sharedMem.GetAllStepsCompletedAt()
+        slotInfo[SharedLib::TotalStepDuration] = @sharedMem.GetTotalStepDuration();
         slotInfoJson = slotInfo.to_json
 		return slotInfoJson
 	end
@@ -129,16 +129,16 @@ class SendSampledTcuToPCLib
     	slotInfoJson = GetDataToSendPc()
     	
     	
-    	# Save data into dbase if SharedMemory.GetAllStepsDone_YesNo() == SharedLib::No && 
-    	# SharedMemory.GetBbbMode() == SharedLib::InRunMode
-        if SharedMemory.GetAllStepsDone_YesNo() == SharedLib::No && SharedMemory.GetBbbMode() == SharedLib::InRunMode
+    	# Save data into dbase if @sharedMem.GetAllStepsDone_YesNo() == SharedLib::No && 
+    	# @sharedMem.GetBbbMode() == SharedLib::InRunMode
+        if @sharedMem.GetAllStepsDone_YesNo() == SharedLib::No && @sharedMem.GetBbbMode() == SharedLib::InRunMode
             # The data needs to be logged in...
-            if SharedMemory.GetDBaseFileName().nil? == false && SharedMemory.GetDBaseFileName().length > 0
-                puts "\n\n\nA Checking #{@dirFileRepository}/#{SharedMemory.GetDBaseFileName()} SharedMemory.GetDBaseFileName().length = #{SharedMemory.GetDBaseFileName().length}  #{__LINE__}-#{__FILE__}"
+            if @sharedMem.GetDBaseFileName().nil? == false && @sharedMem.GetDBaseFileName().length > 0
+                puts "\n\n\nA Checking #{@dirFileRepository}/#{@sharedMem.GetDBaseFileName()} @sharedMem.GetDBaseFileName().length = #{@sharedMem.GetDBaseFileName().length}  #{__LINE__}-#{__FILE__}"
                 # There's a valid dBase file name to save the data.
                 puts "B Checking #{@dirFileRepository}/#{@dBaseFileName} #{__LINE__}-#{__FILE__}"
-            	if @dBaseFileName != SharedMemory.GetDBaseFileName()
-            	    @dBaseFileName = SharedMemory.GetDBaseFileName()
+            	if @dBaseFileName != @sharedMem.GetDBaseFileName()
+            	    @dBaseFileName = @sharedMem.GetDBaseFileName()
             	    @db = SQLite3::Database.open "#{@dirFileRepository}/#{@dBaseFileName}"
             	end
             	

@@ -3,7 +3,7 @@ require 'timeout'
 require 'beaglebone'
 require_relative 'DutObj'
 require_relative 'ThermalSiteDevices'
-require_relative "../experiments/BBB_GPIO2 Interface Ruby/GPIO2"
+require_relative "../BBB_GPIO2 Interface Ruby/GPIO2"
 require_relative '../lib/SharedLib'
 require 'singleton'
 require 'forwardable'
@@ -96,7 +96,7 @@ class TCUSampler
     end
     
     def setToMode(modeParam, calledFrom)
-        SharedMemory.SetBbbMode(modeParam,"#{__LINE__}-#{__FILE__}")
+        @shareMem.SetBbbMode(modeParam,"#{__LINE__}-#{__FILE__}")
         @boardData[BbbMode] = modeParam
         @boardMode = modeParam
 
@@ -235,10 +235,10 @@ class TCUSampler
 	    # Write configuartion to holding tank case there's a power outage.
 	    if @stepToWorkOn.nil? == false
 	        # PP.pp(@stepToWorkOn)
-            SharedMemory.SetStepNumber(@stepToWorkOn["Step Num"])
-            SharedMemory.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
+            @shareMem.SetStepNumber(@stepToWorkOn["Step Num"])
+            @shareMem.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
         else
-            SharedMemory.SetAllStepsCompletedAt(@boardData[SharedLib::AllStepsCompletedAt])
+            @shareMem.SetAllStepsCompletedAt(@boardData[SharedLib::AllStepsCompletedAt])
 	        # SharedLib.pause "PP @stepToWorkOn","#{__LINE__}-#{__FILE__}"
 	    end
 
@@ -354,9 +354,9 @@ class TCUSampler
     end
     
     def initStepToWorkOnVar
-        SharedMemory.SetStepTimeLeft("")
-        SharedMemory.SetStepName("")
-        SharedMemory.SetStepNumber("")
+        @shareMem.SetStepTimeLeft("")
+        @shareMem.SetStepName("")
+        @shareMem.SetStepNumber("")
         # puts "\n\n\ninitStepToWorkOnVar got called."
         # puts caller
         @stepToWorkOn = nil
@@ -385,8 +385,8 @@ class TCUSampler
                                         # puts "B #{__LINE__}-#{__FILE__}"
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
-                                        SharedMemory.SetStepName("#{key}")
-                                        SharedMemory.SetStepNumber("#{stepNumber+1}")
+                                        @shareMem.SetStepName("#{key}")
+                                        @shareMem.SetStepNumber("#{stepNumber+1}")
                                         # SharedLib.pause "A Got a step", "#{__LINE__}-#{__FILE__}"
                                         # PP.pp(@stepToWorkOn)
                                         # SharedLib.pause "B Got a step Breaking out of loop.", "#{__LINE__}-#{__FILE__}"
@@ -432,7 +432,7 @@ class TCUSampler
             psSeqUp()
             setPollIntervalInSeconds(IntervalSecInRunMode,"#{__LINE__}-#{__FILE__}")
         end
-        SharedMemory.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
+        @shareMem.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
     end
     
     def setBoardData(boardDataParam)
@@ -454,7 +454,7 @@ class TCUSampler
         	while true
                 sleep(waitTime.to_f-Time.now.to_f)
                 waitTime += 60*10
-                if SharedMemory.GetBbbMode() == SharedLib::InRunMode && SharedMemory.GetAllStepsDone_YesNo() == SharedLib::No
+                if @shareMem.GetBbbMode() == SharedLib::InRunMode && @shareMem.GetAllStepsDone_YesNo() == SharedLib::No
                 end
         	end
         end
@@ -466,7 +466,7 @@ class TCUSampler
         #    SharedLib.pause "Bingo! caled from #{calledFrom}","#{__LINE__}-#{__FILE__}"
         #end
         @boardData[SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
-        SharedMemory.SetAllStepsDone_YesNo(allStepsDone_YesNoParam,"#{__LINE__}-#{__FILE__}")
+        @shareMem.SetAllStepsDone_YesNo(allStepsDone_YesNoParam,"#{__LINE__}-#{__FILE__}")
     end    
 
     def loadConfigurationFromHoldingTank()
@@ -512,32 +512,32 @@ class TCUSampler
             # puts "g #{__LINE__}-#{__FILE__}"
             # puts "pAin.read=#{pAin.read}"
             # puts "g.1 #{__LINE__}-#{__FILE__}"
-            SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SLOTP5V,pAin.read,@multiplier)
+            @shareMem.SetData(SharedLib::AdcInput,SharedLib::SLOTP5V,pAin.read,@multiplier)
             # puts "h #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_40)
             # puts "i #{__LINE__}-#{__FILE__}"
-            SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SLOTP3V3,pAin.read,@multiplier)
+            @shareMem.SetData(SharedLib::AdcInput,SharedLib::SLOTP3V3,pAin.read,@multiplier)
             # puts "j #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_37)
             # puts "k #{__LINE__}-#{__FILE__}"
-            SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SLOTP1V8,pAin.read,@multiplier)
+            @shareMem.SetData(SharedLib::AdcInput,SharedLib::SLOTP1V8,pAin.read,@multiplier)
             # puts "l #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_38)
             # puts "m #{__LINE__}-#{__FILE__}"
-            SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SlotTemp1,pAin.read,@multiplier)
+            @shareMem.SetData(SharedLib::AdcInput,SharedLib::SlotTemp1,pAin.read,@multiplier)
             # puts "n #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_36)
             # puts "o #{__LINE__}-#{__FILE__}"
-            SharedMemory.SetData(SharedLib::AdcInput,SharedLib::CALREF,pAin.read,@multiplier)
+            @shareMem.SetData(SharedLib::AdcInput,SharedLib::CALREF,pAin.read,@multiplier)
             # puts "p #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_35)
             # puts "q #{__LINE__}-#{__FILE__}"
-            SharedMemory.SetData(SharedLib::AdcInput,SharedLib::SlotTemp2,pAin.read,@multiplier)
+            @shareMem.SetData(SharedLib::AdcInput,SharedLib::SlotTemp2,pAin.read,@multiplier)
             # puts "r #{__LINE__}-#{__FILE__}"
         else
             # The code is not initialized to run this function
@@ -551,7 +551,7 @@ class TCUSampler
             aMux = 0
             @pAinMux = AINPin.new(:P9_33)
             while aMux<48
-                SharedMemory.SetData(SharedLib::MuxData,aMux,getMuxValue(aMux),@multiplier)
+                @shareMem.SetData(SharedLib::MuxData,aMux,getMuxValue(aMux),@multiplier)
                 # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*aMuxMultiplier[aMux]/1000.0).round(4)} V'"
                 aMux += 1
             end
@@ -623,6 +623,35 @@ class TCUSampler
     	@multiplier[SharedLib::CALREF] = 2.3
     	@multiplier[SharedLib::SlotTemp2] = 2.3
     end
+
+    def etsEnaBit(ct)
+        if 8<= ct && ct <= 15
+            ct -= 8
+        elsif 16 <= ct && ct <= 23
+            ct -= 16
+        end
+
+        if 0<=ct && ct <=7
+            case ct
+            when 7
+                return GPIO2::X9_ETS7
+            when 6
+                return GPIO2::X9_ETS6
+            when 5
+                return GPIO2::X9_ETS5
+            when 4 
+                return GPIO2::X9_ETS4
+            when 3
+                return GPIO2::X9_ETS3
+            when 2
+                return GPIO2::X9_ETS2
+            when 1
+                return GPIO2::X9_ETS1
+            when 0
+                return GPIO2::X9_ETS0
+            end
+        end
+    end
     
     def runTCUSampler
     	@setupAtHome = false
@@ -630,8 +659,9 @@ class TCUSampler
     	@initpollAdcInputFunc = false
     	@multiplier = Hash.new
     	
-        SharedMemory.Initialize()
-    	SharedMemory.SetupData()
+        @shareMem = SharedMemory.new
+        @shareMem.Initialize()
+    	@shareMem.SetupData()
     	initMuxValueFunc()
     	initpollAdcInputFunc()
     	
@@ -730,18 +760,16 @@ class TCUSampler
         ct = 0
         while ct<24 do
             if tcusToSkip[ct].nil? == true
+                bitToUse = etsEnaBit(ct)
                 if 0<=ct && ct <=7  
                     SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna1Set('#{ct}').  #{__LINE__}-#{__FILE__}"
-                    bitToUse = etsEnaBit(ct)
                     gPIO2.etsEna1SetOn(bitToUse)
                 elsif 8<=ct && ct <=15
-                    forSetting = ct-8
                     SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna2Set('#{forSetting}').  #{__LINE__}-#{__FILE__}"
-                    gPIO2.etsEna2Set(forSetting)
+                    gPIO2.etsEna2SetOn(bitToUse)
                 elsif 16<=ct && ct <=23
-                    forSetting = ct-16
                     SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna3Set('#{forSetting}').  #{__LINE__}-#{__FILE__}"
-                    gPIO2.etsEna3Set(forSetting)
+                    gPIO2.etsEna3SetOn(bitToUse)
                 end
             end
             ct += 1
@@ -756,21 +784,21 @@ class TCUSampler
         loadConfigurationFromHoldingTank()
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration][FileName].nil? == false
-	        SharedMemory.SetConfigurationFileName(@boardData[Configuration][FileName])
+	        @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
 	    else
-	        SharedMemory.SetConfigurationFileName("")
+	        @shareMem.SetConfigurationFileName("")
         end
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration]["ConfigDateUpload"].nil? == false
-    	    SharedMemory.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
+    	    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
     	else
-    	    SharedMemory.SetConfigDateUpload("")
+    	    @shareMem.SetConfigDateUpload("")
         end
 
         if @boardData[SharedLib::AllStepsDone_YesNo].nil? == false
-            SharedMemory.SetAllStepsDone_YesNo(@boardData[SharedLib::AllStepsDone_YesNo],"#{__LINE__}-#{__FILE__}")
+            @shareMem.SetAllStepsDone_YesNo(@boardData[SharedLib::AllStepsDone_YesNo],"#{__LINE__}-#{__FILE__}")
         else
-            SharedMemory.SetAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # so it will not run
+            @shareMem.SetAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # so it will not run
         end
 
 	    initStepToWorkOnVar()
@@ -784,9 +812,9 @@ class TCUSampler
                 # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
                 stepNum = @stepToWorkOn[StepNum]
             end
-            puts "ping Mode()=#{SharedMemory.GetBbbMode()} AllStepsDone_YesNo()=#{SharedMemory.GetAllStepsDone_YesNo()} ConfigFileName()=#{SharedMemory.GetConfigurationFileName()} stepNum=#{stepNum} #{__LINE__}-#{__FILE__}"
-            SharedMemory.SetSlotTime(Time.now.to_i)
-			case SharedMemory.GetBbbMode()
+            puts "ping Mode()=#{@shareMem.GetBbbMode()} AllStepsDone_YesNo()=#{@shareMem.GetAllStepsDone_YesNo()} ConfigFileName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{__LINE__}-#{__FILE__}"
+            @shareMem.SetSlotTime(Time.now.to_i)
+			case @shareMem.GetBbbMode()
 			when SharedLib::InRunMode
 			    # puts "InRunMode #{__LINE__}-#{__FILE__}"
 			    # puts "@boardData[SharedLib::AllStepsDone_YesNo]=#{@boardData[SharedLib::AllStepsDone_YesNo]} #{__LINE__}-#{__FILE__}"
@@ -816,7 +844,7 @@ class TCUSampler
                                 ThermalSiteDevices.logData
                                 # puts "F #{__LINE__}-#{__FILE__}"
                             end
-                            SharedMemory.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
+                            @shareMem.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
         			    else
         			        # Step just finished.
                             setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
@@ -833,7 +861,7 @@ class TCUSampler
                                 
                                 # Done processing all steps listed in configuration.step file
                                 saveBoardStateToHoldingTank()
-                                # puts "SharedMemory.GetAllStepsCompletedAt() = #{SharedMemory.GetAllStepsCompletedAt()} #{__LINE__}-#{__FILE__}"
+                                # puts "@shareMem.GetAllStepsCompletedAt() = #{@shareMem.GetAllStepsCompletedAt()} #{__LINE__}-#{__FILE__}"
                                 # We're done processing all the steps.
                             end
                         end
@@ -843,11 +871,11 @@ class TCUSampler
 			    end
             end
             
-    		# puts "A getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} SharedMemory.GetTimeOfPcLastCmd()=#{SharedMemory.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - SharedMemory.GetTimeOfPcLastCmd()}"
-    		if getTimeOfPcLastCmd() < SharedMemory.GetTimeOfPcLastCmd()
-    		    puts "\n\n\nNew command from PC - '#{SharedMemory.GetPcCmd()}' #{__LINE__}-#{__FILE__}"
-    		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} SharedMemory.GetTimeOfPcLastCmd()=#{SharedMemory.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - SharedMemory.GetTimeOfPcLastCmd()}"
-    		    case SharedMemory.GetPcCmd()
+    		# puts "A getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
+    		if getTimeOfPcLastCmd() < @shareMem.GetTimeOfPcLastCmd()
+    		    puts "\n\n\nNew command from PC - '#{@shareMem.GetPcCmd()}' #{__LINE__}-#{__FILE__}"
+    		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
+    		    case @shareMem.GetPcCmd()
     		    when SharedLib::RunFromPc
         		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
     		    when SharedLib::StopFromPc
@@ -856,31 +884,31 @@ class TCUSampler
     		    when SharedLib::LoadConfigFromPc
         		    SharedLib.bbbLog("New configuration step file uploaded.")
         		    setBoardData(Hash.new)
-        		    @boardData[Configuration] = SharedMemory.GetConfiguration()
+        		    @boardData[Configuration] = @shareMem.GetConfiguration()
     		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-        		    SharedMemory.SetConfigurationFileName(@boardData[Configuration][FileName])
-        		    SharedMemory.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
+        		    @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
+        		    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
                     setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                     
         		    saveBoardStateToHoldingTank()
         		    
         		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
         		    # by clearing it out.
-        		    SharedMemory.SetConfiguration("","#{__LINE__}-#{__FILE__}") 
+        		    @shareMem.SetConfiguration("","#{__LINE__}-#{__FILE__}") 
     		        setBoardStateForCurrentStep()
         		else
-        		    SharedLib.bbbLog("Unknown PC command SharedMemory.GetPcCmd()='#{SharedMemory.GetPcCmd()}'.")
+        		    SharedLib.bbbLog("Unknown PC command @shareMem.GetPcCmd()='#{@shareMem.GetPcCmd()}'.")
         		end
         		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
-    		    setTimeOfPcLastCmd(SharedMemory.GetTimeOfPcLastCmd())
+    		    setTimeOfPcLastCmd(@shareMem.GetTimeOfPcLastCmd())
     		end
 
             
-            if (SharedMemory.GetBbbMode() == SharedLib::InRunMode || SharedMemory.GetBbbMode() == SharedLib::InStopMode) == false  
+            if (@shareMem.GetBbbMode() == SharedLib::InRunMode || @shareMem.GetBbbMode() == SharedLib::InStopMode) == false  
                 #
                 # We're in limbo for some reason
                 #
-                puts "We're in limbo SharedMemory.GetBbbMode()='#{SharedMemory.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
+                puts "We're in limbo @shareMem.GetBbbMode()='#{@shareMem.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
                 setToMode(SharedLib::InRunMode, "#{__LINE__}-#{__FILE__}")
                 setBoardStateForCurrentStep()
             end
@@ -949,3 +977,4 @@ end
 TCUSampler.runTCUSampler
 # @703
 
+#                     bitToUse = etsEnaBit(ct)

@@ -4,8 +4,8 @@
 #
 require_relative 'SharedMemoryExtension.so'
 require_relative '../lib/SharedLib'
-require 'singleton'
-require 'forwardable'
+#require 'singleton'
+#require 'forwardable'
 require 'json'
 require 'pp'
 
@@ -14,7 +14,7 @@ require 'pp'
 
 class SharedMemory 
     include SharedMemoryExtension
-    include Singleton
+#    include Singleton
     
     Mode = "Mode"
     Cmd = "Cmd"
@@ -347,6 +347,10 @@ class SharedMemory
     end
     
     def Initialize()
+        InitializeSharedMemory()
+    end
+    
+    def initialize()
         #   - This function initialized the shared memory variables.  If not called, the functions below will be rendered 
         #   useless.
         InitializeSharedMemory()
@@ -402,6 +406,11 @@ class SharedMemory
         end
         return getDS()[TimeOfPcLastCmd]
     end
+
+    def GetData()
+        return getDS()[SharedLib::Data]
+    end
+
 
     def SetBbbMode(modeParam,calledFrom)
         # puts "param sent #{modeParam}"
@@ -505,9 +514,11 @@ class SharedMemory
         # puts "WriteDataV1(@setData.to_json) = #{WriteDataV1(@setData.to_json)}"
     end
     
+=begin    
     class << self
       extend Forwardable
       def_delegators :instance, *SharedMemory.instance_methods(false)
     end
+=end    
 end
 # 267

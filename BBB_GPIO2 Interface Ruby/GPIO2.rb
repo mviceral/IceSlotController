@@ -4,7 +4,8 @@
 #
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 require_relative 'Port2Interface.so'
-require_relative "../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryBbbGpio2"
+# require_relative "../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryBbbGpio2"
+require_relative "../lib/SharedMemory"
 require 'json'
 require 'socket'      # Sockets are in standard library
 
@@ -197,7 +198,7 @@ class GPIO2
     @emulatorEnabled = EMULATOR_STATE
     # puts "initializing @regValues #{__LINE__}-#{__FILE__}"
     @regValues = Hash.new
-    @sharedBbbGpio2 = SharedMemoryBbbGpio2.new
+    @sharedBbbGpio2 = SharedMemory.new
   	fromSharedMem = @sharedBbbGpio2.GetData()
   	if fromSharedMem.nil? || fromSharedMem[0.."BbbShared".length-1] != "BbbShared"
         #
@@ -205,7 +206,7 @@ class GPIO2
         #
         # puts "A.1 Initializing shared mem in BBB."
         parsed = Hash.new
-        @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json)
+        @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json,"#{__LINE__}-#{__FILE__}")
   	end
   	
   	fromSharedMem = @sharedBbbGpio2.GetData()
@@ -289,7 +290,7 @@ class GPIO2
         end
         
         parsed[addrParam.to_s] = dataParam
-        @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json)
+        @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json,"#{__LINE__}-#{__FILE__}")
         
         if @regValues[addrParam].nil? == false
             # inBits = getBits(@regValues[addrParam])
@@ -386,7 +387,7 @@ class GPIO2
         parsed[ETS_ENA3_xB.to_s] = @regValues[ETS_ENA3_xB] 
         parsed[ETS_RX_SEL_xC.to_s] = @regValues[ETS_RX_SEL_xC] 
         parsed[ANA_MEAS4_SEL_xD.to_s] = @regValues[ANA_MEAS4_SEL_xD] 
-        @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json)
+        @sharedBbbGpio2.WriteData("BbbShared"+parsed.to_json,"#{__LINE__}-#{__FILE__}")
 =begin
       puts "@regValues[SLOT_ADDR_x0] = 0x#{@regValues[SLOT_ADDR_x0].to_s(16)}"
       puts "@regValues[LED_STAT_x1] = 0x#{@regValues[LED_STAT_x1].to_s(16)}"
@@ -769,21 +770,23 @@ class GPIO2
         # Write bitwise to enabled or disable a temperature controller unit on register ETS_ENA1_x9.
         #
         # setGPIO2(ETS_ENA1_x9, byteParam)
-        setBitOn(EXT_INPUTS_x2,bitParam)
+        setBitOn(ETS_ENA1_x9,bitParam)
     end
     
-    def etsEna2Set(byteParam)
+    def etsEna2SetOn(bitParam)
         #
         # Write bitwise to enabled or disable a temperature controller unit on register ETS_ENA2_xA.
         #
-        setGPIO2(ETS_ENA2_xA, byteParam)
+        #setGPIO2(ETS_ENA2_xA, byteParam)
+        setBitOn(ETS_ENA2_xA,bitParam)
     end
     
-    def etsEna3Set(byteParam)
+    def etsEna3SetOn(bitParam)
         #
         # Write bitwise to enabled or disable a temperature controller unit on register ETS_ENA3_xB.
         #
-        setGPIO2(ETS_ENA3_xB, byteParam)
+        # setGPIO2(ETS_ENA3_xB, byteParam)
+        setBitOn(ETS_ENA3_xB,bitParam)
     end
     
     def etsRxSel(muxParam)
