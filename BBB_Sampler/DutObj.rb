@@ -2,66 +2,74 @@
 require_relative '../lib/SharedMemory'
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 class DutObj
+    FaultyTcu = "Faulty Tcu"        
 
-    def initialize(createLogInterval_UnitsInHoursParam, parentParam)
+    def initialize()
         @statusResponse = Array.new(TOTAL_DUTS_TO_LOOK_AT)
         SharedMemory.Initialize()
         # End of 'def initialize()'
     end
     
-    def poll(dutNumParam, uart1Param)
-        @statusResponse[dutNumParam] = "dummyData"
-        return
-        #puts "within poll. dutNumParam=#{dutNumParam}"
-        # gets
+    def getTcuStatus(dutNumParam,uart1Param,gPIO2)
+        gPIO2.etsRxSel(dutNumParam)
+        tbr = "" # tbr - to be returned
         uartStatusCmd = "S?\n"
         uart1Param.write("#{uartStatusCmd}");
         keepLooping = true
-        
+
         #
         # Code block for ensuring that status request is sent and the expected response is received.
         #
         while keepLooping
             begin
-                complete_results = Timeout.timeout(1) do      
+                complete_results = Timeout.timeout(0.1) do      
                     uart1Param.each_line { 
                         |line| 
-                        @statusResponse[dutNumParam] = line
+                        tbr = line
                         keepLooping = false     # loops out of the keepLooping loop.
                         break if line =~ /^@/   # loops out of the each_line loop.
                     }
-            end
-            rescue Timeout::Error
-                puts "Timed out Error. dutNumParam=#{dutNumParam}"
-                uart1Param.disable   # uart1Param variable is now dead cuz it timed out.
-                uart1Param = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
-
-                puts "Flushing out ThermalSite uart."
-                keepLooping2 = true
-                while keepLooping2
-                    begin
-                        complete_results = Timeout.timeout(1) do      
-                            uart1Param.each_line { 
-                                |line| 
-                                puts "' -- ${line}"
-                            }
-                    end
-                    rescue Timeout::Error
-                        puts "Done flushing out ThermalSite uart."
-                        uart1Param.disable   # uart1Param variable is now dead cuz it timed out.
-                        uart1Param = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
-                        keepLooping2 = false     # loops out of the keepLooping loop.
-                    end
                 end
-
-
-                uart1Param.write("#{uartStatusCmd}");    # Resend the status request command.
+                rescue Timeout::Error
+                    puts "Timed out Error. dutNumParam=#{dutNumParam}"
+                    uart1Param.disable   # uart1Param variable is now dead cuz it timed out.
+                    uart1Param = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
+                    tbr = FaultyTcu
+=begin                
+                    puts "Flushing out ThermalSite uart."
+                    keepLooping2 = true
+                    while keepLooping2
+                        begin
+                            complete_results = Timeout.timeout(1) do      
+                                uart1Param.each_line { 
+                                    |line| 
+                                    puts "' -- ${line}"
+                                }
+                        end
+                        rescue Timeout::Error
+                            puts "Done flushing out ThermalSite uart."
+                            uart1Param.disable   # uart1Param variable is now dead cuz it timed out.
+                            uart1Param = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
+                            keepLooping2 = false     # loops out of the keepLooping loop.
+                        end
+                    end
     
-                #
-                # Place code here for handling hiccups.
-                #
+    
+                    uart1Param.write("#{uartStatusCmd}");    # Resend the status request command.
+        
+                    #
+                    # Place code here for handling hiccups.
+                    #
+=end                
             end
+            return tbr
         end
+    end
+    
+    def poll(dutNumParam, uart1Param,gPIO2)
+        #puts "within poll. dutNumParam=#{dutNumParam}"
+        # gets
+        @statusResponse[dutNumParam] = getTcuStatus(dutNumParam, uart1Param,gPIO2)
         #puts "Leaving poll. dutNumParam=#{dutNumParam}"
     end
 

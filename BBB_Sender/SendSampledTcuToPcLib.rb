@@ -133,38 +133,43 @@ class SendSampledTcuToPCLib
     	# SharedMemory.GetBbbMode() == SharedLib::InRunMode
         if SharedMemory.GetAllStepsDone_YesNo() == SharedLib::No && SharedMemory.GetBbbMode() == SharedLib::InRunMode
             # The data needs to be logged in...
-        	if @dBaseFileName != SharedMemory.GetDBaseFileName()
-        	    @dBaseFileName = SharedMemory.GetDBaseFileName()
-        	    @db = SQLite3::Database.open "#{@dirFileRepository}/#{@dBaseFileName}"
-        	end
-        	
-        	# Change all the '"' to '\"' within slotInfoJson
-        	ct = 0
-        	forDbase = ""
-        	while ct < slotInfoJson.length
-                if slotInfoJson[ct] == '"'
-            	    forDbase += "'"
-                else
-            	    forDbase += slotInfoJson[ct]
-                end
-                # puts "forDbase=#{forDbase}"
-                # SharedLib.pause "At pause","#{__LINE__}-#{__FILE__}"
-        	    ct += 1
-        	end
-	        str = "Insert into log(idLogTime, data) "+
-    		       "values(#{@timeOfData},\"#{forDbase}\")"
-
-            begin
-                @db.execute "#{str}"
-                rescue SQLite3::Exception => e 
-                    puts "\n\n"
-            		SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
-            		SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
-            	    # End of 'rescue SQLite3::Exception => e'
-                ensure
-                
-                # End of 'begin' code block that will handle exceptions...
-            end        	
+            if SharedMemory.GetDBaseFileName().nil? == false && SharedMemory.GetDBaseFileName().length > 0
+                puts "\n\n\nA Checking #{@dirFileRepository}/#{SharedMemory.GetDBaseFileName()} SharedMemory.GetDBaseFileName().length = #{SharedMemory.GetDBaseFileName().length}  #{__LINE__}-#{__FILE__}"
+                # There's a valid dBase file name to save the data.
+                puts "B Checking #{@dirFileRepository}/#{@dBaseFileName} #{__LINE__}-#{__FILE__}"
+            	if @dBaseFileName != SharedMemory.GetDBaseFileName()
+            	    @dBaseFileName = SharedMemory.GetDBaseFileName()
+            	    @db = SQLite3::Database.open "#{@dirFileRepository}/#{@dBaseFileName}"
+            	end
+            	
+            	# Change all the '"' to '\"' within slotInfoJson
+            	ct = 0
+            	forDbase = ""
+            	while ct < slotInfoJson.length
+                    if slotInfoJson[ct] == '"'
+                	    forDbase += "'"
+                    else
+                	    forDbase += slotInfoJson[ct]
+                    end
+                    # puts "forDbase=#{forDbase}"
+                    # SharedLib.pause "At pause","#{__LINE__}-#{__FILE__}"
+            	    ct += 1
+            	end
+    	        str = "Insert into log(idLogTime, data) "+
+        		       "values(#{@timeOfData},\"#{forDbase}\")"
+    
+                begin
+                    @db.execute "#{str}"
+                    rescue SQLite3::Exception => e 
+                        puts "\n\n"
+                		SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
+                		SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
+                	    # End of 'rescue SQLite3::Exception => e'
+                    ensure
+                    
+                    # End of 'begin' code block that will handle exceptions...
+                end        	
+            end
         end
     	
 
@@ -212,4 +217,4 @@ class SendSampledTcuToPCLib
     # End of 'class SendSampledTcuToPC'
 end 
 
-# 391
+# working on def runThreadForSavingSlotStateEvery10Mins()

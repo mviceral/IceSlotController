@@ -3,7 +3,7 @@
 #
 LockFile=/tmp/bbbSampledTcuSenderLock.txt
 if [ -e ${LockFile} ] && kill -0 `cat ${LockFile}`; then
-    echo "runSampledTcuSender.sh is already running"
+    echo "Sender.sh is already running"
     exit
 fi
 
@@ -12,6 +12,6 @@ trap "rm -f ${LockFile}; exit" INT TERM EXIT
 echo $$ > ${LockFile}
 
 # do stuff
-ruby SendSampledTcuToPc.rb
+ruby Sender.rb
 
 rm -f ${LockFile}

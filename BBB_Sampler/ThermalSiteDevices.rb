@@ -7,14 +7,10 @@ class ThermalSiteDevices
     
     attr_accessor :dBase_
     
-    def dBase=(dBaseParam)
-        @dBase_ = dBaseParam
-    end
-
     def dBase
         if @dBase_.nil?
             # puts "ThermalSiteDevices.dBase accessor got called" # from #{file} - #{line}"
-            @dBase_ = DutObj.new(@totalHoursToLog_Interval_UnitsInHours,self)
+            @dBase_ = DutObj.new()
         # else
         #     puts "ThermalSiteDevices.dBase accessor got called.  dBase object is not null." # :  #{file} - #{line}"
             # End of 'if @dBase_.nil?'
@@ -26,11 +22,11 @@ class ThermalSiteDevices
         # End of 'def initialize'
     end
     
-    def pollDevices(uart1)
+    def pollDevices(uart1,gPIO2,tcusToSkip)
         # puts Time.now.inspect+" - ThermalSiteDevices.pollDevices function got called."
         dutNum = 0;
-        while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do
-            dBase.poll(dutNum,uart1)
+        while  dutNum<TOTAL_DUTS_TO_LOOK_AT && tcusToSkip[dutNum].nil?  do
+            dBase.poll(dutNum,uart1,gPIO2)
             dutNum +=1;
         end            
         # End of 'def PollDevices'
@@ -48,14 +44,6 @@ class ThermalSiteDevices
         # End of 'def logData'
     end
 
-    def setTotalHoursToLogData(totalHoursToLog_Interval_UnitsInHoursParam)
-        #
-        # Expected units: Hours
-        #
-        @totalHoursToLog_Interval_UnitsInHours = totalHoursToLog_Interval_UnitsInHoursParam
-        # End of 'def hoursToLogData'
-    end
-    
     class << self
       extend Forwardable
       def_delegators :instance, *ThermalSiteDevices.instance_methods(false)
@@ -63,3 +51,4 @@ class ThermalSiteDevices
     
     # End of 'class ThermalSiteDevices'
 end
+# kill variable logData function

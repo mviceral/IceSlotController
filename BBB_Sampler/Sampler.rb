@@ -10,7 +10,7 @@ require 'forwardable'
 
 include Beaglebone
 
-TOTAL_DUTS_TO_LOOK_AT  = 24
+TOTAL_DUTS_TO_LOOK_AT  = 4
 
 class TCUSampler
 	Steps = "Steps"
@@ -23,6 +23,7 @@ class TCUSampler
     ForPowerSupply = "ForPowerSupply"
     PollIntervalInSeconds = "PollIntervalInSeconds"   
     HoldingTankFilename = "MachineState_DoNotDeleteNorModify.json"
+    FaultyTcuList_SkipPolling = "../DisabledSites.txt"
     TimeOfPcLastCmd ="TimeOfPcLastCmd"
     BbbMode = "BbbMode"
     SeqDownPsArr = "SeqDownPsArr"
@@ -172,15 +173,6 @@ class TCUSampler
             sortedUp = getSeqDownPsArr()
             textDisp = "'DOWN'"
         end
-
-=begin        
-        if sortedUp.nil?
-            puts "sortedUp.nil? is nil #{__LINE__}-#{__FILE__}"
-            exit
-        else
-            PP.pp(sortedUp)
-        end
-=end        
 
         sortedUp.each do |psItem|
             # puts psItem
@@ -496,9 +488,9 @@ class TCUSampler
 			rescue Exception => e  
                 puts "e.message=#{e.message }"
                 puts "e.backtrace.inspect=#{e.backtrace.inspect}" 
-		SharedLib.bbbLog("There's no data in the holding tank.  New machine starting up. #{__LINE__}-#{__FILE__}")
-		setBoardData(Hash.new)
-		setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+        		SharedLib.bbbLog("There's no data in the holding tank.  New machine starting up. #{__LINE__}-#{__FILE__}")
+        		setBoardData(Hash.new)
+        		setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
 	    end
     end
     
@@ -644,8 +636,7 @@ class TCUSampler
     	initpollAdcInputFunc()
     	
         runThreadForSavingSlotStateEvery10Mins()
-        createLogInterval_UnitsInHours = 1 
-        
+
         executeAllStty = "Yes" # "Yes" if you want to execute all...
         
         baudrateToUse = 115200 # baud rate options are 9600, 19200, and 115200
@@ -671,11 +662,92 @@ class TCUSampler
         # puts "Check 6 of 7 - uart1 = UARTDevice.new(:UART1, #{baudrateToUse})"
         uart1 = UARTDevice.new(:UART1, baudrateToUse)
         
-        #
-        # Do an infinite loop for this code.
-        #
-        ThermalSiteDevices.setTotalHoursToLogData(createLogInterval_UnitsInHours)
+        SharedLib.bbbLog("Initializing machine using system's time. #{__LINE__}-#{__FILE__}")
         
+        # Read the file that lists the dead TCUs.
+        lineNum = 0
+        tcusToSkip = Hash.new
+        SharedLib.bbbLog("Processing '#{FaultyTcuList_SkipPolling}' file. #{__LINE__}-#{__FILE__}")
+	    begin
+    		File.open(FaultyTcuList_SkipPolling, "r") do |f|
+    			f.each_line do |line|
+    			    # puts "Puts line read = #{line}.  #{__LINE__}-#{__FILE__}"
+    			    if lineNum>0
+    			        # puts "Processing '#{line}'.  #{__LINE__}-#{__FILE__}"
+    			        readLine = line.chomp
+        			    if SharedLib.is_a_number?(readLine)
+        			        intVal = readLine.to_i
+        			        tcusToSkip[intVal] = intVal
+        			        puts "Skipping TCU(#{intVal}) based on file list. #{__LINE__}-#{__FILE__}"
+        			    else
+        			        SharedLib.bbbLog("Not processing line# '#{lineNum+1}' on file '#{FaultyTcuList_SkipPolling}' because it's not a number. #{__LINE__}-#{__FILE__}")
+        			    end
+    			    end
+    				lineNum += 1
+        		end
+    		end
+		    rescue Exception => e
+		    SharedLib.bbbLog("Error: #{e.message}  #{__LINE__}-#{__FILE__}")
+	    end
+        
+        SharedLib.bbbLog "Searching for disabled TCUs aside the listed ones in '#{FaultyTcuList_SkipPolling}' file. #{__LINE__}-#{__FILE__}"
+        ct = 0
+        newDeadTcu = false
+        dutObj = DutObj.new()
+        while ct<24 && tcusToSkip[ct].nil? do 
+            uartResponse = dutObj.getTcuStatus(ct,uart1,gPIO2)
+            if uartResponse == DutObj::FaultyTcu
+                tcusToSkip[ct] = ct
+                newDeadTcu = true
+                SharedLib.bbbLog("UART not responding to TCU#{ct} (zero based index), adding item to be skipped when polling. #{__LINE__}-#{__FILE__}")
+            else
+                puts "Sent 'S?' - responded :'#{uartResponse}' #{__LINE__}-#{__FILE__}"
+                uart1.write("V?\n");
+                puts "Sent 'V?' - responded :'#{uart1.readline}' #{__LINE__}-#{__FILE__}"
+            end
+            ct += 1
+        end
+        
+        if newDeadTcu
+            # Write the new FaultyTcuList file
+            SharedLib.bbbLog "Updating #{FaultyTcuList_SkipPolling} file due to new faulty TCU.  See log."
+    	    File.open(FaultyTcuList_SkipPolling, "w") { 
+    	        |file| 
+    	        file.write("This file lists the TCUs that are to be skipped when running the system.  Items not listed during initial boot might be added in this list by the system if UART don't reply properly.\n")
+    	        ct = 0
+    	        while ct<24 do
+    	            if tcusToSkip[ct].nil? == false
+    	                file.write("#{ct}\n") 
+    	                puts "Wrote #{ct} into file. #{__LINE__}-#{__FILE__}"
+    	            end
+    	            ct += 1
+    	        end
+            }
+        end
+    
+        # Turn on the control for TCUs that are not disabled.
+        SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
+        ct = 0
+        while ct<24 do
+            if tcusToSkip[ct].nil? == true
+                if 0<=ct && ct <=7  
+                    SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna1Set('#{ct}').  #{__LINE__}-#{__FILE__}"
+                    gPIO2.etsEna1Set(ct)
+                elsif 8<=ct && ct <=15
+                    forSetting = ct-8
+                    SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna2Set('#{forSetting}').  #{__LINE__}-#{__FILE__}"
+                    gPIO2.etsEna2Set(forSetting)
+                elsif 16<=ct && ct <=23
+                    forSetting = ct-16
+                    SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna3Set('#{forSetting}').  #{__LINE__}-#{__FILE__}"
+                    gPIO2.etsEna3Set(forSetting)
+                end
+            end
+            ct += 1
+        end
+
+        # Make sure that the UART is functional again.        
+
         #
         # Get the board configuration
         #
@@ -700,7 +772,6 @@ class TCUSampler
             SharedMemory.SetAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # so it will not run
         end
 
-        
 	    initStepToWorkOnVar()
         waitTime = Time.now
 
@@ -739,7 +810,7 @@ class TCUSampler
                                 # puts "B #{__LINE__}-#{__FILE__}"
                                 pollMuxValues()
                                 # puts "C #{__LINE__}-#{__FILE__}"
-                                ThermalSiteDevices.pollDevices(uart1)
+                                ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
                                 # puts "E #{__LINE__}-#{__FILE__}"
                                 ThermalSiteDevices.logData
                                 # puts "F #{__LINE__}-#{__FILE__}"
@@ -875,5 +946,5 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 748 431
+# @703
 

@@ -9,8 +9,12 @@ system("cd /lib/firmware")
 puts 'Check 2 of 7 - echo BB-UART1 > /sys/devices/bone_capemgr.9/slots'
 system("echo BB-UART1 > /sys/devices/bone_capemgr.9/slots")
 
-puts "Check 3 of 7 - ./openTtyO1Port_#{baudrateToUse}.exe"
-system("openTtyO1Port.exe")
+
+puts "Check 3 of 7 - ./openTtyO1Port_115200.exe"
+# puts "Check 3 of 7 - ./openTtyO1Port_#{baudrateToUse}.exe"
+# system("openTtyO1Port.exe")
+system("./openTtyO1Port_115200.exe")
+    	
 
 puts 'Check 4 of 7 - stty -F /dev/ttyO1 raw'
 system("stty -F /dev/ttyO1 raw")
