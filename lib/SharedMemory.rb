@@ -333,9 +333,9 @@ class SharedMemory
     	puts "B Creating dbase '/mnt/card/#{GetDBaseFileName()}' #{__LINE__}-#{__FILE__}"
         db = SQLite3::Database.new( "/mnt/card/#{GetDBaseFileName()}" )
         if db.nil?
-            puts "db is nil. #{__LINE__}-#{__FILE__}"
+            SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
         else
-            puts "Creating table. #{__LINE__}-#{__FILE__}"
+            SharedLib.bbbLog "Creating table. #{__LINE__}-#{__FILE__}"
                 db.execute("create table log ("+
             "idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
             ");")
@@ -530,4 +530,4 @@ class SharedMemory
     end
 =end    
 end
-# 267
+# 330

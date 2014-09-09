@@ -200,7 +200,22 @@ class SharedLib
         end
     end
     
-        
+    def ChangeDQuoteToSQuoteForDbFormat(slotInfoJson)
+    	# Change all the '"' to '\"' within slotInfoJson
+    	ct = 0
+    	forDbase = ""
+    	while ct < slotInfoJson.length
+            if slotInfoJson[ct] == '"'
+        	    forDbase += "'"
+            else
+        	    forDbase += slotInfoJson[ct]
+            end
+            # puts "forDbase=#{forDbase}"
+            # SharedLib.pause "At pause","#{__LINE__}-#{__FILE__}"
+    	    ct += 1
+    	end
+    	return forDbase
+    end
   
     class << self
         extend Forwardable
