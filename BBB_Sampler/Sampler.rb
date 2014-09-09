@@ -619,9 +619,9 @@ class TCUSampler
     	@multiplier[SharedLib::SLOTP5V] = 4.01
     	@multiplier[SharedLib::SLOTP3V3] = 2.3
     	@multiplier[SharedLib::SLOTP1V8] = 2.3
-    	@multiplier[SharedLib::SlotTemp1] = 2.3
+    	@multiplier[SharedLib::SlotTemp1] = 100.0
     	@multiplier[SharedLib::CALREF] = 2.3
-    	@multiplier[SharedLib::SlotTemp2] = 2.3
+    	@multiplier[SharedLib::SlotTemp2] = 100.0
     end
 
     def etsEnaBit(ct)
@@ -762,13 +762,13 @@ class TCUSampler
             if tcusToSkip[ct].nil? == true
                 bitToUse = etsEnaBit(ct)
                 if 0<=ct && ct <=7  
-                    SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna1Set('#{ct}').  #{__LINE__}-#{__FILE__}"
+                    SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
                     gPIO2.etsEna1SetOn(bitToUse)
                 elsif 8<=ct && ct <=15
-                    SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna2Set('#{forSetting}').  #{__LINE__}-#{__FILE__}"
+                    SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna2Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
                     gPIO2.etsEna2SetOn(bitToUse)
                 elsif 16<=ct && ct <=23
-                    SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna3Set('#{forSetting}').  #{__LINE__}-#{__FILE__}"
+                    SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna3Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
                     gPIO2.etsEna3SetOn(bitToUse)
                 end
             end
