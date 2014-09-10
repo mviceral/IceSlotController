@@ -10,8 +10,9 @@ class SendSampledTcuToPCLib
     MOUNT_CARD_DIR = "/mnt/card"
     TOTAL_DUTS_TO_LOOK_AT = 24
     ITS_MOUNTED = "It's mounted."
-    BbbToPc = 'http://192.168.7.1'
     PcToSamePc = "localhost"
+    # BbbToPc = 'http://192.168.7.1'
+    BbbToPc = 'http://192.168.1.210'
     SendToPc = BbbToPc
 
     def runSampler
@@ -165,6 +166,7 @@ class SendSampledTcuToPCLib
 
         puts "#{__LINE__}-#{__FILE__} slotInfoJson=#{slotInfoJson}"
         begin
+		puts "SendToPc = #{SendToPc} #{__LINE__}-#{__FILE__}"
             resp = 
                 RestClient.post "#{SendToPc}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
             rescue Exception => e  
