@@ -3,7 +3,7 @@ require 'grape'
 require 'singleton'
 require 'forwardable'
 require 'pp'
-require 'sqlite3'
+# require 'sqlite3'
 require_relative '../lib/SharedMemory'
 
 # If you set this true, it will put out some debugging info to STDOUT
@@ -122,7 +122,7 @@ module MigrationCount
               ensure
               
               # End of 'begin' code block that will handle exceptions...
-          end        	
+          end
 				end
 			end
 		end
