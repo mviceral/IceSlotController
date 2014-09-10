@@ -175,7 +175,7 @@ class TCUSampler
     
     def doPsSeqPower(powerUpParam)
         # PS sequence gets called twice sometimes.
-        puts "@boardData[\"LastPsSeqStateCall\"]=#{@boardData["LastPsSeqStateCall"]}, powerUpParam=#{powerUpParam} #{__LINE__}-#{__FILE__}" 
+        # puts "@boardData[\"LastPsSeqStateCall\"]=#{@boardData["LastPsSeqStateCall"]}, powerUpParam=#{powerUpParam} #{__LINE__}-#{__FILE__}" 
         if @boardData["LastPsSeqStateCall"] == powerUpParam
             return
         else
@@ -203,7 +203,8 @@ class TCUSampler
                     #
                     # Do ethernet power supply enabling/disabling here.
                     #
-                    puts "Ethernet PS key isolated = '#{psItem.keyName[1..-1]}' ip address of PS '#{@ethernetScheme[psItem.keyName[1..-1]]}'"
+                    # puts "Ethernet PS key isolated = '#{psItem.keyName[1..-1]}' ip address of PS '#{@ethernetScheme[psItem.keyName[1..-1]]}'"
+                    puts "checking IP of socket = '#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]}'"
                     if @socketIp.nil? == false && @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].nil? == false
                         if powerUpParam
                             @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].print("OUTP:POW:STAT ON\r\n")
@@ -247,16 +248,19 @@ class TCUSampler
                         else
                             `echo "#{Time.new.inspect} : psItem.keyName='#{psItem.keyName}' not recognized.  #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
                         end
-                        
-                        if powerUpParam
-                            sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SUDlyms].to_i)/1000)
-                        else
-                            sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)/1000)
-                        end
                     end
                 else
                     SharedLib.bbbLog "@stepToWorkOn[\"PsConfig\"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb]='#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb]}' not recognized.  #{__LINE__}-#{__FILE__}"
                 end
+                
+                if powerUpParam
+                    sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SUDlyms].to_i)/1000)
+                    puts "sleep for '#{(@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SUDlyms].to_i)}'"
+                else
+                    sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)/1000)
+                    puts "sleep for '#{(@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)}'"
+                end
+                sleep(1)
             end
         end
     end
@@ -394,19 +398,20 @@ class TCUSampler
         # Setup the @stepToWorkOn
         #
 	    stepNumber = 0
-	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}"
+	    puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
 	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
 	    	stepNumber<getConfiguration()["Steps"].length && 
 	    	@stepToWorkOn.nil?
+	    	# puts "A0 #{__LINE__}-#{__FILE__}"
 	        if @stepToWorkOn.nil?
-	            # puts "A #{__LINE__}-#{__FILE__}"
+	            # puts "A1 #{__LINE__}-#{__FILE__}"
                 getConfiguration()[Steps].each do |key, array|
 		            if @stepToWorkOn.nil?
                         getConfiguration()[Steps][key].each do |key2, array2|
                             # if key2 == StepNum && getConfiguration()[Steps][key][key2].to_i == (stepNumber+1)
                             #    SharedLib.pause "getConfiguration()[Steps][key][StepTimeLeft] = #{getConfiguration()[Steps][key][StepTimeLeft]}", "#{__LINE__}-#{__FILE__}"
                             # end
-	                        # puts "A2 key2=#{key2} StepNum=#{StepNum} #{__LINE__}-#{__FILE__}"
+	                        #puts "A2 key2=#{key2} StepNum=#{StepNum} #{__LINE__}-#{__FILE__}"
                             if key2 == StepNum 
                                 if getConfiguration()[Steps][key][key2].to_i == (stepNumber+1) 
                                     # puts "A3 getConfiguration()[Steps][key][key2].to_i=#{getConfiguration()[Steps][key][key2].to_i} (stepNumber+1) =#{(stepNumber+1) } #{__LINE__}-#{__FILE__}"
@@ -432,21 +437,23 @@ class TCUSampler
                                                             @socketIp = Hash.new
                                                         end
                                                         host = @ethernetScheme[key[1..-1]].chomp
+                                                        port = 5025                # port
                                                         if @socketIp[host].nil?
-                                                            port = 5025                # port
-                                                            @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SocketIp] = @ethernetScheme[key[1..-1]]
-                                                            # SharedLib.pause "host = '#{host}',port = '#{port}'","#{__LINE__}-#{__FILE__}"
                                                             @socketIp[host] = TCPSocket.open(host,port)
-                        
-                                                            # Set the voltage
-                                                            puts "voltage name = '#{key}', NomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} #{__LINE__}-#{__FILE__}"
-                                                            @socketIp[host].print("SOUR:VOLT #{@stepToWorkOn["PsConfig"][key][NomSet]}\r\n")
-                        
-                                                            # Set the current
-                                                            puts "current name = 'I#{key[1..-1]}', NomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
-                                                            @socketIp[host].print("SOUR:CURR #{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]}\r\n")
-                                                            # SharedLib.pause "Checking value of @stepToWorkOn","#{__LINE__}-#{__FILE__}"
                                                         end
+                                                        @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SocketIp] = @ethernetScheme[key[1..-1]].chomp
+                                                        print "host = '#{host}',port = '#{port}' "
+                    
+                                                        # Set the voltage
+                                                        # puts "voltage name = '#{key}', NomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                        print "VNomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} "
+                                                        @socketIp[host].print("SOUR:VOLT #{@stepToWorkOn["PsConfig"][key][NomSet]}\r\n")
+                    
+                                                        # Set the current
+                                                        # puts "current name = 'I#{key[1..-1]}', NomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                        puts "INomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                        @socketIp[host].print("SOUR:CURR #{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]}\r\n")
+                                                        # SharedLib.pause "Checking value of @stepToWorkOn","#{__LINE__}-#{__FILE__}"
                                                     end
                                                 end
                                             end
@@ -744,7 +751,7 @@ class TCUSampler
         # Read the BBB-Defaults file.csv file
 		bbbDefaultFile = Array.new
 		@bbbDefaultFile = Hash.new
-		File.open("../BBB-Defaults file.csv", "r") do |f|
+		File.open("../default file.csv", "r") do |f|
 			f.each_line do |line|
 				bbbDefaultFile.push(line)
 			end
@@ -993,6 +1000,7 @@ class TCUSampler
     		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     		    when SharedLib::ClearConfigFromPc
     		    when SharedLib::LoadConfigFromPc
+    		        @socketIp = nil
         		    SharedLib.bbbLog("New configuration step file uploaded.")
         		    setBoardData(Hash.new)
         		    @boardData[Configuration] = @shareMem.GetConfiguration()
