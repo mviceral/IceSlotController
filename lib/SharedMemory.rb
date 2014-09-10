@@ -36,10 +36,12 @@ class SharedMemory
     def SetDispBoardData(configurationFileNameParam, configDateUploadParam, allStepsDone_YesNoParam, bbbModeParam,
       stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotIpAddressParam, allStepsCompletedAtParam,dispTotalStepDurationParam, 
       adcInputParam, muxDataParam, tcuParam)      
+	# puts "tcuParam = #{}"
+	# SharedLib.pause "Checking tcuParam", "#{__LINE__}-#{__FILE__}"
     	ds = getDS()
-    	if ds[SharedLib::PC].nil?
-      	ds[SharedLib::PC] = Hash.new
-      end
+	if ds[SharedLib::PC].nil?
+      		ds[SharedLib::PC] = Hash.new
+	end
       
       ds[SharedLib::PC][SharedLib::ConfigurationFileName] = configurationFileNameParam 
       ds[SharedLib::PC][SharedLib::ConfigDateUpload] = configDateUploadParam
@@ -54,23 +56,25 @@ class SharedMemory
       ds[SharedLib::PC][SharedLib::TotalStepDuration] = dispTotalStepDurationParam
       ds[SharedLib::PC][SharedLib::AdcInput] = adcInputParam
       ds[SharedLib::PC][SharedLib::MuxData] = muxDataParam
-      tcuData = tcuParam
-      datArr = Array.new
-      ct = 1
-      while ct<tcuData.split('|').length
-      	datArr.push(tcuData.split('|')[ct])
-      	ct += 1
-      end
-      
-      hash = Hash.new
-      ct = 0
-      while ct<datArr.length
-      	hold = datArr[ct].split('@')
-      	hash[hold[0]] = hold[1]
-      	ct += 1
-      end
-      ds[SharedLib::PC][SharedLib::Tcu] = hash
-      WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+		if tcuParam.nil? == false && tcuParam.length > 0
+			tcuData = tcuParam
+			datArr = Array.new
+			ct = 1
+			while ct<tcuData.split('|').length
+				datArr.push(tcuData.split('|')[ct])
+				ct += 1
+			end
+
+			hash = Hash.new
+			ct = 0
+			while ct<datArr.length
+				hold = datArr[ct].split('@')
+				hash[hold[0]] = hold[1]
+				ct += 1
+			end
+			ds[SharedLib::PC][SharedLib::Tcu] = hash
+		end
+		WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
 	end
 
 	def GetDispStepTimeLeft      

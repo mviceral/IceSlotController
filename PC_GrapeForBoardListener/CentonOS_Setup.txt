@@ -17,3 +17,7 @@ make
 popd
 gem install sinatra
 gem install rest-client
+
+# To turn off the firewall on CentOS, do the following commands.
+sudo service iptables stop
+sudo chkconfig iptables off

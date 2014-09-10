@@ -31,8 +31,8 @@ require 'pp' # Pretty print to see the hash values.
 # set :sharedMem, SharedMemory.new()
 
 class UserInterface
-	# BbbPcListener = 'http://192.168.7.2'
-	BbbPcListener = 'http://192.168.1.240'
+	BbbPcListener = 'http://192.168.7.2'
+	# BbbPcListener = 'http://192.168.1.211'
 	LinuxBoxPcListener = "localhost"
 	PcListener = BbbPcListener # Chose which ethernet address the PcListener is sitting on.
 	#
