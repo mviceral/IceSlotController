@@ -1,0 +1,3 @@
+,,,Comment,,Nom,Trip,Trip,FLAG,FLAG,Enable,IDLE,LOAD,START,RUN,STOP,CLEAR
+,index,Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,control,,,,,,
+,1,TDUT,DUT TEMPERATURE [1:24],C,125,25,135,118.75,131.25,YES,OFF,OFF,ON,ON,OFF,OFF
