@@ -31,7 +31,8 @@ require 'pp' # Pretty print to see the hash values.
 # set :sharedMem, SharedMemory.new()
 
 class UserInterface
-	BbbPcListener = 'http://192.168.7.2'
+	# BbbPcListener = 'http://192.168.7.2'
+	BbbPcListener = 'http://192.168.1.240'
 	LinuxBoxPcListener = "localhost"
 	PcListener = BbbPcListener # Chose which ethernet address the PcListener is sitting on.
 	#
@@ -572,8 +573,23 @@ class UserInterface
 	end
 
 	def SlotCell()
-		temp1Param = (@sharedMem.GetDispAdcInput()[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3)
-		temp2Param = (@sharedMem.GetDispAdcInput()[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3)
+		if @sharedMem.GetDispAdcInput().nil? == false
+			if @sharedMem.GetDispAdcInput()[SharedLib::SlotTemp1.to_s].nil? == false
+				temp1Param = (@sharedMem.GetDispAdcInput()[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3)
+			else
+				temp1Param = "---"
+			end
+			
+			if @sharedMem.GetDispAdcInput()[SharedLib::SlotTemp2.to_s].nil? == false
+				temp2Param = (@sharedMem.GetDispAdcInput()[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3)
+			else
+				temp2Param = "---"
+			end
+		else
+			temp1Param = "---"
+			temp2Param = "---"
+		end
+
 		bkcolor = setBkColor("#ffaa77")
 		toBeReturned = "<table bgcolor=\"#{bkcolor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">SLOT</font></td></tr>"
@@ -591,10 +607,20 @@ class UserInterface
 		# End of 'DutCell("S20",dut20[2])'
 	end
 
-	def PNPCell(posVolt, negVolt, largeVolt)
-		posVolt = (posVolt.to_f/1000.0).round(3)
-		negVolt = (negVolt.to_f/1000.0).round(3)
-		largeVolt = (largeVolt.to_f/1000.0).round(3)
+	def PNPCellSub(posVoltParam)
+		if @sharedMem.GetDispMuxData() && @sharedMem.GetDispMuxData()[posVoltParam].nil? == false
+			posVolt = @sharedMem.GetDispMuxData()[posVoltParam]
+			posVolt = (posVolt.to_f/1000.0).round(3)
+		else
+			posVolt = "---"
+		end
+		return posVolt
+	end
+
+	def PNPCell(posVoltParam, negVoltParam, largeVoltParam)
+		posVolt = PNPCellSub(posVoltParam)
+		negVolt = PNPCellSub(negVoltParam)
+		largeVolt = PNPCellSub(largeVoltParam)
 		bkcolor = setBkColor("#6699aa")
 		toBeReturned = "<table bgcolor=\"#{bkcolor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">P5V</font></td><td><font size=\"1\">#{posVolt}V</font></td></tr>"
@@ -620,7 +646,11 @@ class UserInterface
 	end
 
 	def PsCell(labelParam,rawDataParam)
-		rawDataParam = (rawDataParam.to_f/1000.0).round(3)
+		if @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[rawDataParam].nil? == false
+			rawDataParam = (rawDataParam.to_f/1000.0).round(3)
+		else
+			rawDataParam = "---"
+		end
 		cellColor = setBkColor("#6699aa")
 		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
@@ -644,8 +674,17 @@ class UserInterface
 	end
 
 	def DutCell(labelParam,rawDataParam)
-		current = (@sharedMem.GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
-		tcuData = @sharedMem.GetDispTcu()["#{rawDataParam}"]
+		if @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[rawDataParam].nil? == false
+			current = (@sharedMem.GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
+		else
+			current = "---"
+		end
+
+		if @sharedMem.GetDispTcu().nil? == false && @sharedMem.GetDispTcu()["#{rawDataParam}"].nil? == false
+			tcuData = @sharedMem.GetDispTcu()["#{rawDataParam}"]
+		else
+			tcuData = "---"
+		end
 		cellColor = setBkColor("#99bb11")
 		if tcuData.nil?
 			cellColor = "#B6B6B4"
@@ -764,11 +803,11 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S0","0")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS0",@sharedMem.GetDispMuxData()["32"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS0","32")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS4",@sharedMem.GetDispMuxData()["36"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS4","36")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS8",@sharedMem.GetDispMuxData()["40"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS8","40")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("5V","???")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
@@ -786,13 +825,13 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S1","1")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS1",@sharedMem.GetDispMuxData()["33"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS1","33")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS5",@sharedMem.GetDispMuxData()["35"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS5","35")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS9",@sharedMem.GetDispMuxData()["41"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS9","41")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("12V",@sharedMem.GetDispMuxData()["46"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("12V","46")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
 		getSlotDisplay_ToBeReturned += 	"<tr>"
 		getSlotDisplay_ToBeReturned += 	
@@ -808,13 +847,13 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S2","2")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS2",@sharedMem.GetDispMuxData()["32"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS2","32")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS6",@sharedMem.GetDispMuxData()["38"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS6","38")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS10",@sharedMem.GetDispMuxData()["42"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS10","42")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("24V",@sharedMem.GetDispMuxData()["47"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("24V","47")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
 		getSlotDisplay_ToBeReturned += 	"<tr>"
 		getSlotDisplay_ToBeReturned += 	
@@ -830,12 +869,12 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S3","3")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS3",@sharedMem.GetDispMuxData()["35"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS3","35")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS7",@sharedMem.GetDispMuxData()["39"])+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS7","39")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : 
-			collapse; border : 1px solid black;\">"+PNPCell(@sharedMem.GetDispMuxData()["43"],@sharedMem.GetDispMuxData()["44"],@sharedMem.GetDispMuxData()["45"])+"</td>"
+			collapse; border : 1px solid black;\">"+PNPCell("43","44","45")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell()+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"

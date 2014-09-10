@@ -1,0 +1,19 @@
+1) Install 'git'
+	sudo yum install curl-devel expat-devel gettext-devel openssl-devel zlib-devel
+2) Install 'ruby'
+	sudo yum install ruby
+	sudo yum install gcc g++ make automake autoconf curl-devel openssl-devel zlib-devel httpd-devel apr-devel apr-util-devel sqlite-devel
+	sudo yum install ruby-rdoc ruby-devel
+	sudo gem update
+3) Install 'rack'
+	gem install rack
+4) Install 'grape'
+	gem install grape
+5) Install 'sqlite3'
+gem install sqlite3
+pushd ../lib/
+ruby extconf.rb
+make
+popd
+gem install sinatra
+gem install rest-client
