@@ -387,7 +387,7 @@ class UserInterface
 		,43,SPS4,Enable-Disable ,SEQ,Ethernent,0,0,0,0,,,,,,,,
 		,44,SPS5,Enable-Disable ,SEQ,Ethernent,0,0,0,0,,,,,,,,
 		,45,SPS6,Enable-Disable ,SEQ,Slot PCB,5,200,5,200,,,,,,,,
-		,46,SPS7,Enable-Disable ,SEQ,,6,200,4,200,,,,,,,,
+		,46,SPS7,Enable-Disable ,SEQ,Ethernent,6,200,4,200,,,,,,,,
 		,47,SPS8,Enable-Disable ,SEQ,Slot PCB,7,200,3,200,,,,,,,,
 		,48,SPS9,Enable-Disable ,SEQ,Slot PCB,8,200,2,200,,,,,,,,
 		,49,SPS10,Enable-Disable ,SEQ,Slot PCB,9,200,1,200,,,,,,,,"

@@ -57,7 +57,7 @@ module MigrationCount
 			post "/Duts" do
 				if params["Duts"]
 					#
-					# Parse out the data sent from BBB
+					# Parse out the data sent from the board					
 					#
 					receivedData = params['Duts']
 					begin
@@ -88,38 +88,41 @@ module MigrationCount
 					puts "Tcu = #{sharedMem.GetDispTcu()}"
 					puts "AllStepsCompletedAt = #{sharedMem.GetDispAllStepsCompletedAt()}"
 					puts "TotalStepDuration = #{sharedMem.GetDispTotalStepDuration()}"
-					return
-
-					# puts "2 receivedData = #{receivedData}" 
-					timeOfData = receivedData.partition("|")
-					dutData = timeOfData[2]
-
-					#
-					# Get the count so we have a proper ID
-					#
-					latestDb = SQLite3::Database.open "latest.db"
-					latestDb.results_as_hash = true
-
-					str = "update Latest set slotData = \"#{dutData}\", slotTime=#{timeOfData[0]} where idData = 1"
-					# puts "str=#{str}"
-					latestDb.execute "#{str}"
-
-
-					#
-					# Save the data to the dbase record.
-					#
-					dbRecord = SQLite3::Database.open "dbRecord.db"
-					# dbRecord.resutls_as_hash = true
-					str = "insert into dbRecord (slotTime, slotData) values(#{timeOfData[0]},\"#{dutData}\")"
-					# puts "str=#{str}"
-					begin
-						dbRecord.execute "#{str}"					
-						{dataTime:timeOfData[0]}
-						
-						rescue SQLite3::Exception => e 
-        		puts "#{Time.now.inspect} Exception occured"
-        		puts e
+					
+					configDateUpload = Time.at(sharedMem.GetDispConfigDateUpload().to_i)
+					dBaseFileName = "../#{sharedMem.GetDispSlotIpAddress()}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName()}.db"
+					if File.file?("#{dBaseFileName}") == false
+						# The file does not exists.
+						dbRecord = SQLite3::Database.new( "#{dBaseFileName}" )
+						if dbRecord.nil?
+							SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
+						else
+								dbRecord.execute("create table log ("+
+								"idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
+								");")
+						end
+					else
+						# The file already exists.
+						dbRecord = SQLite3::Database.open dBaseFileName
 					end
+					
+        	forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(receivedData)
+        	
+	        str = "Insert into log(idLogTime, data) "+
+    		       "values(#{sharedMem.GetDispSlotTime()},\"#{forDbase}\")"
+    		       
+    		  puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
+          begin
+              dbRecord.execute "#{str}"
+              rescue SQLite3::Exception => e 
+                  puts "\n\n"
+          		SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
+          		SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
+          		# End of 'rescue SQLite3::Exception => e'
+              ensure
+              
+              # End of 'begin' code block that will handle exceptions...
+          end        	
 				end
 			end
 		end
