@@ -1,4 +1,4 @@
-To setup rackup in a fresh BBB, run the following first.
+-To setup rackup in a fresh BBB, run the following first.
 gem update
 aptitude install ruby1.9.1-dev
 gem install rack
@@ -10,5 +10,13 @@ pushd ../lib
 ruby extconf.rb
 make
 popd
-
 gem install beaglebone
+mkdir /mnt/card
+mount /dev/mmcblk0p1 /mnt/card
+vi /mnt/card/uEnv.txt
+
+-Then insert the following line.
+optargs=quiet capemgr.disable_partno=BB-BONELT-HDMI,BB-BONELT-HDMIN
+
+-Reboot the board:
+shutdown -r now
