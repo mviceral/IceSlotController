@@ -1,0 +1,6 @@
+1) Install 'git'
+	sudo yum install curl-devel expat-devel gettext-devel openssl-devel zlib-devel
+2) Install 'ruby'
+	sudo yum install ruby
+3) Install 'rack'
+	gem install rack
