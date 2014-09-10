@@ -70,7 +70,7 @@ class DutObj
         #puts "within poll. dutNumParam=#{dutNumParam}"
         # gets
         @statusResponse[dutNumParam] = getTcuStatus(dutNumParam, uart1Param,gPIO2)
-        puts "dutNumParam=#{dutNumParam} @statusResponse[dutNumParam]=#{@statusResponse[dutNumParam]} #{__LINE__}-#{__FILE__}"
+        # puts "dutNumParam=#{dutNumParam} @statusResponse[dutNumParam]=#{@statusResponse[dutNumParam]} #{__LINE__}-#{__FILE__}"
         #puts "Leaving poll. dutNumParam=#{dutNumParam}"
     end
 
@@ -96,8 +96,9 @@ class DutObj
             # End of 'while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do'
         end            
 		
-        timeNow = Time.now.to_i
-		allDutData = "-BBB#{timeNow}"+allDutData
+        # timeNow = Time.now.to_i
+		# allDutData = "-BBB#{timeNow}"+allDutData
+		allDutData = "-"+allDutData
 		# puts "Poll A #{Time.now.inspect}"
         @sharedMem.WriteDataTcu(allDutData,"#{__LINE__}-#{__FILE__}")
 		# puts "Poll B #{Time.now.inspect}"

@@ -29,18 +29,38 @@ class TCUSampler
     SeqDownPsArr = "SeqDownPsArr"
     SeqUpPsArr = "SeqUpPsArr"
     
+    NomSet = "NomSet"
+    
     IntervalSecInStopMode = 1
     IntervalSecInRunMode = 10
     
     FIXNUM_MAX = (2**(0.size * 8 -2) -1) # Had to get its value one time.  Might still be useful.
+
+    # Columns used for bbbDefault
+    IndexCol = 0
+	NameCol = 1
+	NomSetCol = 4
+	TripMinCol = 5
+	TripMaxCol = 6
+	FlagTolPCol = 7 # Flag Tolerance Positive
+	FlagTolNCol = 8 # Flag Tolerance Negative
+	EnableBitCol = 9 # Flag indicating that software can turn it on or off
+	IdleStateCol = 10 # Flag indicating that software can turn it on or off
+	LoadStateCol = 11 # Flag indicating that software can turn it on or off
+	StartStateCol = 12 # Flag indicating that software can turn it on or off
+	RunStateCol = 13 # Flag indicating that software can turn it on or off
+	StopStateCol = 14 # Flag indicating that software can turn it on or off
+	ClearStateCol = 15 # Flag indicating that software can turn it on or off
+	LocationCol = 16 # Flag indicating that software can turn it on or off
+
     
     class PsSeqItem
-        
         EthernetOrSlotPcb = "EthernetOrSlotPcb"
         EthernetOrSlotPcb_Ethernent = "Ethernent"
         EthernetOrSlotPcb_SlotPcb = "Slot PCB"
         SeqUp = "SeqUp"
         SUDlyms = "SUDlyms"
+        SocketIp = "SocketIp"
         SeqDown = "SeqDown"
         SDDlyms = "SDDlyms"
         
@@ -145,7 +165,7 @@ class TCUSampler
     end
 
     def psSeqDown(fromParam)
-        puts "psSeqDown fromParam= #{fromParam}"
+        # puts "psSeqDown fromParam = '#{fromParam}'"
         doPsSeqPower(false)
     end
     
@@ -183,6 +203,16 @@ class TCUSampler
                     #
                     # Do ethernet power supply enabling/disabling here.
                     #
+                    puts "Ethernet PS key isolated = '#{psItem.keyName[1..-1]}' ip address of PS '#{@ethernetScheme[psItem.keyName[1..-1]]}'"
+                    if @socketIp.nil? == false && @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].nil? == false
+                        if powerUpParam
+                            @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].print("OUTP:POW:STAT ON\r\n")
+                        else
+                            @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].print("OUTP:POW:STAT OFF\r\n")
+                        end
+                    else
+                        SharedLib.bbbLog "Socket on '#{psItem.keyName[1..-1]}' ip address '#{@ethernetScheme[psItem.keyName[1..-1]].chomp}' is not yet initialized.  Reload 'Steps' file."
+                    end
                 elsif @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_SlotPcb
                     if @setupAtHome == false
                         case psItem.keyName
@@ -225,7 +255,7 @@ class TCUSampler
                         end
                     end
                 else
-                    `echo "#{Time.new.inspect} : @stepToWorkOn[\"PsConfig\"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb]='#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb]}' not recognized.  #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
+                    SharedLib.bbbLog "@stepToWorkOn[\"PsConfig\"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb]='#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb]}' not recognized.  #{__LINE__}-#{__FILE__}"
                 end
             end
         end
@@ -387,6 +417,41 @@ class TCUSampler
                                         @stepToWorkOn = getConfiguration()[Steps][key]
                                         @shareMem.SetStepName("#{key}")
                                         @shareMem.SetStepNumber("#{stepNumber+1}")
+
+                        		        # Setup the power supplies...
+                                        @stepToWorkOn["PsConfig"].each do |key, data|
+                                            # puts "key='#{key}' #{__LINE__}-#{__FILE__}"
+                                            if key[0..1] == "VP"
+                                                sequencePS = "S#{key[1..-1]}"
+                                                # puts "sequencePS='#{sequencePS}' is '#{PsSeqItem::EthernetOrSlotPcb_Ethernent}' #{__LINE__}-#{__FILE__}"
+                                                if @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_Ethernent 
+                                                    if @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SeqUp].to_i > 0
+                                                        # puts "SeqUp value = '#{@stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SeqUp]}' #{__LINE__}-#{__FILE__}"
+                                                        # Setup a connetion to the PS via ethernet, and set the voltage and current settings
+                                                        if @socketIp.nil?
+                                                            @socketIp = Hash.new
+                                                        end
+                                                        host = @ethernetScheme[key[1..-1]].chomp
+                                                        if @socketIp[host].nil?
+                                                            port = 5025                # port
+                                                            @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SocketIp] = @ethernetScheme[key[1..-1]]
+                                                            # SharedLib.pause "host = '#{host}',port = '#{port}'","#{__LINE__}-#{__FILE__}"
+                                                            @socketIp[host] = TCPSocket.open(host,port)
+                        
+                                                            # Set the voltage
+                                                            puts "voltage name = '#{key}', NomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                            @socketIp[host].print("SOUR:VOLT #{@stepToWorkOn["PsConfig"][key][NomSet]}\r\n")
+                        
+                                                            # Set the current
+                                                            puts "current name = 'I#{key[1..-1]}', NomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                            @socketIp[host].print("SOUR:CURR #{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]}\r\n")
+                                                            # SharedLib.pause "Checking value of @stepToWorkOn","#{__LINE__}-#{__FILE__}"
+                                                        end
+                                                    end
+                                                end
+                                            end
+                                        end
+                                        
                                         # SharedLib.pause "A Got a step", "#{__LINE__}-#{__FILE__}"
                                         # PP.pp(@stepToWorkOn)
                                         # SharedLib.pause "B Got a step Breaking out of loop.", "#{__LINE__}-#{__FILE__}"
@@ -653,6 +718,65 @@ class TCUSampler
         end
     end
     
+    def readInEthernetScheme
+        # Read in the EthernetScheme.csv file
+		ethernetScheme = Array.new
+		@ethernetScheme = Hash.new
+		File.open("../EthernetScheme.csv", "r") do |f|
+			f.each_line do |line|
+				ethernetScheme.push(line)
+			end
+		end
+		SharedLib.bbbLog("No value checking in code within this section, ie, if column value is a valid number, or column name is not recognize. #{__LINE__}-#{__FILE__}")
+		ct = 0
+		while ct < ethernetScheme.length do
+            if ct >= 1
+		        columns = ethernetScheme[ct].split(",")
+                @ethernetScheme[columns[0]] = columns[1]
+            end
+            ct += 1
+        end
+        # PP.pp(@ethernetScheme)
+        # SharedLib.pause "Checking @ethernetScheme value","#{__LINE__}-#{__FILE__}"
+    end
+    
+    def readInBbbDefaultsFile
+        # Read the BBB-Defaults file.csv file
+		bbbDefaultFile = Array.new
+		@bbbDefaultFile = Hash.new
+		File.open("../BBB-Defaults file.csv", "r") do |f|
+			f.each_line do |line|
+				bbbDefaultFile.push(line)
+			end
+		end
+		SharedLib.bbbLog("No value checking in code within this section, ie, if column value is a valid number, or column name is not recognize. #{__LINE__}-#{__FILE__}")
+		ct = 0
+		while ct < bbbDefaultFile.length do
+		    if ct >= 2
+		        columns = bbbDefaultFile[ct].split(",")
+                name = columns[NameCol]
+                if @bbbDefaultFile[name].nil?
+                    @bbbDefaultFile[name] = Hash.new
+                end
+                @bbbDefaultFile[name][NomSetCol] = columns[NomSetCol]
+                @bbbDefaultFile[name][TripMinCol] = columns[TripMinCol]
+                @bbbDefaultFile[name][TripMaxCol] = columns[TripMaxCol]
+                @bbbDefaultFile[name][FlagTolPCol] = columns[FlagTolPCol]
+                @bbbDefaultFile[name][FlagTolNCol] = columns[FlagTolNCol]
+                @bbbDefaultFile[name][EnableBitCol] = columns[EnableBitCol]
+                @bbbDefaultFile[name][IdleStateCol] = columns[IdleStateCol]
+                @bbbDefaultFile[name][LoadStateCol] = columns[LoadStateCol]
+                @bbbDefaultFile[name][StartStateCol] = columns[StartStateCol]
+                @bbbDefaultFile[name][RunStateCol] = columns[RunStateCol]
+                @bbbDefaultFile[name][StopStateCol] = columns[StopStateCol]
+                @bbbDefaultFile[name][ClearStateCol] = columns[ClearStateCol]
+                @bbbDefaultFile[name][LocationCol] = columns[LocationCol]
+		    end
+                
+            ct += 1
+		end
+    end
+    
     def runTCUSampler
     	@setupAtHome = false
     	@initMuxValueFunc = false
@@ -664,32 +788,18 @@ class TCUSampler
     	@shareMem.SetupData()
     	initMuxValueFunc()
     	initpollAdcInputFunc()
+    	readInBbbDefaultsFile()
+    	readInEthernetScheme()
     	
         runThreadForSavingSlotStateEvery10Mins()
 
-        executeAllStty = "Yes" # "Yes" if you want to execute all...
-        
+        # Setup the UART comm.
         baudrateToUse = 115200 # baud rate options are 9600, 19200, and 115200
-    
-        # puts 'Check 1 of 7 - cd /lib/firmware'
         system("cd /lib/firmware")
-        
-        # puts 'Check 2 of 7 - echo BB-UART1 > /sys/devices/bone_capemgr.9/slots'
         system("echo BB-UART1 > /sys/devices/bone_capemgr.9/slots")
-        
-        # puts 'Check 4 of 7 - stty -F /dev/ttyO1 raw'
         system("stty -F /dev/ttyO1 raw")
-        
-        # puts "Check 5 of 7 - stty -F /dev/ttyO1 #{baudrateToUse}"
     	system("stty -F /dev/ttyO1 #{baudrateToUse}")
-    	
-        # puts "Check 3 of 7 - ./openTtyO1Port_#{baudrateToUse}.exe"
-    	# system("../BBB_openTtyO1Port c code/openTtyO1Port_115200.exe")
     	system("./openTtyO1Port_115200.exe")
-    	
-    	# End of 'if (executeAllStty == "Yes")'
-    
-        # puts "Check 6 of 7 - uart1 = UARTDevice.new(:UART1, #{baudrateToUse})"
         uart1 = UARTDevice.new(:UART1, baudrateToUse)
         
         SharedLib.bbbLog("Initializing machine using system's time. #{__LINE__}-#{__FILE__}")
@@ -708,7 +818,7 @@ class TCUSampler
         			    if SharedLib.is_a_number?(readLine)
         			        intVal = readLine.to_i
         			        tcusToSkip[intVal] = intVal
-        			        puts "Skipping TCU(#{intVal}) based on file list. #{__LINE__}-#{__FILE__}"
+        			        # puts "Skipping TCU(#{intVal}) based on file list. #{__LINE__}-#{__FILE__}"
         			    else
         			        SharedLib.bbbLog("Not processing line# '#{lineNum+1}' on file '#{FaultyTcuList_SkipPolling}' because it's not a number. #{__LINE__}-#{__FILE__}")
         			    end
@@ -731,9 +841,10 @@ class TCUSampler
                 newDeadTcu = true
                 SharedLib.bbbLog("UART not responding to TCU#{ct} (zero based index), adding item to be skipped when polling. #{__LINE__}-#{__FILE__}")
             else
-                puts "Sent 'S?' - responded :'#{uartResponse}' #{__LINE__}-#{__FILE__}"
+                # puts "Sent 'S?' - responded :'#{uartResponse}' #{__LINE__}-#{__FILE__}"
                 uart1.write("V?\n");
-                puts "Sent 'V?' - responded :'#{uart1.readline}' #{__LINE__}-#{__FILE__}"
+                x = uart1.readline
+                # puts "Sent 'V?' - responded :'#{x}' #{__LINE__}-#{__FILE__}"
             end
             ct += 1
         end
@@ -889,7 +1000,6 @@ class TCUSampler
         		    @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
         		    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
                     setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
-                    
         		    saveBoardStateToHoldingTank()
         		    
         		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
@@ -975,6 +1085,5 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# @703
+# @974, 207
 
-#                     bitToUse = etsEnaBit(ct)

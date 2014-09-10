@@ -142,19 +142,9 @@ class SendSampledTcuToPCLib
             	    @db = SQLite3::Database.open "#{@dirFileRepository}/#{@dBaseFileName}"
             	end
             	
-            	# Change all the '"' to '\"' within slotInfoJson
-            	ct = 0
-            	forDbase = ""
-            	while ct < slotInfoJson.length
-                    if slotInfoJson[ct] == '"'
-                	    forDbase += "'"
-                    else
-                	    forDbase += slotInfoJson[ct]
-                    end
-                    # puts "forDbase=#{forDbase}"
-                    # SharedLib.pause "At pause","#{__LINE__}-#{__FILE__}"
-            	    ct += 1
-            	end
+            	
+            	forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(slotInfoJson)
+            	
     	        str = "Insert into log(idLogTime, data) "+
         		       "values(#{@timeOfData},\"#{forDbase}\")"
     

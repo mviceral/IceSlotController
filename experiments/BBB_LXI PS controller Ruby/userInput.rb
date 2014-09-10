@@ -1,7 +1,7 @@
 require 'timeout'
 require 'socket'
 
-host = '192.168.1.241'     # The web server
+host = '192.168.1.214'     # The web server
 port = 5025                # port
 
 socket = TCPSocket.open(host,port)  # Connect to server

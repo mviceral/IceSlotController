@@ -326,11 +326,11 @@ class SharedMemory
         # puts "A.6 #{__LINE__}-#{__FILE__}"
         # puts "B Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         configDateUpload = Time.at(GetConfigDateUpload().to_i)
-    	puts "Check 4 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
+    	# puts "Check 4 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
     	dBaseFileName = "#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{GetConfigurationFileName()}.db"
-    	puts "A Creating dbase '/mnt/card/#{dBaseFileName}' #{__LINE__}-#{__FILE__}"
+    	# puts "A Creating dbase '/mnt/card/#{dBaseFileName}' #{__LINE__}-#{__FILE__}"
     	SetDBaseFileName(dBaseFileName)
-    	puts "B Creating dbase '/mnt/card/#{GetDBaseFileName()}' #{__LINE__}-#{__FILE__}"
+    	# puts "B Creating dbase '/mnt/card/#{GetDBaseFileName()}' #{__LINE__}-#{__FILE__}"
         db = SQLite3::Database.new( "/mnt/card/#{GetDBaseFileName()}" )
         if db.nil?
             SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
