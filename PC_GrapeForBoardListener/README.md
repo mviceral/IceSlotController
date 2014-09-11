@@ -5,7 +5,7 @@ To run Sinatra that displays the GUI.
 	ruby Sinatra.rb &
 
 To run Grape that takes in data from BBB
-	rackup Grape.ru &
+	rackup &
 
 # 
 # To list the table names in an sqlite3 database, use the following command.

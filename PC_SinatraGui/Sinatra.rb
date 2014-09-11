@@ -31,6 +31,7 @@ require 'pp' # Pretty print to see the hash values.
 # set :sharedMem, SharedMemory.new()
 
 class UserInterface
+	StepConfigFileFolder = "../steps\ config\ file\ repository"
 	BbbPcListener = 'http://192.168.7.2'
 	# BbbPcListener = 'http://192.168.1.211'
 	LinuxBoxPcListener = "localhost"
@@ -51,7 +52,6 @@ class UserInterface
 	# Constants for what is to be displayed.
 	#
 	BlankFileName = "-----------"
-	FileName = "FileName"
 	
 	#
 	# Button Labels.
@@ -65,14 +65,6 @@ class UserInterface
 	# Accessor for what's displayed on the top button of a slot
 	#
 	ButtonDisplay = "ButtonDisplay"
-	
-	#
-	# Accessors for indicated times of a slot
-	#
-	TimeOfUpload = "TimeOfUpload"
-	TimeOfRun = "TimeOfRun"
-	TimeOfStop = "TimeOfStop"
-	TimeOfClear = "TimeOfClear"
 	
 	#
 	# Accessor for the button image like Stop, Play, Load(Folder), Eject
@@ -118,7 +110,7 @@ class UserInterface
 	end
 	
 	def dirFileRepository
-		return "file repository"
+		return StepConfigFileFolder
 	end
 
 	def redirectWithError
@@ -250,14 +242,12 @@ class UserInterface
 
 	def getSlotOwner
 		if @slotOwnerThe.nil? || @slotOwnerThe == ""
-			getSlotsState
 			redirect "../"
 		end
 		return @slotOwnerThe
 	end
 	
 	def clearError
-		getSlotProperties()[TimeOfUpload] = 0 # = 0 to indicate that this slot is not good for processing	
 		@upLoadConfigErrorName = ""
 		@upLoadConfigErrorRow = ""
 		@upLoadConfigErrorIndex = ""
@@ -423,20 +413,6 @@ class UserInterface
 		return paramDigit
 	end
 	
-	def getSlotsState
-		begin
-			fileRead = ""
-			File.open('SlotState_DoNotDeleteNorModify.json', "r") do |f|
-				f.each_line do |line|
-					fileRead += line
-				end
-			end
-			@slotProperties = JSON.parse(fileRead)
-			rescue 
-				# File does not exists, so just continue with a blank slate.
-		end
-	end
-
 	def Clear
 		return Clear
 	end
@@ -466,38 +442,7 @@ class UserInterface
 		end
 		return slotProperties[getSlotOwner()]
 	end
-	def setConfigFileName(fileNameParam)
-		getSlotProperties()[FileName] = fileNameParam
-	end
-	
-	def setTimeOfRun()
-		getSlotProperties()[TimeOfRun] = Time.now.to_i
-	end
-	
-	def setTimeOfStop()
-		getSlotProperties()[TimeOfStop] = Time.now.to_i
-	end
-	
-	def setTimeOfClear()
-		getSlotProperties()[TimeOfClear] = Time.now.to_i
-	end
-		
-	def saveSlotState()
-		#
-		# Save the slot states of the environment.
-		# How's that going to work?
-		# - Open up a file, and save the Slot Properties
-		#
-		if slotProperties.to_json == "{}"
-			getSlotsState()
-		end		
-		File.open("SlotState_DoNotDeleteNorModify.json", "w") { |file| file.write(slotProperties.to_json) }
-	end
-	
-	def setTimeOfUpload()
-		getSlotProperties()[TimeOfUpload] = Time.now
-	end
-	
+
 	def getButtonImage()
 		if getSlotProperties()[BtnDisplayImg].nil?
 			getSlotProperties()[BtnDisplayImg] = LoadImg
@@ -514,14 +459,16 @@ class UserInterface
 		if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::Yes && 
 			@sharedMem.GetDispConfigurationFileName().nil?  == false &&
 			@sharedMem.GetDispConfigurationFileName().length > 0
-			return Clear
-		else
-			return getSlotProperties()[ButtonDisplay]
+			getSlotProperties()[ButtonDisplay] = Clear
+		elsif @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::No &&
+			@sharedMem.GetDispBbbMode() == SharedLib::InStopMode
+			getSlotProperties()[ButtonDisplay] = Run
 		end
+
+		return getSlotProperties()[ButtonDisplay]
 	end
 	
 	def setToLoadMode()
-		setConfigFileName(BlankFileName)
 		begin
 			# puts "Clearing board #{__LINE__}-#{__FILE__}"
 			@response = 
@@ -716,7 +663,7 @@ class UserInterface
 	end
 
 	def getRows(dirParam)
-		repoDir = "file\ repository"
+		repoDir = StepConfigFileFolder
 		tbr = "" # tbr - to be returned
 		files = dirParam
 		fileIndex = 0;
@@ -769,15 +716,6 @@ class UserInterface
 			sec = make2Digits(d.sec.to_s)
 			return month+"/"+day+"/"+year+" "+hour+":"+min+":"+sec
 		end
-	end
-	
-	def GetSlotFileName ()
-		if getSlotProperties()[FileName].nil?
-			return BlankFileName
-		else
-			return getSlotProperties()[FileName]
-		end
-		# End of 'def GetSlotFileName (slotLabelParam)'
 	end
 	
 	def removeWhiteSpace(slotLabelParam)
@@ -962,12 +900,19 @@ class UserInterface
 							</tr>
 							<tr>
 								<td>
-									<center>
-									<font size=\"1.25\" style=\"font-style: italic;\">#{GetSlotFileName()}</font>"
-		if GetSlotFileName() != BlankFileName
+									<center>"
+		if @sharedMem.GetDispConfigurationFileName().nil?
+			disp = BlankFileName
+		else
+			disp = @sharedMem.GetDispConfigurationFileName()
+		end
+
+		topTable+="
+									<font size=\"1.25\" style=\"font-style: italic;\">#{disp}</font>"
+		if disp != BlankFileName
 		topTable+= "	<button 
 							style=\"height:20px; width:50px; font-size:10px\" 							
-							onclick=\"window.location='../ViewFile?File=#{GetSlotFileName()}'\" />
+							onclick=\"window.location='../ViewFile?File=#{disp}'\" />
 							View
 									</button>"									
 		end									
@@ -1121,6 +1066,7 @@ class UserInterface
 	end
 	
 	def getListOfFiles(path, extentionParam)
+		puts "cd '#{path}'; ls -lt #{extentionParam} #{__LINE__}-#{__FILE__}"
 		listOfFiles = `cd "#{path}"; ls -lt #{extentionParam}`
 		fileRow = listOfFiles.split("\n")
 		ct = 0
@@ -1154,8 +1100,7 @@ class UserInterface
 		#
 		# Create a list of Test Files, and display them in a table.
 		# 						
-		repoDir = "file\ repository"
-		# files = Dir["#{repoDir}/*.step"]
+		repoDir = StepConfigFileFolder
 		files = getListOfFiles("#{repoDir}","*.step")
 		tbr += "<table style=\"border-collapse: collapse;	border: 1px solid black;\">"
 		fileIndex = 0;
@@ -1412,10 +1357,6 @@ class UserInterface
 		end
 		
 		return stepHash[stepNameParam]				
-	end
-	
-	def clearInternalSettings
-		getSlotProperties()[FileName] = ""
 	end
 	
 	def setItemParameter(nameParam, param, valueParam)
@@ -1746,7 +1687,6 @@ class UserInterface
 		# Returns true if no fault, false if there is error
 		#
 		clearError()
-		clearInternalSettings();
 		config = Array.new
 		File.open("#{dirFileRepository}/#{fileNameParam}", "r") do |f|
 			f.each_line do |line|
@@ -2028,10 +1968,7 @@ class UserInterface
 			return false
 		end
 		
-		setConfigFileName("#{fileNameParam}")
-		setTimeOfUpload()
 		setToAllowedToRunMode()
-		saveSlotState()
 		# PP.pp(slotProperties)
 		if setBbbConfigUpload() == false
 			return false
@@ -2205,8 +2142,6 @@ get '/TopBtnPressed' do
 			# The Run button got pressed.
 			#
 			settings.ui.setToRunMode()
-			settings.ui.setTimeOfRun()
-			settings.ui.saveSlotState();
 			redirect "../"
 		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Stop
 			#
@@ -2214,21 +2149,17 @@ get '/TopBtnPressed' do
 			#
 			settings.ui.setBbbToStopMode()
 			settings.ui.setToAllowedToRunMode()
-			settings.ui.setTimeOfStop()
 		
 			#
 			# Update the duration time
 			# Formula : Time now - Time of run, then convert to hours, mins, sec.
 			#
-			settings.ui.saveSlotState();
 			redirect "../"
 		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Clear
 			#
 			# The Clear button got pressed.
 			#
 			settings.ui.setToLoadMode()
-			settings.ui.setTimeOfClear()
-			settings.ui.saveSlotState();
 			redirect "../"
 		end
 	end
@@ -2239,7 +2170,6 @@ get '/' do
 end
 
 post '/' do	
-	settings.ui.saveSlotState() # Saves the state everytime the display gets refreshed.  10 second resolution...
 	return settings.ui.display
 end
 
@@ -2247,18 +2177,16 @@ end
 
 post '/TopBtnPressed' do
 	if settings.ui.slotOwnerThe.nil? || settings.ui.slotOwnerThe == ""
-		settings.ui.getSlotsState
 		redirect "../"
 	end
 	settings.ui.clearError()
-	settings.ui.clearInternalSettings();
 
 	tbr = "" # To be returned.
 	
 	#
 	# Make sure that the "file repository" directory exists.
 	#
-	dirFileRepository = "file repository"
+	dirFileRepository = StepConfigFileFolder
 	if Dir.exists?(dirFileRepository) == false
 		#
 		# Run a bash command to create a directory
@@ -2296,4 +2224,4 @@ post '/TopBtnPressed' do
   
   redirect "../"
 end
-# 571
+# def GetSlotFileName suppose to return ConfigurationFileName, delete all FileName
