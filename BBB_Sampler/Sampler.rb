@@ -3,7 +3,7 @@ require 'timeout'
 require 'beaglebone'
 require_relative 'DutObj'
 require_relative 'ThermalSiteDevices'
-require_relative "../BBB_GPIO2 Interface Ruby/GPIO2"
+require_relative "../lib/BBB_GPIO2 Interface Ruby/GPIO2"
 require_relative '../lib/SharedLib'
 require 'singleton'
 require 'forwardable'
@@ -398,7 +398,7 @@ class TCUSampler
         # Setup the @stepToWorkOn
         #
 	    stepNumber = 0
-	    puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
+	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
 	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
 	    	stepNumber<getConfiguration()["Steps"].length && 
 	    	@stepToWorkOn.nil?
@@ -729,7 +729,7 @@ class TCUSampler
         # Read in the EthernetScheme.csv file
 		ethernetScheme = Array.new
 		@ethernetScheme = Hash.new
-		File.open("../EthernetScheme.csv", "r") do |f|
+		File.open("../BBB_configuration files/ethernet scheme setup.csv", "r") do |f|
 			f.each_line do |line|
 				ethernetScheme.push(line)
 			end
@@ -751,7 +751,7 @@ class TCUSampler
         # Read the BBB-Defaults file.csv file
 		bbbDefaultFile = Array.new
 		@bbbDefaultFile = Hash.new
-		File.open("../default file.csv", "r") do |f|
+		File.open("../BBB_configuration files/board default setup.csv", "r") do |f|
 			f.each_line do |line|
 				bbbDefaultFile.push(line)
 			end
@@ -1055,7 +1055,7 @@ class TCUSampler
                 # waitTime = Time.now+pollInterval
             else
                 if @stepToWorkOn.nil?
-                    puts "A Going to sleep = '#{waitTime.to_f-Time.now.to_f}' #{__LINE__}-#{__FILE__}"
+                    puts "Sleep for '#{waitTime.to_f-Time.now.to_f}' seconds #{__LINE__}-#{__FILE__}"
                     if waitTime.to_f-Time.now.to_f > 0
                         sleep(waitTime.to_f-Time.now.to_f)
                     end
