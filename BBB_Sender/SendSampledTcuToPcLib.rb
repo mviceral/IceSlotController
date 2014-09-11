@@ -17,7 +17,7 @@ class SendSampledTcuToPCLib
 
     def runSampler
         # puts "Running the sampler."
-        system('cd ../"BBB_Sampler"; bash runTcuSampler.sh &')
+        # system('cd ../"BBB_Sampler"; bash runTcuSampler.sh &')
         # puts "Done executing the runTcuSampler.sh script."
         # End of 'def runSampler'
     end
