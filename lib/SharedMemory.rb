@@ -21,7 +21,7 @@ class SharedMemory
     
     TimeOfPcUpload = "TimeOfPcUpload"
     TimeOfPcLastCmd = "TimeOfPcLastCmd"
-    
+	SlotOwner = "SlotOwner"    
     #
     # Known functions of SharedMemoryExtension
     #
@@ -35,7 +35,7 @@ class SharedMemory
     
     def SetDispBoardData(configurationFileNameParam, configDateUploadParam, allStepsDone_YesNoParam, bbbModeParam,
       stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotIpAddressParam, allStepsCompletedAtParam,dispTotalStepDurationParam, 
-      adcInputParam, muxDataParam, tcuParam)      
+      adcInputParam, muxDataParam, tcuParam,eipsParam)      
 	# puts "tcuParam = #{}"
 	# SharedLib.pause "Checking tcuParam", "#{__LINE__}-#{__FILE__}"
     	ds = getDS()
@@ -56,6 +56,7 @@ class SharedMemory
       ds[SharedLib::PC][SharedLib::TotalStepDuration] = dispTotalStepDurationParam
       ds[SharedLib::PC][SharedLib::AdcInput] = adcInputParam
       ds[SharedLib::PC][SharedLib::MuxData] = muxDataParam
+      ds[SharedLib::PC][SharedLib::Eips] = eipsParam
 		if tcuParam.nil? == false && tcuParam.length > 0
 			tcuData = tcuParam
 			datArr = Array.new
@@ -96,7 +97,22 @@ class SharedMemory
 	def GetDispAllStepsCompletedAt
 		return getPCShared()[SharedLib::AllStepsCompletedAt]
 	end
-		
+
+	def GetDispEips
+		return getPCShared()[SharedLib::Eips]
+	end
+
+	def SetDispSlotOwner(slotOwnerParam)
+    		ds = getDS()
+			if ds[SharedLib::PC].nil?
+				ds[SharedLib::PC] = Hash.new
+			end
+			if ds[SharedLib::PC][slotOwnerParam].nil? 
+				ds[SharedLib::PC][slotOwnerParam] = Hash.new
+			end
+			ds[SharedLib::PC][SlotOwner] = slotOwnerParam
+			WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+	end		
     def GetDispConfigurationFileName
 			return getPCShared()[SharedLib::ConfigurationFileName]
     end
@@ -245,7 +261,8 @@ class SharedMemory
 			hash[SharedLib::TotalStepDuration],
 			hash[SharedLib::AdcInput],
 			hash[SharedLib::MuxData],
-			hash[SharedLib::Tcu]
+			hash[SharedLib::Tcu],
+			hash[SharedLib::Eips]
 			)
 	end
 

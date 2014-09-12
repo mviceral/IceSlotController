@@ -6,38 +6,38 @@ class SharedLib
 	#
 	# Constants used for sending data to the slot
 	#
-    PcToBbbCmd = "PcToBbbCmd"
-    RunFromPc = "RunFromPc" # Command
-    StopFromPc = "StopFromPc" # Command
-    LoadConfigFromPc = "LoadConfigFromPc" # Command
-    ClearConfigFromPc = "ClearConfigFromPc"
-    PcToBbbData = "PcToBbbData" # Data flag
+	PcToBbbCmd = "PcToBbbCmd"
+	RunFromPc = "RunFromPc" # Command
+	StopFromPc = "StopFromPc" # Command
+	LoadConfigFromPc = "LoadConfigFromPc" # Command
+	ClearConfigFromPc = "ClearConfigFromPc"
+	PcToBbbData = "PcToBbbData" # Data flag
 
 	#
 	# Constants used for sending data to PC
 	#
-    ConfigurationFileName = "ConfigurationFileName"
-    ConfigDateUpload = "ConfigDateUpload"
-    AllStepsDone_YesNo = "AllStepsDone_YesNo"
-    StepName = "StepName"
-    StepNumber = "StepNumber"
-    StepTimeLeft = "StepTimeLeft"
-    SlotTime = "SlotTime"
-    Data = "Data"
-    SlotIpAddress = "SlotIpAddress"
-    BbbMode = "BbbMode"
-    AllStepsCompletedAt = "AllStepsCompletedAt"
-    TotalStepDuration = "TotalStepDuration"
+	ConfigurationFileName = "ConfigurationFileName"
+	ConfigDateUpload = "ConfigDateUpload"
+	AllStepsDone_YesNo = "AllStepsDone_YesNo"
+	StepName = "StepName"
+	StepNumber = "StepNumber"
+	StepTimeLeft = "StepTimeLeft"
+	SlotTime = "SlotTime"
+	Data = "Data"
+	SlotIpAddress = "SlotIpAddress"
+	BbbMode = "BbbMode"
+	AllStepsCompletedAt = "AllStepsCompletedAt"
+	TotalStepDuration = "TotalStepDuration"
     
-    # Board State.
-    InRunMode = "InRunMode"
-    InStopMode = "InStopMode"
-    
-    #
-    # Constants
-    #
-    Yes = "Yes"
-    No = "No"
+	# Board State.
+	InRunMode = "InRunMode"
+	InStopMode = "InStopMode"
+
+	#
+	# Constants
+	#
+	Yes = "Yes"
+	No = "No"
 
 	# Shared memory for PC side.
 	PC = "Pc"
@@ -114,9 +114,9 @@ class SharedLib
 	# Data Type
 	AdcInput = "A" # for AdcInput
 	MuxData = "M" # for MuxData
-    Tcu	= "T" # for TCU
-    Gpio = "G" # for general purpose IO values
-    Eips = "E" # for Ethernet I (current) ps
+	Tcu	= "T" # for TCU
+	Gpio = "G" # for general purpose IO values
+	Eips = "E" # for Ethernet I (current) ps
     
     #
     # Functions
