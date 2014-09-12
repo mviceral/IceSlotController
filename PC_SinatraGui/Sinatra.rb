@@ -1,4 +1,4 @@
-# ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
+#{__LINE__}-#{__FILE__}
 =begin
 Trying to get the creation date of the uploaded file.
 http://stackoverflow.com/questions/3018123/php-how-to-get-creation-date-from-uploaded-file
@@ -62,11 +62,6 @@ class UserInterface
 	Clear = "Clear"
 	
 	#
-	# Accessor for what's displayed on the top button of a slot
-	#
-	ButtonDisplay = "ButtonDisplay"
-	
-	#
 	# Accessors for indicated times of a slot
 	#
 	TimeOfUpload = "TimeOfUpload"
@@ -124,7 +119,9 @@ class UserInterface
 	def redirectWithError
 		@redirectWithError
 	end
-	
+	def setConfigFileName(fileNameParam)
+		getSlotProperties()[FileName] = fileNameParam
+	end
 	def mustBeBoolean(configFileName,ctParam,config,itemNameParam)
 		#
 		# returns true if the 
@@ -466,21 +463,6 @@ class UserInterface
 		end
 		return slotProperties[getSlotOwner()]
 	end
-	def setConfigFileName(fileNameParam)
-		getSlotProperties()[FileName] = fileNameParam
-	end
-	
-	def setTimeOfRun()
-		getSlotProperties()[TimeOfRun] = Time.now.to_i
-	end
-	
-	def setTimeOfStop()
-		getSlotProperties()[TimeOfStop] = Time.now.to_i
-	end
-	
-	def setTimeOfClear()
-		getSlotProperties()[TimeOfClear] = Time.now.to_i
-	end
 		
 	def saveSlotState()
 		#
@@ -506,17 +488,29 @@ class UserInterface
 	end
 	
 	def getButtonDisplay(slotLabelParam)
-		setSlotOwner(slotLabelParam)
-		if getSlotProperties()[ButtonDisplay].nil?
-			getSlotProperties()[ButtonDisplay] = Load
+		@sharedMem.SetDispSlotOwner(slotLabelParam)
+		puts "slotLabelParam=#{slotLabelParam}"
+		puts "@sharedMem.GetDispConfigurationFileName().nil? = #{@sharedMem.GetDispConfigurationFileName().nil?}"
+		puts "@sharedMem.GetDispConfigurationFileName() = #{@sharedMem.GetDispConfigurationFileName()}"
+		puts "@sharedMem.GetDispConfigurationFileName().length == #{@sharedMem.GetDispConfigurationFileName().length} #{__LINE__}-#{__FILE__}"
+		if @sharedMem.GetDispConfigurationFileName().nil? || @sharedMem.GetDispConfigurationFileName().length == 0
+			return Load
 		end
 		
 		if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::Yes && 
-			@sharedMem.GetDispConfigurationFileName().nil?  == false &&
+			@sharedMem.GetDispConfigurationFileName().nil? == false &&
 			@sharedMem.GetDispConfigurationFileName().length > 0
 			return Clear
-		else
-			return getSlotProperties()[ButtonDisplay]
+		end
+		
+		if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::No && 
+			@sharedMem.GetDispConfigurationFileName().nil? == false &&
+			@sharedMem.GetDispConfigurationFileName().length > 0
+			if @sharedMem.GetDispBbbMode() == SharedLib::InRunMode			
+				return Stop
+			else
+				return Run
+			end
 		end
 	end
 	
@@ -536,7 +530,6 @@ class UserInterface
   	@sharedMem.SetDataBoardToPc(hash2)
 		# puts "@response = #{@response} #{__LINE__}-#{__FILE__}"	
 		# puts "hash2 = #{hash2}"
-		getSlotProperties()[ButtonDisplay] = Load
 	end
 
 	def setBbbConfigUpload()
@@ -559,10 +552,6 @@ class UserInterface
 		end
 	end
 
-	def setToAllowedToRunMode()
-		getSlotProperties()[ButtonDisplay] = Run
-	end
-	
 	def cellWidth
 		return 95
 	end
@@ -691,7 +680,7 @@ class UserInterface
 		else
 			temperature = tcuData.split(',')[2]
 		end
-		puts "rawDataParam=#{rawDataParam}, tcuData=#{tcuData} #{__LINE__}-#{__FILE__}"
+		# puts "rawDataParam=#{rawDataParam}, tcuData=#{tcuData} #{__LINE__}-#{__FILE__}"
 		
 		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
@@ -754,8 +743,18 @@ class UserInterface
 		return tbr
 	end
 	
-	def getStepCompletion()		
-		if getSlotProperties()[ButtonDisplay] == Load
+	def GetSlotFileName()	
+		if @sharedMem.GetDispConfigurationFileName().nil? ||
+				@sharedMem.GetDispConfigurationFileName().length == 0
+			return BlankFileName
+		else
+			return @sharedMem.GetDispConfigurationFileName()
+		end
+	end
+	
+	def getStepCompletion()			
+		if @sharedMem.GetDispConfigurationFileName().nil? ||
+				@sharedMem.GetDispConfigurationFileName().length == 0
 			return BlankFileName
 		else
 			d = Time.now
@@ -769,15 +768,6 @@ class UserInterface
 			sec = make2Digits(d.sec.to_s)
 			return month+"/"+day+"/"+year+" "+hour+":"+min+":"+sec
 		end
-	end
-	
-	def GetSlotFileName ()
-		if getSlotProperties()[FileName].nil?
-			return BlankFileName
-		else
-			return getSlotProperties()[FileName]
-		end
-		# End of 'def GetSlotFileName (slotLabelParam)'
 	end
 	
 	def removeWhiteSpace(slotLabelParam)
@@ -922,8 +912,14 @@ class UserInterface
 				 				</td>
 				 			</tr>"
 		else
+			if @sharedMem.GetDispConfigurationFileName().nil? ||
+				@sharedMem.GetDispConfigurationFileName().length == 0
+				stepNum = ""
+			else
+				stepNum = @sharedMem.GetDispStepNumber()
+			end
 			topTable += "
-				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{@sharedMem.GetDispStepNumber()}' COMPLETION</td></tr>
+				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{stepNum}' COMPLETION</td></tr>
 				 			<tr>
 				 				<td align=\"center\">
 				 					<font 				 						
@@ -1414,10 +1410,6 @@ class UserInterface
 		return stepHash[stepNameParam]				
 	end
 	
-	def clearInternalSettings
-		getSlotProperties()[FileName] = ""
-	end
-	
 	def setItemParameter(nameParam, param, valueParam)
 		#
 		# Get the value as data for processing the slot.
@@ -1475,7 +1467,6 @@ class UserInterface
 		#
 		# When it's in run mode, set the button to stop.
 		#
-		getSlotProperties()[ButtonDisplay] = Stop
 		@response = 
       RestClient.post "#{PcListener}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}" }.to_json, :content_type => :json, :accept => :json
 	end	
@@ -1746,7 +1737,6 @@ class UserInterface
 		# Returns true if no fault, false if there is error
 		#
 		clearError()
-		clearInternalSettings();
 		config = Array.new
 		File.open("#{dirFileRepository}/#{fileNameParam}", "r") do |f|
 			f.each_line do |line|
@@ -2030,7 +2020,6 @@ class UserInterface
 		
 		setConfigFileName("#{fileNameParam}")
 		setTimeOfUpload()
-		setToAllowedToRunMode()
 		saveSlotState()
 		# PP.pp(slotProperties)
 		if setBbbConfigUpload() == false
@@ -2205,7 +2194,6 @@ get '/TopBtnPressed' do
 			# The Run button got pressed.
 			#
 			settings.ui.setToRunMode()
-			settings.ui.setTimeOfRun()
 			settings.ui.saveSlotState();
 			redirect "../"
 		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Stop
@@ -2213,8 +2201,6 @@ get '/TopBtnPressed' do
 			# The Stop button got pressed.
 			#
 			settings.ui.setBbbToStopMode()
-			settings.ui.setToAllowedToRunMode()
-			settings.ui.setTimeOfStop()
 		
 			#
 			# Update the duration time
@@ -2227,7 +2213,6 @@ get '/TopBtnPressed' do
 			# The Clear button got pressed.
 			#
 			settings.ui.setToLoadMode()
-			settings.ui.setTimeOfClear()
 			settings.ui.saveSlotState();
 			redirect "../"
 		end
@@ -2251,7 +2236,6 @@ post '/TopBtnPressed' do
 		redirect "../"
 	end
 	settings.ui.clearError()
-	settings.ui.clearInternalSettings();
 
 	tbr = "" # To be returned.
 	
@@ -2296,4 +2280,5 @@ post '/TopBtnPressed' do
   
   redirect "../"
 end
-# 571
+# 756, def getButtonDisplay
+
