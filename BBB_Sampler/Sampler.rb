@@ -280,7 +280,8 @@ class TCUSampler
 	        # SharedLib.pause "PP @stepToWorkOn","#{__LINE__}-#{__FILE__}"
 	    end
 
-
+        # PP.pp(@boardData)
+        # SharedLib.pause "Checking @boardData","#{__LINE__}-#{__FILE__}"
 	    File.open(HoldingTankFilename, "w") { 
 	        |file| file.write(@boardData.to_json) 
         }
@@ -443,10 +444,10 @@ class TCUSampler
                                                         host = @ethernetScheme[key[1..-1]].chomp
                                                         port = 5025                # port
                                                         if @socketIp[host].nil?
+                                                            puts "host = '#{host}',port = '#{port}' #{__LINE__}-#{__FILE__}"
                                                             @socketIp[host] = TCPSocket.open(host,port)
                                                         end
                                                         @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SocketIp] = @ethernetScheme[key[1..-1]].chomp
-                                                        # SharedLib.pause "host = '#{host}',port = '#{port}' ","#{__LINE__}-#{__FILE__}"
                     
                                                         # Set the voltage
                                                         # puts "voltage name = '#{key}', NomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} #{__LINE__}-#{__FILE__}"

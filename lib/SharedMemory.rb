@@ -22,40 +22,57 @@ class SharedMemory
     TimeOfPcUpload = "TimeOfPcUpload"
     TimeOfPcLastCmd = "TimeOfPcLastCmd"
     
+    SlotOwner = "SlotOwner"
+    
     #
     # Known functions of SharedMemoryExtension
     #
     def getPCShared()
         ds = getDS()
-        if ds[SharedLib::PC].nil?
+        if ds[SharedLib::PC].nil?        
         	ds[SharedLib::PC] = Hash.new
         end
-        return ds[SharedLib::PC]
+        if ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]].nil?
+        	ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]] = Hash.new
+        end
+        return ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]]
+    end
+
+    def SetDispSlotOwner(slotOwnerParam)
+    	ds = getDS()
+			if ds[SharedLib::PC].nil?
+				ds[SharedLib::PC] = Hash.new
+			end
+			if ds[SharedLib::PC][slotOwnerParam].nil? 
+				ds[SharedLib::PC][slotOwnerParam] = Hash.new
+			end
+			ds[SharedLib::PC][SlotOwner] = slotOwnerParam
+			WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
     
     def SetDispBoardData(configurationFileNameParam, configDateUploadParam, allStepsDone_YesNoParam, bbbModeParam,
-      stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotIpAddressParam, allStepsCompletedAtParam,dispTotalStepDurationParam, 
-      adcInputParam, muxDataParam, tcuParam)      
-	# puts "tcuParam = #{}"
-	# SharedLib.pause "Checking tcuParam", "#{__LINE__}-#{__FILE__}"
-    	ds = getDS()
-	if ds[SharedLib::PC].nil?
-      		ds[SharedLib::PC] = Hash.new
-	end
-      
-      ds[SharedLib::PC][SharedLib::ConfigurationFileName] = configurationFileNameParam 
-      ds[SharedLib::PC][SharedLib::ConfigDateUpload] = configDateUploadParam
-      ds[SharedLib::PC][SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
-      ds[SharedLib::PC][SharedLib::BbbMode] = bbbModeParam
-      ds[SharedLib::PC][SharedLib::StepName] = stepNameParam
-      ds[SharedLib::PC][SharedLib::StepNumber] = stepNumberParam
-      ds[SharedLib::PC][SharedLib::StepTimeLeft] = stepTotalTimeParam
-      ds[SharedLib::PC][SharedLib::SlotTime] = slotTimeParam
-      ds[SharedLib::PC][SharedLib::SlotIpAddress] = slotIpAddressParam
-      ds[SharedLib::PC][SharedLib::AllStepsCompletedAt] = allStepsCompletedAtParam
-      ds[SharedLib::PC][SharedLib::TotalStepDuration] = dispTotalStepDurationParam
-      ds[SharedLib::PC][SharedLib::AdcInput] = adcInputParam
-      ds[SharedLib::PC][SharedLib::MuxData] = muxDataParam
+        stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotIpAddressParam, allStepsCompletedAtParam,dispTotalStepDurationParam, 
+        adcInputParam, muxDataParam, tcuParam)      
+        # puts "tcuParam = #{}"
+        # SharedLib.pause "Checking tcuParam", "#{__LINE__}-#{__FILE__}"
+        	ds = getDS()
+        if ds[SharedLib::PC].nil?
+          		ds[SharedLib::PC] = Hash.new
+        end
+    	puts "Setting ConfigurationFileName = #{configurationFileNameParam} #{__LINE__}-#{__FILE__}"
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::ConfigurationFileName] = configurationFileNameParam 
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::ConfigDateUpload] = configDateUploadParam
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::BbbMode] = bbbModeParam
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::StepName] = stepNameParam
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::StepNumber] = stepNumberParam
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::StepTimeLeft] = stepTotalTimeParam
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::SlotTime] = slotTimeParam
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::SlotIpAddress] = slotIpAddressParam
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::AllStepsCompletedAt] = allStepsCompletedAtParam
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::TotalStepDuration] = dispTotalStepDurationParam
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::AdcInput] = adcInputParam
+      ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::MuxData] = muxDataParam
 		if tcuParam.nil? == false && tcuParam.length > 0
 			tcuData = tcuParam
 			datArr = Array.new
@@ -72,7 +89,7 @@ class SharedMemory
 				hash[hold[0]] = hold[1]
 				ct += 1
 			end
-			ds[SharedLib::PC][SharedLib::Tcu] = hash
+			ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::Tcu] = hash
 		end
 		WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
 	end
@@ -201,6 +218,7 @@ class SharedMemory
     end
 
     def SetConfigurationFileName(configurationFileNameParam)
+    	puts "Setting ConfigurationFileName = #{configurationFileNameParam} #{__LINE__}-#{__FILE__}"
         ds = getDS()
         ds[SharedLib::ConfigurationFileName] = configurationFileNameParam
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
@@ -230,7 +248,7 @@ class SharedMemory
 	def	SetDataBoardToPc(hashParam)
 		# hash = JSON.parse(hashParam)
 		hash = hashParam
-		# PP.pp(hash)
+		puts "hash[SharedLib::ConfigurationFileName]=#{hash[SharedLib::ConfigurationFileName]} #{__LINE__}-#{__FILE__}"
 		SetDispBoardData(
 			hash[SharedLib::ConfigurationFileName],
 			hash[SharedLib::ConfigDateUpload],
@@ -381,6 +399,14 @@ class SharedMemory
 	
     def SetPcCmd(cmdParam,calledFrom)
         puts "param sent #{cmdParam} calledFrom=#{calledFrom} #{__LINE__}-#{__FILE__}"
+        if getDS().nil?
+            puts "getDS() is nil. #{__LINE__}-#{__FILE__}"
+        elsif getDS()[Cmd].nil?
+            puts "getDS()[Cmd] is nil. #{__LINE__}-#{__FILE__}"
+            GetPcCmd() # Instantiate the variable for it.
+        elsif getDS()[Cmd][0].nil?
+            puts "getDS()[Cmd][0] is nil. #{__LINE__}-#{__FILE__}"
+        end
         oldCmdParam = getDS()[Cmd][0]
         print "Changing bbb mode from #{oldCmdParam} to "
         ds = getDS()
