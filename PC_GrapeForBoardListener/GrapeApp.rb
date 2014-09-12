@@ -90,7 +90,7 @@ module MigrationCount
 					puts "TotalStepDuration = #{sharedMem.GetDispTotalStepDuration()}"
 					
 					configDateUpload = Time.at(sharedMem.GetDispConfigDateUpload().to_i)
-					dBaseFileName = "../#{sharedMem.GetDispSlotIpAddress()}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName()}.db"
+					dBaseFileName = "../steps log records/#{sharedMem.GetDispSlotIpAddress()}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName()}.db"
 					runningOnCentos = true
 					if runningOnCentos == false
 						if File.file?("#{dBaseFileName}") == false

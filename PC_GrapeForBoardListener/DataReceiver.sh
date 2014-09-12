@@ -12,7 +12,7 @@ trap "rm -f ${BbbDataReceiverLock}; exit" INT TERM EXIT
 echo $$ > ${BbbDataReceiverLock}
 
 # do stuff
-rackup Grape.ru
+rackup 
 
 rm -f ${BbbDataReceiverLock}
 

@@ -370,17 +370,35 @@ class SharedMemory
         #   useless.
         InitializeSharedMemory()
     end 
-
+    
+    def PopPcCmd()
+        ds = getDS()
+        tbr = ds[Cmd].shift # tbr - to be returned
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        return tbr
+    end
+    
 	def GetPcCmd()
-        return getDS()[Cmd]
+	    pcCmd = getDS()[Cmd]
+	    if pcCmd.class.to_s == "Array"
+            return pcCmd
+        else
+            ds = getDS()
+            ds[Cmd] = Array.new
+            WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+            return ds[Cmd];
+	    end
 	end
 	
     def SetPcCmd(cmdParam,calledFrom)
         puts "param sent #{cmdParam} calledFrom=#{calledFrom} #{__LINE__}-#{__FILE__}"
-        oldCmdParam = getDS()[Cmd]
+        oldCmdParam = getDS()[Cmd][0]
         print "Changing bbb mode from #{oldCmdParam} to "
         ds = getDS()
-        ds[Cmd] = "#{cmdParam}"
+        if ds[Cmd].nil? || ds[Cmd].class.to_s != "Array"
+            ds[Cmd] = Array.new
+        end
+        ds[Cmd].push("#{cmdParam}")
         puts "#{cmdParam} [#{calledFrom}]"
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
         SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")        

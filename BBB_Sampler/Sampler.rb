@@ -3,7 +3,7 @@ require 'timeout'
 require 'beaglebone'
 require_relative 'DutObj'
 require_relative 'ThermalSiteDevices'
-require_relative "../BBB_GPIO2 Interface Ruby/GPIO2"
+require_relative "../lib/BBB_GPIO2 Interface Ruby/GPIO2"
 require_relative '../lib/SharedLib'
 require 'singleton'
 require 'forwardable'
@@ -116,7 +116,7 @@ class TCUSampler
     end
     
     def setToMode(modeParam, calledFrom)
-        @shareMem.SetBbbMode(modeParam,"#{__LINE__}-#{__FILE__}")
+        @shareMem.SetBbbMode(modeParam,"called from #{calledFrom} #{__LINE__}-#{__FILE__}")
         @boardData[BbbMode] = modeParam
         @boardMode = modeParam
 
@@ -205,14 +205,18 @@ class TCUSampler
                     #
                     # puts "Ethernet PS key isolated = '#{psItem.keyName[1..-1]}' ip address of PS '#{@ethernetScheme[psItem.keyName[1..-1]]}'"
                     puts "checking IP of socket = '#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]}'"
-                    if @socketIp.nil? == false && @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].nil? == false
-                        if powerUpParam
-                            @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].print("OUTP:POW:STAT ON\r\n")
+                    if @socketIp.nil? == false
+                        if @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].nil? == false
+                            if powerUpParam
+                                @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].print("OUTP:POW:STAT ON\r\n")
+                            else
+                                @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].print("OUTP:POW:STAT OFF\r\n")
+                            end
                         else
-                            @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].print("OUTP:POW:STAT OFF\r\n")
+                            SharedLib.bbbLog "Socket on '#{psItem.keyName[1..-1]}' ip address '#{@ethernetScheme[psItem.keyName[1..-1]].chomp}' is not yet initialized.  Reload 'Steps' file."
                         end
                     else
-                        SharedLib.bbbLog "Socket on '#{psItem.keyName[1..-1]}' ip address '#{@ethernetScheme[psItem.keyName[1..-1]].chomp}' is not yet initialized.  Reload 'Steps' file."
+                        SharedLib.bbbLog "@socketIp is nil!!!!."
                     end
                 elsif @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_SlotPcb
                     if @setupAtHome == false
@@ -398,7 +402,7 @@ class TCUSampler
         # Setup the @stepToWorkOn
         #
 	    stepNumber = 0
-	    puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
+	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
 	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
 	    	stepNumber<getConfiguration()["Steps"].length && 
 	    	@stepToWorkOn.nil?
@@ -442,7 +446,7 @@ class TCUSampler
                                                             @socketIp[host] = TCPSocket.open(host,port)
                                                         end
                                                         @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SocketIp] = @ethernetScheme[key[1..-1]].chomp
-                                                        print "host = '#{host}',port = '#{port}' "
+                                                        # SharedLib.pause "host = '#{host}',port = '#{port}' ","#{__LINE__}-#{__FILE__}"
                     
                                                         # Set the voltage
                                                         # puts "voltage name = '#{key}', NomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} #{__LINE__}-#{__FILE__}"
@@ -451,7 +455,7 @@ class TCUSampler
                     
                                                         # Set the current
                                                         # puts "current name = 'I#{key[1..-1]}', NomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
-                                                        puts "INomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                        # puts "INomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
                                                         @socketIp[host].print("SOUR:CURR #{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]}\r\n")
                                                         # SharedLib.pause "Checking value of @stepToWorkOn","#{__LINE__}-#{__FILE__}"
                                                     end
@@ -729,7 +733,7 @@ class TCUSampler
         # Read in the EthernetScheme.csv file
 		ethernetScheme = Array.new
 		@ethernetScheme = Hash.new
-		File.open("../EthernetScheme.csv", "r") do |f|
+		File.open("../BBB_configuration files/ethernet scheme setup.csv", "r") do |f|
 			f.each_line do |line|
 				ethernetScheme.push(line)
 			end
@@ -751,7 +755,7 @@ class TCUSampler
         # Read the BBB-Defaults file.csv file
 		bbbDefaultFile = Array.new
 		@bbbDefaultFile = Hash.new
-		File.open("../default file.csv", "r") do |f|
+		File.open("../BBB_configuration files/board default setup.csv", "r") do |f|
 			f.each_line do |line|
 				bbbDefaultFile.push(line)
 			end
@@ -785,13 +789,13 @@ class TCUSampler
     end
     
     def runTCUSampler
+        @socketIp = nil
     	@setupAtHome = false
     	@initMuxValueFunc = false
     	@initpollAdcInputFunc = false
     	@multiplier = Hash.new
     	
         @shareMem = SharedMemory.new
-        @shareMem.Initialize()
     	@shareMem.SetupData()
     	initMuxValueFunc()
     	initpollAdcInputFunc()
@@ -880,13 +884,13 @@ class TCUSampler
             if tcusToSkip[ct].nil? == true
                 bitToUse = etsEnaBit(ct)
                 if 0<=ct && ct <=7  
-                    SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
                     gPIO2.etsEna1SetOn(bitToUse)
                 elsif 8<=ct && ct <=15
-                    SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna2Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna2Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
                     gPIO2.etsEna2SetOn(bitToUse)
                 elsif 16<=ct && ct <=23
-                    SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna3Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna3Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
                     gPIO2.etsEna3SetOn(bitToUse)
                 end
             end
@@ -930,7 +934,7 @@ class TCUSampler
                 # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
                 stepNum = @stepToWorkOn[StepNum]
             end
-            puts "ping Mode()=#{@shareMem.GetBbbMode()} AllStepsDone_YesNo()=#{@shareMem.GetAllStepsDone_YesNo()} ConfigFileName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{__LINE__}-#{__FILE__}"
+            puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             @shareMem.SetSlotTime(Time.now.to_i)
 			case @shareMem.GetBbbMode()
 			when SharedLib::InRunMode
@@ -989,11 +993,12 @@ class TCUSampler
 			    end
             end
             
-    		# puts "A getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
-    		if getTimeOfPcLastCmd() < @shareMem.GetTimeOfPcLastCmd()
-    		    puts "\n\n\nNew command from PC - '#{@shareMem.GetPcCmd()}' #{__LINE__}-#{__FILE__}"
+    		if @shareMem.GetPcCmd().length != 0
+    		    pcCmd = @shareMem.PopPcCmd()
+    		    # getTimeOfPcLastCmd() < @shareMem.GetTimeOfPcLastCmd()
+    		    puts "\n\n\nNew command from PC - '#{pcCmd}' #{__LINE__}-#{__FILE__}"
     		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
-    		    case @shareMem.GetPcCmd()
+    		    case pcCmd
     		    when SharedLib::RunFromPc
         		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
     		    when SharedLib::StopFromPc
@@ -1055,7 +1060,7 @@ class TCUSampler
                 # waitTime = Time.now+pollInterval
             else
                 if @stepToWorkOn.nil?
-                    puts "A Going to sleep = '#{waitTime.to_f-Time.now.to_f}' #{__LINE__}-#{__FILE__}"
+                    puts "Sleep for '#{waitTime.to_f-Time.now.to_f}' seconds #{__LINE__}-#{__FILE__}"
                     if waitTime.to_f-Time.now.to_f > 0
                         sleep(waitTime.to_f-Time.now.to_f)
                     end
@@ -1074,6 +1079,7 @@ class TCUSampler
                         puts "Going to sleep = '#{useThisTime}' #{__LINE__}-#{__FILE__}"
                         sleep(useThisTime)
                     else
+                        puts "Going to sleep = '#{bTime}' #{__LINE__}-#{__FILE__}"
                         sleep(bTime)
                     end
                 end

@@ -4,8 +4,7 @@
 #
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 require_relative 'Port2Interface.so'
-# require_relative "../BBB_Shared Memory for GPIO2 Ruby/SharedMemoryBbbGpio2"
-require_relative "../lib/SharedMemory"
+require_relative "../SharedMemory"
 require 'json'
 require 'socket'      # Sockets are in standard library
 
