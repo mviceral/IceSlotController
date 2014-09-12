@@ -118,7 +118,7 @@ class SendSampledTcuToPCLib
         slotInfo[SharedLib::AdcInput] = sharedMemParam.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::MuxData] = sharedMemParam.GetDataMuxData("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::Tcu] = sharedMemParam.GetDataTcu("#{__LINE__}-#{__FILE__}")
-        slotInfo[SharedLib::Eips] = sharedMemParam.GetDataEips("#{__LINE__}-#{__FILE__}")
+        slotInfo[SharedLib::Eips] = sharedMemParam.GetDataEips()
         slotInfo[SharedLib::SlotIpAddress] = GetSlotIpAddress()
         slotInfo[SharedLib::AllStepsCompletedAt] = sharedMemParam.GetAllStepsCompletedAt()
         slotInfo[SharedLib::TotalStepDuration] = sharedMemParam.GetTotalStepDuration();

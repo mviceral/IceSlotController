@@ -193,7 +193,7 @@ class TCUSampler
                             if @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].nil? == false
                                 @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].print("MEAS:CURR?\r\n")
                                 tmp = @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].recv(256)
-                                @eIps[psItem.keyName] = tmp
+                                @eIps[psItem.keyName[1..-1]] = tmp
                                 # puts "measured I='#{tmp[0..-2]}' from IP='#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]}' #{__LINE__}-#{__FILE__}"
                             else
                                 SharedLib.bbbLog "Socket on '#{psItem.keyName[1..-1]}' ip address '#{@ethernetScheme[psItem.keyName[1..-1]].chomp}' is not yet initialized.  Reload 'Steps' file."
@@ -205,7 +205,7 @@ class TCUSampler
                 end
             end        
         end
-        @shareMem.WriteDataEips(@eIps.to_json,"#{__LINE__}-#{__FILE__}")
+        @shareMem.WriteDataEips(@eIps,"#{__LINE__}-#{__FILE__}")
     end
     
     def doPsSeqPower(powerUpParam)
