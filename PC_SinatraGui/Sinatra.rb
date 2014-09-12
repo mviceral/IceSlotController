@@ -603,9 +603,15 @@ class UserInterface
 		end
 	end
 
-	def PsCell(labelParam,rawDataParam)
+	def PsCell(labelParam,rawDataParam, iIndexParam)
+		if iIndexParam.nil? == false && @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[iIndexParam].nil? == false
+			current = (@sharedMem.GetDispMuxData()[iIndexParam].to_f/1000.0).round(3)
+		else
+			current = "---"
+		end
+
 		if @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[rawDataParam].nil? == false
-			rawDataParam = (rawDataParam.to_f/1000.0).round(3)
+			rawDataParam = (@sharedMem.GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
 		else
 			rawDataParam = "---"
 		end
@@ -625,7 +631,7 @@ class UserInterface
 												<font size=\"1\">#{rawDataParam}V</font>
 											</td>"
 		toBeReturned += "</tr>"
-		toBeReturned += "<tr><td><font size=\"1\">Current</font></td><td><font size=\"1\">###A</font></td></tr>"
+		toBeReturned += "<tr><td><font size=\"1\">Current</font></td><td><font size=\"1\">#{current}A</font></td></tr>"
 		toBeReturned += "</table>"
 		return toBeReturned
 		# End of 'DutCell("S20",dut20[2])'
@@ -808,7 +814,7 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS2","32")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS6","38")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS6","38","24")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS10","42")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
