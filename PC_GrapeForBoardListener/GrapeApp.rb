@@ -70,8 +70,8 @@ module MigrationCount
 					# SharedMemory.
 					# puts "1 receivedData = #{receivedData}"
 					
-        	sharedMem = SharedMemory.new()
-        	sharedMem.SetDataBoardToPc(hash)
+					sharedMem = SharedMemory.new()
+					sharedMem.SetDataBoardToPc(hash)
 										
 					puts "ConfigurationFileName = #{sharedMem.GetDispConfigurationFileName()}"
 					puts "ConfigDateUpload = #{sharedMem.GetDispConfigDateUpload()}"
@@ -88,7 +88,7 @@ module MigrationCount
 					puts "Tcu = #{sharedMem.GetDispTcu()}"
 					puts "AllStepsCompletedAt = #{sharedMem.GetDispAllStepsCompletedAt()}"
 					puts "TotalStepDuration = #{sharedMem.GetDispTotalStepDuration()}"
-					
+					puts "Eips = #{sharedMem.GetDispEips()}"
 					configDateUpload = Time.at(sharedMem.GetDispConfigDateUpload().to_i)
 					dBaseFileName = "../steps log records/#{sharedMem.GetDispSlotIpAddress()}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName()}.db"
 					runningOnCentos = true

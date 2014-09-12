@@ -621,7 +621,11 @@ class UserInterface
 			@sharedMem.GetDispMuxData()[iIndexParam].nil? == false
 			current = (@sharedMem.GetDispMuxData()[iIndexParam].to_f/1000.0).round(3)
 		else
-			current = "---"
+			if @sharedMem.GetDispEips()[labelParam].nil? == false
+				current = (@sharedMem.GetDispEips()[labelParam][0..4]) #.to_f*10.0/10.0).round(3)
+			else
+				current = "---"
+			end
 		end
 
 		cellColor = setBkColor("#6699aa")
