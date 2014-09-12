@@ -67,7 +67,7 @@ module PcListenerModule
 					# Parse out the data sent from BBB
 					#
 					mode = params["#{SharedLib::PcToBbbCmd}"]
-					puts "PC told BBB to turn to this mode '#{mode}'"
+					puts "\n\n\n"
 					
 					#
 					#	Tell sampler to Run if mode = run, Stop if mode = stop, etc.
@@ -83,7 +83,6 @@ module PcListenerModule
 					when SharedLib::StopFromPc
 					when SharedLib::LoadConfigFromPc
 						puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
-						# PP.pp(JSON.parse(params["#{SharedLib::PcToBbbData}"]))
 						hash = JSON.parse(params["#{SharedLib::PcToBbbData}"])
 						date = Time.at(hash[SharedLib::ConfigDateUpload])
 						#puts "PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
