@@ -41,9 +41,9 @@ commandList = [
     		[ "*CLS","clear the unit to its power-on default settings."], 
 		[ "*RST","reset the unit."], 
 		[ "OUTP:POW:STAT ON","Turns on that 'Output Enable'"], 
-		[ "SOUR:CURR 1.0","program output current to 1.0 A."], 
+		[ "SOUR:CURR 125.0","program output current to 1.0 A."], 
 		[ "SOUR:CURR?","confirm the output current setting (response: 1.0)."], 
-		[ "SOUR:VOLT 5.0","program output voltage to 5.0 VDC."], 
+		[ "SOUR:VOLT 0.9","program output voltage to 5.0 VDC."], 
 		[ "SOUR:VOLT?","confirm the output voltage setting (response: 5.0)."], 
 		[ "MEAS:CURR?","measure the actual output current (response: ~ 0.0 with no load on output)."], 
 		[ "MEAS:VOLT?","measure the actual output voltage (response: ~ 5.0)."] 

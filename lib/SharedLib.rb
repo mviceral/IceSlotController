@@ -107,7 +107,8 @@ class SharedLib
 	AdcInput = "A" # for AdcInput
 	MuxData = "M" # for MuxData
     Tcu	= "T" # for TCU
-    Gpio = "G"
+    Gpio = "G" # for general purpose IO values
+    Eips = "E" # for Ethernet I (current) ps
     
     #
     # Functions

@@ -173,6 +173,41 @@ class TCUSampler
         doPsSeqPower(true)
     end
     
+    def getEthernetPsCurrent
+        if @eIps.nil?
+            @eIps = Hash.new
+        end
+        
+        sortedUp = getSeqUpPsArr()
+        if sortedUp.nil? == false
+            sortedUp.each do |psItem|
+                # puts psItem
+                # puts "psItem.keyName=#{psItem.keyName}, psItem.seqOrder=#{psItem.seqOrder}"
+                if psItem.seqOrder != 0
+                    if @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_Ethernent
+                        #
+                        # Do ethernet power supply enabling/disabling here.
+                        #
+                        # puts "Ethernet PS key isolated = '#{psItem.keyName[1..-1]}' ip address of PS '#{@ethernetScheme[psItem.keyName[1..-1]]}'"
+                        if @socketIp.nil? == false
+                            if @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].nil? == false
+                                @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].print("MEAS:CURR?\r\n")
+                                tmp = @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].recv(256)
+                                @eIps[psItem.keyName] = tmp
+                                # puts "measured I='#{tmp[0..-2]}' from IP='#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]}' #{__LINE__}-#{__FILE__}"
+                            else
+                                SharedLib.bbbLog "Socket on '#{psItem.keyName[1..-1]}' ip address '#{@ethernetScheme[psItem.keyName[1..-1]].chomp}' is not yet initialized.  Reload 'Steps' file."
+                            end
+                        else
+                            SharedLib.bbbLog "@socketIp is nil!!!!."
+                        end
+                    end
+                end
+            end        
+        end
+        @shareMem.WriteDataEips(@eIps.to_json,"#{__LINE__}-#{__FILE__}")
+    end
+    
     def doPsSeqPower(powerUpParam)
         # PS sequence gets called twice sometimes.
         # puts "@boardData[\"LastPsSeqStateCall\"]=#{@boardData["LastPsSeqStateCall"]}, powerUpParam=#{powerUpParam} #{__LINE__}-#{__FILE__}" 
@@ -451,7 +486,7 @@ class TCUSampler
                     
                                                         # Set the voltage
                                                         # puts "voltage name = '#{key}', NomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} #{__LINE__}-#{__FILE__}"
-                                                        print "VNomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} "
+                                                        # print "VNomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} "
                                                         @socketIp[host].print("SOUR:VOLT #{@stepToWorkOn["PsConfig"][key][NomSet]}\r\n")
                     
                                                         # Set the current
@@ -926,7 +961,7 @@ class TCUSampler
 
 	    initStepToWorkOnVar()
         waitTime = Time.now
-
+        doMeasurements = true
         while true
             waitTime += getPollIntervalInSeconds()
             stepNum = ""
@@ -937,23 +972,6 @@ class TCUSampler
             end
             puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             @shareMem.SetSlotTime(Time.now.to_i)
-            
-            #
-            # Gather data...
-            #
-            SharedLib.bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
-            if @setupAtHome == false
-                # puts "A #{__LINE__}-#{__FILE__}"
-                pollAdcInput()
-                # puts "B #{__LINE__}-#{__FILE__}"
-                pollMuxValues()
-                # puts "C #{__LINE__}-#{__FILE__}"
-                ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
-                # puts "E #{__LINE__}-#{__FILE__}"
-                ThermalSiteDevices.logData
-                # puts "F #{__LINE__}-#{__FILE__}"
-                @sharedMem.WriteDataEIPS(,"#{__LINE__}-#{__FILE__}")
-            end
             
 			case @shareMem.GetBbbMode()
 			when SharedLib::InRunMode
@@ -1023,6 +1041,7 @@ class TCUSampler
         		    # by clearing it out.
         		    @shareMem.SetConfiguration("","#{__LINE__}-#{__FILE__}") 
     		        setBoardStateForCurrentStep()
+    		        doMeasurements = true
         		else
         		    SharedLib.bbbLog("Unknown PC command @shareMem.GetPcCmd()='#{@shareMem.GetPcCmd()}'.")
         		end
@@ -1047,6 +1066,37 @@ class TCUSampler
                 setBoardStateForCurrentStep()
                 setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
             end
+
+            if doMeasurements
+                #
+                # Gather data...
+                #
+                SharedLib.bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
+                if @setupAtHome == false
+                    # puts "A #{__LINE__}-#{__FILE__}"
+                    pollAdcInput()
+                    # puts "B #{__LINE__}-#{__FILE__}"
+                    pollMuxValues()
+                    # puts "C #{__LINE__}-#{__FILE__}"
+                    ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
+                    # puts "E #{__LINE__}-#{__FILE__}"
+                    ThermalSiteDevices.logData
+                    # puts "F #{__LINE__}-#{__FILE__}"
+                    
+                    getEthernetPsCurrent()
+                    
+                    # @sharedMem.WriteDataEips(,"#{__LINE__}-#{__FILE__}")
+    			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes
+    			        doMeasurements = false
+    			    end
+                end
+            else
+			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No
+			        doMeasurements = true
+			    end
+            end
+            
+
             
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
@@ -1103,5 +1153,5 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# @954
+# @208
 
