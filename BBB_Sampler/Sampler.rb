@@ -936,6 +936,24 @@ class TCUSampler
             end
             puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             @shareMem.SetSlotTime(Time.now.to_i)
+            
+            #
+            # Gather data...
+            #
+            SharedLib.bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
+            if @setupAtHome == false
+                # puts "A #{__LINE__}-#{__FILE__}"
+                pollAdcInput()
+                # puts "B #{__LINE__}-#{__FILE__}"
+                pollMuxValues()
+                # puts "C #{__LINE__}-#{__FILE__}"
+                ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
+                # puts "E #{__LINE__}-#{__FILE__}"
+                ThermalSiteDevices.logData
+                # puts "F #{__LINE__}-#{__FILE__}"
+                @sharedMem.WriteDataEIPS(,"#{__LINE__}-#{__FILE__}")
+            end
+            
 			case @shareMem.GetBbbMode()
 			when SharedLib::InRunMode
 			    # puts "InRunMode #{__LINE__}-#{__FILE__}"
@@ -951,21 +969,6 @@ class TCUSampler
     			    else
 			            puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
         			    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
-                            #
-                            # Gather data...
-                            #
-                            SharedLib.bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
-                            if @setupAtHome == false
-                                # puts "A #{__LINE__}-#{__FILE__}"
-                                pollAdcInput()
-                                # puts "B #{__LINE__}-#{__FILE__}"
-                                pollMuxValues()
-                                # puts "C #{__LINE__}-#{__FILE__}"
-                                ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
-                                # puts "E #{__LINE__}-#{__FILE__}"
-                                ThermalSiteDevices.logData
-                                # puts "F #{__LINE__}-#{__FILE__}"
-                            end
                             @shareMem.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
         			    else
         			        # Step just finished.
@@ -1099,5 +1102,5 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# @974, 207
+# @954
 
