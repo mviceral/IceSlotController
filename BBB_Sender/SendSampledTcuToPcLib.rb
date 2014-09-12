@@ -11,8 +11,8 @@ class SendSampledTcuToPCLib
     TOTAL_DUTS_TO_LOOK_AT = 24
     ITS_MOUNTED = "It's mounted."
     PcToSamePc = "localhost"
-    BbbToPc = 'http://192.168.7.1'
-    # BbbToPc = 'http://192.168.1.210'
+    # BbbToPc = 'http://192.168.7.1'
+    BbbToPc = 'http://192.168.1.210'
     SendToPc = BbbToPc
 
     def runSampler
@@ -118,6 +118,7 @@ class SendSampledTcuToPCLib
         slotInfo[SharedLib::AdcInput] = sharedMemParam.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::MuxData] = sharedMemParam.GetDataMuxData("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::Tcu] = sharedMemParam.GetDataTcu("#{__LINE__}-#{__FILE__}")
+        slotInfo[SharedLib::Eips] = sharedMemParam.GetDataEips("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::SlotIpAddress] = GetSlotIpAddress()
         slotInfo[SharedLib::AllStepsCompletedAt] = sharedMemParam.GetAllStepsCompletedAt()
         slotInfo[SharedLib::TotalStepDuration] = sharedMemParam.GetTotalStepDuration();
