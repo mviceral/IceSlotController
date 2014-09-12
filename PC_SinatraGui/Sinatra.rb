@@ -494,8 +494,6 @@ class UserInterface
 		end
 		hash1 = JSON.parse(@response)
 		hash2 = hash1["bbbResponding"]
-		PP.pp(hash2)
-		SharedLib.pause "Checking tcuParam", "#{__LINE__}-#{__FILE__}"
   	@sharedMem.SetDataBoardToPc(hash2)
 		# puts "@response = #{@response} #{__LINE__}-#{__FILE__}"	
 		# puts "hash2 = #{hash2}"
@@ -604,17 +602,28 @@ class UserInterface
 	end
 
 	def PsCell(labelParam,rawDataParam, iIndexParam)
-		if iIndexParam.nil? == false && @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[iIndexParam].nil? == false
+		if rawDataParam.to_i >= 48
+			if @sharedMem.GetDispAdcInput().nil? == false && @sharedMem.GetDispAdcInput()[rawDataParam].nil? == false
+				rawDataParam = (@sharedMem.GetDispAdcInput()[rawDataParam].to_f/1000.0).round(3)
+			else
+				rawDataParam = "---"
+			end
+		else
+			if @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[rawDataParam].nil? == false
+				rawDataParam = (@sharedMem.GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
+			else
+				rawDataParam = "---"
+			end
+		end
+
+		if iIndexParam.nil? == false && 
+			@sharedMem.GetDispMuxData().nil? == false && 
+			@sharedMem.GetDispMuxData()[iIndexParam].nil? == false
 			current = (@sharedMem.GetDispMuxData()[iIndexParam].to_f/1000.0).round(3)
 		else
 			current = "---"
 		end
 
-		if @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[rawDataParam].nil? == false
-			rawDataParam = (@sharedMem.GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
-		else
-			rawDataParam = "---"
-		end
 		cellColor = setBkColor("#6699aa")
 		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
@@ -768,13 +777,13 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S0","0")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS0","32")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS0","32",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS4","36")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS4","36",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS8","40")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS8","40","25")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("5V","???")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("5V","48","29")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
 		getSlotDisplay_ToBeReturned += 	"<tr>"
 		getSlotDisplay_ToBeReturned += 	
@@ -790,13 +799,13 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S1","1")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS1","33")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS1","33",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS5","35")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS5","37",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS9","41")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS9","41","26")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("12V","46")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("12V","46","30")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
 		getSlotDisplay_ToBeReturned += 	"<tr>"
 		getSlotDisplay_ToBeReturned += 	
@@ -812,13 +821,13 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S2","2")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS2","32")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS2","34",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS6","38","24")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS10","42")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS10","42","27")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("24V","47")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("24V","47","31")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
 		getSlotDisplay_ToBeReturned += 	"<tr>"
 		getSlotDisplay_ToBeReturned += 	
@@ -834,9 +843,9 @@ class UserInterface
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell("S3","3")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS3","35")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS3","35",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS7","39")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell("PS7","39",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : 
 			collapse; border : 1px solid black;\">"+PNPCell("43","44","45")+"</td>"

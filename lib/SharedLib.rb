@@ -102,6 +102,14 @@ class SharedLib
 	CALREF = 52
 	SlotTemp2 = 53
 	
+	IPS0 = 54
+	SPS1 = 55
+	SPS2 = 56
+	SPS3 = 57
+	SPS4 = 58
+	SPS5 = 59
+	SPS6 = 60
+	SPS7 = 61						
 	
 	# Data Type
 	AdcInput = "A" # for AdcInput
