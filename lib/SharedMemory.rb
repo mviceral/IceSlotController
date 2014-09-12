@@ -51,7 +51,6 @@ class SharedMemory
     end
     
     def SetDispBoardData(configurationFileNameParam, configDateUploadParam, allStepsDone_YesNoParam, bbbModeParam,
-
         stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotIpAddressParam, allStepsCompletedAtParam,dispTotalStepDurationParam, 
         adcInputParam, muxDataParam, tcuParam)      
         # puts "tcuParam = #{}"
@@ -60,12 +59,7 @@ class SharedMemory
         if ds[SharedLib::PC].nil?
           		ds[SharedLib::PC] = Hash.new
         end
-
-
-
-
-
-
+    	puts "Setting ConfigurationFileName = #{configurationFileNameParam} #{__LINE__}-#{__FILE__}"
       ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::ConfigurationFileName] = configurationFileNameParam 
       ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::ConfigDateUpload] = configDateUploadParam
       ds[SharedLib::PC][ds[SharedLib::PC][SlotOwner]][SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
@@ -224,6 +218,7 @@ class SharedMemory
     end
 
     def SetConfigurationFileName(configurationFileNameParam)
+    	puts "Setting ConfigurationFileName = #{configurationFileNameParam} #{__LINE__}-#{__FILE__}"
         ds = getDS()
         ds[SharedLib::ConfigurationFileName] = configurationFileNameParam
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
@@ -253,7 +248,7 @@ class SharedMemory
 	def	SetDataBoardToPc(hashParam)
 		# hash = JSON.parse(hashParam)
 		hash = hashParam
-		# PP.pp(hash)
+		puts "hash[SharedLib::ConfigurationFileName]=#{hash[SharedLib::ConfigurationFileName]} #{__LINE__}-#{__FILE__}"
 		SetDispBoardData(
 			hash[SharedLib::ConfigurationFileName],
 			hash[SharedLib::ConfigDateUpload],
