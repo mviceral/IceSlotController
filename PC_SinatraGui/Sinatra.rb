@@ -100,6 +100,17 @@ class UserInterface
 	attr_accessor :stepName
 	attr_accessor :redirectErrorFaultyPsConfig	
 	
+	def getBoardIp(slotParam)
+		if @slotToIp.nil?
+			@slotToIp = Hash.new
+			@slotToIp[SharedLib::SLOT1] = SharedLib::PcListener
+			#@slotToIp[SLOT2] = ""
+			#@slotToIp[SLOT3] = ""
+		else
+			return @slotToIp[slotParam]
+		end
+	end
+	
 	def redirectErrorFaultyPsConfig
 		@redirectErrorFaultyPsConfig
 	end
@@ -453,29 +464,30 @@ class UserInterface
 		tbr = "" # To be returned
 		@sharedMem.SetDispSlotOwner(slotLabelParam)
 		puts "slotLabelParam=#{slotLabelParam}"
-		puts "@sharedMem.GetDispConfigurationFileName().nil? = #{@sharedMem.GetDispConfigurationFileName().nil?}"
-		puts "@sharedMem.GetDispConfigurationFileName() = #{@sharedMem.GetDispConfigurationFileName()}"
-		if @sharedMem.GetDispConfigurationFileName().nil? || @sharedMem.GetDispConfigurationFileName().length == 0
+		puts "@sharedMem.GetDispConfigurationFileName().nil? = #{@sharedMem.GetDispConfigurationFileName(slotLabelParam).nil?}"
+		puts "@sharedMem.GetDispConfigurationFileName() = #{@sharedMem.GetDispConfigurationFileName(slotLabelParam)}"
+		puts "@sharedMem.GetDispBbbMode(slotLabelParam) = #{@sharedMem.GetDispBbbMode(slotLabelParam)}"
+		if @sharedMem.GetDispConfigurationFileName(slotLabelParam).nil? || @sharedMem.GetDispConfigurationFileName(slotLabelParam).length == 0
 			return Load
 		end
 		
-		if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::Yes && 
-			@sharedMem.GetDispConfigurationFileName().nil? == false &&
-			@sharedMem.GetDispConfigurationFileName().length > 0
+		if @sharedMem.GetDispAllStepsDone_YesNo(slotLabelParam) == SharedLib::Yes && 
+			@sharedMem.GetDispConfigurationFileName(slotLabelParam).nil? == false &&
+			@sharedMem.GetDispConfigurationFileName(slotLabelParam).length > 0
 			return Clear
 		end
 		
-		if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::No && 
-			@sharedMem.GetDispConfigurationFileName().nil? == false &&
-			@sharedMem.GetDispConfigurationFileName().length > 0
-			if @sharedMem.GetDispBbbMode() == SharedLib::InRunMode			
+		if @sharedMem.GetDispAllStepsDone_YesNo(slotLabelParam) == SharedLib::No && 
+			@sharedMem.GetDispConfigurationFileName(slotLabelParam).nil? == false &&
+			@sharedMem.GetDispConfigurationFileName(slotLabelParam).length > 0
+			if @sharedMem.GetDispBbbMode(slotLabelParam) == SharedLib::InRunMode			
 				return Stop
 			else
 				return Run
 			end
 			getSlotProperties()[ButtonDisplay] = Clear
-		elsif @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::No &&
-			@sharedMem.GetDispBbbMode() == SharedLib::InStopMode
+		elsif @sharedMem.GetDispAllStepsDone_YesNo(slotLabelParam) == SharedLib::No &&
+			@sharedMem.GetDispBbbMode(slotLabelParam) == SharedLib::InStopMode
 			return Run
 		end
 
@@ -485,8 +497,8 @@ class UserInterface
 	def setToLoadMode()
 		begin
 			# puts "Clearing board #{__LINE__}-#{__FILE__}"
-			@response = 
-		    RestClient.post "#{PcListener}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::ClearConfigFromPc}" }.to_json, :content_type => :json, :accept => :json
+			@response = 			
+		    RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::ClearConfigFromPc}" }.to_json, :content_type => :json, :accept => :json
 			rescue
 			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 			@redirectWithError += "&ErrGeneral=bbbDown"
@@ -501,12 +513,13 @@ class UserInterface
 
 	def setBbbConfigUpload()
 		getSlotProperties()[SharedLib::ConfigDateUpload] = Time.now.to_f
+		getSlotProperties()[SharedLib::SlotOwner] = @sharedMem.GetDispSlotOwner
 		slotData = getSlotProperties().to_json
 		# PP.pp(getSlotProperties())
 		# puts "Done doing a PP on sending config to board."
 		begin
 			@response = 
-		    RestClient.post "#{PcListener}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
+		    RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 			puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
 			hash1 = JSON.parse(@response)
 			hash2 = hash1["bbbResponding"]
@@ -529,15 +542,15 @@ class UserInterface
 	end
 
 	def SlotCell()
-		if @sharedMem.GetDispAdcInput().nil? == false
-			if @sharedMem.GetDispAdcInput()[SharedLib::SlotTemp1.to_s].nil? == false
-				temp1Param = (@sharedMem.GetDispAdcInput()[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3)
+		if @sharedMem.GetDispAdcInput(@sharedMem.GetDispSlotOwner()).nil? == false
+			if @sharedMem.GetDispAdcInput(@sharedMem.GetDispSlotOwner())[SharedLib::SlotTemp1.to_s].nil? == false
+				temp1Param = (@sharedMem.GetDispAdcInput(@sharedMem.GetDispSlotOwner())[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3)
 			else
 				temp1Param = "---"
 			end
 			
-			if @sharedMem.GetDispAdcInput()[SharedLib::SlotTemp2.to_s].nil? == false
-				temp2Param = (@sharedMem.GetDispAdcInput()[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3)
+			if @sharedMem.GetDispAdcInput(@sharedMem.GetDispSlotOwner())[SharedLib::SlotTemp2.to_s].nil? == false
+				temp2Param = (@sharedMem.GetDispAdcInput(@sharedMem.GetDispSlotOwner())[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3)
 			else
 				temp2Param = "---"
 			end
@@ -564,8 +577,8 @@ class UserInterface
 	end
 
 	def PNPCellSub(posVoltParam)
-		if @sharedMem.GetDispMuxData() && @sharedMem.GetDispMuxData()[posVoltParam].nil? == false
-			posVolt = @sharedMem.GetDispMuxData()[posVoltParam]
+		if @sharedMem.GetDispMuxData(@sharedMem.GetDispSlotOwner()) && @sharedMem.GetDispMuxData(@sharedMem.GetDispSlotOwner())[posVoltParam].nil? == false
+			posVolt = @sharedMem.GetDispMuxData(@sharedMem.GetDispSlotOwner())[posVoltParam]
 			posVolt = (posVolt.to_f/1000.0).round(3)
 		else
 			posVolt = "---"
@@ -588,8 +601,8 @@ class UserInterface
 	end
 
 	def setBkColor(defColorParam)
-		if @sharedMem.GetDispConfigurationFileName().nil? == false &&  @sharedMem.GetDispConfigurationFileName().length > 0
-			if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::Yes
+		if @sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner()).nil? == false &&  @sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner()).length > 0
+			if @sharedMem.GetDispAllStepsDone_YesNo(@sharedMem.GetDispSlotOwner()) == SharedLib::Yes
 				cellColor = "#04B404"
 			else
 				# puts "printing GREEN (#{@sharedMem.GetDispConfigurationFileName().length})- #{__LINE__} #{__FILE__}"
@@ -603,26 +616,26 @@ class UserInterface
 
 	def PsCell(labelParam,rawDataParam, iIndexParam)
 		if rawDataParam.to_i >= 48
-			if @sharedMem.GetDispAdcInput().nil? == false && @sharedMem.GetDispAdcInput()[rawDataParam].nil? == false
-				rawDataParam = (@sharedMem.GetDispAdcInput()[rawDataParam].to_f/1000.0).round(3)
+			if @sharedMem.GetDispAdcInput(@sharedMem.GetDispSlotOwner()).nil? == false && @sharedMem.GetDispAdcInput(@sharedMem.GetDispSlotOwner())[rawDataParam].nil? == false
+				rawDataParam = (@sharedMem.GetDispAdcInput(@sharedMem.GetDispSlotOwner())[rawDataParam].to_f/1000.0).round(3)
 			else
 				rawDataParam = "---"
 			end
 		else
-			if @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[rawDataParam].nil? == false
-				rawDataParam = (@sharedMem.GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
+			if @sharedMem.GetDispMuxData(@sharedMem.GetDispSlotOwner()).nil? == false && @sharedMem.GetDispMuxData(@sharedMem.GetDispSlotOwner())[rawDataParam].nil? == false
+				rawDataParam = (@sharedMem.GetDispMuxData(@sharedMem.GetDispSlotOwner())[rawDataParam].to_f/1000.0).round(3)
 			else
 				rawDataParam = "---"
 			end
 		end
 
 		if iIndexParam.nil? == false && 
-			@sharedMem.GetDispMuxData().nil? == false && 
-			@sharedMem.GetDispMuxData()[iIndexParam].nil? == false
-			current = (@sharedMem.GetDispMuxData()[iIndexParam].to_f/1000.0).round(3)
+			@sharedMem.GetDispMuxData(@sharedMem.GetDispSlotOwner()).nil? == false && 
+			@sharedMem.GetDispMuxData(@sharedMem.GetDispSlotOwner())[iIndexParam].nil? == false
+			current = (@sharedMem.GetDispMuxData(@sharedMem.GetDispSlotOwner())[iIndexParam].to_f/1000.0).round(3)
 		else
-			if @sharedMem.GetDispEips()[labelParam].nil? == false
-				current = (@sharedMem.GetDispEips()[labelParam][0..4]) #.to_f*10.0/10.0).round(3)
+			if @sharedMem.GetDispEips(@sharedMem.GetDispSlotOwner())[labelParam].nil? == false
+				current = (@sharedMem.GetDispEips(@sharedMem.GetDispSlotOwner())[labelParam][0..4]) #.to_f*10.0/10.0).round(3)
 			else
 				current = "---"
 			end
@@ -651,14 +664,14 @@ class UserInterface
 	end
 
 	def DutCell(labelParam,rawDataParam)
-		if @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[rawDataParam].nil? == false
-			current = (@sharedMem.GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
+		if @sharedMem.GetDispMuxData(@sharedMem.GetDispSlotOwner()).nil? == false && @sharedMem.GetDispMuxData(@sharedMem.GetDispSlotOwner())[rawDataParam].nil? == false
+			current = (@sharedMem.GetDispMuxData(@sharedMem.GetDispSlotOwner())[rawDataParam].to_f/1000.0).round(3)
 		else
 			current = "---"
 		end
 
-		if @sharedMem.GetDispTcu().nil? == false && @sharedMem.GetDispTcu()["#{rawDataParam}"].nil? == false
-			tcuData = @sharedMem.GetDispTcu()["#{rawDataParam}"]
+		if @sharedMem.GetDispTcu(@sharedMem.GetDispSlotOwner()).nil? == false && @sharedMem.GetDispTcu(@sharedMem.GetDispSlotOwner())["#{rawDataParam}"].nil? == false
+			tcuData = @sharedMem.GetDispTcu(@sharedMem.GetDispSlotOwner())["#{rawDataParam}"]
 		else
 			tcuData = "---"
 		end
@@ -731,22 +744,22 @@ class UserInterface
 		return tbr
 	end
 	
-	def GetSlotFileName()	
-		if @sharedMem.GetDispConfigurationFileName().nil? ||
-				@sharedMem.GetDispConfigurationFileName().length == 0
+	def GetSlotFileName(slotParam)	
+		if @sharedMem.GetDispConfigurationFileName(slotParam).nil? ||
+				@sharedMem.GetDispConfigurationFileName(slotParam).length == 0
 			return BlankFileName
 		else
-			return @sharedMem.GetDispConfigurationFileName()
+			return @sharedMem.GetDispConfigurationFileName(slotParam)
 		end
 	end
 	
-	def getStepCompletion()			
-		if @sharedMem.GetDispConfigurationFileName().nil? ||
-				@sharedMem.GetDispConfigurationFileName().length == 0
+	def getStepCompletion(slotParam)			
+		if @sharedMem.GetDispConfigurationFileName(slotParam).nil? ||
+				@sharedMem.GetDispConfigurationFileName(slotParam).length == 0
 			return BlankFileName
 		else
 			d = Time.now
-			d += @sharedMem.GetDispStepTimeLeft().to_i 
+			d += @sharedMem.GetDispStepTimeLeft(slotParam).to_i 
 			
 			month = d.month.to_s # make2Digits(d.month.to_s)
 			day = d.day.to_s # make2Digits(d.day.to_s)
@@ -879,9 +892,9 @@ class UserInterface
 					<td valign=\"top\" rowspan=\"2\">
 				 		<table>"
 				 		
-		if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::Yes &&
-				@sharedMem.GetDispConfigurationFileName().nil? == false &&
-				@sharedMem.GetDispConfigurationFileName().length > 0
+		if @sharedMem.GetDispAllStepsDone_YesNo(@sharedMem.GetDispSlotOwner()) == SharedLib::Yes &&
+				@sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner()).nil? == false &&
+				@sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner()).length > 0
 			topTable += "
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>ALL STEPS COMPLETE</td></tr>
 				 			<tr>
@@ -892,7 +905,7 @@ class UserInterface
 				 							<label 
 				 								id=\"stepCompletion_#{slotLabel2Param}\">
 				 									Date: "
-				 									time = Time.at(@sharedMem.GetDispAllStepsCompletedAt().to_i)				 									
+				 									time = Time.at(@sharedMem.GetDispAllStepsCompletedAt(@sharedMem.GetDispSlotOwner()).to_i)				 									
 			topTable += "
 				 									#{time.strftime("%m/%d/%Y %H:%M:%S")}
 				 							</label>
@@ -900,11 +913,11 @@ class UserInterface
 				 				</td>
 				 			</tr>"
 		else
-			if @sharedMem.GetDispConfigurationFileName().nil? ||
-				@sharedMem.GetDispConfigurationFileName().length == 0
+			if @sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner()).nil? ||
+				@sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner()).length == 0
 				stepNum = ""
 			else
-				stepNum = @sharedMem.GetDispStepNumber()
+				stepNum = @sharedMem.GetDispStepNumber(@sharedMem.GetDispSlotOwner())
 			end
 			topTable += "
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{stepNum}' COMPLETION</td></tr>
@@ -915,7 +928,7 @@ class UserInterface
 				 						style=\"font-style: italic;\">
 				 							<label 
 				 								id=\"stepCompletion_#{slotLabel2Param}\">
-				 									#{getStepCompletion()}
+				 									#{getStepCompletion(slotLabel2Param)}
 				 							</label>
 				 					</font>
 				 				</td>
@@ -933,7 +946,13 @@ class UserInterface
 										onclick=\"window.location='/TopBtnPressed?slot=#{slotLabel2Param}&BtnState=#{getButtonDisplay(slotLabel2Param)}'\"
 										type=\"button\" 
 				 						style=\"width:100;height:25\" 
-				 						id=\"btn_#{slotLabel2Param}\"
+				 						id=\"btn_#{slotLabel2Param}\" "
+		if getBoardIp(@sharedMem.GetDispSlotOwner).nil?
+			disabled = "disabled"
+		else
+			disabled = ""
+		end
+		topTable += "#{disabled}
 				 						>
 				 							#{getButtonDisplay(slotLabel2Param)}
 				 					</button>
@@ -947,10 +966,10 @@ class UserInterface
 							<tr>
 								<td>
 									<center>"
-		if @sharedMem.GetDispConfigurationFileName().nil? || @sharedMem.GetDispConfigurationFileName().length==0
+		if @sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner()).nil? || @sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner()).length==0
 			disp = BlankFileName
 		else
-			disp = @sharedMem.GetDispConfigurationFileName()
+			disp = @sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner())
 		end
 		topTable+="
 									<font size=\"1.25\" style=\"font-style: italic;\">#{disp}</font>"
@@ -966,8 +985,8 @@ class UserInterface
 									</center>
 								</td>
 							</tr>"
-		if @sharedMem.GetDispConfigurationFileName().nil? == false && 
-			@sharedMem.GetDispConfigurationFileName().length > 0
+		if @sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner()).nil? == false && 
+			@sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner()).length > 0
 			topTable += "								
 				<tr>
 					<td align=\"left\">
@@ -977,15 +996,15 @@ class UserInterface
 				<tr>
 					<td align = \"center\">
 						<font size=\"1.25\" style=\"font-style: italic;\">"
-							min = @sharedMem.GetDispTotalStepDuration().to_i/60
-							sec = @sharedMem.GetDispTotalStepDuration().to_i - (min*60)
+							min = @sharedMem.GetDispTotalStepDuration(@sharedMem.GetDispSlotOwner()).to_i/60
+							sec = @sharedMem.GetDispTotalStepDuration(@sharedMem.GetDispSlotOwner()).to_i - (min*60)
 			topTable += "		#{min}:#{sec} (mm:ss)
 						</font>								
 					</td>
 				</tr>"
 		end							
 		
-		if @sharedMem.GetDispBbbMode() == SharedLib::InRunMode && @sharedMem.GetDispConfigurationFileName.nil? == false && @sharedMem.GetDispConfigurationFileName.length > 0
+		if @sharedMem.GetDispBbbMode(@sharedMem.GetDispSlotOwner()) == SharedLib::InRunMode && @sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner()).nil? == false && @sharedMem.GetDispConfigurationFileName(@sharedMem.GetDispSlotOwner()).length > 0
 			topTable += "								
 					<tr>
 						<td align=\"left\">
@@ -1095,8 +1114,8 @@ class UserInterface
 		xmlhttp.send();
 	}
 	
-	setInterval(function(){loadXMLDoc()},10000); 
-	setInterval(function(){updateCountDowns()},1000); 
+	# setInterval(function(){loadXMLDoc()},10000);
+	setInterval(function(){loadXMLDoc()},2000);  
 	</script>
 
 	<div id=\"myDiv\">
@@ -1446,7 +1465,7 @@ class UserInterface
 	
 	def setBbbToStopMode()
 		@response = 
-      RestClient.post "#{PcListener}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPc}" }.to_json, :content_type => :json, :accept => :json
+      RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPc}" }.to_json, :content_type => :json, :accept => :json
 	end
 	
 	def setToRunMode()
@@ -1462,7 +1481,7 @@ class UserInterface
 		# When it's in run mode, set the button to stop.
 		#
 		@response = 
-      RestClient.post "#{PcListener}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}" }.to_json, :content_type => :json, :accept => :json
+      RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}" }.to_json, :content_type => :json, :accept => :json
 	end	
 
 	def parseTheConfigFile(config,configFileName)
@@ -2104,6 +2123,7 @@ get '/ViewFile' do
 end
 
 get '/TopBtnPressed' do
+	settings.ui.setSlotOwner("#{SharedLib.uriToStr(params[:slot])}")
 	if params[:File].nil? == false
 		#
 		# Setup the string for error
@@ -2116,7 +2136,6 @@ get '/TopBtnPressed' do
 		end
 		redirect "../"
 	else
-		settings.ui.setSlotOwner("#{SharedLib.uriToStr(params[:slot])}")
 		if SharedLib.uriToStr(params[:BtnState]) == settings.ui.Load	
 			#
 			# The Load button got pressed.
@@ -2267,4 +2286,4 @@ post '/TopBtnPressed' do
   
   redirect "../"
 end
-# 238 - Set the slot owner.
+# 949

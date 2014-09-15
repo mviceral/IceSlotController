@@ -21,7 +21,7 @@ class SharedMemory
     
     TimeOfPcUpload = "TimeOfPcUpload"
     TimeOfPcLastCmd = "TimeOfPcLastCmd"
-	SlotOwner = "SlotOwner"    
+		SlotOwner = "SlotOwner"    
     #
     # Known functions of SharedMemoryExtension
     #
@@ -30,33 +30,37 @@ class SharedMemory
         if ds[SharedLib::PC].nil?
         	ds[SharedLib::PC] = Hash.new
         end
+        
         return ds[SharedLib::PC]
     end
     
     def SetDispBoardData(configurationFileNameParam, configDateUploadParam, allStepsDone_YesNoParam, bbbModeParam,
       stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotIpAddressParam, allStepsCompletedAtParam,dispTotalStepDurationParam, 
       adcInputParam, muxDataParam, tcuParam,eipsParam)      
-	# puts "tcuParam = #{}"
-	# SharedLib.pause "Checking tcuParam", "#{__LINE__}-#{__FILE__}"
-    	ds = getDS()
-	if ds[SharedLib::PC].nil?
-      		ds[SharedLib::PC] = Hash.new
-	end
-      
-      ds[SharedLib::PC][SharedLib::ConfigurationFileName] = configurationFileNameParam 
-      ds[SharedLib::PC][SharedLib::ConfigDateUpload] = configDateUploadParam
-      ds[SharedLib::PC][SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
-      ds[SharedLib::PC][SharedLib::BbbMode] = bbbModeParam
-      ds[SharedLib::PC][SharedLib::StepName] = stepNameParam
-      ds[SharedLib::PC][SharedLib::StepNumber] = stepNumberParam
-      ds[SharedLib::PC][SharedLib::StepTimeLeft] = stepTotalTimeParam
-      ds[SharedLib::PC][SharedLib::SlotTime] = slotTimeParam
-      ds[SharedLib::PC][SharedLib::SlotIpAddress] = slotIpAddressParam
-      ds[SharedLib::PC][SharedLib::AllStepsCompletedAt] = allStepsCompletedAtParam
-      ds[SharedLib::PC][SharedLib::TotalStepDuration] = dispTotalStepDurationParam
-      ds[SharedLib::PC][SharedLib::AdcInput] = adcInputParam
-      ds[SharedLib::PC][SharedLib::MuxData] = muxDataParam
-      ds[SharedLib::PC][SharedLib::Eips] = eipsParam
+			# puts "tcuParam = #{}"
+			# SharedLib.pause "Checking tcuParam", "#{__LINE__}-#{__FILE__}"
+					ds = getDS()
+			if ds[SharedLib::PC].nil?
+				ds[SharedLib::PC] = Hash.new
+			end
+			
+			if ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)].nil?
+				ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)] = Hash.new
+			end
+			
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::ConfigurationFileName] = configurationFileNameParam 
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::ConfigDateUpload] = configDateUploadParam
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::BbbMode] = bbbModeParam
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::StepName] = stepNameParam
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::StepNumber] = stepNumberParam
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::StepTimeLeft] = stepTotalTimeParam
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::SlotTime] = slotTimeParam
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::AllStepsCompletedAt] = allStepsCompletedAtParam
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::TotalStepDuration] = dispTotalStepDurationParam
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::AdcInput] = adcInputParam
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::MuxData] = muxDataParam
+      ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::Eips] = eipsParam
 		if tcuParam.nil? == false && tcuParam.length > 0
 			tcuData = tcuParam
 			datArr = Array.new
@@ -73,35 +77,51 @@ class SharedMemory
 				hash[hold[0]] = hold[1]
 				ct += 1
 			end
-			ds[SharedLib::PC][SharedLib::Tcu] = hash
+			ds[SharedLib::PC][convertIpToSlotId(slotIpAddressParam)][SharedLib::Tcu] = hash
 		end
 		WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
 	end
 
-	def GetDispStepTimeLeft      
-		return getPCShared()[SharedLib::StepTimeLeft]
+	def GetDispStepTimeLeft(slotParam)
+		return getPCShared()[GetDispSlotOwner()][SharedLib::StepTimeLeft]
 	end
 
-	def GetDispAdcInput()
-		return getPCShared()[SharedLib::AdcInput]
+	def GetDispAdcInput(slotParam)
+		return getPCShared()[GetDispSlotOwner()][SharedLib::AdcInput]
 	end
 	
-	def GetDispMuxData()
-		return getPCShared()[SharedLib::MuxData]
+	def GetDispMuxData(slotParam)
+		return getPCShared()[GetDispSlotOwner()][SharedLib::MuxData]
 	end
 	
-	def GetDispTcu()
-		return getPCShared()[SharedLib::Tcu]
+	def GetDispTcu(slotParam)
+		return getPCShared()[GetDispSlotOwner()][SharedLib::Tcu]
 	end
 
-	def GetDispAllStepsCompletedAt
-		return getPCShared()[SharedLib::AllStepsCompletedAt]
+	def GetDispAllStepsCompletedAt(slotParam)
+		return getPCShared()[GetDispSlotOwner()][SharedLib::AllStepsCompletedAt]
 	end
 
-	def GetDispEips
-		return getPCShared()[SharedLib::Eips]
+	def GetDispEips(slotParam)
+		if getPCShared()[GetDispSlotOwner()][SharedLib::Eips].nil?
+			return Hash.new
+		end
+		return getPCShared()[GetDispSlotOwner()][SharedLib::Eips]
 	end
 
+	def convertIpToSlotId(ipParam)
+		puts "SharedLib::PcListener=#{SharedLib::PcListener}, ipParam=#{ipParam} SharedLib::PcListener==ipParam:#{SharedLib::PcListener==ipParam} #{__LINE__}-#{__FILE__}"
+		if @ipToSlotId.nil?
+			@ipToSlotId = Hash.new
+			@ipToSlotId[SharedLib::PcListener] = SharedLib::SLOT1
+		end
+		return @ipToSlotId[ipParam]
+	end	
+	
+	def GetDispSlotOwner()
+		return getPCShared()[SlotOwner]
+	end
+	
 	def SetDispSlotOwner(slotOwnerParam)
     		ds = getDS()
 			if ds[SharedLib::PC].nil?
@@ -113,44 +133,44 @@ class SharedMemory
 			ds[SharedLib::PC][SlotOwner] = slotOwnerParam
 			WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
 	end		
-    def GetDispConfigurationFileName
-			return getPCShared()[SharedLib::ConfigurationFileName]
+    def GetDispConfigurationFileName(slotParam)
+			return getPCShared()[GetDispSlotOwner()][SharedLib::ConfigurationFileName]
     end
     
-    def GetDispConfigDateUpload
-			return getPCShared()[SharedLib::ConfigDateUpload]
+    def GetDispConfigDateUpload(slotParam)
+			return getPCShared()[GetDispSlotOwner()][SharedLib::ConfigDateUpload]
     end
     
-    def GetDispAllStepsDone_YesNo
-			return getPCShared()[SharedLib::AllStepsDone_YesNo]
+    def GetDispAllStepsDone_YesNo(slotParam)
+			return getPCShared()[GetDispSlotOwner()][SharedLib::AllStepsDone_YesNo]
     end
     
-    def GetDispBbbMode
-			return getPCShared()[SharedLib::BbbMode]
+    def GetDispBbbMode(slotParam)
+			return getPCShared()[GetDispSlotOwner()][SharedLib::BbbMode]
     end
     
-    def GetDispStepName
-			return getPCShared()[SharedLib::StepName]
+    def GetDispStepName(slotParam)
+			return getPCShared()[GetDispSlotOwner()][SharedLib::StepName]
     end
     
-    def GetDispStepNumber
-			return getPCShared()[SharedLib::StepNumber]
+    def GetDispStepNumber(slotParam)
+			return getPCShared()[GetDispSlotOwner()][SharedLib::StepNumber]
     end
 
-	def GetDispTotalStepDuration
-		return getPCShared()[SharedLib::TotalStepDuration]
+	def GetDispTotalStepDuration(slotParam)
+		return getPCShared()[GetDispSlotOwner()][SharedLib::TotalStepDuration]
 	end
 	
-	def GetDispSlotTime
-		return getPCShared()[SharedLib::SlotTime]
+	def GetDispSlotTime(slotParam)
+		return getPCShared()[GetDispSlotOwner()][SharedLib::SlotTime]
 	end
 	 
-	def GetDispSlotIpAddress
-		return getPCShared()[SharedLib::SlotIpAddress]
+	def GetDispSlotIpAddress(slotParam)
+		return getPCShared()[GetDispSlotOwner()][SharedLib::SlotIpAddress]
 	end
 		
-    def GetDispSlotTime()
-        return getPCShared()[SharedLib::SlotTime]
+    def GetDispSlotTime(slotParam)
+        return getPCShared()[GetDispSlotOwner()][SharedLib::SlotTime]
     end
     
     def SetAllStepsCompletedAt(allStepsCompletedAtParam)
@@ -585,4 +605,4 @@ class SharedMemory
     end
 =end    
 end
-# 330
+# 124 convert slot to IP

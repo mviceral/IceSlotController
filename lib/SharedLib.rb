@@ -12,6 +12,7 @@ class SharedLib
 	LoadConfigFromPc = "LoadConfigFromPc" # Command
 	ClearConfigFromPc = "ClearConfigFromPc"
 	PcToBbbData = "PcToBbbData" # Data flag
+	SlotOwner = "SlotOwner"
 
 	#
 	# Constants used for sending data to PC
@@ -28,11 +29,12 @@ class SharedLib
 	BbbMode = "BbbMode"
 	AllStepsCompletedAt = "AllStepsCompletedAt"
 	TotalStepDuration = "TotalStepDuration"
-    
+	PcListener = "http://192.168.7.2"
+	SLOT1 = "SLOT1"
+
 	# Board State.
 	InRunMode = "InRunMode"
 	InStopMode = "InStopMode"
-
 	#
 	# Constants
 	#

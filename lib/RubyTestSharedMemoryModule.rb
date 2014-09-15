@@ -6,10 +6,10 @@ require_relative 'SharedMemory'
 
 
 #WriteDataToSharedMemory("abcd12345")
-SharedMemory.Initialize()
-fromSharedMem = SharedMemory.GetData()
+sm = SharedMemory.new
+fromSharedMem = sm.GetDataV1()
 puts "Content of fromSharedMem=#{fromSharedMem}"
 # newData = "abcd12345"
-SharedMemory.WriteData("This is a ruby test memory sharing.")
-fromSharedMem = SharedMemory.GetData()
+sm.WriteDataV1("This is a ruby test memory sharing.","")
+fromSharedMem = sm.GetDataV1()
 puts "NEW Content of fromSharedMem=#{fromSharedMem}"
