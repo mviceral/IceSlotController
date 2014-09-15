@@ -78,7 +78,7 @@ module PcListenerModule
 					case mode
 					when SharedLib::ClearConfigFromPc
 						sharedMem.ClearConfiguration("#{__LINE__}-#{__FILE__}")
-						return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
+						# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
 					when SharedLib::RunFromPc
 					when SharedLib::StopFromPc
 					when SharedLib::LoadConfigFromPc
@@ -92,7 +92,7 @@ module PcListenerModule
 						`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}"`
 						`echo date after setting:;date`
 						sharedMem.SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
-						return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
+						# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
 					else
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 					end

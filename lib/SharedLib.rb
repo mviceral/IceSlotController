@@ -29,7 +29,7 @@ class SharedLib
 	BbbMode = "BbbMode"
 	AllStepsCompletedAt = "AllStepsCompletedAt"
 	TotalStepDuration = "TotalStepDuration"
-	PcListener = "http://192.168.7.2"
+	PcListener = "http://192.168.1.210"
 	SLOT1 = "SLOT1"
 
 	# Board State.
