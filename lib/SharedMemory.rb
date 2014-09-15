@@ -402,8 +402,12 @@ puts "F2 check paused #{__LINE__}-#{__FILE__}"
     
     def PopPcCmd()
         ds = getDS()
-        tbr = ds[Cmd].shift # tbr - to be returned
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        if ds[Cmd].class.to_s == "Array"
+            tbr = ds[Cmd].shift # tbr - to be returned
+            WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        else
+            tbr = ""
+        end
         return tbr
     end
     
