@@ -68,7 +68,7 @@ module MigrationCount
 						ensure
 					end
 					# SharedMemory.
-					# puts "1 receivedData = #{receivedData}"
+					puts "1 receivedData = #{receivedData}"
 					
 					sharedMem = SharedMemory.new()
 					sharedMem.SetDataBoardToPc(hash)
@@ -91,7 +91,7 @@ module MigrationCount
 					puts "TotalStepDuration = #{sharedMem.GetDispTotalStepDuration()}"
 					puts "Eips = #{sharedMem.GetDispEips()}"
 					configDateUpload = Time.at(sharedMem.GetDispConfigDateUpload().to_i)
-					dBaseFileName = "../steps log records/#{sharedMem.GetDispSlotIpAddress()}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName()}.db"
+					dBaseFileName = "../steps log records/#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName()}.db"
 					runningOnCentos = true
 					if runningOnCentos == false
 						if File.file?("#{dBaseFileName}") == false
@@ -127,7 +127,12 @@ module MigrationCount
 							# End of 'begin' code block that will handle exceptions...
 						end
 					else
-						`echo "#{sharedMem.GetDispSlotTime()},#{receivedData}" >> #{dBaseFileName}`
+						if sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::No && sharedMem.GetDispBbbMode() == SharedLib::InRunMode
+							str = "#{sharedMem.GetDispSlotTime()},#{receivedData}"
+							open("#{dBaseFileName}", 'a') { |f|
+							  f.puts "#{str}"
+							}
+						end
 					end
 				end
 			end

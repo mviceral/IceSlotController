@@ -24,3 +24,23 @@ sudo chkconfig iptables off
 
 # Setup the firewall in Centos by running 
 'firewall-config' and enabling the 'HTTP' option.
+
+# Setup the http server
+#How to install Apache Server on CentOS, RedHat, Linux
+
+#    Install Apache HTTP Server
+    yum install httpd
+#    Note: This is typically installed with CentOS by default
+
+#How to configure Apache Server on CentOS, RedHat, Linux
+
+#    Set the apache service to start on boot
+    chkconfig --levels 235 httpd on
+#    Enable name-based virtual hosting on port 80
+#        Open the httpd configuration file located at /etc/httpd/conf/httpd.conf
+#        Un-comment the line containing the text NameVirtualHost *:80
+#        Save the file
+#        Restart the Apache HTTP Server daemon
+        service httpd restart
+#        Note: Ignore the "NameVirtualHost *:80 has no VirtualHosts" warning for now.
+

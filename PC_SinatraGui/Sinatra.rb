@@ -510,13 +510,13 @@ class UserInterface
 			# gets
 			return false
 		end
-		hash1 = JSON.parse(@response)
-		hash2 = JSON.parse(hash1["bbbResponding"])
-		PP.pp(hash2)
-		puts "Checking hash2 content.  #{__LINE__}-#{__FILE__}"
+		# hash1 = JSON.parse(@response)
+		# hash2 = JSON.parse(hash1["bbbResponding"])
+		# PP.pp(hash2)
+		# puts "Checking hash2 content.  #{__LINE__}-#{__FILE__}"
 		# gets
-  	@sharedMem.SetDataBoardToPc(hash2)
-		puts "C Checking.  #{__LINE__}-#{__FILE__}"
+  		# @sharedMem.SetDataBoardToPc(hash2)
+		# puts "C Checking.  #{__LINE__}-#{__FILE__}"
 	end
 
 	def setBbbConfigUpload()
@@ -529,12 +529,12 @@ class UserInterface
 			@response = 
 		    RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 			puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
-			hash1 = JSON.parse(@response)
-			puts "check A #{__LINE__}-#{__FILE__}"
-			hash2 = JSON.parse(hash1["bbbResponding"])
-			puts "check B #{__LINE__}-#{__FILE__}"
-			@sharedMem.SetDataBoardToPc(hash2)
-			puts "check C #{__LINE__}-#{__FILE__}"
+			# hash1 = JSON.parse(@response)
+			# puts "check A #{__LINE__}-#{__FILE__}"
+			# hash2 = JSON.parse(hash1["bbbResponding"])
+			# puts "check B #{__LINE__}-#{__FILE__}"
+			# @sharedMem.SetDataBoardToPc(hash2)
+			# puts "check C #{__LINE__}-#{__FILE__}"
 			return true
 			rescue
 			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
@@ -589,7 +589,7 @@ class UserInterface
 	end
 
 	def PNPCellSub(posVoltParam)
-		if @sharedMem.GetDispMuxData() && @sharedMem.GetDispMuxData()[posVoltParam].nil? == false
+		if @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[posVoltParam].nil? == false
 			posVolt = @sharedMem.GetDispMuxData()[posVoltParam]
 			posVolt = (posVolt.to_f/1000.0).round(3)
 		else
