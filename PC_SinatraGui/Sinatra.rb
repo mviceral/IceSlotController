@@ -464,9 +464,10 @@ class UserInterface
 		tbr = "" # To be returned
 		# @sharedMem.SetDispSlotOwner(slotLabelParam)
 		# puts "slotLabelParam=#{slotLabelParam}"
+		puts "@sharedMem.GetDispSlotOwner()=#{@sharedMem.GetDispSlotOwner()}"
 		puts "@sharedMem.GetDispConfigurationFileName().nil? = #{@sharedMem.GetDispConfigurationFileName().nil?}"
 		puts "@sharedMem.GetDispConfigurationFileName() = #{@sharedMem.GetDispConfigurationFileName()}"
-		puts "@sharedMem.GetDispBbbMode(slotLabelParam) = #{@sharedMem.GetDispBbbMode()}"
+		puts "@sharedMem.GetDispBbbMode() = #{@sharedMem.GetDispBbbMode()}"
 		if @sharedMem.GetDispConfigurationFileName().nil? || @sharedMem.GetDispConfigurationFileName().length == 0
 			return Load
 		end
@@ -1114,7 +1115,7 @@ class UserInterface
 		xmlhttp.send();
 	}
 	
-	# setInterval(function(){loadXMLDoc()},10000);
+	// setInterval(function(){loadXMLDoc()},10000);
 	setInterval(function(){loadXMLDoc()},2000);  
 	</script>
 
