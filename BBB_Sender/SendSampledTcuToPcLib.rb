@@ -11,8 +11,8 @@ class SendSampledTcuToPCLib
     TOTAL_DUTS_TO_LOOK_AT = 24
     ITS_MOUNTED = "It's mounted."
     PcToSamePc = "localhost"
-    # BbbToPc = 'http://192.168.7.1'
-    BbbToPc = 'http://192.168.1.210'
+    BbbToPc = 'http://192.168.7.1'
+    # BbbToPc = 'http://192.168.1.210'
     SendToPc = BbbToPc
 
     def runSampler
@@ -46,7 +46,7 @@ class SendSampledTcuToPCLib
         # This way, there's lots of lee-way for recovery case something happens before the next polling.
         #
         @timeOfData = @sharedMem.GetSlotTime("#{__LINE__}-#{__FILE__}")
-        SendDataToPC("#{__LINE__} #{__FILE__}")
+        SendDataToPC(@sharedMem,"#{__LINE__} #{__FILE__}")
         waitTime = Time.now+@pollIntervalInSeconds
         while @sharedMem.GetSlotTime("#{__LINE__}-#{__FILE__}") == @timeOfData
             sleep(0.01) 
@@ -68,7 +68,7 @@ class SendSampledTcuToPCLib
             # puts "Test RunSender C #{__FILE__}-#{__LINE__}"
             @timeOfData = @sharedMem.GetSlotTime("#{__LINE__}-#{__FILE__}")
             if (sentSampledData != @timeOfData)
-                SendDataToPC("#{__LINE__}-#{__FILE__}")
+                SendDataToPC(@sharedMem,"#{__LINE__}-#{__FILE__}")
                 # puts "Test RunSender E #{__FILE__}-#{__LINE__}"
                 sentSampledData = @timeOfData
             else
@@ -119,28 +119,28 @@ class SendSampledTcuToPCLib
         slotInfo[SharedLib::MuxData] = sharedMemParam.GetDataMuxData("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::Tcu] = sharedMemParam.GetDataTcu("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::Eips] = sharedMemParam.GetDataEips()
-        slotInfo[SharedLib::SlotIpAddress] = GetSlotIpAddress()
+        slotInfo[SharedLib::SlotOwner] = sharedMemParam.GetSlotOwner# GetSlotIpAddress()
         slotInfo[SharedLib::AllStepsCompletedAt] = sharedMemParam.GetAllStepsCompletedAt()
         slotInfo[SharedLib::TotalStepDuration] = sharedMemParam.GetTotalStepDuration();
         slotInfoJson = slotInfo.to_json
 		return slotInfoJson
 	end
 		
-    def SendDataToPC(fromParam)
+    def SendDataToPC(sharedMemParam,fromParam)
     	# puts "called from #{fromParam}"
-    	slotInfoJson = GetDataToSendPc(@sharedMem)
+    	slotInfoJson = GetDataToSendPc(sharedMemParam)
     	
     	
-    	# Save data into dbase if @sharedMem.GetAllStepsDone_YesNo() == SharedLib::No && 
-    	# @sharedMem.GetBbbMode() == SharedLib::InRunMode
-        if @sharedMem.GetAllStepsDone_YesNo() == SharedLib::No && @sharedMem.GetBbbMode() == SharedLib::InRunMode
+    	# Save data into dbase if sharedMemParam.GetAllStepsDone_YesNo() == SharedLib::No && 
+    	# sharedMemParam.GetBbbMode() == SharedLib::InRunMode
+        if sharedMemParam.GetAllStepsDone_YesNo() == SharedLib::No && sharedMemParam.GetBbbMode() == SharedLib::InRunMode
             # The data needs to be logged in...
-            if @sharedMem.GetDBaseFileName().nil? == false && @sharedMem.GetDBaseFileName().length > 0
-                puts "\n\n\nA Checking #{@dirFileRepository}/#{@sharedMem.GetDBaseFileName()} @sharedMem.GetDBaseFileName().length = #{@sharedMem.GetDBaseFileName().length}  #{__LINE__}-#{__FILE__}"
+            if sharedMemParam.GetDBaseFileName().nil? == false && sharedMemParam.GetDBaseFileName().length > 0
+                # puts "\n\n\nA Checking #{@dirFileRepository}/#{sharedMemParam.GetDBaseFileName()} sharedMemParam.GetDBaseFileName().length = #{sharedMemParam.GetDBaseFileName().length}  #{__LINE__}-#{__FILE__}"
                 # There's a valid dBase file name to save the data.
-                puts "B Checking #{@dirFileRepository}/#{@dBaseFileName} #{__LINE__}-#{__FILE__}"
-            	if @dBaseFileName != @sharedMem.GetDBaseFileName()
-            	    @dBaseFileName = @sharedMem.GetDBaseFileName()
+                # puts "B Checking #{@dirFileRepository}/#{@dBaseFileName} #{__LINE__}-#{__FILE__}"
+            	if @dBaseFileName != sharedMemParam.GetDBaseFileName()
+            	    @dBaseFileName = sharedMemParam.GetDBaseFileName()
             	    @db = SQLite3::Database.open "#{@dirFileRepository}/#{@dBaseFileName}"
             	end
             	
@@ -175,7 +175,7 @@ class SendSampledTcuToPCLib
                 puts e.backtrace.inspect
                 `echo "#{@timeOfData},#{@dBaseFileName}" >> PcDown.BackLog`
         end
-    end
+    end    
 
     def nextLogCreation
         # puts "Within 'nextLogCreation' - @logCompletedAt = #{@logCompletedAt.inspect}  #{__FILE__} - #{__LINE__}"

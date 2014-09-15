@@ -84,6 +84,7 @@ module PcListenerModule
 					when SharedLib::LoadConfigFromPc
 						puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
 						hash = JSON.parse(params["#{SharedLib::PcToBbbData}"])
+						puts "SlotOwner=#{hash["SlotOwner"]}"
 						date = Time.at(hash[SharedLib::ConfigDateUpload])
 						#puts "PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
 						# Sync the board time with the pc time

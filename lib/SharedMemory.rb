@@ -328,6 +328,16 @@ class SharedMemory
         end
         return ds["Configuration"][SharedLib::TotalStepDuration]
     end
+    
+    def GetSlotOwner()
+        return getDS()["SlotOwner"]
+    end
+    
+    def SetSlotOwner(slotOwnerParam)
+        ds = getDS()
+        ds["SlotOwner"] = slotOwnerParam
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+    end
         
     def SetConfiguration(dataParam,fromParam)
         ds = getDS()
@@ -381,7 +391,7 @@ class SharedMemory
             "idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
             ");")
         end
-        
+        SetSlotOwner(hold["SlotOwner"])
         SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
         return tbr
         rescue

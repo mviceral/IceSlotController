@@ -5,6 +5,7 @@ require_relative 'DutObj'
 require_relative 'ThermalSiteDevices'
 require_relative "../lib/BBB_GPIO2 Interface Ruby/GPIO2"
 require_relative '../lib/SharedLib'
+require_relative "../BBB_Sender/SendSampledTcuToPcLib"
 require 'singleton'
 require 'forwardable'
 
@@ -299,7 +300,7 @@ class TCUSampler
                     sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)/1000)
                     puts "sleep for '#{(@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)}'"
                 end
-                sleep(1)
+                # sleep(1)
             end
         end
     end
@@ -663,8 +664,9 @@ class TCUSampler
             aMux = 0
             @pAinMux = AINPin.new(:P9_33)
             while aMux<48
-                @shareMem.SetData(SharedLib::MuxData,aMux,getMuxValue(aMux),@multiplier)
-                # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*aMuxMultiplier[aMux]/1000.0).round(4)} V'"
+                retval = getMuxValue(aMux)
+                @shareMem.SetData(SharedLib::MuxData,aMux,retval,@multiplier)
+                # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) "
                 aMux += 1
             end
         else
@@ -1047,6 +1049,7 @@ class TCUSampler
         		end
         		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
     		    setTimeOfPcLastCmd(@shareMem.GetTimeOfPcLastCmd())
+    		    SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
     		end
 
             
@@ -1073,31 +1076,32 @@ class TCUSampler
                 #
                 SharedLib.bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
                 if @setupAtHome == false
-                    # puts "A #{__LINE__}-#{__FILE__}"
+                    #puts "A #{__LINE__}-#{__FILE__}"
                     pollAdcInput()
-                    # puts "B #{__LINE__}-#{__FILE__}"
+                    #puts "B #{__LINE__}-#{__FILE__}"
                     pollMuxValues()
-                    # puts "C #{__LINE__}-#{__FILE__}"
+                    #puts "C #{__LINE__}-#{__FILE__}"
                     ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
-                    # puts "E #{__LINE__}-#{__FILE__}"
+                    #puts "E #{__LINE__}-#{__FILE__}"
                     ThermalSiteDevices.logData
-                    # puts "F #{__LINE__}-#{__FILE__}"
-                    
+                    #puts "F #{__LINE__}-#{__FILE__}"
                     getEthernetPsCurrent()
+                    #puts "G #{__LINE__}-#{__FILE__}"
                     
                     # @sharedMem.WriteDataEips(,"#{__LINE__}-#{__FILE__}")
-    			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes
+    			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes || @shareMem.GetBbbMode() == SharedLib::InStopMode
+                        #puts "H #{__LINE__}-#{__FILE__}"
     			        doMeasurements = false
     			    end
                 end
             else
-			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No
+			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No && @shareMem.GetBbbMode() == SharedLib::InRunMode
 			        doMeasurements = true
 			    end
             end
             
 
-            
+=begin            
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
             # The code ensures that the process is exactly going to take place at the given interval.  No lag that
@@ -1138,6 +1142,7 @@ class TCUSampler
                     end
                 end
             end
+=end            
         end
 
         # End of 'def runTCUSampler'
