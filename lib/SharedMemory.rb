@@ -257,7 +257,9 @@ class SharedMemory
 	def	SetDataBoardToPc(hashParam)
 		# hash = JSON.parse(hashParam)
 		hash = hashParam
-		# PP.pp(hash)
+		PP.pp(hash)
+puts "hash[SharedLib::SlotOwner]=#{hash[SharedLib::SlotOwner]} #{__LINE__}-#{__FILE__}"
+puts "F2 check paused #{__LINE__}-#{__FILE__}"
 		SetDispBoardData(
 			hash[SharedLib::ConfigurationFileName],
 			hash[SharedLib::ConfigDateUpload],
