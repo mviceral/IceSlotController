@@ -1086,6 +1086,7 @@ class TCUSampler
             end
 
             if doMeasurements
+            
                 #
                 # Gather data...
                 #
@@ -1114,7 +1115,6 @@ class TCUSampler
 			        doMeasurements = true
 			    end
             end
-            
 
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
