@@ -103,7 +103,7 @@ class UserInterface
 	def getBoardIp(slotParam)
 		if @slotToIp.nil?
 			@slotToIp = Hash.new
-			@slotToIp[SharedLib::SLOT1] = SharedLib::PcListener
+			@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
 			#@slotToIp[SLOT2] = ""
 			#@slotToIp[SLOT3] = ""
 		else
@@ -460,14 +460,14 @@ class UserInterface
 	end
 	
 	def getButtonDisplay()
-		puts "getButtonDisplay() got called."
+		# puts "getButtonDisplay() got called."
 		tbr = "" # To be returned
 		# @sharedMem.SetDispSlotOwner(slotLabelParam)
 		# puts "slotLabelParam=#{slotLabelParam}"
-		puts "@sharedMem.GetDispSlotOwner()=#{@sharedMem.GetDispSlotOwner()}"
-		puts "@sharedMem.GetDispConfigurationFileName().nil? = #{@sharedMem.GetDispConfigurationFileName().nil?}"
-		puts "@sharedMem.GetDispConfigurationFileName() = #{@sharedMem.GetDispConfigurationFileName()}"
-		puts "@sharedMem.GetDispBbbMode() = #{@sharedMem.GetDispBbbMode()}"
+		# puts "@sharedMem.GetDispSlotOwner()=#{@sharedMem.GetDispSlotOwner()}"
+		# puts "@sharedMem.GetDispConfigurationFileName().nil? = #{@sharedMem.GetDispConfigurationFileName().nil?}"
+		# puts "@sharedMem.GetDispConfigurationFileName() = #{@sharedMem.GetDispConfigurationFileName()}"
+		# puts "@sharedMem.GetDispBbbMode() = #{@sharedMem.GetDispBbbMode()}"
 		if @sharedMem.GetDispConfigurationFileName().nil? || @sharedMem.GetDispConfigurationFileName().length == 0
 			return Load
 		end
@@ -497,7 +497,7 @@ class UserInterface
 	
 	def setToLoadMode()
 		begin
-			# puts "Clearing board #{__LINE__}-#{__FILE__}"
+			puts "Clearing board IP=#{getBoardIp(@sharedMem.GetDispSlotOwner)} #{__LINE__}-#{__FILE__}"
 			@response = 			
 		    RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::ClearConfigFromPc}" }.to_json, :content_type => :json, :accept => :json
 			puts "A At pause #{__LINE__}-#{__FILE__}"

@@ -98,7 +98,7 @@ class SharedMemory
 	end
 	
 	def GetDispMuxData()
-		puts "GetDispSlotOwner()=#{GetDispSlotOwner()} #{__LINE__}-#{__FILE__}"
+		# puts "GetDispSlotOwner()=#{GetDispSlotOwner()} #{__LINE__}-#{__FILE__}"
 		if getPCShared()[GetDispSlotOwner()].nil?
 			return ""
 		end
