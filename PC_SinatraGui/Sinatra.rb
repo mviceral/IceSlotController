@@ -538,8 +538,8 @@ class UserInterface
 			return true
 			rescue
 			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
-			#@redirectWithError += "&ErrGeneral=bbbDown"
-			@redirectWithError += "&ErrGeneral=EFGH"
+			@redirectWithError += "&ErrGeneral=bbbDown"
+			#@redirectWithError += "&ErrGeneral=EFGH"
 			return false
 		end
 	end
@@ -779,7 +779,7 @@ class UserInterface
 			hour = make2Digits(d.hour.to_s)
 			min = make2Digits(d.min.to_s)
 			sec = make2Digits(d.sec.to_s)
-			return month+"/"+day+"/"+year+" "+hour+":"+min #+":"+sec
+			return month+"/"+day+"/"+year+" "+hour+":"+min # +":"+sec
 		end
 	end
 	
