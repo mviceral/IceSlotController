@@ -192,9 +192,21 @@ class TCUSampler
                         # puts "Ethernet PS key isolated = '#{psItem.keyName[1..-1]}' ip address of PS '#{@ethernetScheme[psItem.keyName[1..-1]]}'"
                         if @socketIp.nil? == false
                             if @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].nil? == false
-                                @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].print("MEAS:CURR?\r\n")
-                                tmp = @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].recv(256)
-                                @eIps[psItem.keyName[1..-1]] = tmp
+                                begin
+                                    host = @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]
+                                    @socketIp[host].print("MEAS:CURR?\r\n")
+                                    tmp = @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].recv(256)
+                                    @eIps[psItem.keyName[1..-1]] = tmp
+                                    rescue Exception => e  
+                                        @socketIp[host].close # Close the socket since there was a failure.
+                                        SharedLib.bbbLog "e.message=#{e.message }"
+                                        SharedLib.bbbLog "e.backtrace.inspect=#{e.backtrace.inspect}" 
+                                        
+                                        # See if it can reconnect...
+                                        port = 5025
+                                        SharedLib.bbbLog "Reconnect Ethernet PS at IP 'host'" 
+                                        @socketIp[host] = TCPSocket.open(host,port)
+                                end
                                 # puts "measured I='#{tmp[0..-2]}' from IP='#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]}' #{__LINE__}-#{__FILE__}"
                             else
                                 SharedLib.bbbLog "Socket on '#{psItem.keyName[1..-1]}' ip address '#{@ethernetScheme[psItem.keyName[1..-1]].chomp}' is not yet initialized.  Reload 'Steps' file."
@@ -1158,5 +1170,5 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# @208
+# @ 199
 
