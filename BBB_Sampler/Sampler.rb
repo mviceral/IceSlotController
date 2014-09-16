@@ -11,7 +11,7 @@ require 'forwardable'
 
 include Beaglebone
 
-TOTAL_DUTS_TO_LOOK_AT  = 4
+TOTAL_DUTS_TO_LOOK_AT  = 5
 
 class TCUSampler
 	Steps = "Steps"
@@ -677,10 +677,10 @@ class TCUSampler
             @pAinMux = AINPin.new(:P9_33)
             while aMux<48
                 retval = getMuxValue(aMux)
-                @shareMem.SetData(SharedLib::MuxData,aMux,retval,@multiplier)
                 # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) "
                 aMux += 1
             end
+            @shareMem.SetData(SharedLib::MuxData,aMux,retval,@multiplier)
         else
             # The code is not initialized to run this function
             puts "The code is not initialized to run this function - #{__LINE__}-#{__FILE__}"
@@ -1040,12 +1040,14 @@ class TCUSampler
     		    when SharedLib::StopFromPc
     		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     		    when SharedLib::ClearConfigFromPc
+        		    setBoardData(Hash.new)
+    		        setBoardStateForCurrentStep()
+    		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     		    when SharedLib::LoadConfigFromPc
     		        @socketIp = nil
         		    SharedLib.bbbLog("New configuration step file uploaded.")
         		    setBoardData(Hash.new)
         		    @boardData[Configuration] = @shareMem.GetConfiguration()
-    		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
         		    @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
         		    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
                     setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
@@ -1056,6 +1058,7 @@ class TCUSampler
         		    @shareMem.SetConfiguration("","#{__LINE__}-#{__FILE__}") 
     		        setBoardStateForCurrentStep()
     		        doMeasurements = true
+    		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
         		else
         		    SharedLib.bbbLog("Unknown PC command @shareMem.GetPcCmd()='#{@shareMem.GetPcCmd()}'.")
         		end
@@ -1113,7 +1116,6 @@ class TCUSampler
             end
             
 
-=begin            
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
             # The code ensures that the process is exactly going to take place at the given interval.  No lag that
@@ -1154,7 +1156,7 @@ class TCUSampler
                     end
                 end
             end
-=end            
+            
         end
 
         # End of 'def runTCUSampler'
@@ -1171,4 +1173,4 @@ end
 
 TCUSampler.runTCUSampler
 # @ 199
-
+# @socketIp[host] = TCPSocket.open(host,port) - fails to connect sometimes.

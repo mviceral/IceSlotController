@@ -459,9 +459,11 @@ puts "F2 check paused #{__LINE__}-#{__FILE__}"
     
 	def GetPcCmd()
 	    pcCmd = getDS()[Cmd]
+	    # puts "pcCmd = '#{pcCmd}' #{__LINE__}-#{__FILE__}"
 	    if pcCmd.class.to_s == "Array"
             return pcCmd
         else
+            puts "pcCmd.class.to_s = '#{pcCmd.class.to_s}' #{__LINE__}-#{__FILE__}"
             ds = getDS()
             ds[Cmd] = Array.new
             WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
@@ -659,3 +661,4 @@ puts "F2 check paused #{__LINE__}-#{__FILE__}"
 =end    
 end
 # 124 convert slot to IP
+# 513, 434, grapeappforpclistener 93

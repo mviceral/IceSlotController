@@ -74,7 +74,6 @@ module PcListenerModule
 					#
 					puts "PC sent '#{mode}'"
 					sharedMem = SharedMemory.new()
-					sharedMem.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
 					case mode
 					when SharedLib::ClearConfigFromPc
 						sharedMem.ClearConfiguration("#{__LINE__}-#{__FILE__}")
@@ -96,6 +95,7 @@ module PcListenerModule
 					else
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 					end
+					sharedMem.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
 					puts "PcCmd=#{mode} #{__LINE__}-#{__FILE__}"
 				end
 				{bbbResponding:"#{mode}"}
