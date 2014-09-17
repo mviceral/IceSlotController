@@ -678,9 +678,9 @@ class TCUSampler
             while aMux<48
                 retval = getMuxValue(aMux)
                 # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) "
+                @shareMem.SetData(SharedLib::MuxData,aMux,retval,@multiplier)
                 aMux += 1
             end
-            @shareMem.SetData(SharedLib::MuxData,aMux,retval,@multiplier)
         else
             # The code is not initialized to run this function
             puts "The code is not initialized to run this function - #{__LINE__}-#{__FILE__}"
@@ -1030,6 +1030,7 @@ class TCUSampler
             
     		if @shareMem.GetPcCmd().length != 0
     		    pcCmdObj = @shareMem.GetPcCmd()[0]
+    		    # Code block below tells the PcListener that it got the message.
     		    pcCmd = pcCmdObj[0]
                 pcCmd = pcCmdObj[0]
     		    timeOfCmd = pcCmdObj[1]
@@ -1044,7 +1045,7 @@ class TCUSampler
                 @shareMem.PopPcCmd()        		    
     		    
     		    # getTimeOfPcLastCmd() < @shareMem.GetTimeOfPcLastCmd()
-    		    puts "\n\n\nNew command from PC - '#{pcCmd}' #{__LINE__}-#{__FILE__}"
+    		    puts "\n\n\nNew command from PC - '#{pcCmd}' @shareMem.GetPcCmd().length='#{@shareMem.GetPcCmd().length}'  #{__LINE__}-#{__FILE__}"
     		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
     		    case pcCmd
     		    when SharedLib::RunFromPc
@@ -1052,16 +1053,10 @@ class TCUSampler
     		    when SharedLib::StopFromPc
     		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     		    when SharedLib::ClearConfigFromPc
-		            puts "Check A #{__LINE__}-#{__FILE__}"
-                    # ds = @shareMem.lockMemory("#{__LINE__}-#{__FILE__}")
-		            puts "Check B #{__LINE__}-#{__FILE__}"
         		    setBoardData(Hash.new)
-		            puts "Check C #{__LINE__}-#{__FILE__}"
     		        setBoardStateForCurrentStep()
-		            puts "Check D #{__LINE__}-#{__FILE__}"
     		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-		            # @shareMem.freeLocked(ds)
-		            puts "Check E #{__LINE__}-#{__FILE__}"
+        		    @shareMem.SetConfigurationFileName("")
     		    when SharedLib::LoadConfigFromPc
     		        @socketIp = nil
         		    SharedLib.bbbLog("New configuration step file uploaded.")
@@ -1096,14 +1091,22 @@ class TCUSampler
                 setBoardStateForCurrentStep()
             end
             
-            if (@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
-                 @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false
+            configName = @shareMem.GetConfigurationFileName()
+            if ((@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
+                 @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false) ||
+                 (configName.nil? == false && configName.length>0 && (stepNum.nil? || (stepNum.nil? ==false && stepNum.length==0) ))
                 puts "We're in limbo @boardData[SharedLib::AllStepsDone_YesNo]='#{@boardData[SharedLib::AllStepsDone_YesNo]}' #{__LINE__}-#{__FILE__}"
                 loadConfigurationFromHoldingTank()
                 setBoardStateForCurrentStep()
-                setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
+                if @stepToWorkOn.nil?
+                    setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
+                else
+                    setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
+                end
             end
 
+            puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+            
             #
             # Gather data regardless of whether it's in run mode or not...
             #
