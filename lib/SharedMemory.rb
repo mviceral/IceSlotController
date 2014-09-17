@@ -18,10 +18,27 @@ class SharedMemory
     
     Mode = "Mode"
     Cmd = "Cmd"
+    CmdProcessed = "CmdProcessed"
     
     TimeOfPcUpload = "TimeOfPcUpload"
     TimeOfPcLastCmd = "TimeOfPcLastCmd"
-		SlotOwner = "SlotOwner"    
+    SlotOwner = "SlotOwner"    
+
+    class MemOwner
+        # The purpose of this object is to lock the shared memory and once the code exits within the code block in which this object
+        # gets instantiated, it's suppose to free the memory after.
+        FINALIZER = lambda { |object_id| 
+            puts "Freeing locked memory. #{__LINE__}-#{__FILE__}"
+            FreeMemory();
+        }
+        def initialize
+            ObjectSpace.define_finalizer(self, FINALIZER)
+            puts "Locking memory. #{__LINE__}-#{__FILE__}"
+            LockMemory();
+            puts "Locked memory. #{__LINE__}-#{__FILE__}"
+        end
+    end
+    
     #
     # Known functions of SharedMemoryExtension
     #
@@ -221,7 +238,10 @@ class SharedMemory
     end
 
     def GetSlotTime(fromParam)
-        return getDS[SharedLib::SlotTime]
+        # puts "A GetSlotTime got called. #{fromParam} @#{__LINE__}-#{__FILE__}"
+        ds = getDS()
+        # puts "B GetSlotTime got called. #{fromParam} @#{__LINE__}-#{__FILE__}"
+        return ds[SharedLib::SlotTime]
     end
     
     def SetSlotTime(slotTimeParam)
@@ -293,6 +313,10 @@ class SharedMemory
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
         
+    def GetConfigDateUpload()
+        return getDS()[SharedLib::ConfigDateUpload]
+    end
+    
     def SetConfigDateUpload(configDateUploadParam)
         ds = getDS()
         puts "configDateUploadParam=#{configDateUploadParam} #{__LINE__}-#{__FILE__}"
@@ -304,8 +328,8 @@ class SharedMemory
 		# hash = JSON.parse(hashParam)
 		hash = hashParam
 		PP.pp(hash)
-puts "hash[SharedLib::SlotOwner]=#{hash[SharedLib::SlotOwner]} #{__LINE__}-#{__FILE__}"
-puts "F2 check paused #{__LINE__}-#{__FILE__}"
+        puts "hash[SharedLib::SlotOwner]=#{hash[SharedLib::SlotOwner]} #{__LINE__}-#{__FILE__}"
+        puts "F2 check paused #{__LINE__}-#{__FILE__}"
 		SetDispBoardData(
 			hash[SharedLib::ConfigurationFileName],
 			hash[SharedLib::ConfigDateUpload],
@@ -325,10 +349,6 @@ puts "F2 check paused #{__LINE__}-#{__FILE__}"
 			)
 	end
 
-    def GetConfigDateUpload()
-        return getDS()[SharedLib::ConfigDateUpload]
-    end
-    
     def SetAllStepsDone_YesNo(allStepsDone_YesNoParam,fromParam)
         ds = getDS()
         #if allStepsDone_YesNoParam == SharedLib::Yes
@@ -379,7 +399,11 @@ puts "F2 check paused #{__LINE__}-#{__FILE__}"
     end
         
     def SetConfiguration(dataParam,fromParam)
+        configDataUpload = GetConfiguration()["ConfigDateUpload"]
+        configurationFileName = GetConfiguration()["FileName"]
         ds = getDS()
+
+        memOwner = MemOwner.new
         # puts "SetConfiguration got called #{fromParam}"
         # puts "A Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         ds[TimeOfPcUpload] = Time.new.to_i
@@ -407,19 +431,18 @@ puts "F2 check paused #{__LINE__}-#{__FILE__}"
         ds["Configuration"] = hold
         ds["Configuration"][SharedLib::TotalStepDuration] = totalStepDuration
         # puts "A.5 #{__LINE__}-#{__FILE__}"
-        tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}") # tbr - to be returned        
     	puts "Check 1 #{__LINE__}-#{__FILE__}"
-        SetConfigDateUpload(GetConfiguration()["ConfigDateUpload"])
+        ds[SharedLib::ConfigDateUpload] = configDataUpload
     	puts "Check 2 #{__LINE__}-#{__FILE__}"
-        SetConfigurationFileName(GetConfiguration()["FileName"])
+    	ds[SharedLib::ConfigurationFileName] = configurationFileName
     	puts "Check 3 #{__LINE__}-#{__FILE__}"
         # puts "A.6 #{__LINE__}-#{__FILE__}"
         # puts "B Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
-        configDateUpload = Time.at(GetConfigDateUpload().to_i)
+        configDateUpload = Time.at(configDataUpload.to_i)
     	# puts "Check 4 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
     	dBaseFileName = "#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{GetConfigurationFileName()}.db"
     	# puts "A Creating dbase '/mnt/card/#{dBaseFileName}' #{__LINE__}-#{__FILE__}"
-    	SetDBaseFileName(dBaseFileName)
+        ds[SharedLib::DBaseFileName] = dBaseFileName
     	# puts "B Creating dbase '/mnt/card/#{GetDBaseFileName()}' #{__LINE__}-#{__FILE__}"
         db = SQLite3::Database.new( "/mnt/card/#{GetDBaseFileName()}" )
         if db.nil?
@@ -430,8 +453,8 @@ puts "F2 check paused #{__LINE__}-#{__FILE__}"
             "idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
             ");")
         end
-        SetSlotOwner(hold["SlotOwner"])
-        SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
+        ds["SlotOwner"] = hold["SlotOwner"]
+        tbr = WriteDataToSharedMemoryNoAutoLock(ds.to_json)
         return tbr
         rescue
     end
@@ -448,22 +471,16 @@ puts "F2 check paused #{__LINE__}-#{__FILE__}"
     
     def PopPcCmd()
         ds = getDS()
-        if ds[Cmd].class.to_s == "Array"
-            tbr = ds[Cmd].shift # tbr - to be returned
-            WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
-        else
-            tbr = ""
-        end
+        tbr = ds[Cmd].shift # tbr - to be returned
+        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
         return tbr
     end
     
 	def GetPcCmd()
 	    pcCmd = getDS()[Cmd]
-	    # puts "pcCmd = '#{pcCmd}' #{__LINE__}-#{__FILE__}"
 	    if pcCmd.class.to_s == "Array"
             return pcCmd
         else
-            puts "pcCmd.class.to_s = '#{pcCmd.class.to_s}' #{__LINE__}-#{__FILE__}"
             ds = getDS()
             ds[Cmd] = Array.new
             WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
@@ -471,20 +488,41 @@ puts "F2 check paused #{__LINE__}-#{__FILE__}"
 	    end
 	end
 	
-    def SetPcCmd(cmdParam,calledFrom)
-        puts "param sent #{cmdParam} calledFrom=#{calledFrom} #{__LINE__}-#{__FILE__}"
-        oldCmdParam = getDS()[Cmd][0]
-        print "Changing bbb mode from #{oldCmdParam} to "
+    def SetPcCmdThread(cmdParam,timeOfCmdParam)
         ds = getDS()
         if ds[Cmd].nil? || ds[Cmd].class.to_s != "Array"
             ds[Cmd] = Array.new
         end
-        ds[Cmd].push("#{cmdParam}")
-        puts "#{cmdParam} [#{calledFrom}]"
+        
+        # Put the command and the time stamp of command in one object.
+        arrItem = Array.new
+        arrItem.push(cmdParam)
+        arrItem.push(timeOfCmdParam)
+        
+        ds[Cmd].push(arrItem)
+        
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
-        SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")        
+        puts "Total sent cmds in stack: '#{ds[Cmd].length}'"
+        samplerNotProcessed = true
+        puts "Total sent cmds in stack: '#{ds[Cmd].length}'"
+        while samplerNotProcessed
+            # puts "A Total sent cmds in stack: '#{ds[Cmd].length}'"
+            sleep(0.01)
+            # puts "B Total sent cmds in stack: '#{ds[Cmd].length}'"
+            ds = getDS()
+            # puts "C Total sent cmds in stack: '#{ds[Cmd].length}'"
+            if ds[CmdProcessed].nil? == false && ds[CmdProcessed].length > 0 && ds[CmdProcessed][0] == cmdParam  && ds[CmdProcessed][1] == timeOfCmdParam
+                samplerNotProcessed = false
+                puts "Processed the command: '#{ds[CmdProcessed][0]}'"
+            end
+            puts "x Total sent cmds in stack: '#{ds[Cmd].length}'"
+        end
     end
 	
+    def SetPcCmd(cmdParam,calledFrom)
+        t1=Thread.new{SetPcCmdThread(cmdParam,Time.now.to_i)}
+    end
+
 	def GetBbbMode()
         return getDS()[Mode]
     end
@@ -501,7 +539,7 @@ puts "F2 check paused #{__LINE__}-#{__FILE__}"
         	# puts "A - good data #{__LINE__}-#{__FILE__}"
         rescue
           ds = Hash.new
-          puts "B - faulty data #{__LINE__}-#{__FILE__}"
+          puts "\n\n\nB - faulty data #{__LINE__}-#{__FILE__}"
         end
         return ds
     end
@@ -660,5 +698,4 @@ puts "F2 check paused #{__LINE__}-#{__FILE__}"
     end
 =end    
 end
-# 124 convert slot to IP
-# 513, 434, grapeappforpclistener 93
+# def 502
