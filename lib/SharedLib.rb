@@ -31,6 +31,8 @@ class SharedLib
 	TotalStepDuration = "TotalStepDuration"
 	PcListener = "http://192.168.1.210"
 	SLOT1 = "SLOT1"
+	SLOT2 = "SLOT2"
+	SLOT3 = "SLOT3"
 
 	# Board State.
 	InRunMode = "InRunMode"

@@ -677,8 +677,9 @@ class UserInterface
 	end
 
 	def DutCell(labelParam,rawDataParam)
-		if @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[rawDataParam].nil? == false
-			current = (@sharedMem.GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
+		muxData = @sharedMem.GetDispMuxData()
+		if muxData.nil? == false && muxData[rawDataParam].nil? == false
+			current = (muxData[rawDataParam].to_f/1000.0).round(3)
 		else
 			current = "---"
 		end

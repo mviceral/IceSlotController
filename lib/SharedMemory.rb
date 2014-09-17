@@ -55,7 +55,6 @@ class SharedMemory
 		if ds[SharedLib::PC].nil?
 			ds[SharedLib::PC] = Hash.new
 		end
-		puts "slotOwnerParam=#{slotOwnerParam} #{__LINE__}-#{__FILE__}"
 		if slotOwnerParam.nil? == false && slotOwnerParam.length > 0
 			if ds[SharedLib::PC][slotOwnerParam].nil?
 				ds[SharedLib::PC][slotOwnerParam] = Hash.new
@@ -324,9 +323,6 @@ class SharedMemory
 	def	SetDataBoardToPc(hashParam)
 		# hash = JSON.parse(hashParam)
 		hash = hashParam
-		PP.pp(hash)
-        puts "hash[SharedLib::SlotOwner]=#{hash[SharedLib::SlotOwner]} #{__LINE__}-#{__FILE__}"
-        puts "F2 check paused #{__LINE__}-#{__FILE__}"
 		SetDispBoardData(
 			hash[SharedLib::ConfigurationFileName],
 			hash[SharedLib::ConfigDateUpload],

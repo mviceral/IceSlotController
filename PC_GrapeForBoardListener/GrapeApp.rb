@@ -69,69 +69,77 @@ module MigrationCount
 					end
 					# SharedMemory.
 					puts "1 receivedData = #{receivedData}"
-					
+					puts "hash[SharedLib::SlotOwner].nil? = #{hash[SharedLib::SlotOwner].nil?}"
 					sharedMem = SharedMemory.new()
-					sharedMem.SetDataBoardToPc(hash)
-					sharedMem.SetDispSlotOwner(hash[SharedLib::SlotOwner])
-					puts "hash[SharedLib::SlotOwner] = #{hash[SharedLib::SlotOwner]}"
-					puts "ConfigurationFileName = #{sharedMem.GetDispConfigurationFileName()}"
-					puts "ConfigDateUpload = #{sharedMem.GetDispConfigDateUpload()}"
-					puts "AllStepsDone_YesNo = #{sharedMem.GetDispAllStepsDone_YesNo()}"
-					puts "BbbMode = #{sharedMem.GetDispBbbMode()}"
-					puts "StepName = #{sharedMem.GetDispStepName()}"
-					puts "StepNumber = #{sharedMem.GetDispStepNumber()}"
-					puts "StepTotalTime = #{sharedMem.GetDispStepTimeLeft()}"
-					puts "SlotTime = #{sharedMem.GetDispSlotTime()}"
-					puts "SlotIpAddress = #{sharedMem.GetDispSlotIpAddress()}"
-					puts "SlotTime = #{sharedMem.GetDispSlotTime()}"
-					puts "AdcInput = #{sharedMem.GetDispAdcInput()}"
-					puts "MuxData = #{sharedMem.GetDispMuxData()}"
-					puts "Tcu = #{sharedMem.GetDispTcu()}"
-					puts "AllStepsCompletedAt = #{sharedMem.GetDispAllStepsCompletedAt()}"
-					puts "TotalStepDuration = #{sharedMem.GetDispTotalStepDuration()}"
-					puts "Eips = #{sharedMem.GetDispEips()}"
-					configDateUpload = Time.at(sharedMem.GetDispConfigDateUpload().to_i)
-					dBaseFileName = "../steps log records/#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName()}.db"
-					runningOnCentos = true
-					if runningOnCentos == false
-						if File.file?("#{dBaseFileName}") == false
-							# The file does not exists.
-							dbRecord = SQLite3::Database.new( "#{dBaseFileName}" )
-							if dbRecord.nil?
-								SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
+					if (hash[SharedLib::SlotOwner].nil? == false &&
+					       (hash[SharedLib::SlotOwner] != SharedLib::SLOT1 &&
+						hash[SharedLib::SlotOwner] != SharedLib::SLOT2 &&
+						hash[SharedLib::SlotOwner] != SharedLib::SLOT3) == true) || hash[SharedLib::SlotOwner].nil?
+						# Flush out the  memory...
+						# sharedMem.WriteDataV1("","")
+					else
+						sharedMem.SetDataBoardToPc(hash)
+						sharedMem.SetDispSlotOwner(hash[SharedLib::SlotOwner])
+
+						puts "ConfigurationFileName = #{sharedMem.GetDispConfigurationFileName()}"
+						puts "ConfigDateUpload = #{sharedMem.GetDispConfigDateUpload()}"
+						puts "AllStepsDone_YesNo = #{sharedMem.GetDispAllStepsDone_YesNo()}"
+						puts "BbbMode = #{sharedMem.GetDispBbbMode()}"
+						puts "StepName = #{sharedMem.GetDispStepName()}"
+						puts "StepNumber = #{sharedMem.GetDispStepNumber()}"
+						puts "StepTotalTime = #{sharedMem.GetDispStepTimeLeft()}"
+						puts "SlotTime = #{sharedMem.GetDispSlotTime()}"
+						puts "SlotIpAddress = #{sharedMem.GetDispSlotIpAddress()}"
+						puts "SlotTime = #{sharedMem.GetDispSlotTime()}"
+						puts "AdcInput = #{sharedMem.GetDispAdcInput()}"
+						puts "MuxData = #{sharedMem.GetDispMuxData()}"
+						puts "Tcu = #{sharedMem.GetDispTcu()}"
+						puts "AllStepsCompletedAt = #{sharedMem.GetDispAllStepsCompletedAt()}"
+						puts "TotalStepDuration = #{sharedMem.GetDispTotalStepDuration()}"
+						puts "Eips = #{sharedMem.GetDispEips()}"
+						configDateUpload = Time.at(sharedMem.GetDispConfigDateUpload().to_i)
+						dBaseFileName = "../steps log records/#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName()}.db"
+						runningOnCentos = true
+						if runningOnCentos == false
+							if File.file?("#{dBaseFileName}") == false
+								# The file does not exists.
+								dbRecord = SQLite3::Database.new( "#{dBaseFileName}" )
+								if dbRecord.nil?
+									SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
+								else
+										dbRecord.execute("create table log ("+
+										"idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
+										");")
+								end
 							else
-									dbRecord.execute("create table log ("+
-									"idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
-									");")
+								# The file already exists.
+								dbRecord = SQLite3::Database.open dBaseFileName
+							end
+	
+							forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(receivedData)
+
+							str = "Insert into log(idLogTime, data) "+
+							"values(#{sharedMem.GetDispSlotTime()},\"#{forDbase}\")"
+
+							puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
+							begin
+								dbRecord.execute "#{str}"
+								rescue SQLite3::Exception => e 
+								puts "\n\n"
+								SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
+								SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
+								# End of 'rescue SQLite3::Exception => e'
+								ensure
+
+								# End of 'begin' code block that will handle exceptions...
 							end
 						else
-							# The file already exists.
-							dbRecord = SQLite3::Database.open dBaseFileName
-						end
-	
-						forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(receivedData)
-
-						str = "Insert into log(idLogTime, data) "+
-						"values(#{sharedMem.GetDispSlotTime()},\"#{forDbase}\")"
-
-						puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
-						begin
-							dbRecord.execute "#{str}"
-							rescue SQLite3::Exception => e 
-							puts "\n\n"
-							SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
-							SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
-							# End of 'rescue SQLite3::Exception => e'
-							ensure
-
-							# End of 'begin' code block that will handle exceptions...
-						end
-					else
-						if sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::No && sharedMem.GetDispBbbMode() == SharedLib::InRunMode
-							str = "#{sharedMem.GetDispSlotTime()},#{receivedData}"
-							open("#{dBaseFileName}", 'a') { |f|
-							  f.puts "#{str}"
-							}
+							if sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::No && sharedMem.GetDispBbbMode() == SharedLib::InRunMode
+								str = "#{sharedMem.GetDispSlotTime()},#{receivedData}"
+								open("#{dBaseFileName}", 'a') { |f|
+								  f.puts "#{str}"
+								}
+							end
 						end
 					end
 				end
