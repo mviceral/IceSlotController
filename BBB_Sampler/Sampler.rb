@@ -975,7 +975,6 @@ class TCUSampler
 
 	    initStepToWorkOnVar()
         waitTime = Time.now
-        doMeasurements = true
         while true
             waitTime += getPollIntervalInSeconds()
             stepNum = ""
@@ -1030,7 +1029,20 @@ class TCUSampler
             end
             
     		if @shareMem.GetPcCmd().length != 0
-    		    pcCmd = @shareMem.PopPcCmd()
+    		    pcCmdObj = @shareMem.PopPcCmd()
+    		    
+    		    # This code will respond to the PcListener telling it that it processed the sent command.
+    		    pcCmd = pcCmdObj[0]
+    		    timeOfCmd = pcCmdObj[1]
+    		    
+		        arrItem = Array.new
+		        arrItem.push(pcCmd)
+		        arrItem.push(timeOfCmd)
+		        
+    		    ds = @shareMem.getDS()
+		        ds[SharedMemory::CmdProcessed] = arrItem
+		        @shareMem.WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+		        
     		    # getTimeOfPcLastCmd() < @shareMem.GetTimeOfPcLastCmd()
     		    puts "\n\n\nNew command from PC - '#{pcCmd}' #{__LINE__}-#{__FILE__}"
     		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
@@ -1057,7 +1069,6 @@ class TCUSampler
         		    # by clearing it out.
         		    @shareMem.SetConfiguration("","#{__LINE__}-#{__FILE__}") 
     		        setBoardStateForCurrentStep()
-    		        doMeasurements = true
     		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
         		else
         		    SharedLib.bbbLog("Unknown PC command @shareMem.GetPcCmd()='#{@shareMem.GetPcCmd()}'.")
@@ -1085,35 +1096,22 @@ class TCUSampler
                 setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
             end
 
-            if doMeasurements
-            
-                #
-                # Gather data...
-                #
-                SharedLib.bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
-                if @setupAtHome == false
-                    #puts "A #{__LINE__}-#{__FILE__}"
-                    pollAdcInput()
-                    #puts "B #{__LINE__}-#{__FILE__}"
-                    pollMuxValues()
-                    #puts "C #{__LINE__}-#{__FILE__}"
-                    ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
-                    #puts "E #{__LINE__}-#{__FILE__}"
-                    ThermalSiteDevices.logData
-                    #puts "F #{__LINE__}-#{__FILE__}"
-                    getEthernetPsCurrent()
-                    #puts "G #{__LINE__}-#{__FILE__}"
-                    
-                    # @sharedMem.WriteDataEips(,"#{__LINE__}-#{__FILE__}")
-    			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes || @shareMem.GetBbbMode() == SharedLib::InStopMode
-                        #puts "H #{__LINE__}-#{__FILE__}"
-    			        doMeasurements = false
-    			    end
-                end
-            else
-			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No && @shareMem.GetBbbMode() == SharedLib::InRunMode
-			        doMeasurements = true
-			    end
+            #
+            # Gather data regardless of whether it's in run mode or not...
+            #
+            SharedLib.bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
+            if @setupAtHome == false
+                #puts "A #{__LINE__}-#{__FILE__}"
+                pollAdcInput()
+                #puts "B #{__LINE__}-#{__FILE__}"
+                pollMuxValues()
+                #puts "C #{__LINE__}-#{__FILE__}"
+                ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
+                #puts "E #{__LINE__}-#{__FILE__}"
+                ThermalSiteDevices.logData
+                #puts "F #{__LINE__}-#{__FILE__}"
+                getEthernetPsCurrent()
+                #puts "G #{__LINE__}-#{__FILE__}"
             end
 
             #
