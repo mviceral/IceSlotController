@@ -1030,11 +1030,51 @@ class TCUSampler
             
     		if @shareMem.GetPcCmd().length != 0
     		    pcCmdObj = @shareMem.GetPcCmd()[0]
-    		    # Code block below tells the PcListener that it got the message.
     		    pcCmd = pcCmdObj[0]
-                pcCmd = pcCmdObj[0]
     		    timeOfCmd = pcCmdObj[1]
-    		    
+    		    if @lastPcCmd != pcCmd && @lastTimeOfCmd != timeOfCmd
+                    @lastPcCmd = pcCmd 
+                    @lastTimeOfCmd = timeOfCmd
+
+    		        # getTimeOfPcLastCmd() < @shareMem.GetTimeOfPcLastCmd()
+        		    puts "\n\n\nNew command from PC - '#{pcCmd}' @shareMem.GetPcCmd().length='#{@shareMem.GetPcCmd().length}'  #{__LINE__}-#{__FILE__}"
+        		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
+        		    case pcCmd
+        		    when SharedLib::RunFromPc
+            		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
+        		    when SharedLib::StopFromPc
+        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+        		    when SharedLib::ClearConfigFromPc
+            		    setBoardData(Hash.new)
+        		        setBoardStateForCurrentStep()
+        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		    @shareMem.SetConfigurationFileName("")
+        		    when SharedLib::LoadConfigFromPc
+        		        @socketIp = nil
+            		    SharedLib.bbbLog("New configuration step file uploaded.")
+            		    setBoardData(Hash.new)
+            		    @boardData[Configuration] = @shareMem.GetConfiguration()
+            		    puts "#{@boardData[Configuration]} - Checking @boardData[Configuration] content."
+            		    @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
+            		    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
+                        setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
+            		    saveBoardStateToHoldingTank()
+            		    
+            		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
+            		    # by clearing it out.
+            		    @shareMem.SetConfiguration("","#{__LINE__}-#{__FILE__}") 
+        		        setBoardStateForCurrentStep()
+        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		else
+            		    SharedLib.bbbLog("Unknown PC command @shareMem.GetPcCmd()='#{@shareMem.GetPcCmd()}'.")
+            		end
+            		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
+        		    setTimeOfPcLastCmd(@shareMem.GetTimeOfPcLastCmd())
+        		    SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+        		    # Code block below tells the PcListener that it got the message.
+
+                end
+                
 		        arrItem = Array.new
 		        arrItem.push(pcCmd)
 		        arrItem.push(timeOfCmd)
@@ -1044,41 +1084,6 @@ class TCUSampler
 		        @shareMem.WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
                 @shareMem.PopPcCmd()        		    
     		    
-    		    # getTimeOfPcLastCmd() < @shareMem.GetTimeOfPcLastCmd()
-    		    puts "\n\n\nNew command from PC - '#{pcCmd}' @shareMem.GetPcCmd().length='#{@shareMem.GetPcCmd().length}'  #{__LINE__}-#{__FILE__}"
-    		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
-    		    case pcCmd
-    		    when SharedLib::RunFromPc
-        		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
-    		    when SharedLib::StopFromPc
-    		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-    		    when SharedLib::ClearConfigFromPc
-        		    setBoardData(Hash.new)
-    		        setBoardStateForCurrentStep()
-    		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-        		    @shareMem.SetConfigurationFileName("")
-    		    when SharedLib::LoadConfigFromPc
-    		        @socketIp = nil
-        		    SharedLib.bbbLog("New configuration step file uploaded.")
-        		    setBoardData(Hash.new)
-        		    @boardData[Configuration] = @shareMem.GetConfiguration()
-        		    puts "#{@boardData[Configuration]} - Checking @boardData[Configuration] content."
-        		    @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
-        		    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
-                    setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
-        		    saveBoardStateToHoldingTank()
-        		    
-        		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
-        		    # by clearing it out.
-        		    @shareMem.SetConfiguration("","#{__LINE__}-#{__FILE__}") 
-    		        setBoardStateForCurrentStep()
-    		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-        		else
-        		    SharedLib.bbbLog("Unknown PC command @shareMem.GetPcCmd()='#{@shareMem.GetPcCmd()}'.")
-        		end
-        		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
-    		    setTimeOfPcLastCmd(@shareMem.GetTimeOfPcLastCmd())
-    		    SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
     		end
 
             
@@ -1094,8 +1099,7 @@ class TCUSampler
             configName = @shareMem.GetConfigurationFileName()
             if ((@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
                  @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false) ||
-                 (configName.nil? == false && configName.length>0 && (stepNum.nil? || (stepNum.nil? ==false && stepNum.length==0) ))
-                puts "We're in limbo @boardData[SharedLib::AllStepsDone_YesNo]='#{@boardData[SharedLib::AllStepsDone_YesNo]}' #{__LINE__}-#{__FILE__}"
+                 (configName.nil? == false && configName.length>0 && (stepNum.nil? || (stepNum.nil? ==false && stepNum.length==0)) && @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No)
                 loadConfigurationFromHoldingTank()
                 setBoardStateForCurrentStep()
                 if @stepToWorkOn.nil?
