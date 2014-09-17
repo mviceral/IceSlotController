@@ -17,6 +17,7 @@ char *shm, *s;
 int shmid;
 
 
+
 // Defining a space for information and references about the module to be stored internally
 VALUE SharedMemoryExtension = Qnil;
 
@@ -28,6 +29,9 @@ void Init_SharedMemoryExtension();
 // Prototype for our methods 'WriteDataToSharedMemory' - methods are prefixed by 'method_' here
 VALUE method_WriteDataToSharedMemory(VALUE self, VALUE rubyStringParam);
 VALUE method_GetDataFromSharedMemory(VALUE self);
+VALUE method_WriteLockedData(VALUE self, VALUE rubyStringParam);
+VALUE method_LockMemory(VALUE self);
+void method_FreeMemory(VALUE self);
 void method_InitializeSharedMemory(VALUE self);
 
 
@@ -37,6 +41,9 @@ void Init_SharedMemoryExtension() {
 	rb_define_method(SharedMemoryExtension, "WriteDataToSharedMemory", method_WriteDataToSharedMemory, 1);
 	rb_define_method(SharedMemoryExtension, "GetDataFromSharedMemory", method_GetDataFromSharedMemory, 0);
 	rb_define_method(SharedMemoryExtension, "InitializeSharedMemory", method_InitializeSharedMemory, 0);
+	rb_define_method(SharedMemoryExtension, "WriteLockedData", method_WriteLockedData, 1);
+	rb_define_method(SharedMemoryExtension, "LockMemory", method_LockMemory, 0);
+	rb_define_method(SharedMemoryExtension, "FreeMemory", method_FreeMemory, 0);
 }
 
 VALUE method_WriteDataToSharedMemory(VALUE self, VALUE rubyStringParam) {
@@ -133,5 +140,58 @@ void method_InitializeSharedMemory(VALUE self) {
     
     initialized = 1;
     *shm = (char)0;
+}
+
+VALUE method_WriteLockedData(VALUE self, VALUE rubyStringParam) {
+    /*
+        return values:
+        0 - no error writing to memory.
+        1 - not initialized.  Run the function InitializeVariables(), first.
+        2 - sent String too long.  Not all data written in.
+    */
+    int ct=1;
+    if (!initialized) {
+        /*
+            It's not initialized.
+        */
+        INT2NUM(1);
+    }
+    
+    /*
+     * Now put some things into the memory for the
+     * other process to read.
+     */
+    s = (shm+1); /* +1 to skip the first character, since it's the flag that indicates memory is being written into. */
+    char * sentString = StringValuePtr(rubyStringParam );
+    while ( *(sentString) && ct++<SHMSZ) {
+        *s++ = *(sentString++);
+    }
+    
+    if (ct < SHMSZ)
+        INT2NUM(0);
+    else 
+        INT2NUM(2);
+}
+
+void method_FreeMemory(VALUE self) {
+    *s = '\0';
+}
+
+VALUE method_LockMemory(VALUE self) {
+    /*
+        Set the first byte to let all the processes know that the data is being updated.
+    */
+    if (!initialized) {
+        rb_str_new2("");
+    }
+    else {
+        
+        // Wait for a micro second until we get the buffer available for writing.    
+        while (*shm != (char)0)
+            usleep(1); // Wait for a micro second until we get the buffer available for writing.
+        *shm = (char)1;
+
+        rb_str_new2(shm+1);
+    }
 }
 

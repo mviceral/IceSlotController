@@ -24,21 +24,17 @@ class SharedMemory
     TimeOfPcLastCmd = "TimeOfPcLastCmd"
     SlotOwner = "SlotOwner"    
 
-    class MemOwner
-        # The purpose of this object is to lock the shared memory and once the code exits within the code block in which this object
-        # gets instantiated, it's suppose to free the memory after.
-        FINALIZER = lambda { |object_id| 
-            puts "Freeing locked memory. #{__LINE__}-#{__FILE__}"
-            FreeMemory();
-        }
-        def initialize
-            ObjectSpace.define_finalizer(self, FINALIZER)
-            puts "Locking memory. #{__LINE__}-#{__FILE__}"
-            LockMemory();
-            puts "Locked memory. #{__LINE__}-#{__FILE__}"
-        end
+    def freeLocked(strParam)
+        puts "Freeing locked memory. #{__LINE__}-#{__FILE__}"
+        WriteLockedData(strParam.to_json)
+        FreeMemory();
     end
     
+    def lockMemory(fromParam)
+        puts "Locking memory (from:#{fromParam}). #{__LINE__}-#{__FILE__}"
+        return LockMemory();
+    end
+
     #
     # Known functions of SharedMemoryExtension
     #
@@ -399,11 +395,10 @@ class SharedMemory
     end
         
     def SetConfiguration(dataParam,fromParam)
-        configDataUpload = GetConfiguration()["ConfigDateUpload"]
-        configurationFileName = GetConfiguration()["FileName"]
+        configDataUpload = dataParam["ConfigDateUpload"]
+        configurationFileName = dataParam["FileName"]
         ds = getDS()
 
-        memOwner = MemOwner.new
         # puts "SetConfiguration got called #{fromParam}"
         # puts "A Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         ds[TimeOfPcUpload] = Time.new.to_i
@@ -439,22 +434,26 @@ class SharedMemory
         # puts "A.6 #{__LINE__}-#{__FILE__}"
         # puts "B Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         configDateUpload = Time.at(configDataUpload.to_i)
-    	# puts "Check 4 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
+    	puts "Check 4 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
     	dBaseFileName = "#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{GetConfigurationFileName()}.db"
-    	# puts "A Creating dbase '/mnt/card/#{dBaseFileName}' #{__LINE__}-#{__FILE__}"
+    	puts "Check 5 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
         ds[SharedLib::DBaseFileName] = dBaseFileName
-    	# puts "B Creating dbase '/mnt/card/#{GetDBaseFileName()}' #{__LINE__}-#{__FILE__}"
-        db = SQLite3::Database.new( "/mnt/card/#{GetDBaseFileName()}" )
+    	puts "Check 6 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
+        db = SQLite3::Database.new( "/mnt/card/#{ds[SharedLib::DBaseFileName]}" )
         if db.nil?
+    	    puts "Check 7 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
             SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
         else
+    	    puts "Check 8 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
             SharedLib.bbbLog "Creating table. #{__LINE__}-#{__FILE__}"
                 db.execute("create table log ("+
             "idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
             ");")
         end
         ds["SlotOwner"] = hold["SlotOwner"]
-        tbr = WriteDataToSharedMemoryNoAutoLock(ds.to_json)
+    	puts "Check 9 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
+        tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        puts "#{getDS()["Configuration"]} Checking Configuration content."
         return tbr
         rescue
     end
@@ -494,28 +493,33 @@ class SharedMemory
             ds[Cmd] = Array.new
         end
         
-        # Put the command and the time stamp of command in one object.
-        arrItem = Array.new
-        arrItem.push(cmdParam)
-        arrItem.push(timeOfCmdParam)
-        
-        ds[Cmd].push(arrItem)
-        
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
-        puts "Total sent cmds in stack: '#{ds[Cmd].length}'"
         samplerNotProcessed = true
-        puts "Total sent cmds in stack: '#{ds[Cmd].length}'"
         while samplerNotProcessed
-            # puts "A Total sent cmds in stack: '#{ds[Cmd].length}'"
-            sleep(0.01)
-            # puts "B Total sent cmds in stack: '#{ds[Cmd].length}'"
-            ds = getDS()
-            # puts "C Total sent cmds in stack: '#{ds[Cmd].length}'"
+            # Put the command and the time stamp of command in one object.
+            arrItem = Array.new
+            arrItem.push(cmdParam)
+            arrItem.push(timeOfCmdParam)
+            
+            ds[Cmd].push(arrItem)
+            
+            WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+            totalCmdInStack = ds[Cmd].length
+            puts "Total sent cmds in stack: '#{totalCmdInStack}'"
+    
+            while ds[Cmd].length == totalCmdInStack
+                sleep(0.25)
+                ds = getDS()
+                puts "x Total sent cmds in stack: '#{ds[Cmd].length}'"
+            end
+            
+            # The sampler processed the command.  Make sure it was the last command sent.
+            
             if ds[CmdProcessed].nil? == false && ds[CmdProcessed].length > 0 && ds[CmdProcessed][0] == cmdParam  && ds[CmdProcessed][1] == timeOfCmdParam
                 samplerNotProcessed = false
                 puts "Processed the command: '#{ds[CmdProcessed][0]}'"
+            #else
+                # Keep looping until the board processed it.
             end
-            puts "x Total sent cmds in stack: '#{ds[Cmd].length}'"
         end
     end
 	

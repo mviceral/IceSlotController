@@ -470,7 +470,7 @@ class TCUSampler
                                     # puts "A3 getConfiguration()[Steps][key][key2].to_i=#{getConfiguration()[Steps][key][key2].to_i} (stepNumber+1) =#{(stepNumber+1) } #{__LINE__}-#{__FILE__}"
                                     # puts "A4 getConfiguration()[Steps][key][StepTimeLeft].to_i=#{getConfiguration()[Steps][key][StepTimeLeft].to_i} #{__LINE__}-#{__FILE__}"
                                     if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0
-                                        # puts "B #{__LINE__}-#{__FILE__}"
+                                        puts "B #{__LINE__}-#{__FILE__}"
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
                                         @shareMem.SetStepName("#{key}")
@@ -557,7 +557,7 @@ class TCUSampler
             psSeqUp()
             setPollIntervalInSeconds(IntervalSecInRunMode,"#{__LINE__}-#{__FILE__}")
         end
-        @shareMem.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
+        # @shareMem.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
     end
     
     def setBoardData(boardDataParam)
@@ -1029,10 +1029,9 @@ class TCUSampler
             end
             
     		if @shareMem.GetPcCmd().length != 0
-    		    pcCmdObj = @shareMem.PopPcCmd()
-    		    
-    		    # This code will respond to the PcListener telling it that it processed the sent command.
+    		    pcCmdObj = @shareMem.GetPcCmd()[0]
     		    pcCmd = pcCmdObj[0]
+                pcCmd = pcCmdObj[0]
     		    timeOfCmd = pcCmdObj[1]
     		    
 		        arrItem = Array.new
@@ -1042,7 +1041,8 @@ class TCUSampler
     		    ds = @shareMem.getDS()
 		        ds[SharedMemory::CmdProcessed] = arrItem
 		        @shareMem.WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
-		        
+                @shareMem.PopPcCmd()        		    
+    		    
     		    # getTimeOfPcLastCmd() < @shareMem.GetTimeOfPcLastCmd()
     		    puts "\n\n\nNew command from PC - '#{pcCmd}' #{__LINE__}-#{__FILE__}"
     		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
@@ -1052,14 +1052,22 @@ class TCUSampler
     		    when SharedLib::StopFromPc
     		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     		    when SharedLib::ClearConfigFromPc
+		            puts "Check A #{__LINE__}-#{__FILE__}"
+                    # ds = @shareMem.lockMemory("#{__LINE__}-#{__FILE__}")
+		            puts "Check B #{__LINE__}-#{__FILE__}"
         		    setBoardData(Hash.new)
+		            puts "Check C #{__LINE__}-#{__FILE__}"
     		        setBoardStateForCurrentStep()
+		            puts "Check D #{__LINE__}-#{__FILE__}"
     		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+		            # @shareMem.freeLocked(ds)
+		            puts "Check E #{__LINE__}-#{__FILE__}"
     		    when SharedLib::LoadConfigFromPc
     		        @socketIp = nil
         		    SharedLib.bbbLog("New configuration step file uploaded.")
         		    setBoardData(Hash.new)
         		    @boardData[Configuration] = @shareMem.GetConfiguration()
+        		    puts "#{@boardData[Configuration]} - Checking @boardData[Configuration] content."
         		    @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
         		    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
                     setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
@@ -1114,6 +1122,7 @@ class TCUSampler
                 #puts "G #{__LINE__}-#{__FILE__}"
             end
 
+=begin
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
             # The code ensures that the process is exactly going to take place at the given interval.  No lag that
@@ -1154,7 +1163,7 @@ class TCUSampler
                     end
                 end
             end
-            
+=end            
         end
 
         # End of 'def runTCUSampler'
@@ -1172,3 +1181,4 @@ end
 TCUSampler.runTCUSampler
 # @ 199
 # @socketIp[host] = TCPSocket.open(host,port) - fails to connect sometimes.
+# at ds = @shareMem.MemOwner.new("#{__LINE__}-#{__FILE_}")

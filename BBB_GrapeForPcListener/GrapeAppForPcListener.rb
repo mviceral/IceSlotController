@@ -83,6 +83,7 @@ module PcListenerModule
 					when SharedLib::LoadConfigFromPc
 						puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
 						hash = JSON.parse(params["#{SharedLib::PcToBbbData}"])
+						puts "hash=#{hash}"
 						puts "SlotOwner=#{hash["SlotOwner"]}"
 						date = Time.at(hash[SharedLib::ConfigDateUpload])
 						#puts "PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
@@ -96,7 +97,6 @@ module PcListenerModule
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 					end
 					sharedMem.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
-					puts "PcCmd=#{mode} #{__LINE__}-#{__FILE__}"
 				end
 				{bbbResponding:"#{mode}"}
 			end
