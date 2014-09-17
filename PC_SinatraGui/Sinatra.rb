@@ -613,7 +613,8 @@ class UserInterface
 	end
 
 	def setBkColor(defColorParam)
-		if @sharedMem.GetDispConfigurationFileName().nil? == false &&  @sharedMem.GetDispConfigurationFileName().length > 0
+		configurationFileName = @sharedMem.GetDispConfigurationFileName()
+		if configurationFileName.nil? == false &&  configurationFileName.length > 0
 			if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::Yes
 				cellColor = "#04B404"
 			else
