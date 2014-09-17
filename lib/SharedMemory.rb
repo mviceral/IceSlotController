@@ -175,10 +175,11 @@ class SharedMemory
     end
     
     def GetDispAllStepsDone_YesNo()
-		if getPCShared()[GetDispSlotOwner()].nil?
+		hold = getPCShared()[GetDispSlotOwner()]
+		if hold.nil? || hold[SharedLib::AllStepsDone_YesNo].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::AllStepsDone_YesNo]
+		return hold[SharedLib::AllStepsDone_YesNo]
     end
     
     def GetDispBbbMode()
