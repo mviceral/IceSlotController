@@ -68,8 +68,8 @@ module MigrationCount
 						ensure
 					end
 					# SharedMemory.
-					puts "1 receivedData = #{receivedData}"
-					puts "hash[SharedLib::SlotOwner].nil? = #{hash[SharedLib::SlotOwner].nil?}"
+					# puts "1 receivedData = #{receivedData}"
+					# puts "hash[SharedLib::SlotOwner].nil? = #{hash[SharedLib::SlotOwner].nil?}"
 					sharedMem = SharedMemory.new()
 					if (hash[SharedLib::SlotOwner].nil? == false &&
 					       (hash[SharedLib::SlotOwner] != SharedLib::SLOT1 &&

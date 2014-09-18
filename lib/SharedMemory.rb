@@ -111,10 +111,11 @@ class SharedMemory
 	
 	def GetDispMuxData()
 		# puts "GetDispSlotOwner()=#{GetDispSlotOwner()} #{__LINE__}-#{__FILE__}"
-		if getPCShared()[GetDispSlotOwner()].nil?
+		slotOwner = getPCShared()[GetDispSlotOwner()]
+		if slotOwner.nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::MuxData]
+		return slotOwner[SharedLib::MuxData]
 	end
 	
 	def GetDispTcu()

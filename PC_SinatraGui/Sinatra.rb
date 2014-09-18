@@ -498,8 +498,10 @@ class UserInterface
 	def setToLoadMode()
 		begin
 			puts "Clearing board IP=#{getBoardIp(@sharedMem.GetDispSlotOwner)} #{__LINE__}-#{__FILE__}"
+			getSlotProperties()[SharedLib::SlotOwner] = @sharedMem.GetDispSlotOwner
+			slotData = getSlotProperties().to_json
 			@response = 			
-		    RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::ClearConfigFromPc}" }.to_json, :content_type => :json, :accept => :json
+		    RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::ClearConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 			puts "A At pause #{__LINE__}-#{__FILE__}"
 			# gets
 			rescue
@@ -628,6 +630,7 @@ class UserInterface
 	end
 
 	def PsCell(labelParam,rawDataParam, iIndexParam)
+		muxData = @sharedMem.GetDispMuxData()
 		if rawDataParam.to_i >= 48
 			if @sharedMem.GetDispAdcInput().nil? == false && @sharedMem.GetDispAdcInput()[rawDataParam].nil? == false
 				rawDataParam = (@sharedMem.GetDispAdcInput()[rawDataParam].to_f/1000.0).round(3)
@@ -635,17 +638,17 @@ class UserInterface
 				rawDataParam = "---"
 			end
 		else
-			if @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[rawDataParam].nil? == false
-				rawDataParam = (@sharedMem.GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
+			if muxData.nil? == false && muxData[rawDataParam].nil? == false
+				rawDataParam = (muxData[rawDataParam].to_f/1000.0).round(3)
 			else
 				rawDataParam = "---"
 			end
 		end
 
 		if iIndexParam.nil? == false && 
-			@sharedMem.GetDispMuxData().nil? == false && 
-			@sharedMem.GetDispMuxData()[iIndexParam].nil? == false
-			current = (@sharedMem.GetDispMuxData()[iIndexParam].to_f/1000.0).round(3)
+			muxData.nil? == false && 
+			muxData[iIndexParam].nil? == false
+			current = (muxData[iIndexParam].to_f/1000.0).round(3)
 		else
 			if @sharedMem.GetDispEips()[labelParam].nil? == false
 				current = (@sharedMem.GetDispEips()[labelParam][0..4]) #.to_f*10.0/10.0).round(3)
@@ -1478,8 +1481,10 @@ class UserInterface
 	end 
 	
 	def setBbbToStopMode()
+		getSlotProperties()[SharedLib::SlotOwner] = @sharedMem.GetDispSlotOwner
+		slotData = getSlotProperties().to_json
 		@response = 
-      RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPc}" }.to_json, :content_type => :json, :accept => :json
+      RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 	end
 	
 	def setToRunMode()
@@ -1494,8 +1499,10 @@ class UserInterface
 		#
 		# When it's in run mode, set the button to stop.
 		#
+		getSlotProperties()[SharedLib::SlotOwner] = @sharedMem.GetDispSlotOwner
+		slotData = getSlotProperties().to_json
 		@response = 
-      RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}" }.to_json, :content_type => :json, :accept => :json
+      RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 	end	
 
 	def parseTheConfigFile(config,configFileName)
