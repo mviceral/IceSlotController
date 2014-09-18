@@ -469,25 +469,26 @@ class UserInterface
 	def getButtonDisplay()
 		# puts "getButtonDisplay() got called."
 		tbr = "" # To be returned
+		configFileName = @sharedMem.GetDispConfigurationFileName()
 		# @sharedMem.SetDispSlotOwner(slotLabelParam)
 		# puts "slotLabelParam=#{slotLabelParam}"
 		# puts "@sharedMem.GetDispSlotOwner()=#{@sharedMem.GetDispSlotOwner()}"
-		# puts "@sharedMem.GetDispConfigurationFileName().nil? = #{@sharedMem.GetDispConfigurationFileName().nil?}"
-		# puts "@sharedMem.GetDispConfigurationFileName() = #{@sharedMem.GetDispConfigurationFileName()}"
+		# puts "configFileName.nil? = #{configFileName.nil?}"
+		# puts "configFileName = #{configFileName}"
 		# puts "@sharedMem.GetDispBbbMode() = #{@sharedMem.GetDispBbbMode()}"
-		if @sharedMem.GetDispConfigurationFileName().nil? || @sharedMem.GetDispConfigurationFileName().length == 0
+		if configFileName.nil? || configFileName.length == 0
 			return Load
 		end
 		
 		if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::Yes && 
-			@sharedMem.GetDispConfigurationFileName().nil? == false &&
-			@sharedMem.GetDispConfigurationFileName().length > 0
+			configFileName.nil? == false &&
+			configFileName.length > 0
 			return Clear
 		end
 		
 		if @sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::No && 
-			@sharedMem.GetDispConfigurationFileName().nil? == false &&
-			@sharedMem.GetDispConfigurationFileName().length > 0
+			configFileName.nil? == false &&
+			configFileName.length > 0
 			if @sharedMem.GetDispBbbMode() == SharedLib::InRunMode			
 				return Stop
 			else
