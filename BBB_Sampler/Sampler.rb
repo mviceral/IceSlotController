@@ -995,7 +995,7 @@ class TCUSampler
 
 	    initStepToWorkOnVar()
         waitTime = Time.now
-        @shareMem.ReportError("Testing report error...")
+        skipLimboStateCheck = false
         while true
             waitTime += getPollIntervalInSeconds()
             stepNum = ""
@@ -1006,6 +1006,29 @@ class TCUSampler
             end
             puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             @shareMem.SetSlotTime(Time.now.to_i)
+
+            if (@shareMem.GetBbbMode() == SharedLib::InRunMode || @shareMem.GetBbbMode() == SharedLib::InStopMode) == false  
+                #
+                # We're in limbo for some reason
+                #
+                puts "We're in limbo @shareMem.GetBbbMode()='#{@shareMem.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
+                loadConfigurationFromHoldingTank()
+                setBoardStateForCurrentStep()
+            end
+            
+            configName = @shareMem.GetConfigurationFileName()
+            if ((@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
+                 @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false) ||
+                 (configName.nil? == false && configName.length>0 && (stepNum.nil? || (stepNum.nil? ==false && stepNum.length==0)) && @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No)
+                loadConfigurationFromHoldingTank()
+                setBoardStateForCurrentStep()
+                if @stepToWorkOn.nil?
+                    setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
+                else
+                    setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
+                end
+            end
+
             
 			case @shareMem.GetBbbMode()
 			when SharedLib::InRunMode
@@ -1109,28 +1132,6 @@ class TCUSampler
     		    
     		end
 
-            
-            if (@shareMem.GetBbbMode() == SharedLib::InRunMode || @shareMem.GetBbbMode() == SharedLib::InStopMode) == false  
-                #
-                # We're in limbo for some reason
-                #
-                puts "We're in limbo @shareMem.GetBbbMode()='#{@shareMem.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
-                loadConfigurationFromHoldingTank()
-                setBoardStateForCurrentStep()
-            end
-            
-            configName = @shareMem.GetConfigurationFileName()
-            if ((@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
-                 @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false) ||
-                 (configName.nil? == false && configName.length>0 && (stepNum.nil? || (stepNum.nil? ==false && stepNum.length==0)) && @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No)
-                loadConfigurationFromHoldingTank()
-                setBoardStateForCurrentStep()
-                if @stepToWorkOn.nil?
-                    setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
-                else
-                    setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
-                end
-            end
 
             # puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             
