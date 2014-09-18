@@ -100,6 +100,13 @@ class UserInterface
 	attr_accessor :stepName
 	attr_accessor :redirectErrorFaultyPsConfig	
 	
+	def clearErrorSlot(slotOwnerParam)
+		puts "clearErrorSlot(slotOwnerParam) got called. slotOwnerParam='#{slotOwnerParam}' SharedLib::ErrorMsg='#{SharedLib::ErrorMsg}'"
+		ds = @sharedMem.getDS()
+		ds[SharedLib::PC][slotOwnerParam][SharedLib::ErrorMsg] = nil
+		@sharedMem.WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+	end
+
 	def getBoardIp(slotParam)
 		if @slotToIp.nil?
 			@slotToIp = Hash.new
@@ -556,15 +563,16 @@ class UserInterface
 	end
 
 	def SlotCell()
-		if @sharedMem.GetDispAdcInput().nil? == false
-			if @sharedMem.GetDispAdcInput()[SharedLib::SlotTemp1.to_s].nil? == false
-				temp1Param = (@sharedMem.GetDispAdcInput()[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3)
+		adcInput = @sharedMem.GetDispAdcInput()
+		if adcInput.nil? == false
+			if adcInput[SharedLib::SlotTemp1.to_s].nil? == false
+				temp1Param = (adcInput[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3)
 			else
 				temp1Param = "---"
 			end
 			
-			if @sharedMem.GetDispAdcInput()[SharedLib::SlotTemp2.to_s].nil? == false
-				temp2Param = (@sharedMem.GetDispAdcInput()[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3)
+			if adcInput[SharedLib::SlotTemp2.to_s].nil? == false
+				temp2Param = (adcInput[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3)
 			else
 				temp2Param = "---"
 			end
@@ -900,8 +908,12 @@ class UserInterface
 									<font size=\"3\"/>#{slotLabelParam}
 								</td>
 								<td>&nbsp;</td>
-								<td style=\"border:1px solid black; border-collapse:collapse; width: 100%;\">
-									<font size=\"1\"/>MESSAGE BOX:
+								<td style=\"border:1px solid black; border-collapse:collapse; width: 95%;\">
+									<font size=\"1\" color=\"red\"/>#{@sharedMem.GetDispErrorMsg()}
+								</td>
+								<td>
+									<button onclick=\"window.location='/AckError?slot=#{slotLabel2Param}'\" style=\"height:20px;
+									width:50px; font-size:10px\" />Ok</button>
 								</td>
 							</tr>
 						</table>
@@ -2117,7 +2129,7 @@ get '/about' do
 	'A little about me.'
 end
 
-post '/ViewFile' do
+post '/AckError' do
 end
 
 get '/ViewFile' do
@@ -2305,6 +2317,32 @@ post '/TopBtnPressed' do
 		end
 	end  
   
-  redirect "../"
 end
-# 949
+
+post '/AckError' do
+	puts "post AckError"
+end
+ 
+get '/AckError' do
+	puts "post AckError X"
+	puts "settings.ui.slotOwnerThe = #{params[:slot]}"
+	newErrLogFileName = "../NewErrors_#{params[:slot]}.log"
+	errLogFileName = "../ErrorLog_#{params[:slot]}.log"
+	errorItem = `head -1 #{newErrLogFileName}`
+	puts "Appending '#{errorItem}' into '#{errLogFileName}'"
+	File.open(errLogFileName, "a") { 
+		|file| file.write("#{errorItem}") 
+	}
+
+	trimmed = `sed -e '1,1d' < #{newErrLogFileName}`
+	puts "Trimmed from sed"
+	puts "#{trimmed}"
+	File.open(newErrLogFileName, "w") { 
+		|file| file.write(trimmed) 
+	}
+	puts "Paused."
+	settings.ui.clearErrorSlot("#{params[:slot]}")
+	redirect "../"
+end
+
+# 906

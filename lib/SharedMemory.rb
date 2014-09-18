@@ -50,7 +50,7 @@ class SharedMemory
     end
     
 	def SetDispBoardData(configurationFileNameParam, configDateUploadParam, allStepsDone_YesNoParam, bbbModeParam,
-		stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotOwnerParam, allStepsCompletedAtParam, dispTotalStepDurationParam, adcInputParam, muxDataParam, tcuParam,eipsParam)      
+		stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotOwnerParam, allStepsCompletedAtParam, dispTotalStepDurationParam, adcInputParam, muxDataParam, tcuParam,eipsParam, errMsgParam)      
 		# puts "tcuParam = #{}"
 		# SharedLib.pause "Checking tcuParam", "#{__LINE__}-#{__FILE__}"
 				ds = getDS()
@@ -75,6 +75,7 @@ class SharedMemory
 			ds[SharedLib::PC][slotOwnerParam][SharedLib::AdcInput] = adcInputParam
 			ds[SharedLib::PC][slotOwnerParam][SharedLib::MuxData] = muxDataParam
 			ds[SharedLib::PC][slotOwnerParam][SharedLib::Eips] = eipsParam
+
 			if tcuParam.nil? == false && tcuParam.length > 0
 				tcuData = tcuParam
 				datArr = Array.new
@@ -93,8 +94,43 @@ class SharedMemory
 				end
 				ds[SharedLib::PC][slotOwnerParam][SharedLib::Tcu] = hash
 			end
+
+			if errMsgParam.nil? == false
+				# There were some errors from the board.
+				# Write the error into a log file
+				newErrLogFileName = "../NewErrors_#{slotOwnerParam}.log"
+				while errMsgParam.length>0
+					errItem = errMsgParam.shift
+					File.open(newErrLogFileName, "a") { 
+						|file| file.write("#{errItem.to_json}\n") 
+					}
+				end
+			end
+
 			WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
 		end
+	end
+
+	def GetDispErrorMsg()
+		# Display what ever un-acknowledged errors are in the record.
+		pcShared = getPCShared()
+		slotOwner = GetDispSlotOwner()
+		if pcShared[slotOwner].nil? == false && pcShared[slotOwner][SharedLib::ErrorMsg].nil?
+			newErrLogFileName = "../NewErrors_#{slotOwner}.log"
+			errorItem = `head -1 #{newErrLogFileName}`
+			#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
+			if errorItem.length > 0
+				ds = getDS()
+				ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(errorItem)
+				WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+			end
+		end
+
+		if pcShared[slotOwner].nil? || pcShared[slotOwner][SharedLib::ErrorMsg].nil?
+			return ""
+		end
+		errItem = pcShared[slotOwner][SharedLib::ErrorMsg]
+		return "&nbsp;&nbsp;#{Time.at(errItem[1]).inspect} - #{errItem[0]}"
 	end
 
 	def GetDispStepTimeLeft()
@@ -341,7 +377,8 @@ class SharedMemory
 			hash[SharedLib::AdcInput],
 			hash[SharedLib::MuxData],
 			hash[SharedLib::Tcu],
-			hash[SharedLib::Eips]
+			hash[SharedLib::Eips],
+			hash[SharedLib::ErrorMsg]
 			)
 	end
 
@@ -733,4 +770,4 @@ class SharedMemory
     end
 =end    
 end
-# def 469
+# 126
