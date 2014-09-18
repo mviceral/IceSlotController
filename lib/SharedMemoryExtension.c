@@ -166,6 +166,7 @@ VALUE method_WriteLockedData(VALUE self, VALUE rubyStringParam) {
     while ( *(sentString) && ct++<SHMSZ) {
         *s++ = *(sentString++);
     }
+    *s = '\0';
     
     if (ct < SHMSZ)
         INT2NUM(0);
@@ -174,7 +175,10 @@ VALUE method_WriteLockedData(VALUE self, VALUE rubyStringParam) {
 }
 
 void method_FreeMemory(VALUE self) {
-    *s = '\0';
+    /*
+        Set the first byte to 0 to indicate that the memory is available for updating.
+    */
+    *shm = (char)0;
 }
 
 VALUE method_LockMemory(VALUE self) {

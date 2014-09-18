@@ -25,14 +25,16 @@ class SharedMemory
     SlotOwner = "SlotOwner"    
 
     def freeLocked(strParam)
-        puts "Freeing locked memory. #{__LINE__}-#{__FILE__}"
+        # puts "Freeing locked memory. #{__LINE__}-#{__FILE__}"
         WriteLockedData(strParam.to_json)
+        # puts "Check A. #{__LINE__}-#{__FILE__}"
         FreeMemory();
+        # puts "Check B. #{__LINE__}-#{__FILE__}"
     end
     
     def lockMemory(fromParam)
-        puts "Locking memory (from:#{fromParam}). #{__LINE__}-#{__FILE__}"
-        return LockMemory();
+        # puts "Locking memory (from:#{fromParam}). #{__LINE__}-#{__FILE__}"
+        return JSON.parse(LockMemory())
     end
 
     #
@@ -316,7 +318,7 @@ class SharedMemory
     
     def SetConfigDateUpload(configDateUploadParam)
         ds = getDS()
-        puts "configDateUploadParam=#{configDateUploadParam} #{__LINE__}-#{__FILE__}"
+        # puts "configDateUploadParam=#{configDateUploadParam} #{__LINE__}-#{__FILE__}"
         ds[SharedLib::ConfigDateUpload] = configDateUploadParam
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
@@ -424,34 +426,34 @@ class SharedMemory
         ds["Configuration"] = hold
         ds["Configuration"][SharedLib::TotalStepDuration] = totalStepDuration
         # puts "A.5 #{__LINE__}-#{__FILE__}"
-    	puts "Check 1 #{__LINE__}-#{__FILE__}"
+    	# puts "Check 1 #{__LINE__}-#{__FILE__}"
         ds[SharedLib::ConfigDateUpload] = configDataUpload
-    	puts "Check 2 #{__LINE__}-#{__FILE__}"
+    	# puts "Check 2 #{__LINE__}-#{__FILE__}"
     	ds[SharedLib::ConfigurationFileName] = configurationFileName
-    	puts "Check 3 #{__LINE__}-#{__FILE__}"
+    	# puts "Check 3 #{__LINE__}-#{__FILE__}"
         # puts "A.6 #{__LINE__}-#{__FILE__}"
         # puts "B Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         configDateUpload = Time.at(configDataUpload.to_i)
-    	puts "Check 4 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
+    	# puts "Check 4 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
     	dBaseFileName = "#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{GetConfigurationFileName()}.db"
-    	puts "Check 5 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
+    	# puts "Check 5 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
         ds[SharedLib::DBaseFileName] = dBaseFileName
-    	puts "Check 6 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
+    	# puts "Check 6 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
         db = SQLite3::Database.new( "/mnt/card/#{ds[SharedLib::DBaseFileName]}" )
         if db.nil?
-    	    puts "Check 7 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
+    	    # puts "Check 7 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
             SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
         else
-    	    puts "Check 8 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
+    	    # puts "Check 8 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
             SharedLib.bbbLog "Creating table. #{__LINE__}-#{__FILE__}"
                 db.execute("create table log ("+
             "idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
             ");")
         end
         ds["SlotOwner"] = hold["SlotOwner"]
-    	puts "Check 9 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
+    	# puts "Check 9 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
         tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
-        puts "#{getDS()["Configuration"]} Checking Configuration content."
+        # puts "#{getDS()["Configuration"]} Checking Configuration content."
         return tbr
         rescue
     end
@@ -465,6 +467,37 @@ class SharedMemory
         #   useless.
         InitializeSharedMemory()
     end 
+    
+    def ClearErrors()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        if ds[SharedLib::ErrorMsg].nil? == false
+            ds[SharedLib::ErrorMsg] = nil
+        end
+        freeLocked(ds)
+    end
+    
+    def GetErrors()    
+        ds = getDS()
+        if ds[SharedLib::ErrorMsg].nil?
+            return ""
+        else
+            return ds[SharedLib::ErrorMsg]
+        end
+    end
+
+    def ReportError(errMsgParam)
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        if ds[SharedLib::ErrorMsg].nil?
+            ds[SharedLib::ErrorMsg] = Array.new
+        end
+        
+        errItem = Array.new
+        errItem.push(errMsgParam)
+        errItem.push(Time.new.to_i)
+        
+        ds[SharedLib::ErrorMsg].push(errItem)
+        freeLocked(ds)
+    end
     
     def PopPcCmd()
         ds = getDS()
@@ -700,4 +733,4 @@ class SharedMemory
     end
 =end    
 end
-# def 502
+# def 469

@@ -74,6 +74,8 @@ module PcListenerModule
 					#
 					puts "PC sent '#{mode}'"
 					sharedMem = SharedMemory.new()
+					hash = JSON.parse(params["#{SharedLib::PcToBbbData}"])
+					sharedMem.SetSlotOwner(hash["SlotOwner"])
 					case mode
 					when SharedLib::ClearConfigFromPc
 						sharedMem.ClearConfiguration("#{__LINE__}-#{__FILE__}")
@@ -82,15 +84,14 @@ module PcListenerModule
 					when SharedLib::StopFromPc
 					when SharedLib::LoadConfigFromPc
 						puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
-						hash = JSON.parse(params["#{SharedLib::PcToBbbData}"])
-						puts "hash=#{hash}"
+						# puts "hash=#{hash}"
 						puts "SlotOwner=#{hash["SlotOwner"]}"
 						date = Time.at(hash[SharedLib::ConfigDateUpload])
 						#puts "PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
 						# Sync the board time with the pc time
-						`echo date before setting:;date`
+						`echo "date before setting:";date`
 						`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}"`
-						`echo date after setting:;date`
+						`echo "date after setting:";date`
 						sharedMem.SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
 						# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
 					else

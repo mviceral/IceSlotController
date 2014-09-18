@@ -122,6 +122,7 @@ class SendSampledTcuToPCLib
         slotInfo[SharedLib::SlotOwner] = sharedMemParam.GetSlotOwner# GetSlotIpAddress()
         slotInfo[SharedLib::AllStepsCompletedAt] = sharedMemParam.GetAllStepsCompletedAt()
         slotInfo[SharedLib::TotalStepDuration] = sharedMemParam.GetTotalStepDuration();
+        slotInfo[SharedLib::ErrorMsg] = sharedMemParam.GetErrors();
         slotInfoJson = slotInfo.to_json
 		return slotInfoJson
 	end
@@ -130,17 +131,20 @@ class SendSampledTcuToPCLib
     	# puts "called from #{fromParam}"
     	slotInfoJson = GetDataToSendPc(sharedMemParam)
     	
-    	
+    	# Clear any error listed in the memomry
+        sharedMemParam.ClearErrors() # This frees up some bytes in the shared memory.
+=begin
     	# Save data into dbase if sharedMemParam.GetAllStepsDone_YesNo() == SharedLib::No && 
     	# sharedMemParam.GetBbbMode() == SharedLib::InRunMode
         if sharedMemParam.GetAllStepsDone_YesNo() == SharedLib::No && sharedMemParam.GetBbbMode() == SharedLib::InRunMode
             # The data needs to be logged in...
-            if sharedMemParam.GetDBaseFileName().nil? == false && sharedMemParam.GetDBaseFileName().length > 0
+            dBaseFileName = sharedMemParam.GetDBaseFileName()
+            if dBaseFileName.nil? == false && dBaseFileName.length > 0
                 # puts "\n\n\nA Checking #{@dirFileRepository}/#{sharedMemParam.GetDBaseFileName()} sharedMemParam.GetDBaseFileName().length = #{sharedMemParam.GetDBaseFileName().length}  #{__LINE__}-#{__FILE__}"
                 # There's a valid dBase file name to save the data.
                 # puts "B Checking #{@dirFileRepository}/#{@dBaseFileName} #{__LINE__}-#{__FILE__}"
-            	if @dBaseFileName != sharedMemParam.GetDBaseFileName()
-            	    @dBaseFileName = sharedMemParam.GetDBaseFileName()
+            	if @dBaseFileName != dBaseFileName
+            	    @dBaseFileName = dBaseFileName
             	    @db = SQLite3::Database.open "#{@dirFileRepository}/#{@dBaseFileName}"
             	end
             	
@@ -163,17 +167,18 @@ class SendSampledTcuToPCLib
                 end        	
             end
         end
+=end
     	
 
-        puts "#{__LINE__}-#{__FILE__} slotInfoJson=#{slotInfoJson}"
+        # puts "#{__LINE__}-#{__FILE__} slotInfoJson=#{slotInfoJson}"
         begin
-		puts "SendToPc = #{SendToPc} #{__LINE__}-#{__FILE__}"
+		# puts "SendToPc = #{SendToPc} #{__LINE__}-#{__FILE__}"
             resp = 
                 RestClient.post "#{SendToPc}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
             rescue Exception => e  
                 puts e.message  
                 puts e.backtrace.inspect
-                `echo "#{@timeOfData},#{@dBaseFileName}" >> PcDown.BackLog`
+                `echo "#{@timeOfData},#{slotInfoJson}" >> PcDown.BackLog`
         end
     end    
 

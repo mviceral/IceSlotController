@@ -13,7 +13,8 @@ class SharedLib
 	ClearConfigFromPc = "ClearConfigFromPc"
 	PcToBbbData = "PcToBbbData" # Data flag
 	SlotOwner = "SlotOwner"
-
+	ErrorMsg = "ErrorMsg"
+	
 	#
 	# Constants used for sending data to PC
 	#
