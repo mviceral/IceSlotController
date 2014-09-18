@@ -100,6 +100,13 @@ class UserInterface
 	attr_accessor :stepName
 	attr_accessor :redirectErrorFaultyPsConfig	
 	
+	def clearErrorSlot(slotOwnerParam)
+		puts "clearErrorSlot(slotOwnerParam) got called. slotOwnerParam='#{slotOwnerParam}' SharedLib::ErrorMsg='#{SharedLib::ErrorMsg}'"
+		ds = @sharedMem.getDS()
+		ds[SharedLib::PC][slotOwnerParam][SharedLib::ErrorMsg] = nil
+		@sharedMem.WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+	end
+
 	def getBoardIp(slotParam)
 		if @slotToIp.nil?
 			@slotToIp = Hash.new
@@ -495,15 +502,18 @@ class UserInterface
 		return Load
 	end
 	
-	def setToLoadMode()
+	def setToLoadMode(slotOwnerParam)
 		begin
-			puts "Clearing board IP=#{getBoardIp(@sharedMem.GetDispSlotOwner)} #{__LINE__}-#{__FILE__}"
+			puts "Clearing board IP=#{getBoardIp(slotOwnerParam)} #{__LINE__}-#{__FILE__}"
+			hash = Hash.new
+			hash[SharedLib::SlotOwner] = slotOwnerParam
+			slotData = hash.to_json
 			@response = 			
-		    RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::ClearConfigFromPc}" }.to_json, :content_type => :json, :accept => :json
+		    RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::ClearConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 			puts "A At pause #{__LINE__}-#{__FILE__}"
 			# gets
 			rescue
-			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
+			@redirectWithError = "/TopBtnPressed?slot=#{slotOwnerParam}&BtnState=#{Load}"
 			#@redirectWithError += "&ErrGeneral=bbbDown"
 			@redirectWithError += "&ErrGeneral=ABDC"
 			puts "B At pause #{__LINE__}-#{__FILE__}"
@@ -519,15 +529,15 @@ class UserInterface
 		# puts "C Checking.  #{__LINE__}-#{__FILE__}"
 	end
 
-	def setBbbConfigUpload()
-		getSlotProperties()[SharedLib::ConfigDateUpload] = Time.now.to_f
-		getSlotProperties()[SharedLib::SlotOwner] = @sharedMem.GetDispSlotOwner
-		slotData = getSlotProperties().to_json
+	def setBbbConfigUpload(slotOwnerParam)
+		slotProperties[slotOwnerParam][SharedLib::ConfigDateUpload] = Time.now.to_f
+		slotProperties[slotOwnerParam][SharedLib::SlotOwner] = slotOwnerParam
+		slotData = slotProperties[slotOwnerParam].to_json
 		# PP.pp(getSlotProperties())
 		# puts "Done doing a PP on sending config to board."
 		begin
 			@response = 
-		    RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
+		    RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 			puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
 			# hash1 = JSON.parse(@response)
 			# puts "check A #{__LINE__}-#{__FILE__}"
@@ -537,7 +547,7 @@ class UserInterface
 			# puts "check C #{__LINE__}-#{__FILE__}"
 			return true
 			rescue
-			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
+			@redirectWithError = "/TopBtnPressed?slot=#{slotOwnerParam}&BtnState=#{Load}"
 			@redirectWithError += "&ErrGeneral=bbbDown"
 			#@redirectWithError += "&ErrGeneral=EFGH"
 			return false
@@ -554,15 +564,16 @@ class UserInterface
 	end
 
 	def SlotCell()
-		if @sharedMem.GetDispAdcInput().nil? == false
-			if @sharedMem.GetDispAdcInput()[SharedLib::SlotTemp1.to_s].nil? == false
-				temp1Param = (@sharedMem.GetDispAdcInput()[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3)
+		adcInput = @sharedMem.GetDispAdcInput()
+		if adcInput.nil? == false
+			if adcInput[SharedLib::SlotTemp1.to_s].nil? == false
+				temp1Param = (adcInput[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3)
 			else
 				temp1Param = "---"
 			end
 			
-			if @sharedMem.GetDispAdcInput()[SharedLib::SlotTemp2.to_s].nil? == false
-				temp2Param = (@sharedMem.GetDispAdcInput()[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3)
+			if adcInput[SharedLib::SlotTemp2.to_s].nil? == false
+				temp2Param = (adcInput[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3)
 			else
 				temp2Param = "---"
 			end
@@ -628,6 +639,7 @@ class UserInterface
 	end
 
 	def PsCell(labelParam,rawDataParam, iIndexParam)
+		muxData = @sharedMem.GetDispMuxData()
 		if rawDataParam.to_i >= 48
 			if @sharedMem.GetDispAdcInput().nil? == false && @sharedMem.GetDispAdcInput()[rawDataParam].nil? == false
 				rawDataParam = (@sharedMem.GetDispAdcInput()[rawDataParam].to_f/1000.0).round(3)
@@ -635,17 +647,17 @@ class UserInterface
 				rawDataParam = "---"
 			end
 		else
-			if @sharedMem.GetDispMuxData().nil? == false && @sharedMem.GetDispMuxData()[rawDataParam].nil? == false
-				rawDataParam = (@sharedMem.GetDispMuxData()[rawDataParam].to_f/1000.0).round(3)
+			if muxData.nil? == false && muxData[rawDataParam].nil? == false
+				rawDataParam = (muxData[rawDataParam].to_f/1000.0).round(3)
 			else
 				rawDataParam = "---"
 			end
 		end
 
 		if iIndexParam.nil? == false && 
-			@sharedMem.GetDispMuxData().nil? == false && 
-			@sharedMem.GetDispMuxData()[iIndexParam].nil? == false
-			current = (@sharedMem.GetDispMuxData()[iIndexParam].to_f/1000.0).round(3)
+			muxData.nil? == false && 
+			muxData[iIndexParam].nil? == false
+			current = (muxData[iIndexParam].to_f/1000.0).round(3)
 		else
 			if @sharedMem.GetDispEips()[labelParam].nil? == false
 				current = (@sharedMem.GetDispEips()[labelParam][0..4]) #.to_f*10.0/10.0).round(3)
@@ -897,8 +909,12 @@ class UserInterface
 									<font size=\"3\"/>#{slotLabelParam}
 								</td>
 								<td>&nbsp;</td>
-								<td style=\"border:1px solid black; border-collapse:collapse; width: 100%;\">
-									<font size=\"1\"/>MESSAGE BOX:
+								<td style=\"border:1px solid black; border-collapse:collapse; width: 95%;\">
+									<font size=\"1\" color=\"red\"/>#{@sharedMem.GetDispErrorMsg()}
+								</td>
+								<td>
+									<button onclick=\"window.location='/AckError?slot=#{slotLabel2Param}'\" style=\"height:20px;
+									width:50px; font-size:10px\" />Ok</button>
 								</td>
 							</tr>
 						</table>
@@ -1477,12 +1493,15 @@ class UserInterface
 		# End of 
 	end 
 	
-	def setBbbToStopMode()
+	def setBbbToStopMode(slotOwnerParam)
+		hash = Hash.new
+		hash[SharedLib::SlotOwner] = slotOwnerParam
+		slotData = hash.to_json
 		@response = 
-      RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPc}" }.to_json, :content_type => :json, :accept => :json
+      RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 	end
 	
-	def setToRunMode()
+	def setToRunMode(slotOwnerParam)
 		#
 		# Send all info to BBB
 		# 1) Make sure the BBB is up an running.
@@ -1494,8 +1513,11 @@ class UserInterface
 		#
 		# When it's in run mode, set the button to stop.
 		#
+		hash = Hash.new
+		hash[SharedLib::SlotOwner] = slotOwnerParam
+		slotData = hash.to_json
 		@response = 
-      RestClient.post "#{getBoardIp(@sharedMem.GetDispSlotOwner)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}" }.to_json, :content_type => :json, :accept => :json
+      RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 	end	
 
 	def parseTheConfigFile(config,configFileName)
@@ -2022,7 +2044,7 @@ class UserInterface
 		# End of 'checkFaultyPsOrTempConfig'	
 	end
 	
-	def setupBbbSlotProcess(fileNameParam)
+	def setupBbbSlotProcess(fileNameParam, slotOwnerParam)
 		#
 		# Find out what type of file we're dealing with:
 		# *.step - for Step file
@@ -2047,7 +2069,7 @@ class UserInterface
 		
 		setConfigFileName("#{fileNameParam}")
 		# PP.pp(slotProperties)
-		if setBbbConfigUpload() == false
+		if setBbbConfigUpload(slotOwnerParam) == false
 			return false
 		end
 		
@@ -2110,7 +2132,7 @@ get '/about' do
 	'A little about me.'
 end
 
-post '/ViewFile' do
+post '/AckError' do
 end
 
 get '/ViewFile' do
@@ -2145,7 +2167,7 @@ get '/TopBtnPressed' do
 		settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}"
 		settings.ui.redirectWithError += "&BtnState=#{settings.ui.Load}"	
 		
-		if settings.ui.setupBbbSlotProcess("#{params[:File]}") == false
+		if settings.ui.setupBbbSlotProcess("#{params[:File]}","#{params[:slot]}") == false
 				redirect settings.ui.redirectWithError
 		end
 		redirect "../"
@@ -2218,13 +2240,13 @@ get '/TopBtnPressed' do
 			#
 			# The Run button got pressed.
 			#
-			settings.ui.setToRunMode()
+			settings.ui.setToRunMode(params[:slot])
 			redirect "../"
 		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Stop
 			#
 			# The Stop button got pressed.
 			#
-			settings.ui.setBbbToStopMode()
+			settings.ui.setBbbToStopMode(params[:slot])
 		
 			#
 			# Update the duration time
@@ -2235,7 +2257,7 @@ get '/TopBtnPressed' do
 			#
 			# The Clear button got pressed.
 			#
-			settings.ui.setToLoadMode()
+			settings.ui.setToLoadMode(params[:slot])
 			redirect "../"
 		end
 	end
@@ -2293,11 +2315,37 @@ post '/TopBtnPressed' do
 		#
 		# Read the file into the server environment
 		#
-		if settings.ui.setupBbbSlotProcess("#{params['myfile'][:filename]}") == false
+		if settings.ui.setupBbbSlotProcess("#{params['myfile'][:filename]}","#{params[:slot]}") == false
 				redirect settings.ui.redirectWithError
 		end
 	end  
   
-  redirect "../"
 end
-# 949
+
+post '/AckError' do
+	puts "post AckError"
+end
+ 
+get '/AckError' do
+	puts "post AckError X"
+	puts "settings.ui.slotOwnerThe = #{params[:slot]}"
+	newErrLogFileName = "../NewErrors_#{params[:slot]}.log"
+	errLogFileName = "../ErrorLog_#{params[:slot]}.log"
+	errorItem = `head -1 #{newErrLogFileName}`
+	puts "Appending '#{errorItem}' into '#{errLogFileName}'"
+	File.open(errLogFileName, "a") { 
+		|file| file.write("#{errorItem}") 
+	}
+
+	trimmed = `sed -e '1,1d' < #{newErrLogFileName}`
+	puts "Trimmed from sed"
+	puts "#{trimmed}"
+	File.open(newErrLogFileName, "w") { 
+		|file| file.write(trimmed) 
+	}
+	puts "Paused."
+	settings.ui.clearErrorSlot("#{params[:slot]}")
+	redirect "../"
+end
+
+# 508
