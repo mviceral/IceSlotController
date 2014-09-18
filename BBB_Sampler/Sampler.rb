@@ -995,7 +995,6 @@ class TCUSampler
 
 	    initStepToWorkOnVar()
         waitTime = Time.now
-        @shareMem.ReportError("Testing report error...")
         while true
             waitTime += getPollIntervalInSeconds()
             stepNum = ""
