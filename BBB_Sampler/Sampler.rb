@@ -212,7 +212,7 @@ class TCUSampler
                                 SharedLib.bbbLog "Socket on '#{psItem.keyName[1..-1]}' ip address '#{@ethernetScheme[psItem.keyName[1..-1]].chomp}' is not yet initialized.  Reload 'Steps' file."
                             end
                         else
-                            SharedLib.bbbLog "@socketIp is nil!!!!."
+                            SharedLib.bbbLog "Ethernet power supplies are not initialized.  Reload steps configuration file."
                         end
                     end
                 end
@@ -440,6 +440,26 @@ class TCUSampler
         return sortedUp
     end
     
+    def openEthernetPsSocket(host,port)
+        tries = 0
+        goodConnection = false
+        while tries<5 && goodConnection == false
+            begin
+                @socketIp[host] = TCPSocket.open(host,port)
+                goodConnection = true
+                rescue
+                    SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
+            end
+            tries += 1
+        end
+        if tries == 5
+            @socketIp[host] = nil
+            # Show a message to the PC that Ethernet PS on IP=host can't be accessed.  Show the time too of incident too.
+            @shareMem.ReportError("Cannot open Ethernet power supply socket on IP='host'.  This power supply will be disabled.")
+        	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+        end
+    end                                                            
+
     def initStepToWorkOnVar
         @shareMem.SetStepTimeLeft("")
         @shareMem.SetStepName("")
@@ -470,7 +490,7 @@ class TCUSampler
                                     # puts "A3 getConfiguration()[Steps][key][key2].to_i=#{getConfiguration()[Steps][key][key2].to_i} (stepNumber+1) =#{(stepNumber+1) } #{__LINE__}-#{__FILE__}"
                                     # puts "A4 getConfiguration()[Steps][key][StepTimeLeft].to_i=#{getConfiguration()[Steps][key][StepTimeLeft].to_i} #{__LINE__}-#{__FILE__}"
                                     if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0
-                                        puts "B #{__LINE__}-#{__FILE__}"
+                                        # puts "B #{__LINE__}-#{__FILE__}"
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
                                         @shareMem.SetStepName("#{key}")
@@ -492,8 +512,8 @@ class TCUSampler
                                                         host = @ethernetScheme[key[1..-1]].chomp
                                                         port = 5025                # port
                                                         if @socketIp[host].nil?
-                                                            puts "host = '#{host}',port = '#{port}' #{__LINE__}-#{__FILE__}"
-                                                            @socketIp[host] = TCPSocket.open(host,port)
+                                                            # puts "host = '#{host}',port = '#{port}' #{__LINE__}-#{__FILE__}"
+                                                            openEthernetPsSocket(host,port)
                                                         end
                                                         @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SocketIp] = @ethernetScheme[key[1..-1]].chomp
                     
@@ -888,7 +908,7 @@ class TCUSampler
         		end
     		end
 		    rescue Exception => e
-		    SharedLib.bbbLog("Error: #{e.message}  #{__LINE__}-#{__FILE__}")
+		        SharedLib.bbbLog("Error: #{e.message}  #{__LINE__}-#{__FILE__}")
 	    end
         
         SharedLib.bbbLog "Searching for disabled TCUs aside the listed ones in '#{FaultyTcuList_SkipPolling}' file. #{__LINE__}-#{__FILE__}"
@@ -975,6 +995,7 @@ class TCUSampler
 
 	    initStepToWorkOnVar()
         waitTime = Time.now
+        @shareMem.ReportError("Testing report error...")
         while true
             waitTime += getPollIntervalInSeconds()
             stepNum = ""
@@ -1049,6 +1070,7 @@ class TCUSampler
         		        setBoardStateForCurrentStep()
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
             		    @shareMem.SetConfigurationFileName("")
+            		    gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
         		    when SharedLib::LoadConfigFromPc
         		        @socketIp = nil
             		    SharedLib.bbbLog("New configuration step file uploaded.")
@@ -1065,6 +1087,7 @@ class TCUSampler
             		    @shareMem.SetConfiguration("","#{__LINE__}-#{__FILE__}") 
         		        setBoardStateForCurrentStep()
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		    gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
             		else
             		    SharedLib.bbbLog("Unknown PC command @shareMem.GetPcCmd()='#{@shareMem.GetPcCmd()}'.")
             		end
@@ -1092,7 +1115,7 @@ class TCUSampler
                 # We're in limbo for some reason
                 #
                 puts "We're in limbo @shareMem.GetBbbMode()='#{@shareMem.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
-                setToMode(SharedLib::InRunMode, "#{__LINE__}-#{__FILE__}")
+                loadConfigurationFromHoldingTank()
                 setBoardStateForCurrentStep()
             end
             
@@ -1109,12 +1132,11 @@ class TCUSampler
                 end
             end
 
-            puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+            # puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             
             #
             # Gather data regardless of whether it's in run mode or not...
             #
-            SharedLib.bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
             if @setupAtHome == false
                 #puts "A #{__LINE__}-#{__FILE__}"
                 pollAdcInput()
@@ -1128,6 +1150,10 @@ class TCUSampler
                 getEthernetPsCurrent()
                 #puts "G #{__LINE__}-#{__FILE__}"
             end
+            
+            
+        	# This line of code makes the 'Sender' process useless.  This gives the fastest time of data update to the display.
+        	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
 
 =begin
             #
@@ -1186,6 +1212,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# @ 199
-# @socketIp[host] = TCPSocket.open(host,port) - fails to connect sometimes.
-# at ds = @shareMem.MemOwner.new("#{__LINE__}-#{__FILE_}")
+# @ 449

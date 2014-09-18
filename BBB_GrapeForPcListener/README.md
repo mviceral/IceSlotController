@@ -15,6 +15,9 @@ mkdir /mnt/card
 mount /dev/mmcblk0p1 /mnt/card
 vi /mnt/card/uEnv.txt
 
+- Set the time zone
+ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime
+
 -Then insert the following line.
 optargs=quiet capemgr.disable_partno=BB-BONELT-HDMI,BB-BONELT-HDMIN
 
