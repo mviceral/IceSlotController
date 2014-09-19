@@ -81,24 +81,24 @@ module MigrationCount
 						sharedMem.SetDataBoardToPc(hash)
 						sharedMem.SetDispSlotOwner(hash[SharedLib::SlotOwner])
 
-						puts "ConfigurationFileName = #{sharedMem.GetDispConfigurationFileName()}"
-						puts "ConfigDateUpload = #{sharedMem.GetDispConfigDateUpload()}"
-						puts "AllStepsDone_YesNo = #{sharedMem.GetDispAllStepsDone_YesNo()}"
-						puts "BbbMode = #{sharedMem.GetDispBbbMode()}"
-						puts "StepName = #{sharedMem.GetDispStepName()}"
-						puts "StepNumber = #{sharedMem.GetDispStepNumber()}"
-						puts "StepTotalTime = #{sharedMem.GetDispStepTimeLeft()}"
-						puts "SlotTime = #{sharedMem.GetDispSlotTime()}"
-						puts "SlotIpAddress = #{sharedMem.GetDispSlotIpAddress()}"
-						puts "SlotTime = #{sharedMem.GetDispSlotTime()}"
-						puts "AdcInput = #{sharedMem.GetDispAdcInput()}"
-						puts "MuxData = #{sharedMem.GetDispMuxData()}"
-						puts "Tcu = #{sharedMem.GetDispTcu()}"
-						puts "AllStepsCompletedAt = #{sharedMem.GetDispAllStepsCompletedAt()}"
-						puts "TotalStepDuration = #{sharedMem.GetDispTotalStepDuration()}"
-						puts "Eips = #{sharedMem.GetDispEips()}"
-						configDateUpload = Time.at(sharedMem.GetDispConfigDateUpload().to_i)
-						dBaseFileName = "../steps log records/#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName()}.db"
+						puts "ConfigurationFileName = #{sharedMem.GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}"
+						puts "ConfigDateUpload = #{sharedMem.GetDispConfigDateUpload(hash[SharedLib::SlotOwner])}"
+						puts "AllStepsDone_YesNo = #{sharedMem.GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner])}"
+						puts "BbbMode = #{sharedMem.GetDispBbbMode(hash[SharedLib::SlotOwner])}"
+						puts "StepName = #{sharedMem.GetDispStepName(hash[SharedLib::SlotOwner])}"
+						puts "StepNumber = #{sharedMem.GetDispStepNumber(hash[SharedLib::SlotOwner])}"
+						puts "StepTotalTime = #{sharedMem.GetDispStepTimeLeft(hash[SharedLib::SlotOwner])}"
+						puts "SlotTime = #{sharedMem.GetDispSlotTime(hash[SharedLib::SlotOwner])}"
+						puts "SlotIpAddress = #{sharedMem.GetDispSlotIpAddress(hash[SharedLib::SlotOwner])}"
+						puts "SlotTime = #{sharedMem.GetDispSlotTime(hash[SharedLib::SlotOwner])}"
+						puts "AdcInput = #{sharedMem.GetDispAdcInput(hash[SharedLib::SlotOwner])}"
+						puts "MuxData = #{sharedMem.GetDispMuxData(hash[SharedLib::SlotOwner])}"
+						puts "Tcu = #{sharedMem.GetDispTcu(hash[SharedLib::SlotOwner])}"
+						puts "AllStepsCompletedAt = #{sharedMem.GetDispAllStepsCompletedAt(hash[SharedLib::SlotOwner])}"
+						puts "TotalStepDuration = #{sharedMem.GetDispTotalStepDuration(hash[SharedLib::SlotOwner])}"
+						puts "Eips = #{sharedMem.GetDispEips(hash[SharedLib::SlotOwner])}"
+						configDateUpload = Time.at(sharedMem.GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
+						dBaseFileName = "../steps log records/#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}.db"
 						runningOnCentos = true
 						if runningOnCentos == false
 							if File.file?("#{dBaseFileName}") == false
@@ -134,8 +134,8 @@ module MigrationCount
 								# End of 'begin' code block that will handle exceptions...
 							end
 						else
-							if sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::No && sharedMem.GetDispBbbMode() == SharedLib::InRunMode
-								str = "#{sharedMem.GetDispSlotTime()},#{receivedData}"
+							if sharedMem.GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner]) == SharedLib::No && sharedMem.GetDispBbbMode(hash[SharedLib::SlotOwner]) == SharedLib::InRunMode
+								str = "#{sharedMem.GetDispSlotTime(hash[SharedLib::SlotOwner])},#{receivedData}"
 								open("#{dBaseFileName}", 'a') { |f|
 								  f.puts "#{str}"
 								}

@@ -25,6 +25,7 @@ class SharedMemory
     SlotOwner = "SlotOwner"    
 
     def freeLocked(strParam)
+	@lockedAt = ""
         # puts "Freeing locked memory. #{__LINE__}-#{__FILE__}"
         WriteLockedData(strParam.to_json)
         # puts "Check A. #{__LINE__}-#{__FILE__}"
@@ -34,6 +35,12 @@ class SharedMemory
     
     def lockMemory(fromParam)
         # puts "Locking memory (from:#{fromParam}). #{__LINE__}-#{__FILE__}"
+	if @lockedAt != ""
+		puts "Shared mem already locked at #{@lockedAt}"
+		exit
+	else
+		@lockedAt = fromParam
+	end
         return JSON.parse(LockMemory())
     end
 
@@ -111,10 +118,19 @@ class SharedMemory
 		end
 	end
 
-	def GetDispErrorMsg()
+	def GetDispButton(slotOwnerParam)
+		return getDS()[SharedLib::PC][slotOwnerParam][SharedLib::ButtonDisplay]
+	end
+
+	def SetDispButton(slotOwnerParam,toDisplay)
+		ds = lockMemory("#{__LINE__}-#{__FILE__}")
+		ds[SharedLib::PC][slotOwnerParam][SharedLib::ButtonDisplay] = toDisplay
+		freeLocked(ds.to_json);		
+	end
+	def GetDispErrorMsg(slotOwnerParam)
 		# Display what ever un-acknowledged errors are in the record.
 		pcShared = getPCShared()
-		slotOwner = GetDispSlotOwner()
+		slotOwner = slotOwnerParam
 		if pcShared[slotOwner].nil? == false && pcShared[slotOwner][SharedLib::ErrorMsg].nil?
 			newErrLogFileName = "../NewErrors_#{slotOwner}.log"
 			errorItem = `head -1 #{newErrLogFileName}`
@@ -133,59 +149,61 @@ class SharedMemory
 		return "&nbsp;&nbsp;#{Time.at(errItem[1]).inspect} - #{errItem[0]}"
 	end
 
-	def GetDispStepTimeLeft()
-		if getPCShared()[GetDispSlotOwner()].nil?
+	def GetDispStepTimeLeft(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::StepTimeLeft]
+		return getPCShared()[slotOwnerParam][SharedLib::StepTimeLeft]
 	end
 
-	def GetDispAdcInput()
-		if getPCShared()[GetDispSlotOwner()].nil?
+	def GetDispAdcInput(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::AdcInput]
+		return getPCShared()[slotOwnerParam][SharedLib::AdcInput]
 	end
 	
-	def GetDispMuxData()
-		# puts "GetDispSlotOwner()=#{GetDispSlotOwner()} #{__LINE__}-#{__FILE__}"
-		slotOwner = getPCShared()[GetDispSlotOwner()]
+	def GetDispMuxData(slotOwnerParam)
+		# puts "slotOwnerParam=#{slotOwnerParam} #{__LINE__}-#{__FILE__}"
+		slotOwner = getPCShared()[slotOwnerParam]
 		if slotOwner.nil?
 			return ""
 		end
 		return slotOwner[SharedLib::MuxData]
 	end
 	
-	def GetDispTcu()
-		if getPCShared()[GetDispSlotOwner()].nil?
+	def GetDispTcu(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::Tcu]
+		return getPCShared()[slotOwnerParam][SharedLib::Tcu]
 	end
 
-	def GetDispAllStepsCompletedAt()
-		if getPCShared()[GetDispSlotOwner()].nil?
+	def GetDispAllStepsCompletedAt(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::AllStepsCompletedAt]
+		return getPCShared()[slotOwnerParam][SharedLib::AllStepsCompletedAt]
 	end
 
-	def GetDispEips()
-		if getPCShared()[GetDispSlotOwner()].nil?
+	def GetDispEips(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		if getPCShared()[GetDispSlotOwner()][SharedLib::Eips].nil?
+		if getPCShared()[slotOwnerParam][SharedLib::Eips].nil?
 			return Hash.new
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::Eips]
+		return getPCShared()[slotOwnerParam][SharedLib::Eips]
 	end
 
+=begin
 	def GetDispSlotOwner()
 		if getPCShared()[SlotOwner].nil?
 			return ""
 		end
 		return getPCShared()[SlotOwner]
 	end
+=end
 	
 	def SetDispSlotOwner(slotOwnerParam)
     		ds = getDS()
@@ -198,68 +216,68 @@ class SharedMemory
 			ds[SharedLib::PC][SlotOwner] = slotOwnerParam
 			WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
 	end		
-	def GetDispConfigurationFileName()
-		if getPCShared()[GetDispSlotOwner()].nil?
+	def GetDispConfigurationFileName(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::ConfigurationFileName]
+		return getPCShared()[slotOwnerParam][SharedLib::ConfigurationFileName]
     end
     
-	def GetDispConfigDateUpload()
-		if getPCShared()[GetDispSlotOwner()].nil?
+	def GetDispConfigDateUpload(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::ConfigDateUpload]
+		return getPCShared()[slotOwnerParam][SharedLib::ConfigDateUpload]
     end
     
-    def GetDispAllStepsDone_YesNo()
-		hold = getPCShared()[GetDispSlotOwner()]
+    def GetDispAllStepsDone_YesNo(slotOwnerParam)
+		hold = getPCShared()[slotOwnerParam]
 		if hold.nil? || hold[SharedLib::AllStepsDone_YesNo].nil?
 			return ""
 		end
 		return hold[SharedLib::AllStepsDone_YesNo]
     end
     
-    def GetDispBbbMode()
-		if getPCShared()[GetDispSlotOwner()].nil?
+    def GetDispBbbMode(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::BbbMode]
+		return getPCShared()[slotOwnerParam][SharedLib::BbbMode]
     end
     
-    def GetDispStepName()
-		if getPCShared()[GetDispSlotOwner()].nil?
+    def GetDispStepName(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::StepName]
+		return getPCShared()[slotOwnerParam][SharedLib::StepName]
     end
     
-    def GetDispStepNumber()
-		if getPCShared()[GetDispSlotOwner()].nil?
+    def GetDispStepNumber(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::StepNumber]
+		return getPCShared()[slotOwnerParam][SharedLib::StepNumber]
     end
 
-	def GetDispTotalStepDuration()
-		if getPCShared()[GetDispSlotOwner()].nil?
+	def GetDispTotalStepDuration(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::TotalStepDuration]
+		return getPCShared()[slotOwnerParam][SharedLib::TotalStepDuration]
 	end
 	
-	def GetDispSlotTime()
-		if getPCShared()[GetDispSlotOwner()].nil?
+	def GetDispSlotTime(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::SlotTime]
+		return getPCShared()[slotOwnerParam][SharedLib::SlotTime]
 	end
 	 
-	def GetDispSlotIpAddress()
-		if getPCShared()[GetDispSlotOwner()].nil?
+	def GetDispSlotIpAddress(slotOwnerParam)
+		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
-		return getPCShared()[GetDispSlotOwner()][SharedLib::SlotIpAddress]
+		return getPCShared()[slotOwnerParam][SharedLib::SlotIpAddress]
 	end
 		
     def SetAllStepsCompletedAt(allStepsCompletedAtParam)
@@ -360,8 +378,15 @@ class SharedMemory
     end
 
 	def	SetDataBoardToPc(hashParam)
-		# hash = JSON.parse(hashParam)
 		hash = hashParam
+    
+
+		if hash[SharedLib::ButtonDisplay].nil? == false
+			ds = lockMemory("#{__LINE__}-#{__FILE__}")
+			ds[SharedLib::PC][hash[SharedLib::SlotOwner]][SharedLib::ConfigurationFileName] = SharedLib::ButtonDisplay
+			freeLocked(ds)
+		end
+
 		SetDispBoardData(
 			hash[SharedLib::ConfigurationFileName],
 			hash[SharedLib::ConfigDateUpload],
@@ -496,6 +521,7 @@ class SharedMemory
     end
     
     def Initialize()
+	@lockedAt = ""
         InitializeSharedMemory()
     end
     
@@ -743,6 +769,17 @@ class SharedMemory
 
         WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
     end
+
+	def SetButtonDisplayToNormal(buttonDispParam)
+		ds = lockMemory("#{__LINE__}-#{__FILE__}")
+		ds[SharedLib::ButtonDisplay] = buttonDispParam
+		freeLocked(ds.to_json);		
+	end
+
+	def GetButtonDisplayToNormal()
+		return getDS()[SharedLib::ButtonDisplay]
+	end
+
     
     def SetData(dataTypeParam,indexParam,dataValueParam,multiplierParam)
         # puts "check A #{__LINE__}-#{__FILE__}"
