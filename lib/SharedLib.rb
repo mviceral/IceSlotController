@@ -14,7 +14,9 @@ class SharedLib
 	PcToBbbData = "PcToBbbData" # Data flag
 	SlotOwner = "SlotOwner"
 	ErrorMsg = "ErrorMsg"
-	
+	ButtonDisplay = "ButtonDisplay"
+	NormalButtonDisplay = "NormalButtonDisplay"
+
 	#
 	# Constants used for sending data to PC
 	#
