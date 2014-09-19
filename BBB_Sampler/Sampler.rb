@@ -1176,9 +1176,9 @@ class TCUSampler
 		        arrItem.push(pcCmd)
 		        arrItem.push(timeOfCmd)
 		        
-    		    ds = @shareMem.getDS()
+    		    ds = @shareMem.lockMemory("#{__LINE__}-#{__FILE__}")
 		        ds[SharedMemory::CmdProcessed] = arrItem
-		        @shareMem.WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+		        @shareMem.writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
                 @shareMem.PopPcCmd()        		    
     		    
     		end

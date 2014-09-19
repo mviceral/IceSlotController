@@ -154,7 +154,7 @@ class SharedMemory
 	end
 
 	def GetDispButton(slotOwnerParam)
-		return lockMemory("#{__LINE__}-#{__FILE__}")[SharedLib::PC][slotOwnerParam][SharedLib::ButtonDisplay]
+		return getMemory()[SharedLib::PC][slotOwnerParam][SharedLib::ButtonDisplay]
 	end
 
 	def SetDispButton(slotOwnerParam,toDisplay)
@@ -638,7 +638,7 @@ class SharedMemory
     
             while ds[Cmd].length == totalCmdInStack
                 sleep(0.25)
-                ds = lockMemory("#{__LINE__}-#{__FILE__}")
+                ds = getMemory()
                 puts "x Total sent cmds in stack: '#{ds[Cmd].length}'"
             end
             
@@ -669,10 +669,10 @@ class SharedMemory
     end
     
     def GetTimeOfPcLastCmd()
-        if lockMemory("#{__LINE__}-#{__FILE__}")[TimeOfPcLastCmd].nil?
+        if getMemory()[TimeOfPcLastCmd].nil?
             SetTimeOfPcLastCmd(0,"#{__LINE__}-#{__FILE__}")
         end
-        return lockMemory("#{__LINE__}-#{__FILE__}")[TimeOfPcLastCmd]
+        return getMemory()[TimeOfPcLastCmd]
     end
 
     def SetBbbMode(modeParam,calledFrom)
