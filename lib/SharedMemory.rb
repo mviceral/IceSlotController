@@ -637,9 +637,11 @@ class SharedMemory
 	end
 	
     def SetPcCmdThread(cmdParam,timeOfCmdParam)
-        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        ds = getMemory()
         if ds[Cmd].nil? || ds[Cmd].class.to_s != "Array"
+            ds = lockMemory("#{__LINE__}-#{__FILE__}")
             ds[Cmd] = Array.new
+            writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
         end
         
         samplerNotProcessed = true
@@ -649,9 +651,10 @@ class SharedMemory
             arrItem.push(cmdParam)
             arrItem.push(timeOfCmdParam)
             
+            ds = lockMemory("#{__LINE__}-#{__FILE__}")
             ds[Cmd].push(arrItem)
-            
             writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+            
             totalCmdInStack = ds[Cmd].length
             puts "Total sent cmds in stack: '#{totalCmdInStack}'"
     
