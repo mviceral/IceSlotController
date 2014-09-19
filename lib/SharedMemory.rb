@@ -84,11 +84,12 @@ class SharedMemory
     # Known functions of SharedMemoryExtension
     #
     def getPCShared()
-        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+	ds = getMemory()
         if ds[SharedLib::PC].nil?
+        	ds = lockMemory("#{__LINE__}-#{__FILE__}")
         	ds[SharedLib::PC] = Hash.new
+        	writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
         end
-        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
         return ds[SharedLib::PC]
     end
     
