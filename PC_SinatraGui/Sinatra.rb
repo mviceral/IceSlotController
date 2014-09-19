@@ -989,9 +989,9 @@ class UserInterface
 		btnStateDisp = @sharedMem.GetDispButton(slotLabel2Param)
 		toDisplay = getButtonDisplay(slotLabel2Param)
 		if btnStateDisp.nil? == false 
-			if btnStateDisp == "Running"
+			if btnStateDisp == "Seq Up"
 				toDisplay = btnStateDisp
-			elsif  btnStateDisp == "Stopping"
+			elsif  btnStateDisp == "Seq Down"
 				toDisplay = btnStateDisp
 			elsif  btnStateDisp == "Loading"
 				toDisplay = btnStateDisp
@@ -1522,7 +1522,7 @@ end
 		slotData = hash.to_json
 		@response = 
       RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
-		@sharedMem.SetDispButton(slotOwnerParam,"Stopping")
+		@sharedMem.SetDispButton(slotOwnerParam,"Seq Down")
 	end
 	
 	def setToRunMode(slotOwnerParam)
@@ -1542,7 +1542,7 @@ end
 		slotData = hash.to_json
 		@response = 
       RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
-		@sharedMem.SetDispButton(slotOwnerParam,"Running")
+		@sharedMem.SetDispButton(slotOwnerParam,"Seq Up")
 	end	
 
 	def parseTheConfigFile(config,configFileName)
