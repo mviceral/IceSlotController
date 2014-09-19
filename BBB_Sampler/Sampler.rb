@@ -1156,7 +1156,7 @@ class TCUSampler
             		    
             		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
             		    # by clearing it out.
-            		    @shareMem.SetConfiguration("","#{__LINE__}-#{__FILE__}") 
+            		    @shareMem.SetConfiguration(nil,"#{__LINE__}-#{__FILE__}") 
             		    gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
             		    skipLimboStateCheck = true
             		else
