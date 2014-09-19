@@ -24,7 +24,11 @@ class SharedMemory
     TimeOfPcLastCmd = "TimeOfPcLastCmd"
     SlotOwner = "SlotOwner"    
 
-    def freeLocked(strParam)
+    def writeAndFreeLocked(strParam, fromParam)
+        if @lockedAt == ""
+            puts "Memory not locked!  Called from [ #{fromParam} ]"
+            exit
+        end
 	    @lockedAt = ""
         # puts "Freeing locked memory. #{__LINE__}-#{__FILE__}"
         WriteLockedData(strParam.to_json)
@@ -33,26 +37,57 @@ class SharedMemory
         # puts "Check B. #{__LINE__}-#{__FILE__}"
     end
     
+=begin    
+    def freeLocked(fromParam)
+        # sourceLock - not used but for making sure data is considered.
+        if @lockedAt == ""
+            puts "Memory not locked!  Called from [ #{fromParam} ]"
+            exit
+        end
+	    @lockedAt = ""
+    end
+=end
+
+    def getMemory()
+        while @lockedAt.nil? == false && @lockedAt != ""
+            puts "It's locked at #{@lockedAt}"
+        end
+        return JSON.parse(GetDataV1())
+    end
+    
     def lockMemory(fromParam)
         # puts "Locking memory (from:#{fromParam}). #{__LINE__}-#{__FILE__}"
-    	if @lockedAt.nil? == false && @lockedAt != ""
-    		puts "Shared mem already locked at #{@lockedAt}"
-    		exit
-    	else
-    		@lockedAt = fromParam
-	    end
-        return JSON.parse(LockMemory())
+    	while @lockedAt.nil? == false && @lockedAt != ""
+            puts "Shared memory used at '#{@lockedAt}'."
+            sleep(1.0/1000.0)
+            # puts "Called from '#{fromParam}'."
+            # puts "Exiting code. @#{__LINE__}-#{__FILE__}"
+            # exit
+    	end
+    	
+    	@lockedAt = fromParam
+        begin
+        	# puts "From #{__LINE__}-#{__FILE__}"
+        	# puts "GetDataV1()=#{GetDataV1()}"
+        	ds = JSON.parse(LockMemory())
+        	# puts "A - good data #{__LINE__}-#{__FILE__}"
+        rescue
+            ds = Hash.new
+            puts "\n\n\nB - faulty data #{__LINE__}-#{__FILE__}"
+        end	    
+        return ds
     end
+
 
     #
     # Known functions of SharedMemoryExtension
     #
     def getPCShared()
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         if ds[SharedLib::PC].nil?
         	ds[SharedLib::PC] = Hash.new
         end
-        
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
         return ds[SharedLib::PC]
     end
     
@@ -60,7 +95,7 @@ class SharedMemory
 		stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotOwnerParam, allStepsCompletedAtParam, dispTotalStepDurationParam, adcInputParam, muxDataParam, tcuParam,eipsParam, errMsgParam)      
 		# puts "tcuParam = #{}"
 		# SharedLib.pause "Checking tcuParam", "#{__LINE__}-#{__FILE__}"
-				ds = getDS()
+		ds = lockMemory("#{__LINE__}-#{__FILE__}")
 		if ds[SharedLib::PC].nil?
 			ds[SharedLib::PC] = Hash.new
 		end
@@ -114,18 +149,18 @@ class SharedMemory
 				end
 			end
 
-			WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 		end
 	end
 
 	def GetDispButton(slotOwnerParam)
-		return getDS()[SharedLib::PC][slotOwnerParam][SharedLib::ButtonDisplay]
+		return lockMemory("#{__LINE__}-#{__FILE__}")[SharedLib::PC][slotOwnerParam][SharedLib::ButtonDisplay]
 	end
 
 	def SetDispButton(slotOwnerParam,toDisplay)
 		ds = lockMemory("#{__LINE__}-#{__FILE__}")
 		ds[SharedLib::PC][slotOwnerParam][SharedLib::ButtonDisplay] = toDisplay
-		freeLocked(ds.to_json);		
+		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");
 	end
 	def GetDispErrorMsg(slotOwnerParam)
 		# Display what ever un-acknowledged errors are in the record.
@@ -136,9 +171,9 @@ class SharedMemory
 			errorItem = `head -1 #{newErrLogFileName}`
 			#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
 			if errorItem.length > 0
-				ds = getDS()
+				ds = lockMemory("#{__LINE__}-#{__FILE__}")
 				ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(errorItem)
-				WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+				writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 			end
 		end
 
@@ -206,7 +241,7 @@ class SharedMemory
 =end
 	
 	def SetDispSlotOwner(slotOwnerParam)
-    		ds = getDS()
+    		ds = lockMemory("#{__LINE__}-#{__FILE__}")
 			if ds[SharedLib::PC].nil?
 				ds[SharedLib::PC] = Hash.new
 			end
@@ -214,7 +249,7 @@ class SharedMemory
 				ds[SharedLib::PC][slotOwnerParam] = Hash.new
 			end
 			ds[SharedLib::PC][SlotOwner] = slotOwnerParam
-			WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 	end		
 	def GetDispConfigurationFileName(slotOwnerParam)
 		if getPCShared()[slotOwnerParam].nil?
@@ -281,64 +316,64 @@ class SharedMemory
 	end
 		
     def SetAllStepsCompletedAt(allStepsCompletedAtParam)
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         ds[SharedLib::AllStepsCompletedAt] = allStepsCompletedAtParam
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
 
     def GetAllStepsCompletedAt()
-        return getDS[SharedLib::AllStepsCompletedAt]
+        return getMemory()[SharedLib::AllStepsCompletedAt]
     end
 
     def GetSlotTime(fromParam)
         # puts "A GetSlotTime got called. #{fromParam} @#{__LINE__}-#{__FILE__}"
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         # puts "B GetSlotTime got called. #{fromParam} @#{__LINE__}-#{__FILE__}"
         return ds[SharedLib::SlotTime]
     end
     
     def SetSlotTime(slotTimeParam)
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         ds[SharedLib::SlotTime] = slotTimeParam
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
     def GetStepTimeLeft
-    	return getDS()[SharedLib::StepTimeLeft]
+    	return getMemory()[SharedLib::StepTimeLeft]
     end 
     
     def SetStepTimeLeft(stepTotalTimeParam)
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         ds[SharedLib::StepTimeLeft] = stepTotalTimeParam
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
     def GetStepName()
-        return getDS()[SharedLib::StepName]
+        return getMemory()[SharedLib::StepName]
     end
     
     def SetStepName(stepNameParam)
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         ds[SharedLib::StepName] = stepNameParam
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
     def GetStepNumber()
-        return getDS()[SharedLib::StepNumber]
+        return getMemory()[SharedLib::StepNumber]
     end
     
     def SetStepNumber(stepNumberParam)
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         ds[SharedLib::StepNumber] = stepNumberParam
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
     def GetTimeOfPcUpload()
-        return getDS()[TimeOfPcUpload]
+        return lockMemory("#{__LINE__}-#{__FILE__}")[TimeOfPcUpload]
     end
     
     def GetConfiguration()
-        return getDS()["Configuration"]
+        return lockMemory("#{__LINE__}-#{__FILE__}")["Configuration"]
     end
     
     def pause(paramA,fromParam)
@@ -347,34 +382,34 @@ class SharedMemory
     end
 
     def SetConfigurationFileName(configurationFileNameParam)
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         ds[SharedLib::ConfigurationFileName] = configurationFileNameParam
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
 
     def GetConfigurationFileName()
-        return getDS()[SharedLib::ConfigurationFileName]
+        return getMemory()[SharedLib::ConfigurationFileName]
     end
 
     def GetDBaseFileName()    
-        return getDS()[SharedLib::DBaseFileName]
+        return lockMemory("#{__LINE__}-#{__FILE__}")[SharedLib::DBaseFileName]
     end
     
     def SetDBaseFileName(dBaseFileName)    
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         ds[SharedLib::DBaseFileName] = dBaseFileName
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
         
     def GetConfigDateUpload()
-        return getDS()[SharedLib::ConfigDateUpload]
+        return getMemory()[SharedLib::ConfigDateUpload]
     end
     
     def SetConfigDateUpload(configDateUploadParam)
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         # puts "configDateUploadParam=#{configDateUploadParam} #{__LINE__}-#{__FILE__}"
         ds[SharedLib::ConfigDateUpload] = configDateUploadParam
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
 
 	def	SetDataBoardToPc(hashParam)
@@ -384,7 +419,7 @@ class SharedMemory
 		if hash[SharedLib::ButtonDisplay].nil? == false
 			ds = lockMemory("#{__LINE__}-#{__FILE__}")
 			ds[SharedLib::PC][hash[SharedLib::SlotOwner]][SharedLib::ConfigurationFileName] = SharedLib::ButtonDisplay
-			freeLocked(ds)
+			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 		end
 
 		SetDispBoardData(
@@ -408,16 +443,16 @@ class SharedMemory
 	end
 
     def SetAllStepsDone_YesNo(allStepsDone_YesNoParam,fromParam)
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         #if allStepsDone_YesNoParam == SharedLib::Yes
         #    pause "Bingo! Called from #{fromParam}","#{__LINE__}-#{__FILE__}"
         #end
         ds[SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
     def GetAllStepsDone_YesNo()
-        return getDS()[SharedLib::AllStepsDone_YesNo]
+        return getMemory()[SharedLib::AllStepsDone_YesNo]
     end
 
     def ClearConfiguration(fromParam)
@@ -425,44 +460,45 @@ class SharedMemory
         # puts "Start 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
         SetConfigurationFileName("")
         SetConfigDateUpload("")
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
     	ds["Configuration"] = "" # Clears the configuration.
     	ds[TimeOfPcUpload] = Time.new.to_i
-        tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}") # tbr - to be returned
+        tbr = writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}") # tbr - to be returned
         SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
         # puts "Done 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
     end
     
     def GetTotalStepDuration()
-        ds = getDS()
+        ds = getMemory()
         if ds["Configuration"].nil?
+            ds = lockMemory("#{__LINE__}-#{__FILE__}")
             ds["Configuration"] = Hash.new
             
             if ds["Configuration"][SharedLib::TotalStepDuration].nil?
                 ds["Configuration"][SharedLib::TotalStepDuration] = ""
             end
-            WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+            writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
         end
         return ds["Configuration"][SharedLib::TotalStepDuration]
     end
     
     def GetSlotOwner()
-        return getDS()["SlotOwner"]
+        return getMemory()["SlotOwner"]
     end
     
     def SetSlotOwner(slotOwnerParam)
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         ds["SlotOwner"] = slotOwnerParam
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
         
     def SetConfiguration(dataParam,fromParam)
         configDataUpload = dataParam["ConfigDateUpload"]
         configurationFileName = dataParam["FileName"]
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
 
         # puts "SetConfiguration got called #{fromParam}"
-        # puts "A Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
+        # puts "A Within 'SetConfiguration' lockMemory()[TimeOfPcUpload] = #{lockMemory()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         ds[TimeOfPcUpload] = Time.new.to_i
         # puts "A.1 #{__LINE__}-#{__FILE__}"
         hold = dataParam
@@ -494,7 +530,7 @@ class SharedMemory
     	ds[SharedLib::ConfigurationFileName] = configurationFileName
     	# puts "Check 3 #{__LINE__}-#{__FILE__}"
         # puts "A.6 #{__LINE__}-#{__FILE__}"
-        # puts "B Within 'SetConfiguration' getDS()[TimeOfPcUpload] = #{getDS()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
+        # puts "B Within 'SetConfiguration' lockMemory()[TimeOfPcUpload] = #{lockMemory()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         configDateUpload = Time.at(configDataUpload.to_i)
     	# puts "Check 4 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
     	dBaseFileName = "#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{GetConfigurationFileName()}.db"
@@ -514,8 +550,8 @@ class SharedMemory
         end
         ds["SlotOwner"] = hold["SlotOwner"]
     	# puts "Check 9 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
-        tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
-        # puts "#{getDS()["Configuration"]} Checking Configuration content."
+        tbr = writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+        # puts "#{lockMemory()["Configuration"]} Checking Configuration content."
         return tbr
         rescue
     end
@@ -536,11 +572,11 @@ class SharedMemory
         if ds[SharedLib::ErrorMsg].nil? == false
             ds[SharedLib::ErrorMsg] = nil
         end
-        freeLocked(ds)
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
     def GetErrors()    
-        ds = getDS()
+        ds = getMemory()
         if ds[SharedLib::ErrorMsg].nil?
             return ""
         else
@@ -559,30 +595,30 @@ class SharedMemory
         errItem.push(Time.new.to_i)
         
         ds[SharedLib::ErrorMsg].push(errItem)
-        freeLocked(ds)
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
     def PopPcCmd()
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         tbr = ds[Cmd].shift # tbr - to be returned
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
         return tbr
     end
     
 	def GetPcCmd()
-	    pcCmd = getDS()[Cmd]
+	    pcCmd = getMemory()[Cmd]
 	    if pcCmd.class.to_s == "Array"
             return pcCmd
         else
-            ds = getDS()
+            ds = lockMemory("#{__LINE__}-#{__FILE__}")
             ds[Cmd] = Array.new
-            WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+            writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
             return ds[Cmd];
 	    end
 	end
 	
     def SetPcCmdThread(cmdParam,timeOfCmdParam)
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         if ds[Cmd].nil? || ds[Cmd].class.to_s != "Array"
             ds[Cmd] = Array.new
         end
@@ -596,13 +632,13 @@ class SharedMemory
             
             ds[Cmd].push(arrItem)
             
-            WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+            writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
             totalCmdInStack = ds[Cmd].length
             puts "Total sent cmds in stack: '#{totalCmdInStack}'"
     
             while ds[Cmd].length == totalCmdInStack
                 sleep(0.25)
-                ds = getDS()
+                ds = lockMemory("#{__LINE__}-#{__FILE__}")
                 puts "x Total sent cmds in stack: '#{ds[Cmd].length}'"
             end
             
@@ -622,75 +658,65 @@ class SharedMemory
     end
 
 	def GetBbbMode()
-        return getDS()[Mode]
+        return getMemory()[Mode]
     end
-    
-    def getDS() 
-        #
-        # Get the DS - data structure
-        #
-        # puts "fromParam=#{fromParam}"
-        begin
-        	# puts "From #{__LINE__}-#{__FILE__}"
-        	# puts "GetDataV1()=#{GetDataV1()}"
-        	ds = JSON.parse(GetDataV1()) # ds = data structure.
-        	# puts "A - good data #{__LINE__}-#{__FILE__}"
-        rescue
-          ds = Hash.new
-          puts "\n\n\nB - faulty data #{__LINE__}-#{__FILE__}"
-        end
-        return ds
-    end
-
 
     def SetTimeOfPcLastCmd(timeOfPcLastCmdParam,fromParam)
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         ds[TimeOfPcLastCmd] = timeOfPcLastCmdParam
-        tbr = WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        tbr = writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
         return tbr
     end
     
     def GetTimeOfPcLastCmd()
-        if getDS()[TimeOfPcLastCmd].nil?
+        if lockMemory("#{__LINE__}-#{__FILE__}")[TimeOfPcLastCmd].nil?
             SetTimeOfPcLastCmd(0,"#{__LINE__}-#{__FILE__}")
         end
-        return getDS()[TimeOfPcLastCmd]
+        return lockMemory("#{__LINE__}-#{__FILE__}")[TimeOfPcLastCmd]
     end
 
     def SetBbbMode(modeParam,calledFrom)
         # puts "param sent #{modeParam}"
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         oldModeParam = ds[Mode]
         print "Changing bbb mode from #{oldModeParam} to "
         ds[Mode] = "#{modeParam}"
         puts "#{modeParam} [#{calledFrom}]"
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
 
     def GetDataMuxData(fromParam)
         # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
-    	tbr = getDS()[SharedLib::MuxData] # tbr - to be returned
+    	tbr = getMemory()[SharedLib::MuxData] # tbr - to be returned
     	if tbr.nil?
-    		tbr = Hash.new()
+    	    ds = lockMemory("#{__LINE__}-#{__FILE__}")
+    		ds[SharedLib::MuxData] = Hash.new()
+            writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+    	    tbr = ds[SharedLib::MuxData] # tbr - to be returned
     	end
         return tbr
     end
     
     def GetDataAdcInput(fromParam)
         # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
-    	tbr = getDS()[SharedLib::AdcInput] # tbr - to be returned
-    	if tbr.nil?
-    		tbr = Hash.new()
+    	ds = getMemory()
+    	if ds[SharedLib::AdcInput].nil?
+    	    ds = lockMemory("#{__LINE__}-#{__FILE__}")
+    		ds[SharedLib::AdcInput] = Hash.new()
+            writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     	end
-        return tbr
+        return ds[SharedLib::AdcInput]
     end
 
 	
     def GetDataTcu(fromParam)
         # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
-    	tbr = getDS()[SharedLib::Tcu] # tbr - to be returned
+    	tbr = getMemory()[SharedLib::Tcu] # tbr - to be returned
     	if tbr.nil?
-    		tbr = Hash.new()
+    	    ds = lockMemory("#{__LINE__}-#{__FILE__}")
+    		ds[SharedLib::Tcu] = Hash.new()
+            writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+            tbr = ds[SharedLib::Tcu]
     	end
         return tbr
     end
@@ -702,88 +728,74 @@ class SharedMemory
     end
     
     def GetDataGpio
-        return getDS()[SharedLib::Gpio]
+        return getMemory()[SharedLib::Gpio]
     end
     
     def WriteDataGpio(stringParam, fromParam)
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         if ds[SharedLib::Gpio].nil?
             ds[SharedLib::Gpio] = Hash.new
         end
         
         ds[SharedLib::Gpio] = stringParam 
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
     def GetDataEips()
-        return getDS()[SharedLib::Eips]
+        return getMemory()[SharedLib::Eips]
     end
     
     def WriteDataEips(stringParam,fromParam)
         # Eips = Ethernet I (Current) PS
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         if ds[SharedLib::Eips].nil?
             ds[SharedLib::Eips] = Hash.new
         end
         
         ds[SharedLib::Eips] = stringParam 
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
     
     def WriteDataTcu(stringParam,fromParam)
         # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         if ds[SharedLib::Tcu].nil?
             ds[SharedLib::Tcu] = Hash.new
         end
         
         ds[SharedLib::Tcu] = stringParam 
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
-    
-    def WriteDataV1(stringParam, fromParam) # Changed function so other calls to it will fail and have to adhere to the new data 
-                                # structure
-        #   - Writes data to the shared memory.
-        #       return values:
-        #       0 - no error writing to memory.
-        #       1 - not initialized.  Run the function InitializeVariables(), first.
-        #       2 - sent String too long.  Not all data written in.
-        # puts "WriteDataV1 called from #{fromParam} #{__LINE__}-#{__FILE__}"
-        # puts "stringParam = #{stringParam}"
-        tbr = WriteDataToSharedMemory(stringParam)
-        return tbr
-    end 
-    
+
     def SetupData
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        
         if ds[SharedLib::AdcInput].nil?
-            puts "Got in B #{__LINE__}-#{__FILE__}"
             ds[SharedLib::AdcInput] = Hash.new
         end
 
         if ds[SharedLib::MuxData].nil?
-            puts "Got in C #{__LINE__}-#{__FILE__}"
             ds[SharedLib::MuxData] = Hash.new
         end
 
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
 
 	def SetButtonDisplayToNormal(buttonDispParam)
 		ds = lockMemory("#{__LINE__}-#{__FILE__}")
 		ds[SharedLib::ButtonDisplay] = buttonDispParam
-		freeLocked(ds.to_json);		
+		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");		
 	end
 
 	def GetButtonDisplayToNormal()
-		return getDS()[SharedLib::ButtonDisplay]
+		return getMemory()[SharedLib::ButtonDisplay]
 	end
 
     
     def SetData(dataTypeParam,indexParam,dataValueParam,multiplierParam)
         # puts "check A #{__LINE__}-#{__FILE__}"
-        ds = getDS()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         # puts "check B #{__LINE__}-#{__FILE__}"
         if ds[dataTypeParam].nil?
             # puts "ds[#{dataTypeParam}] is nil #{__LINE__}-#{__FILE__}"
@@ -792,12 +804,12 @@ class SharedMemory
         # puts "check C #{__LINE__}-#{__FILE__}"
         
         ds[dataTypeParam][indexParam.to_s] = (dataValueParam*multiplierParam[indexParam]).to_s
-        WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
         # puts "check D #{__LINE__}-#{__FILE__}"
         # PP.pp(ds)
         # puts "@setData.length=#{@setData.length}"
         # gets
-        # puts "WriteDataV1(@setData.to_json) = #{WriteDataV1(@setData.to_json)}"
+        # puts "writeAndFreeLocked(@setData) = #{writeAndFreeLocked(@setData)}"
     end
     
 =begin    
@@ -807,4 +819,4 @@ class SharedMemory
     end
 =end    
 end
-# 126
+# 638

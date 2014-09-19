@@ -901,7 +901,7 @@ class TCUSampler
     	initpollAdcInputFunc()
     	readInBbbDefaultsFile()
     	readInEthernetScheme()
-    	
+
         runThreadForSavingSlotStateEvery10Mins()
 
         # Setup the UART comm.
@@ -1036,7 +1036,6 @@ class TCUSampler
             end
             puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             @shareMem.SetSlotTime(Time.now.to_i)
-
             if skipLimboStateCheck
                 skipLimboStateCheck = false
             else
@@ -1166,11 +1165,12 @@ class TCUSampler
             		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
         		    setTimeOfPcLastCmd(@shareMem.GetTimeOfPcLastCmd())
         		    # @shareMem.SetClearButtonState()
-        		    SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
                     @shareMem.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    # Code block below tells the PcListener that it got the message.
 
                 end
+                
+        		SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
                 
 		        arrItem = Array.new
 		        arrItem.push(pcCmd)
