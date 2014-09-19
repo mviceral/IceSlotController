@@ -449,6 +449,7 @@ class TCUSampler
                 goodConnection = true
                 rescue
                     SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
+                    sleep(1.0)
             end
             tries += 1
         end
@@ -517,16 +518,18 @@ class TCUSampler
                                                         end
                                                         @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SocketIp] = @ethernetScheme[key[1..-1]].chomp
                     
-                                                        # Set the voltage
-                                                        # puts "voltage name = '#{key}', NomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} #{__LINE__}-#{__FILE__}"
-                                                        # print "VNomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} "
-                                                        @socketIp[host].print("SOUR:VOLT #{@stepToWorkOn["PsConfig"][key][NomSet]}\r\n")
-                    
-                                                        # Set the current
-                                                        # puts "current name = 'I#{key[1..-1]}', NomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
-                                                        # puts "INomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
-                                                        @socketIp[host].print("SOUR:CURR #{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]}\r\n")
-                                                        # SharedLib.pause "Checking value of @stepToWorkOn","#{__LINE__}-#{__FILE__}"
+                                                        if @socketIp[host]
+                                                            # Set the voltage
+                                                            # puts "voltage name = '#{key}', NomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                            # print "VNomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} "
+                                                            @socketIp[host].print("SOUR:VOLT #{@stepToWorkOn["PsConfig"][key][NomSet]}\r\n")
+                        
+                                                            # Set the current
+                                                            # puts "current name = 'I#{key[1..-1]}', NomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                            # puts "INomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                            @socketIp[host].print("SOUR:CURR #{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]}\r\n")
+                                                            # SharedLib.pause "Checking value of @stepToWorkOn","#{__LINE__}-#{__FILE__}"
+                                                        end
                                                     end
                                                 end
                                             end
@@ -697,8 +700,35 @@ class TCUSampler
             @pAinMux = AINPin.new(:P9_33)
             while aMux<48
                 retval = getMuxValue(aMux)
+                if aMux == 2
+                    useIndex = 4
+                elsif aMux == 3
+                    useIndex = 5
+                elsif aMux == 4
+                    useIndex = 2
+                elsif aMux == 5
+                    useIndex = 3
+                elsif aMux == 10
+                    useIndex = 12
+                elsif aMux == 11
+                    useIndex = 13
+                elsif aMux == 12
+                    useIndex = 10
+                elsif aMux == 13
+                    useIndex = 11
+                elsif aMux == 18
+                    useIndex = 20
+                elsif aMux == 19
+                    useIndex = 21
+                elsif aMux == 20
+                    useIndex = 18
+                elsif aMux == 21
+                    useIndex = 19
+                else
+                    useIndex = aMux
+                end
+                @shareMem.SetData(SharedLib::MuxData,useIndex,retval,@multiplier)
                 # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) "
-                @shareMem.SetData(SharedLib::MuxData,aMux,retval,@multiplier)
                 aMux += 1
             end
         else
@@ -1007,28 +1037,46 @@ class TCUSampler
             puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             @shareMem.SetSlotTime(Time.now.to_i)
 
-            if (@shareMem.GetBbbMode() == SharedLib::InRunMode || @shareMem.GetBbbMode() == SharedLib::InStopMode) == false  
-                #
-                # We're in limbo for some reason
-                #
-                puts "We're in limbo @shareMem.GetBbbMode()='#{@shareMem.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
-                loadConfigurationFromHoldingTank()
-                setBoardStateForCurrentStep()
-            end
-            
-            configName = @shareMem.GetConfigurationFileName()
-            if ((@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
-                 @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false) ||
-                 (configName.nil? == false && configName.length>0 && (stepNum.nil? || (stepNum.nil? ==false && stepNum.length==0)) && @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No)
-                loadConfigurationFromHoldingTank()
-                setBoardStateForCurrentStep()
-                if @stepToWorkOn.nil?
-                    setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
-                else
-                    setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
+            if skipLimboStateCheck
+                skipLimboStateCheck = false
+            else
+                if (@shareMem.GetBbbMode() == SharedLib::InRunMode || @shareMem.GetBbbMode() == SharedLib::InStopMode) == false  
+                    #
+                    # We're in limbo for some reason
+                    #
+                    puts "We're in limbo @shareMem.GetBbbMode()='#{@shareMem.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
+                    loadConfigurationFromHoldingTank()
+
+        		    case @lastPcCmd
+        		    when SharedLib::RunFromPc
+            		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
+        		    when SharedLib::StopFromPc
+        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+        		    when SharedLib::ClearConfigFromPc
+        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+        		    when SharedLib::LoadConfigFromPc
+        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		else
+        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		end
+
+                    setBoardStateForCurrentStep()
+                end
+                
+                configName = @shareMem.GetConfigurationFileName()
+                if ((@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
+                     @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false) ||
+                     (configName.nil? == false && configName.length>0 && (stepNum.nil? || (stepNum.nil? ==false && stepNum.length==0)) && @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No)
+                    loadConfigurationFromHoldingTank()
+                    setBoardStateForCurrentStep()
+                    if @stepToWorkOn.nil?
+                        setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
+                    else
+                        setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
+                    end
                 end
             end
-
+    
             
 			case @shareMem.GetBbbMode()
 			when SharedLib::InRunMode
@@ -1090,8 +1138,8 @@ class TCUSampler
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
         		    when SharedLib::ClearConfigFromPc
             		    setBoardData(Hash.new)
-        		        setBoardStateForCurrentStep()
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+        		        setBoardStateForCurrentStep()
             		    @shareMem.SetConfigurationFileName("")
             		    gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
         		    when SharedLib::LoadConfigFromPc
@@ -1103,20 +1151,23 @@ class TCUSampler
             		    @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
             		    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
+        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+        		        setBoardStateForCurrentStep()
             		    saveBoardStateToHoldingTank()
             		    
             		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
             		    # by clearing it out.
             		    @shareMem.SetConfiguration("","#{__LINE__}-#{__FILE__}") 
-        		        setBoardStateForCurrentStep()
-        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
             		    gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+            		    skipLimboStateCheck = true
             		else
             		    SharedLib.bbbLog("Unknown PC command @shareMem.GetPcCmd()='#{@shareMem.GetPcCmd()}'.")
             		end
             		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
         		    setTimeOfPcLastCmd(@shareMem.GetTimeOfPcLastCmd())
+        		    # @shareMem.SetClearButtonState()
         		    SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                    @shareMem.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    # Code block below tells the PcListener that it got the message.
 
                 end

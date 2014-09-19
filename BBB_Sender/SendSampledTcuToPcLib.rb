@@ -123,6 +123,10 @@ class SendSampledTcuToPCLib
         slotInfo[SharedLib::AllStepsCompletedAt] = sharedMemParam.GetAllStepsCompletedAt()
         slotInfo[SharedLib::TotalStepDuration] = sharedMemParam.GetTotalStepDuration();
         slotInfo[SharedLib::ErrorMsg] = sharedMemParam.GetErrors();
+        if GetButtonDisplayToNormal() != nil
+            slotInfo[SharedLib::ButtonDisplay] = GetButtonDisplayToNormal()
+            @sharedMemParam.SetButtonDisplayToNormal(nil)
+        end
         slotInfoJson = slotInfo.to_json
 		return slotInfoJson
 	end
