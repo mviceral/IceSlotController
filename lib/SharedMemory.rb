@@ -776,6 +776,21 @@ class SharedMemory
 		return getMemory()[SharedLib::ButtonDisplay]
 	end
 
+    def SetTotalTimeOfStepsInQueue(dataParam)
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        ds[SharedLib::TotalTimeOfStepsInQueue] = dataParam
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");		
+    end
+    
+    def GetTotalTimeOfStepsInQueue()
+		ds = getMemory("#{__LINE__}-#{__FILE__}")
+		if ds[SharedLib::TotalTimeOfStepsInQueue].nil?
+            ds = lockMemory("#{__LINE__}-#{__FILE__}")
+            ds[SharedLib::TotalTimeOfStepsInQueue] = 0
+		    writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");		
+		end
+		return ds
+    end
     
     def SetData(dataTypeParam,indexParam,dataValueParam,multiplierParam)
         # puts "check A #{__LINE__}-#{__FILE__}"

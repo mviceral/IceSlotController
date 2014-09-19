@@ -465,6 +465,7 @@ class TCUSampler
         @shareMem.SetStepTimeLeft("")
         @shareMem.SetStepName("")
         @shareMem.SetStepNumber("")
+        @shareMem.SetTotalTimeOfStepsInQueue()
         # puts "\n\n\ninitStepToWorkOnVar got called."
         # puts caller
         @stepToWorkOn = nil
@@ -482,10 +483,16 @@ class TCUSampler
                 getConfiguration()[Steps].each do |key, array|
 		            if @stepToWorkOn.nil?
                         getConfiguration()[Steps][key].each do |key2, array2|
-                            # if key2 == StepNum && getConfiguration()[Steps][key][key2].to_i == (stepNumber+1)
-                            #    SharedLib.pause "getConfiguration()[Steps][key][StepTimeLeft] = #{getConfiguration()[Steps][key][StepTimeLeft]}", "#{__LINE__}-#{__FILE__}"
-                            # end
-	                        #puts "A2 key2=#{key2} StepNum=#{StepNum} #{__LINE__}-#{__FILE__}"
+                            # Get the total time of Steps in queue
+                            if key2 == StepNum 
+                                if getConfiguration()[Steps][key][key2].to_i != (stepNumber+1) 
+                                    if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0
+                                        @shareMem.SetTotalTimeOfStepsInQueue(getConfiguration()[Steps][key][StepTimeLeft]+@shareMem.GetTotalTimeOfStepsInQueue())
+                                    end
+                                end
+                            end
+                            
+                            # Get which step to work on and setup the power supply settings.
                             if key2 == StepNum 
                                 if getConfiguration()[Steps][key][key2].to_i == (stepNumber+1) 
                                     # puts "A3 getConfiguration()[Steps][key][key2].to_i=#{getConfiguration()[Steps][key][key2].to_i} (stepNumber+1) =#{(stepNumber+1) } #{__LINE__}-#{__FILE__}"
@@ -1059,10 +1066,8 @@ class TCUSampler
             		else
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
             		end
-
                     setBoardStateForCurrentStep()
                 end
-                
                 configName = @shareMem.GetConfigurationFileName()
                 if ((@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
                      @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false) ||
@@ -1077,15 +1082,10 @@ class TCUSampler
                 end
             end
     
-            
 			case @shareMem.GetBbbMode()
 			when SharedLib::InRunMode
-			    # puts "InRunMode #{__LINE__}-#{__FILE__}"
-			    # puts "@boardData[SharedLib::AllStepsDone_YesNo]=#{@boardData[SharedLib::AllStepsDone_YesNo]} #{__LINE__}-#{__FILE__}"
 			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No
-			        # puts "@boardData[SharedLib::AllStepsDone_YesNo]=#{@boardData[SharedLib::AllStepsDone_YesNo]}  #{__LINE__}-#{__FILE__}"
     			    if @stepToWorkOn.nil?
-			            # puts "@stepToWorkOn.nil? is NIL #{__LINE__}-#{__FILE__}"
     			        # There are no more steps to process.
     			        # All the steps are done processing.
     			        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
@@ -1103,14 +1103,11 @@ class TCUSampler
                                 # There's more step to process
                     		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
                             else
-                                # puts "A @boardData[SharedLib::AllStepsCompletedAt] = #{@boardData[SharedLib::AllStepsCompletedAt]} #{__LINE__}-#{__FILE__}"
                                 @boardData[SharedLib::AllStepsCompletedAt] = Time.new.to_i
                                 setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
-                                # puts "B @boardData[SharedLib::AllStepsCompletedAt] = #{@boardData[SharedLib::AllStepsCompletedAt]} #{__LINE__}-#{__FILE__}"
-                                
+
                                 # Done processing all steps listed in configuration.step file
                                 saveBoardStateToHoldingTank()
-                                # puts "@shareMem.GetAllStepsCompletedAt() = #{@shareMem.GetAllStepsCompletedAt()} #{__LINE__}-#{__FILE__}"
                                 # We're done processing all the steps.
                             end
                         end
@@ -1119,7 +1116,7 @@ class TCUSampler
     			    setToMode(SharedLib::InStopMode,"#{__LINE__}-#{__FILE__}")
 			    end
             end
-            
+
     		if @shareMem.GetPcCmd().length != 0
     		    pcCmdObj = @shareMem.GetPcCmd()[0]
     		    pcCmd = pcCmdObj[0]
@@ -1190,23 +1187,16 @@ class TCUSampler
             # Gather data regardless of whether it's in run mode or not...
             #
             if @setupAtHome == false
-                #puts "A #{__LINE__}-#{__FILE__}"
                 pollAdcInput()
-                #puts "B #{__LINE__}-#{__FILE__}"
                 pollMuxValues()
-                #puts "C #{__LINE__}-#{__FILE__}"
                 ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
-                #puts "E #{__LINE__}-#{__FILE__}"
                 ThermalSiteDevices.logData
-                #puts "F #{__LINE__}-#{__FILE__}"
                 getEthernetPsCurrent()
-                #puts "G #{__LINE__}-#{__FILE__}"
             end
-            
+
             
         	# This line of code makes the 'Sender' process useless.  This gives the fastest time of data update to the display.
         	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
-
 =begin
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative

@@ -277,6 +277,7 @@ class GPIO2
   end
   
     def setGPIO2(addrParam, dataParam)
+=begin
         #
         # This function sets a value 'dataParam' on a given register address 'addrParam',
         #        
@@ -295,10 +296,7 @@ class GPIO2
             # inBits = getBits(@regValues[addrParam])
             # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : Current value."
         end
-=begin        
-        inBits = getBits(dataParam)
-        puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : Setting to."
-=end        
+
         @regValues[addrParam] = dataParam
         # inBits = getBits(@regValues[addrParam])
         # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : New value."
@@ -316,7 +314,8 @@ class GPIO2
             rescue Exception => e  
                 # puts e.message  
                 # puts e.backtrace.inspect  
-        end        
+        end
+=end        
         sendToPort2(addrParam,dataParam)
         # End of 'def setGPIO2(addrParam, dataParam)'
     end

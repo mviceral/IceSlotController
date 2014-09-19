@@ -16,7 +16,8 @@ class SharedLib
 	ErrorMsg = "ErrorMsg"
 	ButtonDisplay = "ButtonDisplay"
 	NormalButtonDisplay = "NormalButtonDisplay"
-
+	TotalTimeOfStepsInQueue = "TotalTimeOfStepsInQueue"
+	
 	#
 	# Constants used for sending data to PC
 	#

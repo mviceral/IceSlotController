@@ -123,6 +123,7 @@ class SendSampledTcuToPCLib
         slotInfo[SharedLib::AllStepsCompletedAt] = sharedMemParam.GetAllStepsCompletedAt()
         slotInfo[SharedLib::TotalStepDuration] = sharedMemParam.GetTotalStepDuration();
         slotInfo[SharedLib::ErrorMsg] = sharedMemParam.GetErrors();
+        slotInfo[SharedLib::TotalTimeOfStepsInQueue] = sharedMemParam.GetTotalTimeOfStepsInQueue()
         if sharedMemParam.GetButtonDisplayToNormal() != nil
             slotInfo[SharedLib::ButtonDisplay] = sharedMemParam.GetButtonDisplayToNormal()
             sharedMemParam.SetButtonDisplayToNormal(nil)
