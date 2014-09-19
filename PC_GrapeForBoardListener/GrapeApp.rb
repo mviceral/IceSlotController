@@ -83,6 +83,8 @@ module MigrationCount
 
 						puts "\n\n\n"
 						puts "Display button = '#{sharedMem.GetDispButton(hash[SharedLib::SlotOwner])}'"
+						print "TotalTimeOfStepsInQueue ="
+puts " '#{sharedMem.GetDispTotalTimeOfStepsInQueue(hash[SharedLib::SlotOwner])}'"
 						puts "ConfigurationFileName = #{sharedMem.GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}"
 						puts "ConfigDateUpload = #{sharedMem.GetDispConfigDateUpload(hash[SharedLib::SlotOwner])}"
 						puts "AllStepsDone_YesNo = #{sharedMem.GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner])}"

@@ -91,16 +91,17 @@ class SharedMemory
     # Known functions of SharedMemoryExtension
     #
     def getPCShared()
-        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+	ds = getMemory()
         if ds[SharedLib::PC].nil?
+        	ds = lockMemory("#{__LINE__}-#{__FILE__}")
         	ds[SharedLib::PC] = Hash.new
+        	writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
         end
-        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
         return ds[SharedLib::PC]
     end
     
 	def SetDispBoardData(configurationFileNameParam, configDateUploadParam, allStepsDone_YesNoParam, bbbModeParam,
-		stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotOwnerParam, allStepsCompletedAtParam, dispTotalStepDurationParam, adcInputParam, muxDataParam, tcuParam,eipsParam, errMsgParam)      
+		stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotOwnerParam, allStepsCompletedAtParam, dispTotalStepDurationParam, adcInputParam, muxDataParam, tcuParam,eipsParam, errMsgParam,totalTimeOfStepsInQueue)      
 		# puts "tcuParam = #{}"
 		# SharedLib.pause "Checking tcuParam", "#{__LINE__}-#{__FILE__}"
 		ds = lockMemory("#{__LINE__}-#{__FILE__}")
@@ -112,6 +113,7 @@ class SharedMemory
 				ds[SharedLib::PC][slotOwnerParam] = Hash.new
 			end
 
+			ds[SharedLib::PC][slotOwnerParam][SharedLib::TotalTimeOfStepsInQueue] = totalTimeOfStepsInQueue 
 			ds[SharedLib::PC][slotOwnerParam][SharedLib::ConfigurationFileName] = configurationFileNameParam 
 			ds[SharedLib::PC][slotOwnerParam][SharedLib::ConfigDateUpload] = configDateUploadParam
 			ds[SharedLib::PC][slotOwnerParam][SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
@@ -159,6 +161,10 @@ class SharedMemory
 
 			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 		end
+	end
+
+	def GetDispTotalTimeOfStepsInQueue(slotOwnerParam)
+		return getMemory()[SharedLib::PC][slotOwnerParam][SharedLib::TotalTimeOfStepsInQueue]
 	end
 
 	def GetDispButton(slotOwnerParam)
@@ -423,7 +429,6 @@ class SharedMemory
 	def SetDataBoardToPc(hashParam)
 		hash = hashParam
     
-
 		if hash[SharedLib::ButtonDisplay].nil? == false
 			ds = lockMemory("#{__LINE__}-#{__FILE__}")
 			ds[SharedLib::PC][hash[SharedLib::SlotOwner]][SharedLib::ButtonDisplay] = hash[SharedLib::ButtonDisplay]
@@ -446,8 +451,8 @@ class SharedMemory
 			hash[SharedLib::MuxData],
 			hash[SharedLib::Tcu],
 			hash[SharedLib::Eips],
-			hash[SharedLib::ErrorMsg]
-			)
+			hash[SharedLib::ErrorMsg],
+			hash[SharedLib::TotalTimeOfStepsInQueue])
 	end
 
     def SetAllStepsDone_YesNo(allStepsDone_YesNoParam,fromParam)

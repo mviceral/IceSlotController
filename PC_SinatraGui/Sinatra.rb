@@ -102,9 +102,9 @@ class UserInterface
 	
 	def clearErrorSlot(slotOwnerParam)
 		puts "clearErrorSlot(slotOwnerParam) got called. slotOwnerParam='#{slotOwnerParam}' SharedLib::ErrorMsg='#{SharedLib::ErrorMsg}'"
-		ds = @sharedMem.getDS()
+		ds = @sharedMem.lockMemory("#{__LINE__}-#{__FILE__}")
 		ds[SharedLib::PC][slotOwnerParam][SharedLib::ErrorMsg] = nil
-		@sharedMem.WriteDataV1(ds.to_json,"#{__LINE__}-#{__FILE__}")
+		@sharedMem.writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 	end
 
 	def getBoardIp(slotParam)
@@ -415,8 +415,19 @@ class UserInterface
 	def GetDurationLeft(slotLabel2Param)
 		# If the button state is Stop, subtract the total time between now and TimeOfRun, then 
 		if @sharedMem.GetDispStepTimeLeft(slotLabel2Param).nil? == false
-			totalMins = @sharedMem.GetDispStepTimeLeft(slotLabel2Param).to_i/60
-			totalSec = @sharedMem.GetDispStepTimeLeft(slotLabel2Param).to_i-60*totalMins
+			totMinsInQueue = @sharedMem.GetDispTotalTimeOfStepsInQueue(slotLabel2Param).to_i
+			totMinsInQueue += @sharedMem.GetDispStepTimeLeft(slotLabel2Param).to_i
+			totalMins = (totMinsInQueue)/60
+			totalSec = totMinsInQueue-60*totalMins
+			totalSec = totalSec.to_s
+			if totalSec.length<2
+				totalSec = "0"+totalSec
+			end
+
+			totalMins = totalMins.to_s
+			if totalMins.length<2
+				totalMins = "0"+totalMins
+			end
 			return "#{totalMins}:#{totalSec} (mm:ss)"
 		else 
 		end
@@ -1043,6 +1054,16 @@ class UserInterface
 						<font size=\"1.25\" style=\"font-style: italic;\">"
 							min = @sharedMem.GetDispTotalStepDuration(slotLabel2Param).to_i/60
 							sec = @sharedMem.GetDispTotalStepDuration(slotLabel2Param).to_i - (min*60)
+							min = min.to_s
+							sec = sec.to_s
+
+							if min.length < 2
+								min = "0"+min
+							end
+							
+							if sec.length < 2
+								sec = "0"+sec
+							end
 			topTable += "		#{min}:#{sec} (mm:ss)
 						</font>								
 					</td>
@@ -1053,7 +1074,7 @@ class UserInterface
 			topTable += "								
 					<tr>
 						<td align=\"left\">
-								<font size=\"1\">Duration Left:</font>
+								<font size=\"1\">Total Duration Left:</font>
 						</td>
 					</tr>
 					<tr>
