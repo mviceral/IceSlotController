@@ -25,7 +25,7 @@ class SharedMemory
     SlotOwner = "SlotOwner"    
 
     def freeLocked(strParam)
-	@lockedAt = ""
+	    @lockedAt = ""
         # puts "Freeing locked memory. #{__LINE__}-#{__FILE__}"
         WriteLockedData(strParam.to_json)
         # puts "Check A. #{__LINE__}-#{__FILE__}"
@@ -35,12 +35,12 @@ class SharedMemory
     
     def lockMemory(fromParam)
         # puts "Locking memory (from:#{fromParam}). #{__LINE__}-#{__FILE__}"
-	if @lockedAt != ""
-		puts "Shared mem already locked at #{@lockedAt}"
-		exit
-	else
-		@lockedAt = fromParam
-	end
+    	if @lockedAt.nil? == false && @lockedAt != ""
+    		puts "Shared mem already locked at #{@lockedAt}"
+    		exit
+    	else
+    		@lockedAt = fromParam
+	    end
         return JSON.parse(LockMemory())
     end
 
