@@ -81,6 +81,8 @@ module MigrationCount
 						sharedMem.SetDataBoardToPc(hash)
 						sharedMem.SetDispSlotOwner(hash[SharedLib::SlotOwner])
 
+						puts "\n\n\n"
+						puts "Display button = '#{sharedMem.GetDispButton(hash[SharedLib::SlotOwner])}'"
 						puts "ConfigurationFileName = #{sharedMem.GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}"
 						puts "ConfigDateUpload = #{sharedMem.GetDispConfigDateUpload(hash[SharedLib::SlotOwner])}"
 						puts "AllStepsDone_YesNo = #{sharedMem.GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner])}"
@@ -88,15 +90,14 @@ module MigrationCount
 						puts "StepName = #{sharedMem.GetDispStepName(hash[SharedLib::SlotOwner])}"
 						puts "StepNumber = #{sharedMem.GetDispStepNumber(hash[SharedLib::SlotOwner])}"
 						puts "StepTotalTime = #{sharedMem.GetDispStepTimeLeft(hash[SharedLib::SlotOwner])}"
-						puts "SlotTime = #{sharedMem.GetDispSlotTime(hash[SharedLib::SlotOwner])}"
 						puts "SlotIpAddress = #{sharedMem.GetDispSlotIpAddress(hash[SharedLib::SlotOwner])}"
-						puts "SlotTime = #{sharedMem.GetDispSlotTime(hash[SharedLib::SlotOwner])}"
-						puts "AdcInput = #{sharedMem.GetDispAdcInput(hash[SharedLib::SlotOwner])}"
+						puts "SlotTime = #{Time.at(sharedMem.GetDispSlotTime(hash[SharedLib::SlotOwner]).to_i).inspect}"
+						# puts "AdcInput = #{sharedMem.GetDispAdcInput(hash[SharedLib::SlotOwner])}"
 						puts "MuxData = #{sharedMem.GetDispMuxData(hash[SharedLib::SlotOwner])}"
-						puts "Tcu = #{sharedMem.GetDispTcu(hash[SharedLib::SlotOwner])}"
+						# puts "Tcu = #{sharedMem.GetDispTcu(hash[SharedLib::SlotOwner])}"
 						puts "AllStepsCompletedAt = #{sharedMem.GetDispAllStepsCompletedAt(hash[SharedLib::SlotOwner])}"
 						puts "TotalStepDuration = #{sharedMem.GetDispTotalStepDuration(hash[SharedLib::SlotOwner])}"
-						puts "Eips = #{sharedMem.GetDispEips(hash[SharedLib::SlotOwner])}"
+						# puts "Eips = #{sharedMem.GetDispEips(hash[SharedLib::SlotOwner])}"
 						configDateUpload = Time.at(sharedMem.GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
 						dBaseFileName = "../steps log records/#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}.db"
 						runningOnCentos = true

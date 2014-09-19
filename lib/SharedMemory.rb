@@ -413,13 +413,13 @@ class SharedMemory
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
 
-	def	SetDataBoardToPc(hashParam)
+	def SetDataBoardToPc(hashParam)
 		hash = hashParam
     
 
 		if hash[SharedLib::ButtonDisplay].nil? == false
 			ds = lockMemory("#{__LINE__}-#{__FILE__}")
-			ds[SharedLib::PC][hash[SharedLib::SlotOwner]][SharedLib::ConfigurationFileName] = SharedLib::ButtonDisplay
+			ds[SharedLib::PC][hash[SharedLib::SlotOwner]][SharedLib::ButtonDisplay] = hash[SharedLib::ButtonDisplay]
 			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 		end
 
