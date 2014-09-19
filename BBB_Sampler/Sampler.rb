@@ -897,6 +897,7 @@ class TCUSampler
     	
         @shareMem = SharedMemory.new
     	@shareMem.SetupData()
+    	@shareMem.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
     	initMuxValueFunc()
     	initpollAdcInputFunc()
     	readInBbbDefaultsFile()
@@ -1130,6 +1131,7 @@ class TCUSampler
     		        # getTimeOfPcLastCmd() < @shareMem.GetTimeOfPcLastCmd()
         		    puts "\n\n\nNew command from PC - '#{pcCmd}' @shareMem.GetPcCmd().length='#{@shareMem.GetPcCmd().length}'  #{__LINE__}-#{__FILE__}"
         		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
+                    @shareMem.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    case pcCmd
         		    when SharedLib::RunFromPc
             		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
@@ -1164,8 +1166,6 @@ class TCUSampler
             		end
             		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
         		    setTimeOfPcLastCmd(@shareMem.GetTimeOfPcLastCmd())
-        		    # @shareMem.SetClearButtonState()
-                    @shareMem.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    # Code block below tells the PcListener that it got the message.
 
                 end

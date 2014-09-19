@@ -497,22 +497,13 @@ class SharedMemory
         configDataUpload = dataParam["ConfigDateUpload"]
         configurationFileName = dataParam["FileName"]
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
-        puts "A #{__LINE__}-#{__FILE__}"
-        # puts "SetConfiguration got called #{fromParam}"
-        # puts "A Within 'SetConfiguration' lockMemory()[TimeOfPcUpload] = #{lockMemory()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         ds[TimeOfPcUpload] = Time.new.to_i
-        puts "B #{__LINE__}-#{__FILE__}"
-        # puts "A.1 #{__LINE__}-#{__FILE__}"
         hold = dataParam
-        puts "C #{__LINE__}-#{__FILE__}"
-        # puts "A.2 #{__LINE__}-#{__FILE__}"
         #
         # Setup the TotalTimeLeft in the steps, and make sure that the variables for TimeOfRun
         # are initialized per step also.
         # 
-        # PP.pp(hold["Steps"])
         totalStepDuration = 0
-        puts "D #{__LINE__}-#{__FILE__}"
         if hold.nil? == false
             hold["Steps"].each do |key, array|
                 puts "E #{__LINE__}-#{__FILE__}"
@@ -520,57 +511,28 @@ class SharedMemory
                 totalStepDuration += hold["Steps"][key]["StepTimeLeft"]
             end
         end
-        # pause("Checking contents of steps within SetConfiguration function.","#{__LINE__}-#{__FILE__}")
-        
-        puts "F #{__LINE__}-#{__FILE__}"
         ds["Configuration"] = hold
-        puts "G #{__LINE__}-#{__FILE__}"
         ds["Configuration"][SharedLib::TotalStepDuration] = totalStepDuration
-        puts "H #{__LINE__}-#{__FILE__}"
-        # puts "A.5 #{__LINE__}-#{__FILE__}"
-    	# puts "Check 1 #{__LINE__}-#{__FILE__}"
         ds[SharedLib::ConfigDateUpload] = configDataUpload
-        puts "I #{__LINE__}-#{__FILE__}"
-    	# puts "Check 2 #{__LINE__}-#{__FILE__}"
     	ds[SharedLib::ConfigurationFileName] = configurationFileName
-        puts "J #{__LINE__}-#{__FILE__}"
-    	# puts "Check 3 #{__LINE__}-#{__FILE__}"
-        # puts "A.6 #{__LINE__}-#{__FILE__}"
-        # puts "B Within 'SetConfiguration' lockMemory()[TimeOfPcUpload] = #{lockMemory()[TimeOfPcUpload]} #{__LINE__}-#{__FILE__}"
         configDateUpload = Time.at(configDataUpload.to_i)
-        puts "K #{__LINE__}-#{__FILE__}"
-    	# puts "Check 4 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
         
     	dBaseFileName = "#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{GetConfigurationFileName()}.db"
     	
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
-        puts "L #{__LINE__}-#{__FILE__}"
-    	# puts "Check 5 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
         ds[SharedLib::DBaseFileName] = dBaseFileName
-        puts "M #{__LINE__}-#{__FILE__}"
-    	# puts "Check 6 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
         db = SQLite3::Database.new( "/mnt/card/#{ds[SharedLib::DBaseFileName]}" )
-        puts "N #{__LINE__}-#{__FILE__}"
         if db.nil?
-        puts "O #{__LINE__}-#{__FILE__}"
-    	    # puts "Check 7 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
             SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
         else
-        puts "P #{__LINE__}-#{__FILE__}"
-    	    # puts "Check 8 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
             SharedLib.bbbLog "Creating table. #{__LINE__}-#{__FILE__}"
                 db.execute("create table log ("+
             "idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
             ");")
         end
-        puts "Q #{__LINE__}-#{__FILE__}"
         ds["SlotOwner"] = hold["SlotOwner"]
-        puts "R #{__LINE__}-#{__FILE__}"
-    	# puts "Check 9 configDateUpload='#{configDateUpload}' #{__LINE__}-#{__FILE__}"
         tbr = writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-        puts "S #{__LINE__}-#{__FILE__}"
-        # puts "#{lockMemory()["Configuration"]} Checking Configuration content."
         return tbr
         rescue
     end
