@@ -53,7 +53,14 @@ class SharedMemory
             puts "It's locked at #{@lockedAt}"
             sleep(1)
         end
-        return JSON.parse(GetDataV1())
+        
+        begin
+            ds = JSON.parse(GetDataV1())
+            rescue
+            ds = lockMemory(fromParam)
+            writeAndFreeLocked(ds, fromParam)
+        end
+        return ds
     end
     
     def lockMemory(fromParam)
@@ -783,13 +790,13 @@ class SharedMemory
     end
     
     def GetTotalTimeOfStepsInQueue()
-		ds = getMemory("#{__LINE__}-#{__FILE__}")
+		ds = getMemory()
 		if ds[SharedLib::TotalTimeOfStepsInQueue].nil?
             ds = lockMemory("#{__LINE__}-#{__FILE__}")
             ds[SharedLib::TotalTimeOfStepsInQueue] = 0
 		    writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");		
 		end
-		return ds
+		return ds[SharedLib::TotalTimeOfStepsInQueue]
     end
     
     def SetData(dataTypeParam,indexParam,dataValueParam,multiplierParam)

@@ -456,7 +456,7 @@ class TCUSampler
         if tries == 5
             @socketIp[host] = nil
             # Show a message to the PC that Ethernet PS on IP=host can't be accessed.  Show the time too of incident too.
-            @shareMem.ReportError("Cannot open Ethernet power supply socket on IP='host'.  This power supply will be disabled.")
+            @shareMem.ReportError("Cannot open Ethernet power supply socket on IP='#{host}'.  This power supply will be disabled.")
         	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
         end
     end                                                            
@@ -465,13 +465,12 @@ class TCUSampler
         @shareMem.SetStepTimeLeft("")
         @shareMem.SetStepName("")
         @shareMem.SetStepNumber("")
-        @shareMem.SetTotalTimeOfStepsInQueue()
+        @shareMem.SetTotalTimeOfStepsInQueue(0.0)
         # puts "\n\n\ninitStepToWorkOnVar got called."
         # puts caller
         @stepToWorkOn = nil
-        #
+
         # Setup the @stepToWorkOn
-        #
 	    stepNumber = 0
 	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
 	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
@@ -483,15 +482,6 @@ class TCUSampler
                 getConfiguration()[Steps].each do |key, array|
 		            if @stepToWorkOn.nil?
                         getConfiguration()[Steps][key].each do |key2, array2|
-                            # Get the total time of Steps in queue
-                            if key2 == StepNum 
-                                if getConfiguration()[Steps][key][key2].to_i != (stepNumber+1) 
-                                    if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0
-                                        @shareMem.SetTotalTimeOfStepsInQueue(getConfiguration()[Steps][key][StepTimeLeft]+@shareMem.GetTotalTimeOfStepsInQueue())
-                                    end
-                                end
-                            end
-                            
                             # Get which step to work on and setup the power supply settings.
                             if key2 == StepNum 
                                 if getConfiguration()[Steps][key][key2].to_i == (stepNumber+1) 
@@ -559,9 +549,35 @@ class TCUSampler
 	        # puts "G #{__LINE__}-#{__FILE__}"
 	        stepNumber += 1
 	    end
-	    # puts "H #{__LINE__}-#{__FILE__}"
-        # puts "I #{__LINE__}-#{__FILE__}"
-        
+
+        # Setup the total time still to go on the step queue
+        hash = Hash.new
+	    stepNumber = 0
+	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
+	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
+	    	stepNumber<getConfiguration()["Steps"].length 
+	    	# puts "A0 #{__LINE__}-#{__FILE__}"
+            # puts "A1 #{__LINE__}-#{__FILE__}"
+            getConfiguration()[Steps].each do |key, array|
+                getConfiguration()[Steps][key].each do |key2, array2|
+                    # Get the total time of Steps in queue
+                    if key2 == StepNum 
+                        if @stepToWorkOn != getConfiguration()[Steps][key]
+                            if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0 && hash[key].nil?
+                                puts "Add time #{getConfiguration()[Steps][key][StepTimeLeft]} key='#{key}' @shareMem.GetTotalTimeOfStepsInQueue()='#{@shareMem.GetTotalTimeOfStepsInQueue()}'"
+                                hash[key] = key
+                                @shareMem.SetTotalTimeOfStepsInQueue(getConfiguration()[Steps][key][StepTimeLeft].to_f+@shareMem.GetTotalTimeOfStepsInQueue().to_f)
+                                puts "New total @shareMem.GetTotalTimeOfStepsInQueue()='#{@shareMem.GetTotalTimeOfStepsInQueue()}'"
+                            end
+                        end
+                    end
+                end
+	            # puts "E #{__LINE__}-#{__FILE__}"
+            end
+	        # puts "G #{__LINE__}-#{__FILE__}"
+	        stepNumber += 1
+	    end
+
         # if @stepToWorkOn.nil?
         #   setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
         # else
@@ -1145,7 +1161,7 @@ class TCUSampler
             		    SharedLib.bbbLog("New configuration step file uploaded.")
             		    setBoardData(Hash.new)
             		    @boardData[Configuration] = @shareMem.GetConfiguration()
-            		    puts "#{@boardData[Configuration]} - Checking @boardData[Configuration] content."
+            		    # puts "#{@boardData[Configuration]} - Checking @boardData[Configuration] content."
             		    @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
             		    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
