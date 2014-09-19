@@ -415,7 +415,8 @@ class UserInterface
 	def GetDurationLeft(slotLabel2Param)
 		# If the button state is Stop, subtract the total time between now and TimeOfRun, then 
 		if @sharedMem.GetDispStepTimeLeft(slotLabel2Param).nil? == false
-			totalMins = @sharedMem.GetDispStepTimeLeft(slotLabel2Param).to_i/60
+			totMinsInQueue = @sharedMem.GetDispTotalTimeOfStepsInQueue(slotLabel2Param).to_i
+			totalMins = (totMinsInQueue+@sharedMem.GetDispStepTimeLeft(slotLabel2Param).to_i)/60
 			totalSec = @sharedMem.GetDispStepTimeLeft(slotLabel2Param).to_i-60*totalMins
 			return "#{totalMins}:#{totalSec} (mm:ss)"
 		else 
@@ -1053,7 +1054,7 @@ class UserInterface
 			topTable += "								
 					<tr>
 						<td align=\"left\">
-								<font size=\"1\">Duration Left:</font>
+								<font size=\"1\">Total Duration Left:</font>
 						</td>
 					</tr>
 					<tr>
