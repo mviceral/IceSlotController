@@ -62,19 +62,20 @@ class DutObj
                     #
 =end                
             end
+            puts "dutNumParam=#{dutNumParam}, tbr=#{tbr} #{__LINE__}-#{__FILE__}"
             return tbr
         end
     end
     
     def poll(dutNumParam, uart1Param,gPIO2)
-        #puts "within poll. dutNumParam=#{dutNumParam}"
+        puts "within poll. dutNumParam=#{dutNumParam}"
         # gets
         @statusResponse[dutNumParam] = getTcuStatus(dutNumParam, uart1Param,gPIO2)
-        # puts "dutNumParam=#{dutNumParam} @statusResponse[dutNumParam]=#{@statusResponse[dutNumParam]} #{__LINE__}-#{__FILE__}"
+        puts "dutNumParam=#{dutNumParam} @statusResponse[dutNumParam]=#{@statusResponse[dutNumParam]} #{__LINE__}-#{__FILE__}"
         #puts "Leaving poll. dutNumParam=#{dutNumParam}"
     end
 
-    def saveAllData(timeNowParam)
+    def saveAllData(parentMemory, timeNowParam)
         dutNum = 0;
         allDutData = "";
         while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do
@@ -100,7 +101,8 @@ class DutObj
 		# allDutData = "-BBB#{timeNow}"+allDutData
 		allDutData = "-"+allDutData
 		# puts "Poll A #{Time.now.inspect}"
-        @sharedMem.WriteDataTcu(allDutData,"#{__LINE__}-#{__FILE__}")
+        # @sharedMem.WriteDataTcu(allDutData,"#{__LINE__}-#{__FILE__}")
+        parentMemory.WriteDataTcu(allDutData,"#{__LINE__}-#{__FILE__}")
 		# puts "Poll B #{Time.now.inspect}"
         
         # End of 'def poll()'

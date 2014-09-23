@@ -31,9 +31,9 @@ class SharedMemory
         end
 	    @lockedAt = ""
         # puts "Freeing locked memory. #{__LINE__}-#{__FILE__}"
-        WriteLockedData(strParam.to_json)
+        # @theMemory = strParam.to_json
+        @theMemory = strParam
         # puts "Check A. #{__LINE__}-#{__FILE__}"
-        FreeMemory();
         # puts "Check B. #{__LINE__}-#{__FILE__}"
     end
     
@@ -55,10 +55,14 @@ class SharedMemory
         end
         
         begin
-            ds = JSON.parse(GetDataV1())
+            # ds = JSON.parse(@theMemory)
+            if @theMemory.nil?
+                @theMemory = Hash.new
+            end
+            ds = @theMemory
             rescue
-            ds = lockMemory(fromParam)
-            writeAndFreeLocked(ds, fromParam)
+            ds = lockMemory("#{__LINE__}-#{__FILE__}")
+            writeAndFreeLocked(ds, "#{__LINE__}-#{__FILE__}")
         end
         return ds
     end
@@ -77,7 +81,12 @@ class SharedMemory
         begin
         	# puts "From #{__LINE__}-#{__FILE__}"
         	# puts "GetDataV1()=#{GetDataV1()}"
-        	ds = JSON.parse(LockMemory())
+        	# ds = JSON.parse(@theMemory)
+        	if @theMemory.nil?
+        	    @theMemory = Hash.new
+        	end
+        	ds = @theMemory
+                    	
         	# puts "A - good data #{__LINE__}-#{__FILE__}"
         rescue
             ds = Hash.new
@@ -470,7 +479,7 @@ class SharedMemory
 
     def ClearConfiguration(fromParam)
         # puts "called from #{fromParam}"
-        # puts "Start 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
+        puts "Start 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
         SetConfigurationFileName("")
         SetConfigDateUpload("")
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
@@ -478,7 +487,7 @@ class SharedMemory
     	ds[TimeOfPcUpload] = Time.new.to_i
         tbr = writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}") # tbr - to be returned
         SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
-        # puts "Done 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
+        puts "Done 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
     end
     
     def GetTotalStepDuration()
@@ -705,18 +714,6 @@ class SharedMemory
     end
 
 	
-    def GetDataTcu(fromParam)
-        # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
-    	tbr = getMemory()[SharedLib::Tcu] # tbr - to be returned
-    	if tbr.nil?
-    	    ds = lockMemory("#{__LINE__}-#{__FILE__}")
-    		ds[SharedLib::Tcu] = Hash.new()
-            writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-            tbr = ds[SharedLib::Tcu]
-    	end
-        return tbr
-    end
-
     def GetDataV1() # Changed function so other calls to it will fail and have to adhere to the new data structure
         #   - Gets the data sitting in the shared memory.
         #   - If it returns "", the function InitializeSharedMemory() is probably not called, or there is no data.
@@ -752,9 +749,21 @@ class SharedMemory
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
+    def GetDataTcu(fromParam)
+        # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
+    	tbr = getMemory()[SharedLib::Tcu] # tbr - to be returned
+    	if tbr.nil?
+    	    ds = lockMemory("#{__LINE__}-#{__FILE__}")
+    		ds[SharedLib::Tcu] = Hash.new()
+            writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+    	    tbr = ds[SharedLib::Tcu]
+    	end
+        return tbr
+    end
+
     
     def WriteDataTcu(stringParam,fromParam)
-        # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
+        puts "stringParam='#{stringParam}' fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
         if ds[SharedLib::Tcu].nil?
             ds[SharedLib::Tcu] = Hash.new
@@ -762,6 +771,7 @@ class SharedMemory
         
         ds[SharedLib::Tcu] = stringParam 
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+        puts "Check = '#{GetDataTcu("#{__LINE__}-#{__FILE__}")}'  #{__LINE__}-#{__FILE__}"
     end
 
     def SetupData

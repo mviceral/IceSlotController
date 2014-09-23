@@ -63,18 +63,58 @@ module PcListenerModule
 			#
 			post "/" do
 				if params["#{SharedLib::PcToBbbCmd}"].nil? == false
+					# We got a new command from the PC
+					# See of the 'Sampler' is running
+					ct = 0
+					processNum = ""
+					while ct < 5
+						filePath = '/tmp/bbbTcuSamplerLock.txt'
+						if File.exist?(filePath)
+							ct = 5 # The file exists.  Close the loop.
+							File.open(filePath, "r") do |f|
+							  f.each_line do |line|
+							    processNum = line
+							    processNum = processNum.chomp
+							  end
+							end
+						else
+							# The file does not exist.
+						end
+						ct += 1
+					end
+					
 					#
 					# Parse out the data sent from BBB
 					#
-					mode = params["#{SharedLib::PcToBbbCmd}"]
+					hash = Hash.new
+					hash["Cmd"] = params["#{SharedLib::PcToBbbCmd}"]
 					puts "\n\n\n"
 					
 					#
 					#	Tell sampler to Run if mode = run, Stop if mode = stop, etc.
 					#
-					puts "PC sent '#{mode}'"
+					puts "PC sent '#{hash["Cmd"]}'"
 					sharedMem = SharedMemory.new()
-					hash = JSON.parse(params["#{SharedLib::PcToBbbData}"])
+					hash["Data"] = JSON.parse(params["#{SharedLib::PcToBbbData}"])
+					puts "A processNum = '#{processNum}'  forEcho = #{hash.to_json}"
+					forEcho = SharedLib.makeUriFriendly(hash.to_json)
+					puts "B processNum = '#{processNum}'  forEcho = #{forEcho}"
+			        #
+			        # Send data to real time register data viewer
+			        #
+			        hostname = 'localhost'
+			        port = 2000
+			        begin
+			            s = TCPSocket.open(hostname, port)
+			            
+			            s.puts "#{forEcho}"
+			            s.close               # Close the socket when done
+			            rescue Exception => e  
+			                puts e.message  
+			                puts e.backtrace.inspect  
+			        end
+			        puts "Suppose to have sent."
+					return
 					sharedMem.SetSlotOwner(hash["SlotOwner"])
 					case mode
 					when SharedLib::ClearConfigFromPc
