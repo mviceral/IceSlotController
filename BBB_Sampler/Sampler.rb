@@ -630,7 +630,7 @@ class TCUSampler
                 client = server.accept       # Wait for a client to connect
                 @mutex.synchronize do
                     puts "D Running 'runThreadForPcCmdInput()'"
-                    clientStr = SharedLib.uriToStr(client.gets).chomp
+                    clientStr = client.gets.chomp
                     puts "E uritostr = '#{clientStr}'"
                     hashSocket = JSON.parse(clientStr)
                     puts "f uritostr = '#{clientStr}'"
@@ -1210,8 +1210,15 @@ class TCUSampler
                 		    @shareMem.SetConfigurationFileName("")
                 		    gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
             		    when SharedLib::LoadConfigFromPc
+            		        # close the sockets of the Ethernet PS if they're on.
+            		        if @socketIp.nil? == false
+                                @socketIp.each do |key, array|
+                                    @socketIp[key].close
+                                end                		    
+            		        end
             		        @socketIp = nil
-                		    SharedLib.bbbLog("New configuration step file uploaded.")
+            		        
+                            SharedLib.bbbLog("New configuration step file uploaded.")
                 		    setBoardData(Hash.new)
                 		    @boardData[Configuration] = @shareMem.GetConfiguration()
                 		    # puts "#{@boardData[Configuration]} - Checking @boardData[Configuration] content."

@@ -23,12 +23,12 @@ class ThermalSiteDevices
     end
     
     def pollDevices(uart1,gPIO2,tcusToSkip)
-        puts "A - "+Time.now.inspect+" - ThermalSiteDevices.pollDevices function got called."
-        puts "tcusToSkip='#{tcusToSkip}' TOTAL_DUTS_TO_LOOK_AT='#{TOTAL_DUTS_TO_LOOK_AT}'"
+        # puts "A - "+Time.now.inspect+" - ThermalSiteDevices.pollDevices function got called."
+        # puts "tcusToSkip='#{tcusToSkip}' TOTAL_DUTS_TO_LOOK_AT='#{TOTAL_DUTS_TO_LOOK_AT}'"
         dutNum = 0;
         while  dutNum<TOTAL_DUTS_TO_LOOK_AT do
             if  tcusToSkip[dutNum].nil?  
-                puts "B - dutNum='#{dutNum}' #{__LINE__}-#{__FILE__}"
+                # puts "B - dutNum='#{dutNum}' #{__LINE__}-#{__FILE__}"
                 dBase.poll(dutNum,uart1,gPIO2)
             end
             dutNum +=1;

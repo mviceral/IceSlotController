@@ -97,7 +97,7 @@ module PcListenerModule
 					sharedMem = SharedMemory.new()
 					hash["Data"] = JSON.parse(params["#{SharedLib::PcToBbbData}"])
 					puts "A processNum = '#{processNum}'  forEcho = #{hash.to_json}"
-					forEcho = SharedLib.makeUriFriendly(hash.to_json)
+					forEcho = hash.to_json
 					puts "B processNum = '#{processNum}'  forEcho = #{forEcho}"
 			        #
 			        # Send data to real time register data viewer
@@ -113,7 +113,7 @@ module PcListenerModule
 			                puts e.message  
 			                puts e.backtrace.inspect  
 			        end
-			        puts "Suppose to have sent."
+			        puts "Done sending."
 					return
 					sharedMem.SetSlotOwner(hash["SlotOwner"])
 					case mode
