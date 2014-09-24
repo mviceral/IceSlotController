@@ -23,7 +23,7 @@ class TestPanelGui
 		# 
 		#
 		begin
-			latestBbbState = RestClient.get "http://192.168.7.2:8000/v1/bbbsetter/"
+			latestBbbState = RestClient.get "http://192.168.7.2:7000/v1/bbbsetter/"
 			#
 			# latestBbbState is what you save into the share memory in the PC.
 			#

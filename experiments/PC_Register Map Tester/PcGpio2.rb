@@ -34,7 +34,7 @@ class PcGpio
 		fromSharedMem = @sharedGpio2.GetData()
 		parsed = JSON.parse(fromSharedMem["BbbShared".length..-1])
 		parsed[addrParam.to_s] = dataParam
-    @response = RestClient.post "http://192.168.7.2:8000/v1/bbbsetter/", 
+    @response = RestClient.post "http://192.168.7.2:7000/v1/bbbsetter/", 
     {addr:"#{addrParam}", data:"#{dataParam}" }.to_json, :content_type => :json, :accept => :json
 	  returnedValue = @sharedGpio2.WriteData("BbbShared"+@response)
 	  # End of 'def setGPIO2(addrParam, dataParam)'

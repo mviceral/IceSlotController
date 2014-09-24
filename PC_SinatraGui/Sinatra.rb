@@ -26,11 +26,14 @@ require 'json'
 require 'rest_client'
 require_relative '../lib/SharedLib'
 require_relative '../lib/SharedMemory'
+require_relative '../PC_GrapeForBoardListener/ServerLib'
 require 'pp' # Pretty print to see the hash values.
+require 'drb/drb'
 
 # set :sharedMem, SharedMemory.new()
 
 class UserInterface
+	SERVER_URI = "druby://localhost:8787"
 	StepConfigFileFolder = "../steps\ config\ file\ repository"
 	BbbPcListener = 'http://192.168.7.2'
 	# BbbPcListener = 'http://192.168.1.211'
@@ -574,7 +577,6 @@ class UserInterface
 	end
 
 	def initialize		
-		@sharedMem = SharedMemory.new
 		# end of 'def initialize'
 	end
 
@@ -1138,6 +1140,10 @@ end
 	end
 	
 	def display
+		# Get a fresh data...
+		DRb.start_service
+		@dataStructure = DRbObject.new_with_uri(SERVER_URI)
+		@sharedMem = @dataStructure.getSharedMem(SharedLib::MemAccessor)
 		displayForm = ""
 		displayForm =  "	
 	<style>

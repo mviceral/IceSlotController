@@ -125,6 +125,9 @@ class SharedLib
 	Tcu	= "T" # for TCU
 	Gpio = "G" # for general purpose IO values
 	Eips = "E" # for Ethernet I (current) ps
+
+	# Shared memory accessor
+	MemAccessor = "MemAccessor"
     
     #
     # Functions
