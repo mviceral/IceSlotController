@@ -314,7 +314,7 @@ class TCUSampler
                     sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)/1000)
                     puts "sleep for '#{(@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)}'"
                 end
-                # sleep(1)
+                # sleep(3)
             end
         end
     end
@@ -451,7 +451,7 @@ class TCUSampler
                 goodConnection = true
                 rescue
                     SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
-                    sleep(1.0)
+                    sleep(0.5)
             end
             tries += 1
         end
@@ -621,12 +621,12 @@ class TCUSampler
     end
     
     def runThreadForPcCmdInput()
-        puts "A Running 'runThreadForPcCmdInput()'"
+        # puts "A Running 'runThreadForPcCmdInput()'"
         pcCmdInput = Thread.new do
-            puts "B Running 'runThreadForPcCmdInput()'"
+            # puts "B Running 'runThreadForPcCmdInput()'"
             server = TCPServer.open(2000)  # Socket to listen on port 2000
             loop {                         # Servers run forever
-                puts "C Running 'runThreadForPcCmdInput()'"
+                # puts "C Running 'runThreadForPcCmdInput()'"
                 client = server.accept       # Wait for a client to connect
                 @mutex.synchronize do
                     puts "D Running 'runThreadForPcCmdInput()'"
@@ -1266,12 +1266,12 @@ class TCUSampler
                 
             	# This line of code makes the 'Sender' process useless.  This gives the fastest time of data update to the display.
             	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
-=begin
                 #
                 # What if there was a hiccup and waitTime-Time.now becomes negative
                 # The code ensures that the process is exactly going to take place at the given interval.  No lag that
                 # takes place on processing data.
                 #
+=begin                
                 if (waitTime-Time.now)<0
                     #
                     # The code fix for the scenario above.  I can't get it to activate the code below, unless
@@ -1307,7 +1307,7 @@ class TCUSampler
                         end
                     end
                 end
-=end    
+=end                
             end # for the mutex
         end
 

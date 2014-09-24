@@ -20,15 +20,30 @@ class DutObj
         #
         # Code block for ensuring that status request is sent and the expected response is received.
         #
+        line = ""
         while keepLooping
             begin
                 complete_results = Timeout.timeout(0.1) do      
+                    keepLooping = true
+                    while keepLooping
+                        c = uart1Param.readchar
+                        if c!="\n"
+                            line += c
+                        else
+                            tbr = line
+                            line = ""
+                            keepLooping = false
+                        end
+                    end
+                        
+=begin                    
                     uart1Param.each_line { 
                         |line| 
                         tbr = line
                         keepLooping = false     # loops out of the keepLooping loop.
                         break if line =~ /^@/   # loops out of the each_line loop.
                     }
+=end                    
                 end
                 rescue Timeout::Error
                     puts "Timed out Error. dutNumParam=#{dutNumParam}"
