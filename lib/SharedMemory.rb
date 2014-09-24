@@ -561,14 +561,10 @@ class SharedMemory
     end
     
     def Initialize()
-	@lockedAt = ""
-        InitializeSharedMemory()
+    	@lockedAt = ""
     end
     
     def initialize()
-        #   - This function initialized the shared memory variables.  If not called, the functions below will be rendered 
-        #   useless.
-        InitializeSharedMemory()
     end 
     
     def ClearErrors()
