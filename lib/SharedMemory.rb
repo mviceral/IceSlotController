@@ -2,18 +2,20 @@
 # To run:
 # clear; ruby extconf.rb ; make; ruby myRubyTest.rb
 #
-require_relative 'SharedMemoryExtension.so'
+#require_relative 'SharedMemoryExtension.so'
 require_relative '../lib/SharedLib'
 #require 'singleton'
 #require 'forwardable'
 require 'json'
 require 'pp'
+require 'drb/drb'
 
 # V1 - version 1
 # Adding the mode of the BBB
 
 class SharedMemory 
-    include SharedMemoryExtension
+    include DRb::DRbUndumped
+#    include SharedMemoryExtension
 #    include Singleton
     
     Mode = "Mode"
