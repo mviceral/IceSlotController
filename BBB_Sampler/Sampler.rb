@@ -803,6 +803,7 @@ class TCUSampler
                 @shareMem.SetData(SharedLib::MuxData,useIndex,retval,@multiplier)
                 # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) "
                 aMux += 1
+                # sleep(1)
             end
         else
             # The code is not initialized to run this function

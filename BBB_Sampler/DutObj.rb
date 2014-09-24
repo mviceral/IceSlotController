@@ -12,7 +12,6 @@ class DutObj
     
     def getTcuStatus(dutNumParam,uart1Param,gPIO2)
         gPIO2.etsRxSel(dutNumParam)
-        # sleep(10/1000)
         tbr = "" # tbr - to be returned
         uartStatusCmd = "S?\n"
         uart1Param.write("#{uartStatusCmd}");
@@ -97,6 +96,7 @@ class DutObj
                 ""
             end
 =end            
+        sleep(0.01)
             return tbr
         #end
     end

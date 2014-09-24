@@ -103,7 +103,7 @@ class TestBench
                 @pAinMux = AINPin.new(:P9_33)
                 while aMux<48
                     readValue = getMuxValue(aMux)
-                    puts "AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*aMuxMultiplier[aMux]/1000.0).round(4)} V'"
+                    puts "AMUX CH (0x#{aMux.to_s(16)}/#{aMux}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*aMuxMultiplier[aMux]/1000.0).round(4)} V'"
                     # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) AIN4='#{readValue/1000.0} V' - Adjusted: '#{(readValue*aMuxMultiplier[aMux]/1000.0).round(4)} V'"
                     aMux += 1
                 end
