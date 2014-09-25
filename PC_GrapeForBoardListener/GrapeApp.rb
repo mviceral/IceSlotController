@@ -68,7 +68,8 @@ module MigrationCount
 						hash = JSON.parse(receivedData)
 
 						DRb.start_service
-						@sharedMem = DRbObject.new_with_uri(SERVER_URI)
+						sharedMemService = DRbObject.new_with_uri(SERVER_URI)
+						@sharedMem = sharedMemService.getSharedMem()		 
 						@sharedMem.setDataFromBoardToPc(hash)
 						######################
 						rescue Exception => e

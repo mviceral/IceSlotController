@@ -577,6 +577,8 @@ class UserInterface
 	end
 
 	def initialize		
+		DRb.start_service
+		@sharedMemService = DRbObject.new_with_uri(SERVER_URI)
 		# end of 'def initialize'
 	end
 
@@ -1141,8 +1143,7 @@ end
 	
 	def display
 		# Get a fresh data...
-		DRb.start_service
-		@sharedMem = DRbObject.new_with_uri(SERVER_URI)
+		@sharedMem = @sharedMemService.getSharedMem()		 
 		displayForm =  "	
 	<style>
 	#slotA
@@ -1193,7 +1194,7 @@ end
 	}
 	
 	// setInterval(function(){loadXMLDoc()},10000);
-	setInterval(function(){loadXMLDoc()},2000);  
+	setInterval(function(){loadXMLDoc()},1000);  
 	</script>
 
 	<div id=\"myDiv\">

@@ -7,11 +7,19 @@ require_relative '../lib/SharedMemory'
 # garbage collected!
 class LoggerFactory
 	def initialize()
-		@data = SharedMemory.new
+		@data = {}
 	end
 	
 	def getSharedMem()
-		return @data
+		# An existing data can be looked up by name
+		# to prevent data from being garbage collected.  A dRuby
+		# reference to an object is not sufficient to prevent it being
+		# garbage collected!
+		name = "TheSharedMemObject"
+		if !@data.has_key? name
+		    @data[name] = SharedMemory.new
+		end
+		return @data[name]
 	end	
 end
 
