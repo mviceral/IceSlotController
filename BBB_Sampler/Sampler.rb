@@ -1202,14 +1202,17 @@ class TCUSampler
             		    case pcCmd
             		    when SharedLib::RunFromPc
                 		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
+                		    
             		    when SharedLib::StopFromPc
             		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		        
             		    when SharedLib::ClearConfigFromPc
                 		    setBoardData(Hash.new)
             		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
             		        setBoardStateForCurrentStep()
                 		    @shareMem.SetConfigurationFileName("")
                 		    gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+                		    
             		    when SharedLib::LoadConfigFromPc
             		        # close the sockets of the Ethernet PS if they're on.
             		        if @socketIp.nil? == false
