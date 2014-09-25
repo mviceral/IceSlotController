@@ -3,7 +3,7 @@ require_relative '../lib/SharedMemory'
 
 URI="druby://localhost:8787"
 
-FRONT_OBJECT=SharedMemory.new("Hello World here.")
+FRONT_OBJECT=SharedMemory.new()
 
 $SAFE = 1   # disable eval() and friends
 
