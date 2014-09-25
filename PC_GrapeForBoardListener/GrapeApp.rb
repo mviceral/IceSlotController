@@ -22,7 +22,6 @@ module MigrationCount
 		attr_accessor :quantity
 
 		def initialize
-			@quantity = 0
 		end
 
 		# This bit of magic makes it so you don't have to say
@@ -41,6 +40,9 @@ module MigrationCount
 
 	# This is the Grape REST API implementation
 	class API < Grape::API
+		puts "Calling DRb.start_service."
+		DRb.start_service			
+		@@sharedMemService =  DRbObject.new_with_uri(SERVER_URI)
 		# This makes it so you have to specifiy the API version in the
 		# path string
 		version 'v1', using: :path
@@ -67,10 +69,8 @@ module MigrationCount
 						receivedData = params['Duts']
 						hash = JSON.parse(receivedData)
 
-						DRb.start_service
-						sharedMemService = DRbObject.new_with_uri(SERVER_URI)
-						@sharedMem = sharedMemService.getSharedMem()		 
-						@sharedMem.setDataFromBoardToPc(hash)
+						sharedMem = @@sharedMemService.getSharedMem()		 
+						sharedMem.setDataFromBoardToPc(hash)
 						######################
 						rescue Exception => e
 							# The data didn't parse properly.  Do nothing.
