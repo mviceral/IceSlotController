@@ -25,17 +25,18 @@ require 'sqlite3'
 require 'json'
 require 'rest_client'
 require_relative '../lib/SharedLib'
+require_relative '../PC_DRbServer/ServerLib'
 require_relative '../lib/SharedMemory'
-require_relative '../PC_GrapeForBoardListener/ServerLib'
+#require_relative '../PC_GrapeForBoardListener/ServerLib'
 require 'pp' # Pretty print to see the hash values.
 require 'drb/drb'
 
 # set :sharedMem, SharedMemory.new()
 
 class UserInterface
-	SERVER_URI = "druby://localhost:8787"
 	StepConfigFileFolder = "../steps\ config\ file\ repository"
 	BbbPcListener = 'http://192.168.7.2'
+	SERVER_URI="druby://localhost:8787"
 	# BbbPcListener = 'http://192.168.1.211'
 	LinuxBoxPcListener = "localhost"
 	PcListener = BbbPcListener # Chose which ethernet address the PcListener is sitting on.
@@ -818,7 +819,7 @@ class UserInterface
 		return slotLabelParam.delete(' ')
 	end
 	
-	def GetSlotDisplay (slotLabelParam,slotLabel2Param)
+	def GetSlotDisplay(slotLabelParam,slotLabel2Param)
 		setSlotOwner(slotLabel2Param)
 		getSlotDisplay_ToBeReturned = ""
 		getSlotDisplay_ToBeReturned += 	
@@ -913,7 +914,7 @@ class UserInterface
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell(slotLabel2Param)+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
 		getSlotDisplay_ToBeReturned += 	"</table>"		
-		
+		errMsg = @sharedMem.GetDispErrorMsg(slotLabel2Param)
 		topTable = "
 			<table>
 				<tr><td></td><td/></tr>
@@ -927,7 +928,7 @@ class UserInterface
 								</td>
 								<td>&nbsp;</td>
 								<td style=\"border:1px solid black; border-collapse:collapse; width: 95%;\">
-									<font size=\"1\" color=\"red\"/>#{@sharedMem.GetDispErrorMsg(slotLabel2Param)}
+									<font size=\"1\" color=\"red\"/>#{errMsg}
 								</td>
 								<td>
 									<button onclick=\"window.location='/AckError?slot=#{slotLabel2Param}'\" style=\"height:20px;
@@ -1142,9 +1143,7 @@ end
 	def display
 		# Get a fresh data...
 		DRb.start_service
-		@dataStructure = DRbObject.new_with_uri(SERVER_URI)
-		@sharedMem = @dataStructure.getSharedMem(SharedLib::MemAccessor)
-		displayForm = ""
+		@sharedMem = DRbObject.new_with_uri(SERVER_URI)
 		displayForm =  "	
 	<style>
 	#slotA

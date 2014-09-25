@@ -187,18 +187,102 @@ class SharedMemory
 		ds[SharedLib::PC][slotOwnerParam][SharedLib::ButtonDisplay] = toDisplay
 		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");
 	end
+
+	def setDataFromBoardToPc(hash)
+		# puts "hash[SharedLib::SlotOwner].nil? = #{hash[SharedLib::SlotOwner].nil?}"
+		if (hash[SharedLib::SlotOwner].nil? == false &&
+		       (hash[SharedLib::SlotOwner] != SharedLib::SLOT1 &&
+			hash[SharedLib::SlotOwner] != SharedLib::SLOT2 &&
+			hash[SharedLib::SlotOwner] != SharedLib::SLOT3) == true) || hash[SharedLib::SlotOwner].nil?
+			# Flush out the  memory...
+			# @data.WriteDataV1("","")
+			hash[SharedLib::SlotOwner] = "SLOT1"
+		end
+		SetDataBoardToPc(hash)
+		SetDispSlotOwner(hash[SharedLib::SlotOwner])
+
+		puts "\n\n\n"
+		puts "Display button = '#{GetDispButton(hash[SharedLib::SlotOwner])}'"
+		print "TotalTimeOfStepsInQueue ="
+puts " '#{GetDispTotalTimeOfStepsInQueue(hash[SharedLib::SlotOwner])}'"
+		puts "ConfigurationFileName = #{GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}"
+		puts "ConfigDateUpload = #{GetDispConfigDateUpload(hash[SharedLib::SlotOwner])}"
+		puts "AllStepsDone_YesNo = #{GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner])}"
+		puts "BbbMode = #{GetDispBbbMode(hash[SharedLib::SlotOwner])}"
+		puts "StepName = #{GetDispStepName(hash[SharedLib::SlotOwner])}"
+		puts "StepNumber = #{GetDispStepNumber(hash[SharedLib::SlotOwner])}"
+		puts "StepTotalTime = #{GetDispStepTimeLeft(hash[SharedLib::SlotOwner])}"
+		puts "SlotIpAddress = #{GetDispSlotIpAddress(hash[SharedLib::SlotOwner])}"
+		puts "SlotTime = #{Time.at(GetDispSlotTime(hash[SharedLib::SlotOwner]).to_i).inspect}"
+		# puts "AdcInput = #{GetDispAdcInput(hash[SharedLib::SlotOwner])}"
+		puts "MuxData = #{GetDispMuxData(hash[SharedLib::SlotOwner])}"
+		puts "Tcu = #{GetDispTcu(hash[SharedLib::SlotOwner])}"
+		puts "AllStepsCompletedAt = #{GetDispAllStepsCompletedAt(hash[SharedLib::SlotOwner])}"
+		puts "TotalStepDuration = #{GetDispTotalStepDuration(hash[SharedLib::SlotOwner])}"
+		# puts "Eips = #{GetDispEips(hash[SharedLib::SlotOwner])}"
+		configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
+		dBaseFileName = "../steps log records/#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}.db"
+		runningOnCentos = true
+		if runningOnCentos == false
+			if File.file?("#{dBaseFileName}") == false
+				# The file does not exists.
+				dbRecord = SQLite3::Database.new( "#{dBaseFileName}" )
+				if dbRecord.nil?
+					SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
+				else
+						dbRecord.execute("create table log ("+
+						"idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
+						");")
+				end
+			else
+				# The file already exists.
+				dbRecord = SQLite3::Database.open dBaseFileName
+			end
+
+			forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(receivedData)
+
+			str = "Insert into log(idLogTime, data) "+
+			"values(#{GetDispSlotTime()},\"#{forDbase}\")"
+
+			puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
+			begin
+				dbRecord.execute "#{str}"
+				rescue SQLite3::Exception => e 
+				puts "\n\n"
+				SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
+				SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
+				# End of 'rescue SQLite3::Exception => e'
+				ensure
+
+				# End of 'begin' code block that will handle exceptions...
+			end
+		else
+			if GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner]) == SharedLib::No && 
+				GetDispBbbMode(hash[SharedLib::SlotOwner]) == SharedLib::InRunMode
+				str = "#{GetDispSlotTime(hash[SharedLib::SlotOwner])},#{receivedData}"
+				open("#{dBaseFileName}", 'a') { |f|
+				  f.puts "#{str}"
+				}
+			end
+		end
+	end
+
 	def GetDispErrorMsg(slotOwnerParam)
 		# Display what ever un-acknowledged errors are in the record.
 		pcShared = getPCShared()
 		slotOwner = slotOwnerParam
 		if pcShared[slotOwner].nil? == false && pcShared[slotOwner][SharedLib::ErrorMsg].nil?
-			newErrLogFileName = "../NewErrors_#{slotOwner}.log"
-			errorItem = `head -1 #{newErrLogFileName}`
-			#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
-			if errorItem.length > 0
-				ds = lockMemory("#{__LINE__}-#{__FILE__}")
-				ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(errorItem)
-				writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+			begin
+				newErrLogFileName = "../NewErrors_#{slotOwner}.log"
+				errorItem = `head -1 #{newErrLogFileName}`
+				#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
+				if errorItem.length > 0
+					ds = lockMemory("#{__LINE__}-#{__FILE__}")
+					ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(errorItem)
+					writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+				end
+				rescue Exception => e  
+		                puts "e.message=#{e.message }"
 			end
 		end
 
@@ -207,6 +291,8 @@ class SharedMemory
 		end
 		errItem = pcShared[slotOwner][SharedLib::ErrorMsg]
 		return "&nbsp;&nbsp;#{Time.at(errItem[1]).inspect} - #{errItem[0]}"
+		rescue
+			return ""
 	end
 
 	def GetDispStepTimeLeft(slotOwnerParam)

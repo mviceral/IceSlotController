@@ -6,11 +6,13 @@ require 'pp'
 require 'drb/drb'
 # require 'sqlite3'
 require_relative '../lib/SharedMemory'
-require_relative 'ServerLib'
+require_relative '../PC_DRbServer/ServerLib'
 
 # If you set this true, it will put out some debugging info to STDOUT
 # (usually the termninal that you started rackup with)
 $debug = true 
+
+SERVER_URI="druby://localhost:8787"
 
 module MigrationCount
 	# This is the resource we're managing. Not perssistant!
@@ -64,9 +66,10 @@ module MigrationCount
 						#
 						receivedData = params['Duts']
 						hash = JSON.parse(receivedData)
+
 						DRb.start_service
-						dataStructure = DRbObject.new_with_uri(SERVER_URI)
-						dataStructure.setData(hash,SharedLib::MemAccessor)
+						@sharedMem = DRbObject.new_with_uri(SERVER_URI)
+						@sharedMem.setDataFromBoardToPc(hash)
 						######################
 						rescue Exception => e
 							# The data didn't parse properly.  Do nothing.
