@@ -23,10 +23,14 @@ class ThermalSiteDevices
     end
     
     def pollDevices(uart1,gPIO2,tcusToSkip)
-        # puts Time.now.inspect+" - ThermalSiteDevices.pollDevices function got called."
+        # puts "A - "+Time.now.inspect+" - ThermalSiteDevices.pollDevices function got called."
+        # puts "tcusToSkip='#{tcusToSkip}' TOTAL_DUTS_TO_LOOK_AT='#{TOTAL_DUTS_TO_LOOK_AT}'"
         dutNum = 0;
-        while  dutNum<TOTAL_DUTS_TO_LOOK_AT && tcusToSkip[dutNum].nil?  do
-            dBase.poll(dutNum,uart1,gPIO2)
+        while  dutNum<TOTAL_DUTS_TO_LOOK_AT do
+            if  tcusToSkip[dutNum].nil?  
+                # puts "B - dutNum='#{dutNum}' #{__LINE__}-#{__FILE__}"
+                dBase.poll(dutNum,uart1,gPIO2)
+            end
             dutNum +=1;
         end            
         # End of 'def PollDevices'
@@ -36,10 +40,10 @@ class ThermalSiteDevices
         # End of 'def analyzeData'  
     end
     
-    def logData
+    def logData(parentMemory)
         # Did we get the data?
         # puts "   #{Time.now.to_f.inspect} - ThermalSiteDevices.logData function got called A."
-        dBase.saveAllData(Time.now)
+        dBase.saveAllData(parentMemory,Time.now)
         # puts "   #{Time.now.to_f.inspect} - ThermalSiteDevices.logData function got called B."
         # End of 'def logData'
     end

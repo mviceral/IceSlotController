@@ -4,7 +4,7 @@ require 'grape'
 #require 'forwardable'
 require 'pp'
 require 'sqlite3'
-require_relative "../BBB_GPIO2 Interface Ruby/GPIO2"
+require_relative "../../lib/BBB_GPIO2 Interface Ruby/GPIO2"
 
 # If you set this true, it will put out some debugging info to STDOUT
 # (usually the termninal that you started rackup with)

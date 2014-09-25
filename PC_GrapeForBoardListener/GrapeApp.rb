@@ -3,12 +3,16 @@ require 'grape'
 require 'singleton'
 require 'forwardable'
 require 'pp'
+require 'drb/drb'
 # require 'sqlite3'
 require_relative '../lib/SharedMemory'
+require_relative '../PC_DRbServer/ServerLib'
 
 # If you set this true, it will put out some debugging info to STDOUT
 # (usually the termninal that you started rackup with)
 $debug = true 
+
+SERVER_URI="druby://localhost:8787"
 
 module MigrationCount
 	# This is the resource we're managing. Not perssistant!
@@ -18,7 +22,6 @@ module MigrationCount
 		attr_accessor :quantity
 
 		def initialize
-			@quantity = 0
 		end
 
 		# This bit of magic makes it so you don't have to say
@@ -37,6 +40,9 @@ module MigrationCount
 
 	# This is the Grape REST API implementation
 	class API < Grape::API
+		puts "Calling DRb.start_service."
+		DRb.start_service			
+		@@sharedMemService =  DRbObject.new_with_uri(SERVER_URI)
 		# This makes it so you have to specifiy the API version in the
 		# path string
 		version 'v1', using: :path
@@ -56,83 +62,20 @@ module MigrationCount
 			#
 			post "/Duts" do
 				if params["Duts"]
-					#
-					# Parse out the data sent from the board					
-					#
-					receivedData = params['Duts']
 					begin
+						#
+						# Parse out the data sent from the board					
+						#
+						receivedData = params['Duts']
 						hash = JSON.parse(receivedData)
+
+						sharedMem = @@sharedMemService.getSharedMem()		 
+						sharedMem.setDataFromBoardToPc(hash)
+						######################
 						rescue Exception => e
+							# The data didn't parse properly.  Do nothing.
 							puts e.message  
-							puts e.backtrace.inspect  						
 						ensure
-					end
-					# SharedMemory.
-					puts "1 receivedData = #{receivedData}"
-					
-					sharedMem = SharedMemory.new()
-					sharedMem.SetDataBoardToPc(hash)
-					sharedMem.SetDispSlotOwner(hash[SharedLib::SlotOwner])
-					puts "hash[SharedLib::SlotOwner] = #{hash[SharedLib::SlotOwner]}"
-					puts "ConfigurationFileName = #{sharedMem.GetDispConfigurationFileName()}"
-					puts "ConfigDateUpload = #{sharedMem.GetDispConfigDateUpload()}"
-					puts "AllStepsDone_YesNo = #{sharedMem.GetDispAllStepsDone_YesNo()}"
-					puts "BbbMode = #{sharedMem.GetDispBbbMode()}"
-					puts "StepName = #{sharedMem.GetDispStepName()}"
-					puts "StepNumber = #{sharedMem.GetDispStepNumber()}"
-					puts "StepTotalTime = #{sharedMem.GetDispStepTimeLeft()}"
-					puts "SlotTime = #{sharedMem.GetDispSlotTime()}"
-					puts "SlotIpAddress = #{sharedMem.GetDispSlotIpAddress()}"
-					puts "SlotTime = #{sharedMem.GetDispSlotTime()}"
-					puts "AdcInput = #{sharedMem.GetDispAdcInput()}"
-					puts "MuxData = #{sharedMem.GetDispMuxData()}"
-					puts "Tcu = #{sharedMem.GetDispTcu()}"
-					puts "AllStepsCompletedAt = #{sharedMem.GetDispAllStepsCompletedAt()}"
-					puts "TotalStepDuration = #{sharedMem.GetDispTotalStepDuration()}"
-					puts "Eips = #{sharedMem.GetDispEips()}"
-					configDateUpload = Time.at(sharedMem.GetDispConfigDateUpload().to_i)
-					dBaseFileName = "../steps log records/#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName()}.db"
-					runningOnCentos = true
-					if runningOnCentos == false
-						if File.file?("#{dBaseFileName}") == false
-							# The file does not exists.
-							dbRecord = SQLite3::Database.new( "#{dBaseFileName}" )
-							if dbRecord.nil?
-								SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
-							else
-									dbRecord.execute("create table log ("+
-									"idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
-									");")
-							end
-						else
-							# The file already exists.
-							dbRecord = SQLite3::Database.open dBaseFileName
-						end
-	
-						forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(receivedData)
-
-						str = "Insert into log(idLogTime, data) "+
-						"values(#{sharedMem.GetDispSlotTime()},\"#{forDbase}\")"
-
-						puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
-						begin
-							dbRecord.execute "#{str}"
-							rescue SQLite3::Exception => e 
-							puts "\n\n"
-							SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
-							SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
-							# End of 'rescue SQLite3::Exception => e'
-							ensure
-
-							# End of 'begin' code block that will handle exceptions...
-						end
-					else
-						if sharedMem.GetDispAllStepsDone_YesNo() == SharedLib::No && sharedMem.GetDispBbbMode() == SharedLib::InRunMode
-							str = "#{sharedMem.GetDispSlotTime()},#{receivedData}"
-							open("#{dBaseFileName}", 'a') { |f|
-							  f.puts "#{str}"
-							}
-						end
 					end
 				end
 			end

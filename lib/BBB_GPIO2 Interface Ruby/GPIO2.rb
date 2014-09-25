@@ -251,11 +251,11 @@ class GPIO2
       puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bits after the tilde."
       inBits = getBits(@regValues[addrParam])
       puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value before of what to turn off."
-      @regValues[addrParam] = 
       inBits = getBits(@regValues[addrParam])
       puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value after turning off."
 =end      
-      setGPIO2(addrParam, @regValues[addrParam]&hold)
+      @regValues[addrParam] = @regValues[addrParam]&hold
+      setGPIO2(addrParam, @regValues[addrParam])
   end
   
     def setBitOn(addrParam, dataParam)
@@ -268,15 +268,16 @@ class GPIO2
         # SharedLib::pause "@regValues=#{@regValues}","#{__LINE__}-#{__FILE__}"
         # inBits = getBits((@regValues[addrParam]).to_i)
         # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value of what to turn on."
-        # @regValues[addrParam] = @regValues[addrParam]|dataParam
         # inBits = getBits((@regValues[addrParam]).to_i)
         # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value after turning on."
         
         # SharedLib::pause "SetbitOne", "#{__LINE__}-#{__FILE__}"
-      setGPIO2(addrParam, @regValues[addrParam]|dataParam)
-  end
+        @regValues[addrParam] = @regValues[addrParam]|dataParam
+        setGPIO2(addrParam, @regValues[addrParam])
+    end
   
     def setGPIO2(addrParam, dataParam)
+=begin
         #
         # This function sets a value 'dataParam' on a given register address 'addrParam',
         #        
@@ -295,10 +296,7 @@ class GPIO2
             # inBits = getBits(@regValues[addrParam])
             # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : Current value."
         end
-=begin        
-        inBits = getBits(dataParam)
-        puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : Setting to."
-=end        
+
         @regValues[addrParam] = dataParam
         # inBits = getBits(@regValues[addrParam])
         # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : New value."
@@ -316,7 +314,8 @@ class GPIO2
             rescue Exception => e  
                 # puts e.message  
                 # puts e.backtrace.inspect  
-        end        
+        end
+=end        
         sendToPort2(addrParam,dataParam)
         # End of 'def setGPIO2(addrParam, dataParam)'
     end

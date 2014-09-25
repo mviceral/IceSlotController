@@ -63,18 +63,59 @@ module PcListenerModule
 			#
 			post "/" do
 				if params["#{SharedLib::PcToBbbCmd}"].nil? == false
+					# We got a new command from the PC
+					# See of the 'Sampler' is running
+					ct = 0
+					processNum = ""
+					while ct < 5
+						filePath = '/tmp/bbbTcuSamplerLock.txt'
+						if File.exist?(filePath)
+							ct = 5 # The file exists.  Close the loop.
+							File.open(filePath, "r") do |f|
+							  f.each_line do |line|
+							    processNum = line
+							    processNum = processNum.chomp
+							  end
+							end
+						else
+							# The file does not exist.
+						end
+						ct += 1
+					end
+					
 					#
 					# Parse out the data sent from BBB
 					#
-					mode = params["#{SharedLib::PcToBbbCmd}"]
+					hash = Hash.new
+					hash["Cmd"] = params["#{SharedLib::PcToBbbCmd}"]
 					puts "\n\n\n"
 					
 					#
 					#	Tell sampler to Run if mode = run, Stop if mode = stop, etc.
 					#
-					puts "PC sent '#{mode}'"
+					puts "PC sent '#{hash["Cmd"]}'"
 					sharedMem = SharedMemory.new()
-					sharedMem.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
+					hash["Data"] = JSON.parse(params["#{SharedLib::PcToBbbData}"])
+					puts "A processNum = '#{processNum}'  forEcho = #{hash.to_json}"
+					forEcho = hash.to_json
+					puts "B processNum = '#{processNum}'  forEcho = #{forEcho}"
+			        #
+			        # Send data to real time register data viewer
+			        #
+			        hostname = 'localhost'
+			        port = 2000
+			        begin
+			            s = TCPSocket.open(hostname, port)
+			            
+			            s.puts "#{forEcho}"
+			            s.close               # Close the socket when done
+			            rescue Exception => e  
+			                puts e.message  
+			                puts e.backtrace.inspect  
+			        end
+			        puts "Done sending."
+					return
+					sharedMem.SetSlotOwner(hash["SlotOwner"])
 					case mode
 					when SharedLib::ClearConfigFromPc
 						sharedMem.ClearConfiguration("#{__LINE__}-#{__FILE__}")
@@ -83,20 +124,20 @@ module PcListenerModule
 					when SharedLib::StopFromPc
 					when SharedLib::LoadConfigFromPc
 						puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
-						hash = JSON.parse(params["#{SharedLib::PcToBbbData}"])
+						# puts "hash=#{hash}"
 						puts "SlotOwner=#{hash["SlotOwner"]}"
 						date = Time.at(hash[SharedLib::ConfigDateUpload])
 						#puts "PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
 						# Sync the board time with the pc time
-						`echo date before setting:;date`
+						`echo "date before setting:";date`
 						`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}"`
-						`echo date after setting:;date`
+						`echo "date after setting:";date`
 						sharedMem.SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
 						# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
 					else
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 					end
-					puts "PcCmd=#{mode} #{__LINE__}-#{__FILE__}"
+					sharedMem.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
 				end
 				{bbbResponding:"#{mode}"}
 			end

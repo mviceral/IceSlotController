@@ -8,10 +8,12 @@ require_relative '../lib/SharedLib'
 require_relative "../BBB_Sender/SendSampledTcuToPcLib"
 require 'singleton'
 require 'forwardable'
+require 'thread'
+require 'json'
 
 include Beaglebone
 
-TOTAL_DUTS_TO_LOOK_AT  = 4
+TOTAL_DUTS_TO_LOOK_AT  = 24
 
 class TCUSampler
 	Steps = "Steps"
@@ -212,7 +214,7 @@ class TCUSampler
                                 SharedLib.bbbLog "Socket on '#{psItem.keyName[1..-1]}' ip address '#{@ethernetScheme[psItem.keyName[1..-1]].chomp}' is not yet initialized.  Reload 'Steps' file."
                             end
                         else
-                            SharedLib.bbbLog "@socketIp is nil!!!!."
+                            SharedLib.bbbLog "Ethernet power supplies are not initialized.  Reload steps configuration file."
                         end
                     end
                 end
@@ -312,7 +314,7 @@ class TCUSampler
                     sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)/1000)
                     puts "sleep for '#{(@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)}'"
                 end
-                # sleep(1)
+                # sleep(3)
             end
         end
     end
@@ -440,16 +442,37 @@ class TCUSampler
         return sortedUp
     end
     
+    def openEthernetPsSocket(host,port)
+        tries = 0
+        goodConnection = false
+        while tries<5 && goodConnection == false
+            begin
+                @socketIp[host] = TCPSocket.open(host,port)
+                goodConnection = true
+                rescue
+                    SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
+                    sleep(0.5)
+            end
+            tries += 1
+        end
+        if tries == 5
+            @socketIp[host] = nil
+            # Show a message to the PC that Ethernet PS on IP=host can't be accessed.  Show the time too of incident too.
+            @shareMem.ReportError("Cannot open Ethernet power supply socket on IP='#{host}'.  This power supply will be disabled.")
+        	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+        end
+    end                                                            
+
     def initStepToWorkOnVar
         @shareMem.SetStepTimeLeft("")
         @shareMem.SetStepName("")
         @shareMem.SetStepNumber("")
+        @shareMem.SetTotalTimeOfStepsInQueue(0.0)
         # puts "\n\n\ninitStepToWorkOnVar got called."
         # puts caller
         @stepToWorkOn = nil
-        #
+
         # Setup the @stepToWorkOn
-        #
 	    stepNumber = 0
 	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
 	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
@@ -461,10 +484,7 @@ class TCUSampler
                 getConfiguration()[Steps].each do |key, array|
 		            if @stepToWorkOn.nil?
                         getConfiguration()[Steps][key].each do |key2, array2|
-                            # if key2 == StepNum && getConfiguration()[Steps][key][key2].to_i == (stepNumber+1)
-                            #    SharedLib.pause "getConfiguration()[Steps][key][StepTimeLeft] = #{getConfiguration()[Steps][key][StepTimeLeft]}", "#{__LINE__}-#{__FILE__}"
-                            # end
-	                        #puts "A2 key2=#{key2} StepNum=#{StepNum} #{__LINE__}-#{__FILE__}"
+                            # Get which step to work on and setup the power supply settings.
                             if key2 == StepNum 
                                 if getConfiguration()[Steps][key][key2].to_i == (stepNumber+1) 
                                     # puts "A3 getConfiguration()[Steps][key][key2].to_i=#{getConfiguration()[Steps][key][key2].to_i} (stepNumber+1) =#{(stepNumber+1) } #{__LINE__}-#{__FILE__}"
@@ -492,21 +512,23 @@ class TCUSampler
                                                         host = @ethernetScheme[key[1..-1]].chomp
                                                         port = 5025                # port
                                                         if @socketIp[host].nil?
-                                                            puts "host = '#{host}',port = '#{port}' #{__LINE__}-#{__FILE__}"
-                                                            @socketIp[host] = TCPSocket.open(host,port)
+                                                            # puts "host = '#{host}',port = '#{port}' #{__LINE__}-#{__FILE__}"
+                                                            openEthernetPsSocket(host,port)
                                                         end
                                                         @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SocketIp] = @ethernetScheme[key[1..-1]].chomp
                     
-                                                        # Set the voltage
-                                                        # puts "voltage name = '#{key}', NomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} #{__LINE__}-#{__FILE__}"
-                                                        # print "VNomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} "
-                                                        @socketIp[host].print("SOUR:VOLT #{@stepToWorkOn["PsConfig"][key][NomSet]}\r\n")
-                    
-                                                        # Set the current
-                                                        # puts "current name = 'I#{key[1..-1]}', NomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
-                                                        # puts "INomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
-                                                        @socketIp[host].print("SOUR:CURR #{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]}\r\n")
-                                                        # SharedLib.pause "Checking value of @stepToWorkOn","#{__LINE__}-#{__FILE__}"
+                                                        if @socketIp[host]
+                                                            # Set the voltage
+                                                            # puts "voltage name = '#{key}', NomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                            # print "VNomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} "
+                                                            @socketIp[host].print("SOUR:VOLT #{@stepToWorkOn["PsConfig"][key][NomSet]}\r\n")
+                        
+                                                            # Set the current
+                                                            # puts "current name = 'I#{key[1..-1]}', NomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                            # puts "INomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                            @socketIp[host].print("SOUR:CURR #{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]}\r\n")
+                                                            # SharedLib.pause "Checking value of @stepToWorkOn","#{__LINE__}-#{__FILE__}"
+                                                        end
                                                     end
                                                 end
                                             end
@@ -529,9 +551,35 @@ class TCUSampler
 	        # puts "G #{__LINE__}-#{__FILE__}"
 	        stepNumber += 1
 	    end
-	    # puts "H #{__LINE__}-#{__FILE__}"
-        # puts "I #{__LINE__}-#{__FILE__}"
-        
+
+        # Setup the total time still to go on the step queue
+        hash = Hash.new
+	    stepNumber = 0
+	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
+	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
+	    	stepNumber<getConfiguration()["Steps"].length 
+	    	# puts "A0 #{__LINE__}-#{__FILE__}"
+            # puts "A1 #{__LINE__}-#{__FILE__}"
+            getConfiguration()[Steps].each do |key, array|
+                getConfiguration()[Steps][key].each do |key2, array2|
+                    # Get the total time of Steps in queue
+                    if key2 == StepNum 
+                        if @stepToWorkOn != getConfiguration()[Steps][key]
+                            if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0 && hash[key].nil?
+                                puts "Add time #{getConfiguration()[Steps][key][StepTimeLeft]} key='#{key}' @shareMem.GetTotalTimeOfStepsInQueue()='#{@shareMem.GetTotalTimeOfStepsInQueue()}'"
+                                hash[key] = key
+                                @shareMem.SetTotalTimeOfStepsInQueue(getConfiguration()[Steps][key][StepTimeLeft].to_f+@shareMem.GetTotalTimeOfStepsInQueue().to_f)
+                                puts "New total @shareMem.GetTotalTimeOfStepsInQueue()='#{@shareMem.GetTotalTimeOfStepsInQueue()}'"
+                            end
+                        end
+                    end
+                end
+	            # puts "E #{__LINE__}-#{__FILE__}"
+            end
+	        # puts "G #{__LINE__}-#{__FILE__}"
+	        stepNumber += 1
+	    end
+
         # if @stepToWorkOn.nil?
         #   setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
         # else
@@ -557,7 +605,7 @@ class TCUSampler
             psSeqUp()
             setPollIntervalInSeconds(IntervalSecInRunMode,"#{__LINE__}-#{__FILE__}")
         end
-        @shareMem.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
+        # @shareMem.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
     end
     
     def setBoardData(boardDataParam)
@@ -570,6 +618,54 @@ class TCUSampler
         if getConfiguration().nil? == false
             setBoardStateForCurrentStep()
         end
+    end
+    
+    def runThreadForPcCmdInput()
+        # puts "A Running 'runThreadForPcCmdInput()'"
+        pcCmdInput = Thread.new do
+            # puts "B Running 'runThreadForPcCmdInput()'"
+            server = TCPServer.open(2000)  # Socket to listen on port 2000
+            loop {                         # Servers run forever
+                # puts "C Running 'runThreadForPcCmdInput()'"
+                client = server.accept       # Wait for a client to connect
+                @mutex.synchronize do
+                    puts "D Running 'runThreadForPcCmdInput()'"
+                    clientStr = client.gets.chomp
+                    puts "E uritostr = '#{clientStr}'"
+                    hashSocket = JSON.parse(clientStr)
+                    puts "f uritostr = '#{clientStr}'"
+                    mode = hashSocket["Cmd"]
+                    hash = hashSocket["Data"]
+					@shareMem.SetSlotOwner(hash["SlotOwner"])
+                    puts "mode='#{mode}'"
+					case mode
+					when SharedLib::ClearConfigFromPc
+						@shareMem.ClearConfiguration("#{__LINE__}-#{__FILE__}")
+						# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
+					when SharedLib::RunFromPc
+					when SharedLib::StopFromPc
+					when SharedLib::LoadConfigFromPc
+						puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
+						# puts "hash=#{hash}"
+						puts "SlotOwner=#{hash["SlotOwner"]}"
+						date = Time.at(hash[SharedLib::ConfigDateUpload])
+						#puts "PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
+						# Sync the board time with the pc time
+						`echo "date before setting:";date`
+						`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}"`
+						`echo "date after setting:";date`
+						@shareMem.SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
+						# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
+					else
+						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
+					end
+					@shareMem.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
+                    puts "User input @pcCmdNew='#{@pcCmdNew}'"
+                end
+                client.close                 # Disconnect from the client
+            }
+        end
+        
     end
     
     def runThreadForSavingSlotStateEvery10Mins()
@@ -677,9 +773,37 @@ class TCUSampler
             @pAinMux = AINPin.new(:P9_33)
             while aMux<48
                 retval = getMuxValue(aMux)
-                @shareMem.SetData(SharedLib::MuxData,aMux,retval,@multiplier)
+                if aMux == 2
+                    useIndex = 4
+                elsif aMux == 3
+                    useIndex = 5
+                elsif aMux == 4
+                    useIndex = 2
+                elsif aMux == 5
+                    useIndex = 3
+                elsif aMux == 10
+                    useIndex = 12
+                elsif aMux == 11
+                    useIndex = 13
+                elsif aMux == 12
+                    useIndex = 10
+                elsif aMux == 13
+                    useIndex = 11
+                elsif aMux == 18
+                    useIndex = 20
+                elsif aMux == 19
+                    useIndex = 21
+                elsif aMux == 20
+                    useIndex = 18
+                elsif aMux == 21
+                    useIndex = 19
+                else
+                    useIndex = aMux
+                end
+                @shareMem.SetData(SharedLib::MuxData,useIndex,retval,@multiplier)
                 # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) "
                 aMux += 1
+                # sleep(1)
             end
         else
             # The code is not initialized to run this function
@@ -847,13 +971,16 @@ class TCUSampler
     	
         @shareMem = SharedMemory.new
     	@shareMem.SetupData()
+    	@shareMem.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
+    	@mutex = Mutex.new
     	initMuxValueFunc()
     	initpollAdcInputFunc()
     	readInBbbDefaultsFile()
     	readInEthernetScheme()
-    	
-        runThreadForSavingSlotStateEvery10Mins()
 
+        runThreadForSavingSlotStateEvery10Mins()
+        runThreadForPcCmdInput()
+        
         # Setup the UART comm.
         baudrateToUse = 115200 # baud rate options are 9600, 19200, and 115200
         system("cd /lib/firmware")
@@ -888,7 +1015,7 @@ class TCUSampler
         		end
     		end
 		    rescue Exception => e
-		    SharedLib.bbbLog("Error: #{e.message}  #{__LINE__}-#{__FILE__}")
+		        SharedLib.bbbLog("Error: #{e.message}  #{__LINE__}-#{__FILE__}")
 	    end
         
         SharedLib.bbbLog "Searching for disabled TCUs aside the listed ones in '#{FaultyTcuList_SkipPolling}' file. #{__LINE__}-#{__FILE__}"
@@ -975,186 +1102,224 @@ class TCUSampler
 
 	    initStepToWorkOnVar()
         waitTime = Time.now
-        doMeasurements = true
+        skipLimboStateCheck = false
         while true
-            waitTime += getPollIntervalInSeconds()
-            stepNum = ""
-            if @stepToWorkOn.nil? == false
-                # PP.pp(@stepToWorkOn)
-                # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
-                stepNum = @stepToWorkOn[StepNum]
-            end
-            puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
-            @shareMem.SetSlotTime(Time.now.to_i)
-            
-			case @shareMem.GetBbbMode()
-			when SharedLib::InRunMode
-			    # puts "InRunMode #{__LINE__}-#{__FILE__}"
-			    # puts "@boardData[SharedLib::AllStepsDone_YesNo]=#{@boardData[SharedLib::AllStepsDone_YesNo]} #{__LINE__}-#{__FILE__}"
-			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No
-			        # puts "@boardData[SharedLib::AllStepsDone_YesNo]=#{@boardData[SharedLib::AllStepsDone_YesNo]}  #{__LINE__}-#{__FILE__}"
-    			    if @stepToWorkOn.nil?
-			            # puts "@stepToWorkOn.nil? is NIL #{__LINE__}-#{__FILE__}"
-    			        # There are no more steps to process.
-    			        # All the steps are done processing.
-    			        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-    			        setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
-    			    else
-			            puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
-        			    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
-                            @shareMem.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
-        			    else
-        			        # Step just finished.
-                            setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-                            setBoardStateForCurrentStep()
-                            # SharedLib.pause "Finished step. @stepToWorkOn.nil?=#{@stepToWorkOn.nil?}","#{__LINE__}-#{__FILE__}"
-                            if @stepToWorkOn.nil? == false
-                                # There's more step to process
-                    		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
-                            else
-                                # puts "A @boardData[SharedLib::AllStepsCompletedAt] = #{@boardData[SharedLib::AllStepsCompletedAt]} #{__LINE__}-#{__FILE__}"
-                                @boardData[SharedLib::AllStepsCompletedAt] = Time.new.to_i
-                                setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
-                                # puts "B @boardData[SharedLib::AllStepsCompletedAt] = #{@boardData[SharedLib::AllStepsCompletedAt]} #{__LINE__}-#{__FILE__}"
-                                
-                                # Done processing all steps listed in configuration.step file
-                                saveBoardStateToHoldingTank()
-                                # puts "@shareMem.GetAllStepsCompletedAt() = #{@shareMem.GetAllStepsCompletedAt()} #{__LINE__}-#{__FILE__}"
-                                # We're done processing all the steps.
-                            end
-                        end
-    			    end
-    			elsif @boardMode == SharedLib::InRunMode
-    			    setToMode(SharedLib::InStopMode,"#{__LINE__}-#{__FILE__}")
-			    end
-            end
-            
-    		if @shareMem.GetPcCmd().length != 0
-    		    pcCmd = @shareMem.PopPcCmd()
-    		    # getTimeOfPcLastCmd() < @shareMem.GetTimeOfPcLastCmd()
-    		    puts "\n\n\nNew command from PC - '#{pcCmd}' #{__LINE__}-#{__FILE__}"
-    		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
-    		    case pcCmd
-    		    when SharedLib::RunFromPc
-        		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
-    		    when SharedLib::StopFromPc
-    		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-    		    when SharedLib::ClearConfigFromPc
-    		    when SharedLib::LoadConfigFromPc
-    		        @socketIp = nil
-        		    SharedLib.bbbLog("New configuration step file uploaded.")
-        		    setBoardData(Hash.new)
-        		    @boardData[Configuration] = @shareMem.GetConfiguration()
-    		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-        		    @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
-        		    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
-                    setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
-        		    saveBoardStateToHoldingTank()
-        		    
-        		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
-        		    # by clearing it out.
-        		    @shareMem.SetConfiguration("","#{__LINE__}-#{__FILE__}") 
-    		        setBoardStateForCurrentStep()
-    		        doMeasurements = true
-        		else
-        		    SharedLib.bbbLog("Unknown PC command @shareMem.GetPcCmd()='#{@shareMem.GetPcCmd()}'.")
-        		end
-        		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
-    		    setTimeOfPcLastCmd(@shareMem.GetTimeOfPcLastCmd())
-    		    SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
-    		end
-
-            
-            if (@shareMem.GetBbbMode() == SharedLib::InRunMode || @shareMem.GetBbbMode() == SharedLib::InStopMode) == false  
-                #
-                # We're in limbo for some reason
-                #
-                puts "We're in limbo @shareMem.GetBbbMode()='#{@shareMem.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
-                setToMode(SharedLib::InRunMode, "#{__LINE__}-#{__FILE__}")
-                setBoardStateForCurrentStep()
-            end
-            
-            if (@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
-                 @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false
-                puts "We're in limbo @boardData[SharedLib::AllStepsDone_YesNo]='#{@boardData[SharedLib::AllStepsDone_YesNo]}' #{__LINE__}-#{__FILE__}"
-                loadConfigurationFromHoldingTank()
-                setBoardStateForCurrentStep()
-                setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
-            end
-
-            if doMeasurements
-                #
-                # Gather data...
-                #
-                SharedLib.bbbLog("'#{SharedLib::InRunMode}' - poll devices and log data. #{__LINE__}-#{__FILE__}")
-                if @setupAtHome == false
-                    #puts "A #{__LINE__}-#{__FILE__}"
-                    pollAdcInput()
-                    #puts "B #{__LINE__}-#{__FILE__}"
-                    pollMuxValues()
-                    #puts "C #{__LINE__}-#{__FILE__}"
-                    ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
-                    #puts "E #{__LINE__}-#{__FILE__}"
-                    ThermalSiteDevices.logData
-                    #puts "F #{__LINE__}-#{__FILE__}"
-                    getEthernetPsCurrent()
-                    #puts "G #{__LINE__}-#{__FILE__}"
-                    
-                    # @sharedMem.WriteDataEips(,"#{__LINE__}-#{__FILE__}")
-    			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes || @shareMem.GetBbbMode() == SharedLib::InStopMode
-                        #puts "H #{__LINE__}-#{__FILE__}"
-    			        doMeasurements = false
-    			    end
+            @mutex.synchronize do
+                waitTime += getPollIntervalInSeconds()
+                stepNum = ""
+                if @stepToWorkOn.nil? == false
+                    # PP.pp(@stepToWorkOn)
+                    # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
+                    stepNum = @stepToWorkOn[StepNum]
                 end
-            else
-			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No && @shareMem.GetBbbMode() == SharedLib::InRunMode
-			        doMeasurements = true
-			    end
-            end
-            
-
-=begin            
-            #
-            # What if there was a hiccup and waitTime-Time.now becomes negative
-            # The code ensures that the process is exactly going to take place at the given interval.  No lag that
-            # takes place on processing data.
-            #
-            if (waitTime-Time.now)<0
-                #
-                # The code fix for the scenario above.  I can't get it to activate the code below, unless
-                # the code was killed...
-                #
-                puts "#{Time.now.inspect} Warning - time to complete polling took longer than poll interval!!!"
-                # exit # - the exit code...
-                #
-                # waitTime = Time.now+pollInterval
-            else
-                if @stepToWorkOn.nil?
-                    puts "Sleep for '#{waitTime.to_f-Time.now.to_f}' seconds #{__LINE__}-#{__FILE__}"
-                    if waitTime.to_f-Time.now.to_f > 0
-                        sleep(waitTime.to_f-Time.now.to_f)
-                    end
+                puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+                @shareMem.SetSlotTime(Time.now.to_i)
+                if skipLimboStateCheck
+                    skipLimboStateCheck = false
                 else
-                    # The step time might finish sooner than the 10 sec interval so do the time out on that case it is.
-                    aTime = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)
-                    bTime = waitTime.to_f-Time.now.to_f
-                    if aTime > bTime
-                        useThisTime = bTime
-                    else
-                        useThisTime = aTime
-                        
+                    if (@shareMem.GetBbbMode() == SharedLib::InRunMode || @shareMem.GetBbbMode() == SharedLib::InStopMode) == false  
+                        #
+                        # We're in limbo for some reason
+                        #
+                        puts "We're in limbo @shareMem.GetBbbMode()='#{@shareMem.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
+                        loadConfigurationFromHoldingTank()
+
+            		    case @lastPcCmd
+            		    when SharedLib::RunFromPc
+                		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
+            		    when SharedLib::StopFromPc
+            		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		    when SharedLib::ClearConfigFromPc
+            		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		    when SharedLib::LoadConfigFromPc
+            		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+                		else
+            		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+                		end
+                        setBoardStateForCurrentStep()
                     end
-                    
-                    if (useThisTime>0)
-                        puts "Going to sleep = '#{useThisTime}' #{__LINE__}-#{__FILE__}"
-                        sleep(useThisTime)
-                    else
-                        puts "Going to sleep = '#{bTime}' #{__LINE__}-#{__FILE__}"
-                        sleep(bTime)
+                    configName = @shareMem.GetConfigurationFileName()
+                    if ((@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
+                         @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false) ||
+                         (configName.nil? == false && configName.length>0 && (stepNum.nil? || (stepNum.nil? ==false && stepNum.length==0)) && @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No)
+                        loadConfigurationFromHoldingTank()
+                        setBoardStateForCurrentStep()
+                        if @stepToWorkOn.nil?
+                            setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
+                        else
+                            setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
+                        end
                     end
                 end
-            end
-=end            
+        
+    			case @shareMem.GetBbbMode()
+    			when SharedLib::InRunMode
+    			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No
+        			    if @stepToWorkOn.nil?
+        			        # There are no more steps to process.
+        			        # All the steps are done processing.
+        			        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+        			        setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
+        			    else
+    			            puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
+            			    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
+                                @shareMem.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
+            			    else
+            			        # Step just finished.
+                                setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+                                setBoardStateForCurrentStep()
+                                # SharedLib.pause "Finished step. @stepToWorkOn.nil?=#{@stepToWorkOn.nil?}","#{__LINE__}-#{__FILE__}"
+                                if @stepToWorkOn.nil? == false
+                                    # There's more step to process
+                        		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
+                                else
+                                    @boardData[SharedLib::AllStepsCompletedAt] = Time.new.to_i
+                                    setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
+
+                                    # Done processing all steps listed in configuration.step file
+                                    saveBoardStateToHoldingTank()
+                                    # We're done proce@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNewssing all the steps.
+                                end
+                            end
+        			    end
+        			elsif @boardMode == SharedLib::InRunMode
+        			    setToMode(SharedLib::InStopMode,"#{__LINE__}-#{__FILE__}")
+    			    end
+                end
+
+        		if @shareMem.GetPcCmd().length != 0
+        		    pcCmdObj = @shareMem.GetPcCmd()[0]
+        		    pcCmd = pcCmdObj[0]
+        		    timeOfCmd = pcCmdObj[1]
+        		    if @lastPcCmd != pcCmd && @lastTimeOfCmd != timeOfCmd
+                        @lastPcCmd = pcCmd 
+                        @lastTimeOfCmd = timeOfCmd
+
+        		        # getTimeOfPcLastCmd() < @shareMem.GetTimeOfPcLastCmd()
+            		    puts "\n\n\nNew command from PC - '#{pcCmd}' @shareMem.GetPcCmd().length='#{@shareMem.GetPcCmd().length}'  #{__LINE__}-#{__FILE__}"
+            		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
+                        @shareMem.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
+            		    case pcCmd
+            		    when SharedLib::RunFromPc
+                		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
+                		    
+            		    when SharedLib::StopFromPc
+            		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		        
+            		    when SharedLib::ClearConfigFromPc
+                		    setBoardData(Hash.new)
+            		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		        setBoardStateForCurrentStep()
+                		    @shareMem.SetConfigurationFileName("")
+                		    gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+                		    
+            		    when SharedLib::LoadConfigFromPc
+            		        # close the sockets of the Ethernet PS if they're on.
+            		        if @socketIp.nil? == false
+                                @socketIp.each do |key, array|
+                                    @socketIp[key].close
+                                end                		    
+            		        end
+            		        @socketIp = nil
+            		        
+                            SharedLib.bbbLog("New configuration step file uploaded.")
+                		    setBoardData(Hash.new)
+                		    @boardData[Configuration] = @shareMem.GetConfiguration()
+                		    # puts "#{@boardData[Configuration]} - Checking @boardData[Configuration] content."
+                		    @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
+                		    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
+                            setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
+            		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		        setBoardStateForCurrentStep()
+                		    saveBoardStateToHoldingTank()
+
+                		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
+                		    # by clearing it out.
+                		    @shareMem.SetConfiguration(nil,"#{__LINE__}-#{__FILE__}") 
+                		    gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+                		    skipLimboStateCheck = true
+                		else
+                		    SharedLib.bbbLog("Unknown PC command @shareMem.GetPcCmd()='#{@shareMem.GetPcCmd()}'.")
+                		end
+                		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
+            		    setTimeOfPcLastCmd(@shareMem.GetTimeOfPcLastCmd())
+            		    # Code block below tells the PcListener that it got the message.
+    
+                    end
+                    
+            		SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+
+    		        arrItem = Array.new
+    		        arrItem.push(pcCmd)
+       		        arrItem.push(timeOfCmd)
+    		        
+        		    ds = @shareMem.lockMemory("#{__LINE__}-#{__FILE__}")
+    		        ds[SharedMemory::CmdProcessed] = arrItem
+    		        @shareMem.writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+                    @shareMem.PopPcCmd()        		    
+        		    
+        		end
+    
+
+                # puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+                
+                #
+                # Gather data regardless of whether it's in run mode or not...
+                #
+                if @setupAtHome == false
+                    pollAdcInput()
+                    pollMuxValues()
+                    ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
+                    ThermalSiteDevices.logData(@shareMem)
+                    getEthernetPsCurrent()
+                end
+
+                
+            	# This line of code makes the 'Sender' process useless.  This gives the fastest time of data update to the display.
+            	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                #
+                # What if there was a hiccup and waitTime-Time.now becomes negative
+                # The code ensures that the process is exactly going to take place at the given interval.  No lag that
+                # takes place on processing data.
+                #
+=begin                
+                if (waitTime-Time.now)<0
+                    #
+                    # The code fix for the scenario above.  I can't get it to activate the code below, unless
+                    # the code was killed...
+                    #
+                    puts "#{Time.now.inspect} Warning - time to complete polling took longer than poll interval!!!"
+                    # exit # - the exit code...
+                    #
+                    # waitTime = Time.now+pollInterval
+                else
+                    if @stepToWorkOn.nil?
+                        puts "Sleep for '#{waitTime.to_f-Time.now.to_f}' seconds #{__LINE__}-#{__FILE__}"
+                        if waitTime.to_f-Time.now.to_f > 0
+                            sleep(waitTime.to_f-Time.now.to_f)
+                        end
+                    else
+                        # The step time might finish sooner than the 10 sec interval so do the time out on that case it is.
+                        aTime = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)
+                        bTime = waitTime.to_f-Time.now.to_f
+                        if aTime > bTime
+                            useThisTime = bTime
+                        else
+                            useThisTime = aTime
+                            
+                        end
+                        
+                        if (useThisTime>0)
+                            puts "Going to sleep = '#{useThisTime}' #{__LINE__}-#{__FILE__}"
+                            sleep(useThisTime)
+                        else
+                            puts "Going to sleep = '#{bTime}' #{__LINE__}-#{__FILE__}"
+                            sleep(bTime)
+                        end
+                    end
+                end
+=end                
+            end # for the mutex
         end
 
         # End of 'def runTCUSampler'
@@ -1170,5 +1335,6 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# @ 199
-
+# @ 449
+# SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
+# uncomment sleep code below given line above.

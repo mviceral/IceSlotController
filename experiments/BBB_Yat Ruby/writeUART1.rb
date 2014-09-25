@@ -29,7 +29,6 @@ uart1 = UARTDevice.new(:UART1, 115200)
 STDOUT.flush  
 
 userInput = "S?"
-=begin
 while (userInput == "x" || userInput == "X") == false  do
     puts "S? - which will return the status (dynamic data: ambient temp, current temp, etc)"
     puts "V? - Which will return the version (static temp)"
@@ -44,7 +43,6 @@ while (userInput == "x" || userInput == "X") == false  do
     end
     puts "\n\n"
 end
-=end
 
 #
 # Continuous loop.  Loop is turned off for now.

@@ -13,7 +13,11 @@ class SharedLib
 	ClearConfigFromPc = "ClearConfigFromPc"
 	PcToBbbData = "PcToBbbData" # Data flag
 	SlotOwner = "SlotOwner"
-
+	ErrorMsg = "ErrorMsg"
+	ButtonDisplay = "ButtonDisplay"
+	NormalButtonDisplay = "NormalButtonDisplay"
+	TotalTimeOfStepsInQueue = "TotalTimeOfStepsInQueue"
+	
 	#
 	# Constants used for sending data to PC
 	#
@@ -32,6 +36,8 @@ class SharedLib
 	# PcListener = "http://192.168.1.210"
 	PcListener = "http://192.168.7.1"
 	SLOT1 = "SLOT1"
+	SLOT2 = "SLOT2"
+	SLOT3 = "SLOT3"
 
 	# Board State.
 	InRunMode = "InRunMode"
@@ -48,6 +54,7 @@ class SharedLib
 	#  Shared memory for Boad side
 	DBaseFileName = "DBaseFileName"
 	
+	DRbMemoryKey = "DRbMemoryKey"
 	# The constants used for referencing mux values, and adc input
 	IDUT1 = 0
 	IDUT2 = 1
@@ -120,6 +127,9 @@ class SharedLib
 	Tcu	= "T" # for TCU
 	Gpio = "G" # for general purpose IO values
 	Eips = "E" # for Ethernet I (current) ps
+
+	# Shared memory accessor
+	MemAccessor = "MemAccessor"
     
     #
     # Functions

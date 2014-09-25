@@ -44,3 +44,104 @@ sudo chkconfig iptables off
         service httpd restart
 #        Note: Ignore the "NameVirtualHost *:80 has no VirtualHosts" warning for now.
 
+################################################################
+# Installing mail server
+# http://www.krizna.com/centos/setup-mail-server-in-centos-6/#postfix
+» Installing and configuring  postfix
+
+Step 1 »Before installation assign a static ip and add a host entry for your domain to that IP in the /etc/hosts file like below.
+192.168.0.15 krizna.com
+
+Step 2 » Issue the below command to install postfix
+
+[root@mail ~]# yum -y install postfix
+
+Step 3 » Now issue the below command to install SMTP AUTH packages .
+
+[root@mail ~]# yum -y install cyrus-sasl cyrus-sasl-devel cyrus-sasl-gssapi cyrus-sasl-md5 cyrus-sasl-plain
+
+Postfix package installation is completed .
+Step 4 » Issue the below commands one by one for creating SSL Cert.
+[root@mail ~]# mkdir /etc/postfix/ssl
+[root@mail ~]# cd /etc/postfix/ssl/
+[root@mail ssl]# openssl genrsa -des3 -rand /etc/hosts -out smtpd.key 1024
+[root@mail ssl]# chmod 600 smtpd.key
+[root@mail ssl]# openssl req -new -key smtpd.key -out smtpd.csr
+[root@mail ssl]# openssl x509 -req -days 365 -in smtpd.csr -signkey smtpd.key -out smtpd.crt
+[root@mail ssl]# openssl rsa -in smtpd.key -out smtpd.key.unencrypted
+[root@mail ssl]# mv -f smtpd.key.unencrypted smtpd.key
+[root@mail ssl]# openssl req -new -x509 -extensions v3_ca -keyout cakey.pem -out cacert.pem -days 365
+
+Step 4 » Now open /etc/postfix/main.cf file .
+Find and comment the below lines .
+#inet_interfaces = localhost #---> line no 116
+#mydestination = $myhostname, localhost.$mydomain, localhost #--> line no 164
+and add these lines at the bottom of the file.
+myhostname = mail.krizna.com
+mydomain = krizna.com
+myorigin = $mydomain
+home_mailbox = mail/
+mynetworks = 127.0.0.0/8
+inet_interfaces = all
+mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
+smtpd_sasl_auth_enable = yes
+smtpd_sasl_type = cyrus
+smtpd_sasl_security_options = noanonymous
+broken_sasl_auth_clients = yes
+smtpd_sasl_authenticated_header = yes
+smtpd_recipient_restrictions = permit_sasl_authenticated,permit_mynetworks,reject_unauth_destination
+smtpd_tls_auth_only = no
+smtp_use_tls = yes
+smtpd_use_tls = yes
+smtp_tls_note_starttls_offer = yes
+smtpd_tls_key_file = /etc/postfix/ssl/smtpd.key
+smtpd_tls_cert_file = /etc/postfix/ssl/smtpd.crt
+smtpd_tls_CAfile = /etc/postfix/ssl/cacert.pem
+smtpd_tls_received_header = yes
+smtpd_tls_session_cache_timeout = 3600s
+tls_random_source = dev:/dev/urandom
+
+Step 5 » Now open /etc/postfix/master.cf file and add the below line after smtp
+smtps     inet  n       -       n       -       -       smtpd
+      -o smtpd_sasl_auth_enable=yes
+      -o smtpd_reject_unlisted_sender=yes
+      -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject
+      -o broken_sasl_auth_clients=yes
+
+Step 6 » Now start postfix and saslauthd service
+[root@mail ~]# service postfix start
+[root@mail ~]# service saslauthd start
+» Issue the below commands to start the postfix and saslauthd at startup
+[root@mail ~]# chkconfig --level 235 postfix on
+[root@mail ~]# chkconfig --level 235 saslauthd on
+Step 7 » Now check your smtp connectivity . just telnet localhost on port 25 and type this command ehlo localhost
+[root@mail ~]# telnet localhost 25
+Trying ::1...
+Connected to localhost.
+Escape character is '^]'.
+220 mail.krizna.com ESMTP Postfix
+ehlo localhost <---- type this command
+250-mail.krizna.com
+250-PIPELINING
+250-SIZE 10240000
+250-VRFY
+250-ETRN
+250-STARTTLS
+250-AUTH PLAIN LOGIN
+250-AUTH=PLAIN LOGIN
+250-ENHANCEDSTATUSCODES
+250-8BITMIME
+250 DSN
+quit
+221 2.0.0 Bye
+Connection closed by foreign host.
+If you get this output .. Great .. everything is fine till now.
+
+###########################################
+# Install telnet
+sudo yum install telnet telnet-server -y
+
+
+###########################################
+# Install tcl tk.
+sudo yum install tcl.x86_64 tk.x86_64

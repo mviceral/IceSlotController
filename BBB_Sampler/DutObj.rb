@@ -16,22 +16,47 @@ class DutObj
         uartStatusCmd = "S?\n"
         uart1Param.write("#{uartStatusCmd}");
         keepLooping = true
+        notFoundAtChar = true
 
         #
         # Code block for ensuring that status request is sent and the expected response is received.
         #
-        while keepLooping
+        line = ""
+        # while keepLooping
             begin
                 complete_results = Timeout.timeout(0.1) do      
+                    keepLooping = true
+                    while keepLooping
+                        c = uart1Param.readchar
+                        if notFoundAtChar
+                            # Some funky character sits in the buffer, and this code will not take the data
+                            # until the beginning of the character is '@'
+                            if c=="@"
+                                notFoundAtChar = false
+                                line += c
+                            end
+                        else
+                            if c!="\n"
+                                line += c
+                            else
+                                tbr = line
+                                line = ""
+                                keepLooping = false
+                            end
+                        end
+                    end
+                        
+=begin                    
                     uart1Param.each_line { 
                         |line| 
                         tbr = line
                         keepLooping = false     # loops out of the keepLooping loop.
                         break if line =~ /^@/   # loops out of the each_line loop.
                     }
+=end                    
                 end
                 rescue Timeout::Error
-                    puts "Timed out Error. dutNumParam=#{dutNumParam}"
+                    puts "\n\n\n\nTimed out Error. dutNumParam=#{dutNumParam}"
                     uart1Param.disable   # uart1Param variable is now dead cuz it timed out.
                     uart1Param = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
                     tbr = FaultyTcu
@@ -62,19 +87,29 @@ class DutObj
                     #
 =end                
             end
+            
+=begin            
+            # puts "dutNumParam=#{dutNumParam}, tbr=#{tbr} #{__LINE__}-#{__FILE__}"
+            if tbr.force_encoding("UTF-8").ascii_only?
+                return tbr
+            else
+                ""
+            end
+=end            
+        sleep(0.01)
             return tbr
-        end
+        #end
     end
     
     def poll(dutNumParam, uart1Param,gPIO2)
-        #puts "within poll. dutNumParam=#{dutNumParam}"
+        # puts "within poll. dutNumParam=#{dutNumParam}"
         # gets
         @statusResponse[dutNumParam] = getTcuStatus(dutNumParam, uart1Param,gPIO2)
         # puts "dutNumParam=#{dutNumParam} @statusResponse[dutNumParam]=#{@statusResponse[dutNumParam]} #{__LINE__}-#{__FILE__}"
         #puts "Leaving poll. dutNumParam=#{dutNumParam}"
     end
 
-    def saveAllData(timeNowParam)
+    def saveAllData(parentMemory, timeNowParam)
         dutNum = 0;
         allDutData = "";
         while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do
@@ -100,7 +135,8 @@ class DutObj
 		# allDutData = "-BBB#{timeNow}"+allDutData
 		allDutData = "-"+allDutData
 		# puts "Poll A #{Time.now.inspect}"
-        @sharedMem.WriteDataTcu(allDutData,"#{__LINE__}-#{__FILE__}")
+        # @sharedMem.WriteDataTcu(allDutData,"#{__LINE__}-#{__FILE__}")
+        parentMemory.WriteDataTcu(allDutData,"#{__LINE__}-#{__FILE__}")
 		# puts "Poll B #{Time.now.inspect}"
         
         # End of 'def poll()'
