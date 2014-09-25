@@ -53,6 +53,7 @@ class SharedLib
 	#  Shared memory for Boad side
 	DBaseFileName = "DBaseFileName"
 	
+	DRbMemoryKey = "DRbMemoryKey"
 	# The constants used for referencing mux values, and adc input
 	IDUT1 = 0
 	IDUT2 = 1

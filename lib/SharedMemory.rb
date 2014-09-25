@@ -222,6 +222,8 @@ puts " '#{GetDispTotalTimeOfStepsInQueue(hash[SharedLib::SlotOwner])}'"
 		# puts "Eips = #{GetDispEips(hash[SharedLib::SlotOwner])}"
 		configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
 		dBaseFileName = "../steps log records/#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}.db"
+=begin
+		# logging code.
 		runningOnCentos = true
 		if runningOnCentos == false
 			if File.file?("#{dBaseFileName}") == false
@@ -265,6 +267,7 @@ puts " '#{GetDispTotalTimeOfStepsInQueue(hash[SharedLib::SlotOwner])}'"
 				}
 			end
 		end
+=end
 	end
 
 	def GetDispErrorMsg(slotOwnerParam)
@@ -649,6 +652,36 @@ puts " '#{GetDispTotalTimeOfStepsInQueue(hash[SharedLib::SlotOwner])}'"
     def Initialize()
     	@lockedAt = ""
     end
+    
+    def CheckInit(slotOwnerParam)
+    	return GetDispErrorMsg(slotOwnerParam)
+    end
+
+	def GetDispErrorMsg(slotOwnerParam)
+		begin
+			# Display what ever un-acknowledged errors are in the record.
+			pcShared = getPCShared()
+			slotOwner = slotOwnerParam
+			if pcShared[slotOwner].nil? == false && pcShared[slotOwner][SharedLib::ErrorMsg].nil?
+				newErrLogFileName = "../NewErrors_#{slotOwner}.log"
+				errorItem = `head -1 #{newErrLogFileName}`
+				#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
+				if errorItem.length > 0
+					ds = lockMemory("#{__LINE__}-#{__FILE__}")
+					ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(errorItem)
+					writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+				end
+			end
+
+			if pcShared[slotOwner].nil? || pcShared[slotOwner][SharedLib::ErrorMsg].nil?
+				return ""
+			end
+			errItem = pcShared[slotOwner][SharedLib::ErrorMsg]
+			return "&nbsp;&nbsp;#{Time.at(errItem[1]).inspect} - #{errItem[0]}"
+			rescue  Exception => e
+		end
+	end
+
     
     def initialize()
     end 

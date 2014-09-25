@@ -30,9 +30,8 @@ require_relative '../lib/SharedMemory'
 #require_relative '../PC_GrapeForBoardListener/ServerLib'
 require 'pp' # Pretty print to see the hash values.
 require 'drb/drb'
-
 # set :sharedMem, SharedMemory.new()
-
+SERVER_URI="druby://localhost:8787"
 class UserInterface
 	StepConfigFileFolder = "../steps\ config\ file\ repository"
 	BbbPcListener = 'http://192.168.7.2'
