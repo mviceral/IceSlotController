@@ -27,9 +27,9 @@ require 'rest_client'
 require_relative '../lib/SharedLib'
 require_relative '../lib/SharedMemory'
 require 'pp' # Pretty print to see the hash values.
-
+require 'drb/drb'
 # set :sharedMem, SharedMemory.new()
-
+SERVER_URI="druby://localhost:8787"
 class UserInterface
 	StepConfigFileFolder = "../steps\ config\ file\ repository"
 	BbbPcListener = 'http://192.168.7.2'
@@ -574,7 +574,6 @@ class UserInterface
 	end
 
 	def initialize		
-		@sharedMem = SharedMemory.new
 		# end of 'def initialize'
 	end
 
@@ -911,7 +910,8 @@ class UserInterface
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell(slotLabel2Param)+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
 		getSlotDisplay_ToBeReturned += 	"</table>"		
-		
+		puts "asdfsdf #{__LINE__}"
+		errMsg = @sharedMem.CheckInit(slotLabel2Param)
 		topTable = "
 			<table>
 				<tr><td></td><td/></tr>
@@ -925,7 +925,7 @@ class UserInterface
 								</td>
 								<td>&nbsp;</td>
 								<td style=\"border:1px solid black; border-collapse:collapse; width: 95%;\">
-									<font size=\"1\" color=\"red\"/>#{@sharedMem.GetDispErrorMsg(slotLabel2Param)}
+									<font size=\"1\" color=\"red\"/>#{errMsg}
 								</td>
 								<td>
 									<button onclick=\"window.location='/AckError?slot=#{slotLabel2Param}'\" style=\"height:20px;
@@ -1138,8 +1138,11 @@ end
 	end
 	
 	def display
-		displayForm = ""
-		displayForm =  "	
+		DRb.start_service
+		@sharedMem=DRbObject.new_with_uri(SERVER_URI)
+		@sharedMem.CheckInit("A #{__LINE__}-#{__FILE__}")
+    puts "@sharedMem.class = #{@sharedMem}"
+    displayForm =  "	
 	<style>
 	#slotA
 	{

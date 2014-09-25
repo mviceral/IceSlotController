@@ -187,28 +187,7 @@ class SharedMemory
 		ds[SharedLib::PC][slotOwnerParam][SharedLib::ButtonDisplay] = toDisplay
 		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");
 	end
-	def GetDispErrorMsg(slotOwnerParam)
-		# Display what ever un-acknowledged errors are in the record.
-		pcShared = getPCShared()
-		slotOwner = slotOwnerParam
-		if pcShared[slotOwner].nil? == false && pcShared[slotOwner][SharedLib::ErrorMsg].nil?
-			newErrLogFileName = "../NewErrors_#{slotOwner}.log"
-			errorItem = `head -1 #{newErrLogFileName}`
-			#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
-			if errorItem.length > 0
-				ds = lockMemory("#{__LINE__}-#{__FILE__}")
-				ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(errorItem)
-				writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-			end
-		end
-
-		if pcShared[slotOwner].nil? || pcShared[slotOwner][SharedLib::ErrorMsg].nil?
-			return ""
-		end
-		errItem = pcShared[slotOwner][SharedLib::ErrorMsg]
-		return "&nbsp;&nbsp;#{Time.at(errItem[1]).inspect} - #{errItem[0]}"
-	end
-
+	
 	def GetDispStepTimeLeft(slotOwnerParam)
 		if getPCShared()[slotOwnerParam].nil?
 			return ""
@@ -564,7 +543,54 @@ class SharedMemory
     	@lockedAt = ""
     end
     
-    def initialize()
+    def CheckInit(slotOwnerParam)
+    	return GetDispErrorMsg(slotOwnerParam)
+    end
+
+	def GetDispErrorMsg(slotOwnerParam)
+		begin
+			# Display what ever un-acknowledged errors are in the record.
+			puts "a"
+			pcShared = getPCShared()
+			puts "b"
+			slotOwner = slotOwnerParam
+			puts "c"
+			if pcShared[slotOwner].nil? == false && pcShared[slotOwner][SharedLib::ErrorMsg].nil?
+			puts "d"
+				newErrLogFileName = "../NewErrors_#{slotOwner}.log"
+			puts "e"
+				errorItem = `head -1 #{newErrLogFileName}`
+			puts "f"
+				#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
+				if errorItem.length > 0
+			puts "g"
+					ds = lockMemory("#{__LINE__}-#{__FILE__}")
+			puts "h"
+					ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(errorItem)
+			puts "i"
+					writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+			puts "j"
+				end
+			puts "k"
+			end
+			puts "l"
+
+			if pcShared[slotOwner].nil? || pcShared[slotOwner][SharedLib::ErrorMsg].nil?
+			puts "m"
+				return ""
+			end
+			puts "n"
+			errItem = pcShared[slotOwner][SharedLib::ErrorMsg]
+			puts "o"
+			return "&nbsp;&nbsp;#{Time.at(errItem[1]).inspect} - #{errItem[0]}"
+			rescue  Exception => e
+				puts "e.message=#{e.message }"
+		end
+	end
+
+    
+    def initialize(initParam)
+    	@initParamater = initParam
     end 
     
     def ClearErrors()
