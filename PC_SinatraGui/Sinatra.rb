@@ -25,15 +25,15 @@ require 'sqlite3'
 require 'json'
 require 'rest_client'
 require_relative '../lib/SharedLib'
-require_relative '../PC_DRbServer/ServerLib'
+require_relative '../lib/DRbSharedMemory/ServerLib'
 require_relative '../lib/SharedMemory'
 #require_relative '../PC_GrapeForBoardListener/ServerLib'
 require 'pp' # Pretty print to see the hash values.
 require 'drb/drb'
-# set :sharedMem, SharedMemory.new()
+
 SERVER_URI="druby://localhost:8787"
+
 class UserInterface
-	StepConfigFileFolder = "../steps\ config\ file\ repository"
 	BbbPcListener = 'http://192.168.7.2'
 	SERVER_URI="druby://localhost:8787"
 	# BbbPcListener = 'http://192.168.1.211'
@@ -45,6 +45,8 @@ class UserInterface
 	StepFileConfig = "StepFileConfig"
 	PsConfig = "PsConfig"
 	TempConfig = "TempConfig"
+	MinCurrConfig = "MinCurrConfig"
+	StepConfigFileFolder = "../steps\ config\ file\ repository"
 
 	#
 	# Settings file constants
@@ -171,22 +173,27 @@ class UserInterface
 		ct = ctParam
 		indexOfStepName = ctParam-2
 		while ct < config.length do
-			stepName = config[ct-indexOfStepName].split(",")[2].strip # Get the row data for the step file name.
-			stepTime = config[ct].split(",")[4].strip
-			if SharedLib.is_a_number?(stepTime) == false
-				#
-				# Given number is not good
-				#
-				@redirectWithError += "&ErrInFile="
-				@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
-				error = "Step File '#{configFileName}' - '#{itemNameParam}' '#{stepTime}' on line "
-				error += "'#{ct+1}' must be a number."
-				@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
-				return false
-			else				
-				slotConfigStep = getSlotConfigStep(stepName)
-				slotConfigStep[itemNameParam] = stepTime
-			end
+			colName = config[ct-indexOfStepName].split(",")[1].strip # Get the row data for the step file name.
+			if colName == "Step Name"
+				stepName = config[ct-indexOfStepName].split(",")[2].strip # Get the row data for the step file name.
+				stepTime = config[ct].split(",")[4].strip
+				if SharedLib.is_a_number?(stepTime) == false
+					#
+					# Given number is not good
+					#
+					@redirectWithError += "&ErrInFile="
+					@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
+					error = "Step File '#{configFileName}' - '#{itemNameParam}' '#{stepTime}' on line "
+					error += "'#{ct+1}' must be a number."
+					puts "A error =>#{error}<= @#{__LINE__}-#{__FILE__}"
+					@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+					puts "B @redirectWithError =>#{@redirectWithError}<= @#{__LINE__}-#{__FILE__}"
+					return false
+				else				
+					slotConfigStep = getSlotConfigStep(stepName)
+					slotConfigStep[itemNameParam] = stepTime
+				end
+			end				
 			ct += 11
 			# End of 'while ct < config.length do' 
 		end
@@ -320,10 +327,13 @@ class UserInterface
 	end
 
 	def stepConfigFileTemplate
-		return ",,,,
-		Item,Name,Description,Type,Value
+		return "Item,Name,Description,Type,Value
+		,Pretest ( site identification),,T,STRING
+		1,Power Supplies,PS Config For Pretest.ps_config,File,
+		2,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
+		3,DUT Site Activation Min Current File ,SiteMin.minCurr_config,File,
 		,Step Name,File Name A ,N,1
-		1,Power Supplies,PS File Name A,File,
+		1,Power Supplies,PS Config A.ps_config,File,
 		2,Temperature,TMP File Name Z,File,
 		3,Step Name,Step Name,T,STRING
 		4,TIME,STEP TIME,M,2400
@@ -331,10 +341,10 @@ class UserInterface
 		6,Alarm Wait,WAIT TIME ON ALARM,M,1
 		7,Auto Restart,Auto restart,B,1
 		8,Stop on Tolerance,Stop on tolerance limit,B,0
-		9,Text Vector,Test Vector Name & Path,T,STRING
+		9,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
 		10,Next Step,Next Step Name 'B',T,STRING
 		,Step Name,File Name B,N,2
-		1,Power Supplies,PS File Name B,File,
+		1,Power Supplies,PS Config B.ps_config,File,
 		2,Temperature,TMP File Name Z,File,
 		3,Step Name,Step Name,T,STRING
 		4,TIME,STEP TIME,M,2400
@@ -342,10 +352,10 @@ class UserInterface
 		6,Alarm Wait,WAIT TIME ON ALARM,M,1
 		7,Auto Restart,Auto restart,B,1
 		8,Stop on Tolerance,Stop on tolerance limit,B,0
-		9,Text Vector,Test Vector Name & Path,T,STRING
+		9,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
 		10,Next Step,Next Step Name 'C',T,STRING
 		,Step Name,File Name C,N,3
-		1,Power Supplies,PS File Name C,File,
+		1,Power Supplies,PS Config C.ps_config,File,
 		2,Temperature,TMP File Name Z,File,
 		3,Step Name,Step Name,T,STRING
 		4,TIME,STEP TIME,M,2400
@@ -353,7 +363,7 @@ class UserInterface
 		6,Alarm Wait,WAIT TIME ON ALARM,M,1
 		7,Auto Restart,Auto restart,B,1
 		8,Stop on Tolerance,Stop on tolerance limit,B,0
-		9,Text Vector,Test Vector Name & Path,T,STRING
+		9,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
 		10,Next Step,Next Step Name 'END',T,STRING
 		,if Condition,Count >= 10 END,F,FUNCTION
 		,Count ++,incrament count,F,FUNCTION"
@@ -1297,6 +1307,7 @@ end
 		# Create a list of Test Files, and display them in a table.
 		# 						
 		tbr += "<table style=\"border-collapse: collapse;	border: 1px solid black;\">"
+		tbr += getRows(getListOfFiles("#{repoDir}","*.mincurr_config"))
 		tbr += getRows(getListOfFiles("#{repoDir}","*.ps_config"))
 		tbr += getRows(getListOfFiles("#{repoDir}","*.temp_config"))
 		tbr += "		
@@ -1571,11 +1582,34 @@ end
 		@sharedMem.SetDispButton(slotOwnerParam,"Seq Up")
 	end	
 
+	def psConfigFileInFileSystem(colContent,configFileName)
+		#
+		# Make sure that the PS config file is present in the file system
+		#
+		if File.file?(dirFileRepository+"/"+colContent) == false
+			#
+			# The file does not exists.  Post an error.
+			#
+			@redirectWithError += "&ErrInFile="
+			@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
+			@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
+			@redirectWithError += "&ErrStepPsNotFound=#{SharedLib.makeUriFriendly(colContent)}"
+			return false
+		else 
+			#
+			# Make sure the PS File config is good.
+			#
+			@configFileType = UserInterface::PsConfig
+			if checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
+				return false
+			end
+		end
+	end
+	
 	def parseTheConfigFile(config,configFileName)
 		#
 		# We got to parse the data.  Make sure that the data format is what Mike had provided by ensuring 
-		# that the column
-		# item matches the known rows.
+		# that the column item matches the known rows.
 		#
 		
 		#
@@ -1587,7 +1621,7 @@ end
 			# We're going to parse a step file.  Hard code settings:  "Item","Name","Description","Type","Value" are
 			# starting on row 2, col A if viewed from Excel.
 			#
-			row = 1
+			row = 0
 			colContent = config[row].split(",")
 			if (colContent[0].upcase.strip != "ITEM")
 				@redirectWithError += "&ErrStepFormat=A"
@@ -1612,49 +1646,74 @@ end
 			end
 			
 			#
+			# Make sure that the pretest section has valid data.
+			#
+			#   Make sure that the PS file for the pretest is valid.
+			#   How are we going to check whether the file is present or not?
+			ct = 2 # this is the row for the pretest power supply config file.
+			@stepName = config[ct-1].split(",")[1].strip # Get the row data for file name.
+			colContent = config[ct].split(",")[2].strip
+			if colContent.nil? == true || colContent.length == 0
+				@redirectWithError += "&ErrInFile="
+				@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
+				@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
+				@redirectWithError += "&ErrPsFileNotGiven=Y"
+				@redirectWithError = SharedLib.makeUriFriendly(@redirectWithError)
+				return false
+			else
+				if psConfigFileInFileSystem(colContent,configFileName) == false
+					return false
+				end
+			end
+			
+			#
 			# Make sure that the row "Step Name" column "Value" are unique and listed in order.
 			#
 			uniqueStepValue = Hash.new
-			ct = 2
+			beginningLineOfSteps = 5
+			ct = beginningLineOfSteps
 			valueCounter = 1
 			while ct < config.length do
 				columns = config[ct].split(",")
-				@stepName = config[ct].split(",")[2].strip # Get the row data for file name.
-				valueColumnOrStepNameRow = config[ct].split(",")[4].strip
-				#
-				# Must be a number test.
-				#
-				if SharedLib.is_a_number?(valueColumnOrStepNameRow) == false
-						error = "Error: In file '#{SharedLib.makeUriFriendly(configFileName)}', 'Value' "
-						error += "'#{valueColumnOrStepNameRow}'"
-						error += "on Step Name '#{columns[2]}' must be a number."
-						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
-						return false
-				end
+				colName = config[ct].split(",")[1].strip # Get the row data for file name.
+				if colName == "Step Name"
+					# The section of the read file is still working on a step.
+					@stepName = config[ct].split(",")[2].strip # Get the row data for file name.
+					valueColumnOrStepNameRow = config[ct].split(",")[4].strip
+					#
+					# Must be a number test.
+					#
+					if SharedLib.is_a_number?(valueColumnOrStepNameRow) == false
+							error = "Error: In file '#{configFileName}', 'Value' "
+							error += "'#{valueColumnOrStepNameRow}' "
+							error += "on Step Name '#{columns[2]}' must be a number."
+							@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+							return false
+					end
 				
-				#
-				# Must be unique test.
-				#
-				if uniqueStepValue[valueColumnOrStepNameRow].nil? == false
-						error = "Error: In file '#{SharedLib.makeUriFriendly(configFileName)}', 'Value' "
-						error += "'#{valueColumnOrStepNameRow}'"						
-						error += "on Step Name '#{columns[2]}' must be unique."
-						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
-						return false
-				end
+					#
+					# Must be unique test.
+					#
+					if uniqueStepValue[valueColumnOrStepNameRow].nil? == false
+							error = "Error: In file '#{configFileName}', 'Value' "
+							error += "'#{valueColumnOrStepNameRow}' "						
+							error += "on Step Name '#{columns[2]}' must be unique."
+							@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+							return false
+					end
 				
-				#
-				# Must be in order test
-				#
-				if valueColumnOrStepNameRow.to_i != valueCounter
-						error = "Error: In file '#{SharedLib.makeUriFriendly(configFileName)}', 'Value' "
-						error += "'#{valueColumnOrStepNameRow}' valueColumnOrStepNameRow.to_i=#{valueColumnOrStepNameRow.to_i} valueCounter=#{valueCounter} ct=#{ct}"
-						error += "on Step Name '#{columns[2]}' must be listed in increasing order."
-						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
-						return false
+					#
+					# Must be in order test
+					#
+					if valueColumnOrStepNameRow.to_i != valueCounter
+							error = "Error: In file '#{configFileName}', 'Value' "
+							error += "'#{valueColumnOrStepNameRow}' valueColumnOrStepNameRow.to_i=#{valueColumnOrStepNameRow.to_i} valueCounter=#{valueCounter} ct=#{ct} "
+							error += "on Step Name '#{columns[2]}' must be listed in increasing order."
+							@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+							return false
+					end				
+					valueCounter += 1
 				end
-				
-				valueCounter += 1
 				ct += 11
 			end
 			
@@ -1662,7 +1721,7 @@ end
 			# Make sure that the step file has no two equal step names 
 			#			
 			uniqueStepNames = Hash.new
-			ct = 2
+			ct = beginningLineOfSteps
 			while ct < config.length do
 				colContent = config[ct].split(",")[2].strip
 				if uniqueStepNames[colContent].nil? == false
@@ -1700,36 +1759,21 @@ end
 			#
 			# Make sure Power Supply setup file name are given.
 			#
-			ct = 3
+			ct = beginningLineOfSteps+1
 			while ct < config.length do
-				@stepName = config[ct-1].split(",")[2].strip # Get the row data for file name.
-				colContent = config[ct].split(",")[2].strip
-				if colContent.nil? == true || colContent.length == 0
-					@redirectWithError += "&ErrInFile="
-					@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
-					@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
-					@redirectWithError += "&ErrPsFileNotGiven=Y"
-					@redirectWithError = SharedLib.makeUriFriendly(@redirectWithError)
-					return false
-				else
-					#
-					# Make sure that the PS config file is present in the file system
-					#
-					if File.file?(dirFileRepository+"/"+colContent) == false
-						#
-						# The file does not exists.  Post an error.
-						#
+				colName = config[ct].split(",")[2].strip
+				if colName == 	"Power Supplies"
+					@stepName = config[ct-1].split(",")[2].strip # Get the row data for file name.
+					colContent = config[ct].split(",")[2].strip
+					if colContent.nil? == true || colContent.length == 0
 						@redirectWithError += "&ErrInFile="
 						@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 						@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(stepName)}"
-						@redirectWithError += "&ErrStepPsNotFound=#{SharedLib.makeUriFriendly(colContent)}"
+						@redirectWithError += "&ErrPsFileNotGiven=Y"
+						@redirectWithError = SharedLib.makeUriFriendly(@redirectWithError)
 						return false
-					else 
-						#
-						# Make sure the PS File config is good.
-						#
-						@configFileType = UserInterface::PsConfig
-						if checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
+					else
+						if psConfigFileInFileSystem(colContent,configFileName) == false
 							return false
 						end
 					end
@@ -1741,7 +1785,7 @@ end
 			#
 			# Make sure the Temp Config file is given
 			#
-			ct = 4
+			ct = beginningLineOfSteps+2
 			while ct < config.length do
 				@stepName = config[ct-2].split(",")[2].strip # Get the row data for the step file name.
 				colContent = config[ct].split(",")[2].strip
@@ -1780,31 +1824,32 @@ end
 						
 			#
 			# Make sure 'STEP TIME', 'Temp Wait Time', 'Alarm Wait Time' are numbers
-			#			
-			if mustBeNumber(configFileName,2,config,"Step Num") == false
+			#
+			offset = 3 # Due to Pretest (site identification.)
+			if mustBeNumber(configFileName,2+offset,config,"Step Num") == false
 					return false
 			end
 			
-			if mustBeNumber(configFileName,6,config,"Step Time") == false
+			if mustBeNumber(configFileName,6+offset,config,"Step Time") == false
 					return false
 			end
 			
-			if mustBeNumber(configFileName,7,config,"TEMP WAIT") == false
+			if mustBeNumber(configFileName,7+offset,config,"TEMP WAIT") == false
 					return false
 			end
 			
-			if mustBeNumber(configFileName,8,config,"Alarm Wait") == false
+			if mustBeNumber(configFileName,8+offset,config,"Alarm Wait") == false
 					return false
 			end
 			
 			#
 			# Make sure that 'Auto Restart' and 'Stop on Tolerance' are boolean (1 or 0)
 			#
-			if mustBeBoolean(configFileName,9,config,"Auto Restart") == false
+			if mustBeBoolean(configFileName,9+offset,config,"Auto Restart") == false
 					return false
 			end
 			
-			if mustBeBoolean(configFileName,10,config,"Stop on Tolerance") == false
+			if mustBeBoolean(configFileName,10+offset,config,"Stop on Tolerance") == false
 					return false
 			end
 			
@@ -2023,6 +2068,7 @@ end
 						error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', sequence number"
 						error += " '#{columns[seqDownCol]}' on index '#{columns[indexCol]}' is already accounted for"
 						error += " sequence down."
+						puts "error @#{__LINE__}-#{__FILE__}"
 						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 						return false
 					end
@@ -2035,6 +2081,7 @@ end
 						error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', sequence number"
 						error += " '#{columns[seqUpCol]}' on index '#{columns[indexCol]}' is already accounted for" 
 						error += " sequence up."
+						puts "error @#{__LINE__}-#{__FILE__}"
 						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 						return false
 					end
@@ -2048,6 +2095,7 @@ end
 					error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}' on"
 					error += " index '#{columns[indexCol]}', if PS is turned off on "
 					error += "power sequence (sequence order = 0), it must have a sequence = 0 for both SEQ UP and SEQ DN."
+						puts "error @#{__LINE__}-#{__FILE__}"
 					@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 					return false
 				end
@@ -2134,6 +2182,7 @@ end
 			#
 			error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', #{colNameParam} column"
 			error += " on index '#{columns[indexCol]}' must be an integer."
+						puts "error @#{__LINE__}-#{__FILE__}"
 			@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 			return false
 		end
@@ -2151,10 +2200,12 @@ end
 		stepFileExtension = ".step"
 		psFileExtension = ".ps_config"
 		temperatureFileExtension = ".temp_config"
-	
+		minCurrFileExtension = ".minCurr_config"
+		
 		stepFile = uploadedFileName[uploadedFileName.length-stepFileExtension.length..-1]
 		psFile  = uploadedFileName[uploadedFileName.length-psFileExtension.length..-1]
 		tempFile = uploadedFileName[uploadedFileName.length-temperatureFileExtension.length..-1]
+		minCurrFile = uploadedFileName[uploadedFileName.length-minCurrFileExtension.length..-1]
 		
 		if stepFile == stepFileExtension
 			@configFileType = UserInterface::StepFileConfig
@@ -2162,7 +2213,10 @@ end
 			@configFileType = UserInterface::PsConfig
 		elsif tempFile == temperatureFileExtension
 			@configFileType = UserInterface::TempConfig
+		elsif minCurrFile == minCurrFileExtension
+			@configFileType = UserInterface::MinCurrConfig
 		else
+						puts "error @#{__LINE__}-#{__FILE__}"
 			@redirectWithError += "&ErrGeneral=FileNotKnown&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 			return false
 		end
@@ -2258,10 +2312,10 @@ get '/TopBtnPressed' do
 				fileName = SharedLib.uriToStr(params[:ErrStepNameAlreadyFound])
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Duplicate filename '#{fileName}' in the step file list."
 			elsif SharedLib.uriToStr(params[:ErrStepFormat]).nil? == false && SharedLib.uriToStr(params[:ErrStepFormat]) != ""
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  Column labels must start on column A, row 2."
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  Column labels must start on column A, row 1."
 			elsif (SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && SharedLib.uriToStr(params[:ErrGeneral]) != "")
 				if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
-					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, or *.temp_config"
+					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, *.minCurr_config, or *.temp_config"
 				elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
 					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Board PcListener is down."
 				elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
@@ -2335,7 +2389,7 @@ post '/TopBtnPressed' do
 	#
 	# Make sure that the "file repository" directory exists.
 	#
-	dirFileRepository = StepConfigFileFolder
+	dirFileRepository = UserInterface::StepConfigFileFolder
 	if Dir.exists?(dirFileRepository) == false
 		#
 		# Run a bash command to create a directory
@@ -2399,4 +2453,4 @@ get '/AckError' do
 	redirect "../"
 end
 
-# 508
+# 1621

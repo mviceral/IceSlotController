@@ -1,5 +1,4 @@
 require 'drb/drb'
-require_relative '../lib/SharedMemory'
 require_relative 'ServerLib'
 URI="druby://localhost:8787"
 FRONT_OBJECT=LoggerFactory.new()
