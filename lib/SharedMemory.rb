@@ -3,7 +3,7 @@
 # clear; ruby extconf.rb ; make; ruby myRubyTest.rb
 #
 #require_relative 'SharedMemoryExtension.so'
-require_relative '../lib/SharedLib'
+require_relative 'SharedLib'
 #require 'singleton'
 #require 'forwardable'
 require 'json'
@@ -27,11 +27,13 @@ class SharedMemory
     SlotOwner = "SlotOwner"    
 
     def writeAndFreeLocked(strParam, fromParam)
+=begin
         if @lockedAt == ""
             puts "Memory not locked!  Called from [ #{fromParam} ]"
             exit
         end
 	    @lockedAt = ""
+=end
         # puts "Freeing locked memory. #{__LINE__}-#{__FILE__}"
         # @theMemory = strParam.to_json
         @theMemory = strParam
@@ -70,6 +72,7 @@ class SharedMemory
     end
     
     def lockMemory(fromParam)
+=begin
         # puts "Locking memory (from:#{fromParam}). #{__LINE__}-#{__FILE__}"
     	while @lockedAt.nil? == false && @lockedAt != ""
             puts "Shared memory used at '#{@lockedAt}'."
@@ -78,8 +81,8 @@ class SharedMemory
             # puts "Exiting code. @#{__LINE__}-#{__FILE__}"
             # exit
     	end
-    	
     	@lockedAt = fromParam
+=end    	
         begin
         	# puts "From #{__LINE__}-#{__FILE__}"
         	# puts "GetDataV1()=#{GetDataV1()}"
@@ -158,17 +161,22 @@ class SharedMemory
 				ds[SharedLib::PC][slotOwnerParam][SharedLib::Tcu] = hash
 			end
 
-			if errMsgParam.nil? == false
-				# There were some errors from the board.
-				# Write the error into a log file
-				newErrLogFileName = "../NewErrors_#{slotOwnerParam}.log"
-				while errMsgParam.length>0
-					errItem = errMsgParam.shift
-					File.open(newErrLogFileName, "a") { 
-						|file| file.write("#{errItem.to_json}\n") 
-					}
+			begin
+				if errMsgParam.nil? == false
+					# There were some errors from the board.
+					# Write the error into a log file
+					newErrLogFileName = "../NewErrors_#{slotOwnerParam}.log"
+					while errMsgParam.length>0
+						errItem = errMsgParam.shift
+						File.open(newErrLogFileName, "a") { 
+							|file| file.write("#{errItem.to_json}\n") 
+						}
+					end
 				end
-			end
+				rescue
+					#`echo "#{SharedLib.makeUriFriendly(errMsgParam)}" >> #{newErrLogFileName}`
+					puts errMsgParam
+			end			
 
 			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 		end

@@ -17,6 +17,7 @@ class SharedLib
 	ButtonDisplay = "ButtonDisplay"
 	NormalButtonDisplay = "NormalButtonDisplay"
 	TotalTimeOfStepsInQueue = "TotalTimeOfStepsInQueue"
+	DutSiteActivationMin = "DutSiteActivationMin"
 	
 	#
 	# Constants used for sending data to PC

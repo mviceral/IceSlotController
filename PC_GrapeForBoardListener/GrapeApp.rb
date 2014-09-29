@@ -6,7 +6,7 @@ require 'pp'
 require 'drb/drb'
 # require 'sqlite3'
 require_relative '../lib/SharedMemory'
-require_relative '../lib/DRbSharedMemory/ServerLib'
+require_relative '../PC_DRbSharedMemory/ServerLib'
 
 # If you set this true, it will put out some debugging info to STDOUT
 # (usually the termninal that you started rackup with)
