@@ -47,7 +47,7 @@ end
 #
 # Continuous loop.  Loop is turned off for now.
 #
-while true do
+while false do
 	sleep(0.5);
 	uart1.write("#{userInput}\n");
 	#ARGV.each do|a|

@@ -10,10 +10,29 @@ class DutObj
         # End of 'def initialize()'
     end
     
-    def getTcuStatus(dutNumParam,uart1Param,gPIO2)
+    def setTemp(dutNum,uart1,gPIO2,temParam)
         gPIO2.etsRxSel(dutNumParam)
         tbr = "" # tbr - to be returned
-        uartStatusCmd = "S?\n"
+        uartStatusCmd = "T:\n"
+        uart1Param.write("#{uartStatusCmd}");
+        uartStatusCmd = "\n"
+        uart1Param.write("#{uartStatusCmd}");
+        sleep(0.01)
+        return tbr
+    end
+    
+    def getTcuStatusV(dutNumParam,uart1Param,gPIO2)
+        getTcuStatus(dutNumParam,uart1Param,gPIO2,"V")
+    end
+    
+    def getTcuStatusS(dutNumParam,uart1Param,gPIO2)
+        getTcuStatus(dutNumParam,uart1Param,gPIO2,"S")
+    end
+    
+    def getTcuStatus(dutNumParam,uart1Param,gPIO2,singleCharParam)
+        gPIO2.etsRxSel(dutNumParam)
+        tbr = "" # tbr - to be returned
+        uartStatusCmd = "#{singleCharParam}?\n"
         uart1Param.write("#{uartStatusCmd}");
         keepLooping = true
         notFoundAtChar = true
@@ -102,11 +121,22 @@ class DutObj
     end
     
     def poll(dutNumParam, uart1Param,gPIO2)
-        # puts "within poll. dutNumParam=#{dutNumParam}"
-        # gets
-        @statusResponse[dutNumParam] = getTcuStatus(dutNumParam, uart1Param,gPIO2)
-        # puts "dutNumParam=#{dutNumParam} @statusResponse[dutNumParam]=#{@statusResponse[dutNumParam]} #{__LINE__}-#{__FILE__}"
-        #puts "Leaving poll. dutNumParam=#{dutNumParam}"
+        @statusResponse[dutNumParam] = getTcuStatusS(dutNumParam, uart1Param,gPIO2)
+        
+        if @vCounter.nil?
+            @vCounter = Hash.new
+        end
+        
+        if @vCounter[dutNumParam].nil?
+            @vCounter[dutNumParam] = 0
+        end
+        
+        if @vCounter[dutNumParam] < 0
+            @vCounter[dutNumParam] += 1
+        else
+            @vCounter[dutNumParam] = 0
+            puts "Dut##{dutNumParam}#{getTcuStatusV(dutNumParam, uart1Param,gPIO2)}"
+        end
     end
 
     def saveAllData(parentMemory, timeNowParam)

@@ -451,7 +451,7 @@ class TCUSampler
                 goodConnection = true
                 rescue
                     SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
-                    sleep(0.5)
+                    sleep(0.25)
             end
             tries += 1
         end
@@ -490,7 +490,8 @@ class TCUSampler
                                     # puts "A3 getConfiguration()[Steps][key][key2].to_i=#{getConfiguration()[Steps][key][key2].to_i} (stepNumber+1) =#{(stepNumber+1) } #{__LINE__}-#{__FILE__}"
                                     # puts "A4 getConfiguration()[Steps][key][StepTimeLeft].to_i=#{getConfiguration()[Steps][key][StepTimeLeft].to_i} #{__LINE__}-#{__FILE__}"
                                     if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0
-                                        # puts "B #{__LINE__}-#{__FILE__}"
+                                        # This is the step we want to work on.  Set the temperature settings.
+                                        
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
                                         @shareMem.SetStepName("#{key}")
@@ -1023,7 +1024,7 @@ class TCUSampler
         newDeadTcu = false
         dutObj = DutObj.new()
         while ct<24 && tcusToSkip[ct].nil? do 
-            uartResponse = dutObj.getTcuStatus(ct,uart1,gPIO2)
+            uartResponse = dutObj.getTcuStatusS(ct,uart1,gPIO2)
             if uartResponse == DutObj::FaultyTcu
                 tcusToSkip[ct] = ct
                 newDeadTcu = true
@@ -1202,22 +1203,21 @@ class TCUSampler
             		    case pcCmd
             		    when SharedLib::RunFromPc
                 		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
-                		    
             		    when SharedLib::StopFromPc
             		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-            		        
             		    when SharedLib::ClearConfigFromPc
                 		    setBoardData(Hash.new)
             		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
             		        setBoardStateForCurrentStep()
                 		    @shareMem.SetConfigurationFileName("")
                 		    gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
-                		    
             		    when SharedLib::LoadConfigFromPc
             		        # close the sockets of the Ethernet PS if they're on.
             		        if @socketIp.nil? == false
                                 @socketIp.each do |key, array|
-                                    @socketIp[key].close
+                                    if @socketIp[key].nil? == false
+                                        @socketIp[key].close
+                                    end
                                 end                		    
             		        end
             		        @socketIp = nil
@@ -1335,6 +1335,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# @ 449
-# SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
-# uncomment sleep code below given line above.
+# @ # This is the step we want to work on.  Set the temperature settings.

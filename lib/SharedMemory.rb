@@ -626,7 +626,9 @@ class SharedMemory
         totalStepDuration = 0
         if hold.nil? == false
             hold["Steps"].each do |key, array|
-                puts "E #{__LINE__}-#{__FILE__}"
+                puts "key='#{key}'#{__LINE__}-#{__FILE__}"
+                PP.pp(array)
+                sleep(1.0)
                 hold["Steps"][key]["StepTimeLeft"] = 60.0*hold["Steps"][key]["Step Time"].to_f
                 totalStepDuration += hold["Steps"][key]["StepTimeLeft"]
             end
@@ -888,7 +890,7 @@ class SharedMemory
 
     
     def WriteDataTcu(stringParam,fromParam)
-        puts "stringParam='#{stringParam}' fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
+        # puts "stringParam='#{stringParam}' fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
         if ds[SharedLib::Tcu].nil?
             ds[SharedLib::Tcu] = Hash.new
@@ -896,7 +898,7 @@ class SharedMemory
         
         ds[SharedLib::Tcu] = stringParam 
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-        puts "Check = '#{GetDataTcu("#{__LINE__}-#{__FILE__}")}'  #{__LINE__}-#{__FILE__}"
+        # puts "Check = '#{GetDataTcu("#{__LINE__}-#{__FILE__}")}'  #{__LINE__}-#{__FILE__}"
     end
 
     def SetupData

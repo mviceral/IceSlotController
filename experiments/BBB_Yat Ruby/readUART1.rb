@@ -11,8 +11,6 @@ system("echo BB-UART1 > /sys/devices/bone_capemgr.9/slots")
 
 
 puts "Check 3 of 7 - ./openTtyO1Port_115200.exe"
-# puts "Check 3 of 7 - ./openTtyO1Port_#{baudrateToUse}.exe"
-# system("openTtyO1Port.exe")
 system("./openTtyO1Port_115200.exe")
     	
 
