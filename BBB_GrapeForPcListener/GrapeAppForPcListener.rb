@@ -96,9 +96,7 @@ module PcListenerModule
 					puts "PC sent '#{hash["Cmd"]}'"
 					sharedMem = SharedMemory.new()
 					hash["Data"] = JSON.parse(params["#{SharedLib::PcToBbbData}"])
-					puts "A processNum = '#{processNum}'  forEcho = #{hash.to_json}"
 					forEcho = hash.to_json
-					puts "B processNum = '#{processNum}'  forEcho = #{forEcho}"
 			        #
 			        # Send data to real time register data viewer
 			        #
@@ -115,6 +113,7 @@ module PcListenerModule
 			        end
 			        puts "Done sending."
 					return
+					
 					sharedMem.SetSlotOwner(hash["SlotOwner"])
 					case mode
 					when SharedLib::ClearConfigFromPc
