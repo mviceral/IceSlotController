@@ -3,7 +3,7 @@
 # clear; ruby extconf.rb ; make; ruby myRubyTest.rb
 #
 #require_relative 'SharedMemoryExtension.so'
-require_relative '../lib/SharedLib'
+require_relative 'SharedLib'
 #require 'singleton'
 #require 'forwardable'
 require 'json'
