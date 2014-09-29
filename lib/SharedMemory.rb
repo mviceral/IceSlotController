@@ -882,7 +882,7 @@ class SharedMemory
 
     
     def WriteDataTcu(stringParam,fromParam)
-        puts "stringParam='#{stringParam}' fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
+        # puts "stringParam='#{stringParam}' fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
         if ds[SharedLib::Tcu].nil?
             ds[SharedLib::Tcu] = Hash.new
@@ -890,7 +890,7 @@ class SharedMemory
         
         ds[SharedLib::Tcu] = stringParam 
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-        puts "Check = '#{GetDataTcu("#{__LINE__}-#{__FILE__}")}'  #{__LINE__}-#{__FILE__}"
+        # puts "Check = '#{GetDataTcu("#{__LINE__}-#{__FILE__}")}'  #{__LINE__}-#{__FILE__}"
     end
 
     def SetupData

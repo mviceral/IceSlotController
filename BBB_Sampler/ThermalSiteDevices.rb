@@ -22,6 +22,17 @@ class ThermalSiteDevices
         # End of 'def initialize'
     end
     
+    def setTemp(uart1,gPIO2,tcusToSkip,temParam)
+        dutNum = 0;
+        while  dutNum<TOTAL_DUTS_TO_LOOK_AT do
+            if  tcusToSkip[dutNum].nil?  
+                # puts "B - dutNum='#{dutNum}' #{__LINE__}-#{__FILE__}"
+                dBase.setTemp(dutNum,uart1,gPIO2,temParam)
+            end
+            dutNum +=1;
+        end            
+    end
+    
     def pollDevices(uart1,gPIO2,tcusToSkip)
         # puts "A - "+Time.now.inspect+" - ThermalSiteDevices.pollDevices function got called."
         # puts "tcusToSkip='#{tcusToSkip}' TOTAL_DUTS_TO_LOOK_AT='#{TOTAL_DUTS_TO_LOOK_AT}'"
