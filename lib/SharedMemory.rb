@@ -196,78 +196,78 @@ class SharedMemory
 			hash[SharedLib::SlotOwner] != SharedLib::SLOT3) == true) || hash[SharedLib::SlotOwner].nil?
 			# Flush out the  memory...
 			# @data.WriteDataV1("","")
-			hash[SharedLib::SlotOwner] = "SLOT1"
-		end
-		SetDataBoardToPc(hash)
-		SetDispSlotOwner(hash[SharedLib::SlotOwner])
+		else
+			SetDataBoardToPc(hash)
+			SetDispSlotOwner(hash[SharedLib::SlotOwner])
 
-		puts "\n\n\n"
-		puts "Display button = '#{GetDispButton(hash[SharedLib::SlotOwner])}'"
-		print "TotalTimeOfStepsInQueue ="
-puts " '#{GetDispTotalTimeOfStepsInQueue(hash[SharedLib::SlotOwner])}'"
-		puts "ConfigurationFileName = #{GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}"
-		puts "ConfigDateUpload = #{GetDispConfigDateUpload(hash[SharedLib::SlotOwner])}"
-		puts "AllStepsDone_YesNo = #{GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner])}"
-		puts "BbbMode = #{GetDispBbbMode(hash[SharedLib::SlotOwner])}"
-		puts "StepName = #{GetDispStepName(hash[SharedLib::SlotOwner])}"
-		puts "StepNumber = #{GetDispStepNumber(hash[SharedLib::SlotOwner])}"
-		puts "StepTotalTime = #{GetDispStepTimeLeft(hash[SharedLib::SlotOwner])}"
-		puts "SlotIpAddress = #{GetDispSlotIpAddress(hash[SharedLib::SlotOwner])}"
-		puts "SlotTime = #{Time.at(GetDispSlotTime(hash[SharedLib::SlotOwner]).to_i).inspect}"
-		# puts "AdcInput = #{GetDispAdcInput(hash[SharedLib::SlotOwner])}"
-		puts "MuxData = #{GetDispMuxData(hash[SharedLib::SlotOwner])}"
-		puts "Tcu = #{GetDispTcu(hash[SharedLib::SlotOwner])}"
-		puts "AllStepsCompletedAt = #{GetDispAllStepsCompletedAt(hash[SharedLib::SlotOwner])}"
-		puts "TotalStepDuration = #{GetDispTotalStepDuration(hash[SharedLib::SlotOwner])}"
-		# puts "Eips = #{GetDispEips(hash[SharedLib::SlotOwner])}"
-		configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
-		dBaseFileName = "../steps log records/#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}.db"
+			puts "\n\n\n"
+			puts "Display button = '#{GetDispButton(hash[SharedLib::SlotOwner])}'"
+			print "TotalTimeOfStepsInQueue ="
+	puts " '#{GetDispTotalTimeOfStepsInQueue(hash[SharedLib::SlotOwner])}'"
+			puts "ConfigurationFileName = #{GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}"
+			puts "ConfigDateUpload = #{GetDispConfigDateUpload(hash[SharedLib::SlotOwner])}"
+			puts "AllStepsDone_YesNo = #{GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner])}"
+			puts "BbbMode = #{GetDispBbbMode(hash[SharedLib::SlotOwner])}"
+			puts "StepName = #{GetDispStepName(hash[SharedLib::SlotOwner])}"
+			puts "StepNumber = #{GetDispStepNumber(hash[SharedLib::SlotOwner])}"
+			puts "StepTotalTime = #{GetDispStepTimeLeft(hash[SharedLib::SlotOwner])}"
+			puts "SlotIpAddress = #{GetDispSlotIpAddress(hash[SharedLib::SlotOwner])}"
+			puts "SlotTime = #{Time.at(GetDispSlotTime(hash[SharedLib::SlotOwner]).to_i).inspect}"
+			# puts "AdcInput = #{GetDispAdcInput(hash[SharedLib::SlotOwner])}"
+			puts "MuxData = #{GetDispMuxData(hash[SharedLib::SlotOwner])}"
+			puts "Tcu = #{GetDispTcu(hash[SharedLib::SlotOwner])}"
+			puts "AllStepsCompletedAt = #{GetDispAllStepsCompletedAt(hash[SharedLib::SlotOwner])}"
+			puts "TotalStepDuration = #{GetDispTotalStepDuration(hash[SharedLib::SlotOwner])}"
+			# puts "Eips = #{GetDispEips(hash[SharedLib::SlotOwner])}"
+			configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
+			dBaseFileName = "../steps log records/#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}.db"
 =begin
-		# logging code.
-		runningOnCentos = true
-		if runningOnCentos == false
-			if File.file?("#{dBaseFileName}") == false
-				# The file does not exists.
-				dbRecord = SQLite3::Database.new( "#{dBaseFileName}" )
-				if dbRecord.nil?
-					SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
+			# logging code.
+			runningOnCentos = true
+			if runningOnCentos == false
+				if File.file?("#{dBaseFileName}") == false
+					# The file does not exists.
+					dbRecord = SQLite3::Database.new( "#{dBaseFileName}" )
+					if dbRecord.nil?
+						SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
+					else
+							dbRecord.execute("create table log ("+
+							"idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
+							");")
+					end
 				else
-						dbRecord.execute("create table log ("+
-						"idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
-						");")
+					# The file already exists.
+					dbRecord = SQLite3::Database.open dBaseFileName
+				end
+
+				forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(receivedData)
+
+				str = "Insert into log(idLogTime, data) "+
+				"values(#{GetDispSlotTime()},\"#{forDbase}\")"
+
+				puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
+				begin
+					dbRecord.execute "#{str}"
+					rescue SQLite3::Exception => e 
+					puts "\n\n"
+					SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
+					SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
+					# End of 'rescue SQLite3::Exception => e'
+					ensure
+
+					# End of 'begin' code block that will handle exceptions...
 				end
 			else
-				# The file already exists.
-				dbRecord = SQLite3::Database.open dBaseFileName
+				if GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner]) == SharedLib::No && 
+					GetDispBbbMode(hash[SharedLib::SlotOwner]) == SharedLib::InRunMode
+					str = "#{GetDispSlotTime(hash[SharedLib::SlotOwner])},#{receivedData}"
+					open("#{dBaseFileName}", 'a') { |f|
+					  f.puts "#{str}"
+					}
+				end
 			end
-
-			forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(receivedData)
-
-			str = "Insert into log(idLogTime, data) "+
-			"values(#{GetDispSlotTime()},\"#{forDbase}\")"
-
-			puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
-			begin
-				dbRecord.execute "#{str}"
-				rescue SQLite3::Exception => e 
-				puts "\n\n"
-				SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
-				SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
-				# End of 'rescue SQLite3::Exception => e'
-				ensure
-
-				# End of 'begin' code block that will handle exceptions...
-			end
-		else
-			if GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner]) == SharedLib::No && 
-				GetDispBbbMode(hash[SharedLib::SlotOwner]) == SharedLib::InRunMode
-				str = "#{GetDispSlotTime(hash[SharedLib::SlotOwner])},#{receivedData}"
-				open("#{dBaseFileName}", 'a') { |f|
-				  f.puts "#{str}"
-				}
-			end
-		end
 =end
+		end
 	end
 
 	def GetDispErrorMsg(slotOwnerParam)
