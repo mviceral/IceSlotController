@@ -1194,6 +1194,7 @@ class TCUSampler
 
                                     # Done processing all steps listed in configuration.step file
                                     saveBoardStateToHoldingTank()
+                                    turnOffDuts(tcusToSkip)
                                     # We're done proce@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNewssing all the steps.
                                 end
                             end
