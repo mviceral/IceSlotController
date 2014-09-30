@@ -10,10 +10,9 @@ class DutObj
         # End of 'def initialize()'
     end
     
-    def setTemp(dutNumParam,uart1Param,gPIO2,temParam)
-        gPIO2.etsRxSel(dutNumParam)
+    def setTHCPID(keyParam,uart1Param,temParam)
         tbr = "" # tbr - to be returned
-        uartStatusCmd = "T:\n"
+        uartStatusCmd = "#{keyParam}:\n"
         uart1Param.write("#{uartStatusCmd}");
         sleep(0.01)
         uartStatusCmd = "#{temParam}\n"

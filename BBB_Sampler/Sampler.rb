@@ -491,12 +491,16 @@ class TCUSampler
                                     # puts "A4 getConfiguration()[Steps][key][StepTimeLeft].to_i=#{getConfiguration()[Steps][key][StepTimeLeft].to_i} #{__LINE__}-#{__FILE__}"
                                     if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0
                                         # This is the step we want to work on.  Set the temperature settings.
-                                        PP.pp(getConfiguration()[Steps][key])
+                                        PP.pp(getConfiguration()[Steps][key]["TempConfig"])
                                         puts "Checking content of 'TempConfig' #{__LINE__}-#{__FILE__}"
                                         sleep(2.0)
-                                        ThermalSiteDevices.setTemp(uart1,gPIO2,tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"T",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["TDUT"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"H",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["H"][0..-2].to_f/100.0*255)
+                                        ThermalSiteDevices.setTHCPID(uart1,"C",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["C"][0..-2].to_f/100.0*255)
+                                        ThermalSiteDevices.setTHCPID(uart1,"P",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["P"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"I",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["I"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"D",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["D"])
 
-                                        
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
                                         @shareMem.SetStepName("#{key}")
