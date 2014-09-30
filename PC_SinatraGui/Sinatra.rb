@@ -336,9 +336,16 @@ class UserInterface
 		#
 		# Temperature config file template.
 		#
-		return ",,,Comment,,Nom,Trip,Trip,FLAG,FLAG,Enable,IDLE,LOAD,START,RUN,STOP,CLEAR
-		,index,Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,control,,,,,,
-		,1,TDUT,DUT TEMPERATURE [1:24],C,125,25,135,118.75,131.25,YES,OFF,OFF,ON,ON,OFF,OFF"
+		return "Temperature,Comment,,Nom,Trip,Trip,FLAG,FLAG,Enable,IDLE,LOAD,START,RUN,STOP,CLEAR
+		Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,control,,,,,,
+		TDUT,DUT TEMPERATURE [1:24],C,25,15,135,23.75,26.25,YES,OFF,OFF,ON,ON,OFF,OFF
+		Timer,Delay Ramp Up to full power,seconds,500,,,,,,,,,,,
+		Timer,Delay Ramp Dn to FP,seconds,60,,,,,,,,,,,
+		H,Delay UP Max PWM Heat ,Percent,25%,,,,,0-255,,,,,,
+		C,Ramp down PWM COOL,Percent,100%,,,,,0-255,,,,,,
+		P,Propotional,Value,6,,,,,,,,,,,
+		I,Integral,Value,0.6,,,,,,,,,,,
+		D,Derivitive,Value,0.15,,,,,,,,,,,"
 	end
 
 	def stepConfigFileTemplate
@@ -385,47 +392,44 @@ class UserInterface
 	end
 	
 	def psConfigFileTemplate
-		return "
-		,,,,,,,,,,,,,,,,,
-		,,,,,,,,,,,,,,,,,
-		,Config File,,,,,,,,,,Condition,,,,,,
-		,,,Comment,,Nom,Trip,Trip,FLAG,FLAG,Enable,IDLE,LOAD,START,RUN,STOP,CLEAR,
-		,index,Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,control,,,,,,,
-		,15,VPS0,Slot PS Voltage 0,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-		,16,IPS0,Slot PS Current 0,A,125,0,140,14,131.25,,,,,,,,
-		,17,VPS1,Slot PS Voltage 1,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-		,18,IPS1,Slot PS Current 1,A,125,0,140,14,131.25,,,,,,,,
-		,19,VPS2,Slot PS Voltage 2  (shared PS2),V,1.5,1.35,1.65,1.425,1.575,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-		,20,IPS2,Slot PS Current 2 (shared PS2),A,70,0,70,7,73.5,,,,,,,,
-		,21,VPS3,Slot PS Voltage 3,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-		,22,IPS3,Slot PS Current 3,A,125,0,140,14,131.25,,,,,,,,
-		,23,VPS4,Slot PS Voltage 4  (shared PS2),V,1.5,1.35,1.65,1.425,1.575,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-		,24,IPS4,Slot PS Current 4  (shared PS2),A,70,0,70,7,73.5,,,,,,,,
-		,25,VPS5,Slot PS Voltage 5,V,ph,ph,ph,ph,ph,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-		,26,IPS5,Slot PS Current 5,A,ph,ph,ph,ph,ph,,,,,,,,
-		,27,VPS6,Slot PS Voltage 6,V,3.3,2.97,3.63,3.135,3.465,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
-		,28,IPS6,Slot PS Current 6,A,3,0,5,0.5,3.15,,,,,,,,
-		,29,VPS7,Slot PS Voltage 7,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-		,30,IPS7,Slot PS Current 7,A,125,0,140,14,131.25,,,,,,,,
-		,31,VPS8,Slot PS Voltage 8,V,5,4.5,5.5,4.75,5.25,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
-		,32,IPS8,Slot PS Current 8,A,1,0,3,0.3,1.05,,,,,,,,
-		,33,VPS9,Slot PS Voltage 9,V,2.1,1.89,2.31,1.995,2.205,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
-		,34,IPS9,Slot PS Current 9,A,1,0,3,0.3,1.05,,,,,,,,
-		,35,VPS10,Slot PS Voltage 10,V,2.5,2.25,2.75,2.375,2.625,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
-		,36,IPS10,Slot PS Current 10,A,3,0,5,0.5,3.15,,,,,,,,
-		,37,IDUT,Dut PS current 24 [1:24],A,23,0,27,2.7,24.15,,,,,,,,
-		,,,,,,UP,DLYms,DN,DLYms,,,,,,,,
-		,39,SPS0,Enable-Disable ,SEQ,Ethernent,3,100,9,200,,,,,,,,
-		,40,SPS1,Enable-Disable ,SEQ,Ethernent,1,500,8,200,,,,,,,,
-		,41,SPS2,Enable-Disable ,SEQ,Ethernent,2,1000,7,200,,,,,,,,
-		,42,SPS3,Enable-Disable ,SEQ,Ethernent,4,200,6,200,,,,,,,,
-		,43,SPS4,Enable-Disable ,SEQ,Ethernent,0,0,0,0,,,,,,,,
-		,44,SPS5,Enable-Disable ,SEQ,Ethernent,0,0,0,0,,,,,,,,
-		,45,SPS6,Enable-Disable ,SEQ,Slot PCB,5,200,5,200,,,,,,,,
-		,46,SPS7,Enable-Disable ,SEQ,Ethernent,6,200,4,200,,,,,,,,
-		,47,SPS8,Enable-Disable ,SEQ,Slot PCB,7,200,3,200,,,,,,,,
-		,48,SPS9,Enable-Disable ,SEQ,Slot PCB,8,200,2,200,,,,,,,,
-		,49,SPS10,Enable-Disable ,SEQ,Slot PCB,9,200,1,200,,,,,,,,"
+		return "Config File,,,,,,,,,,Condition,,,,,,
+			,,Comment,,Nom,Trip,Trip,FLAG,FLAG,Enable,IDLE,LOAD,START,RUN,STOP,CLEAR,
+			index,Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,control,,,,,,,
+			15,VPS0,Slot PS Voltage 0,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			16,IPS0,Slot PS Current 0,A,125,0,140,14,131.25,,,,,,,,
+			17,VPS1,Slot PS Voltage 1,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			18,IPS1,Slot PS Current 1,A,125,0,140,14,131.25,,,,,,,,
+			19,VPS2,Slot PS Voltage 2  (shared PS2),V,1.5,1.35,1.65,1.425,1.575,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			20,IPS2,Slot PS Current 2 (shared PS2),A,70,0,70,7,73.5,,,,,,,,
+			21,VPS3,Slot PS Voltage 3,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			22,IPS3,Slot PS Current 3,A,125,0,140,14,131.25,,,,,,,,
+			23,VPS4,Slot PS Voltage 4  (shared PS2),V,1.5,1.35,1.65,1.425,1.575,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			24,IPS4,Slot PS Current 4  (shared PS2),A,70,0,70,7,73.5,,,,,,,,
+			25,VPS5,Slot PS Voltage 5,V,ph,ph,ph,ph,ph,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			26,IPS5,Slot PS Current 5,A,ph,ph,ph,ph,ph,,,,,,,,
+			27,VPS6,Slot PS Voltage 6,V,3.3,2.97,3.63,3.135,3.465,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
+			28,IPS6,Slot PS Current 6,A,3,0,5,0.5,3.15,,,,,,,,
+			29,VPS7,Slot PS Voltage 7,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
+			30,IPS7,Slot PS Current 7,A,125,0,140,14,131.25,,,,,,,,
+			31,VPS8,Slot PS Voltage 8,V,5,4.5,5.5,4.75,5.25,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
+			32,IPS8,Slot PS Current 8,A,1,0,3,0.3,1.05,,,,,,,,
+			33,VPS9,Slot PS Voltage 9,V,2.1,1.89,2.31,1.995,2.205,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
+			34,IPS9,Slot PS Current 9,A,1,0,3,0.3,1.05,,,,,,,,
+			35,VPS10,Slot PS Voltage 10,V,2.5,2.25,2.75,2.375,2.625,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
+			36,IPS10,Slot PS Current 10,A,3,0,5,0.5,3.15,,,,,,,,
+			37,IDUT,Dut PS current 24 [1:24],A,23,0,27,2.7,24.15,,,,,,,,
+			,,,,,UP,DLYms,DN,DLYms,,,,,,,,
+			39,SPS0,Enable-Disable ,SEQ,Ethernent,1,200,9,200,,,,,,,,
+			40,SPS1,Enable-Disable ,SEQ,Ethernent,2,200,8,200,,,,,,,,
+			41,SPS2,Enable-Disable ,SEQ,Ethernent,3,200,7,200,,,,,,,,
+			42,SPS3,Enable-Disable ,SEQ,Ethernent,4,200,6,200,,,,,,,,
+			43,SPS4,Enable-Disable ,SEQ,Ethernent,0,0,0,0,,,,,,,,
+			44,SPS5,Enable-Disable ,SEQ,Ethernent,0,0,0,0,,,,,,,,
+			45,SPS6,Enable-Disable ,SEQ,Slot PCB,5,200,5,200,,,,,,,,
+			46,SPS7,Enable-Disable ,SEQ,Ethernent,6,200,4,200,,,,,,,,
+			47,SPS8,Enable-Disable ,SEQ,Slot PCB,7,200,3,200,,,,,,,,
+			48,SPS9,Enable-Disable ,SEQ,Slot PCB,8,200,2,200,,,,,,,,
+			49,SPS10,Enable-Disable ,SEQ,Slot PCB,9,200,1,200,,,,,,,,"
 	end
 	
 	def upLoadConfigErrorRow
@@ -1472,13 +1476,13 @@ end
 			
 			if fileTypeParam == UserInterface::PsConfig				
 				configTemplateRows = psConfigFileTemplate.split("\n")
-			elsif fileTypeParam  == UserInterface::TempConfig							
+			elsif fileTypeParam  == UserInterface::TempConfig
 				configTemplateRows = tempConfigFileTemplate.split("\n")
 			end
 			rowCt = 0
 			while rowCt<configTemplateRows.length do
 				columns = configTemplateRows[rowCt].split(",")
-				colName = columns[2].to_s.upcase
+				colName = columns[1].to_s.upcase
 				@knownConfigRowNames[colName] = "nn" # nn - not nil.
 				rowCt += 1
 			end
@@ -1551,7 +1555,7 @@ end
 		if slotConfigStep[configFileType][nameParam].nil?
 			slotConfigStep[configFileType][nameParam] = Hash.new
 		end
-		# puts "stepName=#{stepName},configFileType=#{configFileType},nameParam=#{nameParam},param=#{param},valueParam=#{valueParam}"
+		# pause "stepName=#{stepName},configFileType=#{configFileType},nameParam=#{nameParam},param=#{param},valueParam=#{valueParam}"
 		slotConfigStep[configFileType][nameParam][param] = valueParam.to_f
 		# PP.pp(getSlotProperties()["Steps"])
 		# pause("checking the new \"Steps\" value","#{__LINE__}-#{__FILE__}")
@@ -1706,7 +1710,7 @@ end
 			# Make sure the PS File config is good.
 			#
 			@configFileType = UserInterface::PsConfig
-			if checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
+			if checkFaultyPsConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 				return false
 			end
 		end
@@ -1765,7 +1769,7 @@ end
 				@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 				@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 				@redirectWithError += "&ErrPsFileNotGiven=Y"
-				@redirectWithError = SharedLib.makeUriFriendly(@redirectWithError)
+				@redirectWithError = SharedLib.makeUriFriendly(@redirectWithError)				
 				return false
 			else
 				if psConfigFileInFileSystem(colContent,configFileName) == false
@@ -1941,8 +1945,8 @@ end
 						#
 						# Make sure the Temp File config is good.
 						#
-						@configFileType = UserInterface::TempConfig
-						if checkFaultyPsOrTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
+						@configFileType = UserInterface::TempConfig 
+						if checkFaultyTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 							return false
 						end
 					end
@@ -1985,40 +1989,40 @@ end
 			# Get the sequence up and sequence down of power supplies
 			#
 			
-		elsif @configFileType == UserInterface::PsConfig ||
-					@configFileType == UserInterface::TempConfig ||
-					@configFileType == UserInterface::MinCurrConfig					
+		elsif @configFileType == UserInterface::PsConfig 
 			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}"
 			@redirectWithError += "&BtnState=#{Load}"
-			if @configFileType == UserInterface::MinCurrConfig
-				if checkFaultyDutSiteActivationMinCurrentConfig("#{configFileName}",
-					"#{__LINE__}-#{__FILE__}") == false				
-					return false
-				end
-				@redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(configFileName)}"
-				return false
-			else
-				if checkFaultyPsOrTempConfig("#{configFileName}",
-					"#{__LINE__}-#{__FILE__}") == false				
-					return false
-				end
-				@redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(configFileName)}"
+			if checkFaultyPsConfig("#{configFileName}",
+				"#{__LINE__}-#{__FILE__}") == false				
 				return false
 			end
+			@redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(configFileName)}"
+			return false
+		elsif @configFileType == UserInterface::TempConfig 
+			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}"
+			@redirectWithError += "&BtnState=#{Load}"
+			if checkFaultyTempConfig("#{configFileName}",
+				"#{__LINE__}-#{__FILE__}") == false				
+				return false
+			end
+			@redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(configFileName)}"
+			return false
+		elsif @configFileType == UserInterface::MinCurrConfig					
+			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}"
+			@redirectWithError += "&BtnState=#{Load}"
+			if checkFaultyDutSiteActivationMinCurrentConfig("#{configFileName}",
+				"#{__LINE__}-#{__FILE__}") == false				
+				return false
+			end
+			@redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(configFileName)}"
+			return false
 		end		
 		
 		return true
 		# End of def parseTheConfigFile(config)
 	end
 
-	def checkFaultyPsOrTempConfig(fileNameParam,fromParam)
-		# puts "checkFaultyPsOrTempConfig got called."
-		# puts "fileNameParam=#{fileNameParam}"
-		# puts "fromParam=#{fromParam}"
-		# puts "configFileType=#{configFileType}"
-		#
-		# Returns true if no fault, false if there is error
-		#
+	def checkFaultyTempConfig(fileNameParam,fromParam)
 		clearError()
 		config = Array.new
 		File.open("#{dirFileRepository}/#{fileNameParam}", "r") do |f|
@@ -2027,13 +2031,15 @@ end
 			end
 		end
 		
-		knownRowNames = getKnownRowNamesFor(configFileType)			
+		knownRowNames = getKnownRowNamesFor(configFileType)
+puts "knownRowNames = #{knownRowNames}"
+
 		#
 		# Make sure that each row have a column name that is found within the template which Mike provided.
 		#
 		ct = 0
 		while ct < config.length do
-			colContent = config[ct].split(",")[2].upcase
+			colContent = config[ct].split(",")[1].upcase
 			if colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn")
 				#
 				# How are we going to inform the user that the file is not a good one?
@@ -2045,6 +2051,48 @@ end
 			ct += 1
 		end
 
+		ct = 2
+		while ct < config.length do
+			colName = config[ct].split(",")[0].upcase
+			colContent = config[ct].split(",")[3].upcase
+			puts "colContent=#{colContent}"
+			ct += 1
+			puts "colName=#{colName} colContent=#{colContent}"
+		end
+	end
+
+	def checkFaultyPsConfig(fileNameParam,fromParam)
+		puts "checkFaultyPsConfig got called."
+		puts "fileNameParam=#{fileNameParam}"
+		puts "fromParam=#{fromParam}"
+		puts "configFileType=#{configFileType}"
+		#
+		# Returns true if no fault, false if there is error
+		#
+		clearError()
+		config = Array.new
+		File.open("#{dirFileRepository}/#{fileNameParam}", "r") do |f|
+			f.each_line do |line|
+				config.push(line)
+			end
+		end
+		knownRowNames = getKnownRowNamesFor(configFileType)
+		#
+		# Make sure that each row have a column name that is found within the template which Mike provided.
+		#
+		ct = 0
+		while ct < config.length do
+			colContent = config[ct].split(",")[1].upcase
+			if colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn")
+				#
+				# How are we going to inform the user that the file is not a good one?
+				#
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
+				@redirectErrorFaultyPsConfig = redirectWithError
+				return false
+			end
+			ct += 1
+		end
 		#
 		# Rows to skip checking if values for Nom Set, Trip Min, Trip Max, Flag Tol+, Flog Tol- are numbers or not.
 		skipNumCheckOnRows = Hash.new
@@ -2052,22 +2100,22 @@ end
 		skipNumCheckOnRows["iPS5".upcase] = "nn"
 
 		ct = 0
-		indexCol = 1
-		nameCol = 2
-		unitCol = 4
-		nomSetCol = 5
-		tripMinCol = 6
-		tripMaxCol = 7
-		flagTolPCol = 8 # Flag Tolerance Positive
-		flagTolNCol = 9 # Flag Tolerance Negative
-		enableBitCol = 10 # Flag indicating that software can turn it on or off
-		idleStateCol = 11 # Flag indicating that software can turn it on or off
-		loadStateCol = 12 # Flag indicating that software can turn it on or off
-		startStateCol = 13 # Flag indicating that software can turn it on or off
-		runStateCol = 14 # Flag indicating that software can turn it on or off
-		stopStateCol = 15 # Flag indicating that software can turn it on or off
-		clearStateCol = 16 # Flag indicating that software can turn it on or off
-		locationCol = 17 # Flag indicating that software can turn it on or off
+		indexCol = 0 #1
+		nameCol = 1 #2
+		unitCol = 3 #4
+		nomSetCol = 4 # 5
+		tripMinCol = 5# 6
+		tripMaxCol = 6#7
+		flagTolPCol = 7#8 # Flag Tolerance Positive
+		flagTolNCol = 8#9 # Flag Tolerance Negative
+		enableBitCol = 9#10 # Flag indicating that software can turn it on or off
+		idleStateCol = 10#11 # Flag indicating that software can turn it on or off
+		loadStateCol = 11#12 # Flag indicating that software can turn it on or off
+		startStateCol = 12#13 # Flag indicating that software can turn it on or off
+		runStateCol = 13#14 # Flag indicating that software can turn it on or off
+		stopStateCol = 14#15 # Flag indicating that software can turn it on or off
+		clearStateCol = 15#16 # Flag indicating that software can turn it on or off
+		locationCol = 16#17 # Flag indicating that software can turn it on or off
 
 		while ct < config.length do
 			columns = config[ct].split(",")
@@ -2085,8 +2133,10 @@ end
 			loadState = columns[loadStateCol].upcase
 			startState = columns[startStateCol].upcase
 			runState = columns[runStateCol].upcase
-			stopState = columns[stopStateCol].upcase
-			clearState = columns[clearStateCol].upcase
+			if configFileType != UserInterface::TempConfig
+				stopState = columns[stopStateCol].upcase
+				clearState = columns[clearStateCol].upcase
+			end
 
 			if skipNumCheckOnRows[name].nil?
 				#
@@ -2154,7 +2204,7 @@ end
 					# End of 'elsif unit == "V" || unit == "A" || unit == "C"'
 				end								
 				
-				if unit == "V" || unit == "A" || unit == "C" || unit == "M"
+				if unit == "V" || unit == "A" || unit == "C" || unit == "M" || unit == "seconds" || unit == "Percent"|| unit == "Value"
 					#
 					# Get the data for processing
 					#
@@ -2185,10 +2235,10 @@ end
 		# Make sure that the sequence order are unique such that there are no same sequence number in the sequence
 		# vice it's a zero.
 		#
-		seqUpCol = 6
-		seqUpDlyMsCol = 7
-		seqDownCol = 8
-		seqDownDlyMsCol = 9
+		seqUpCol = 5 #6
+		seqUpDlyMsCol = 6 #7
+		seqDownCol = 7 #8
+		seqDownDlyMsCol = 8 #9
 		sequenceUpHash = Hash.new
 		sequenceDownHash = Hash.new
 		@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
@@ -2273,13 +2323,12 @@ end
 				slotConfigStep[configFileType][columns[nameCol]]["SDDlyms"] = columns[9]
 				# End of 'if columns[unitCol] == "SEQ"'
 			end
-			
-			
 			ct += 1
 			# End of 'while ct < config.length do'
 		end
 		return true
-		# End of 'checkFaultyPsOrTempConfig'	
+		# End of 'checkFaultyPsConfig'	
+
 	end
 	
 	def setupBbbSlotProcess(fileNameParam, slotOwnerParam)
@@ -2599,7 +2648,7 @@ get '/AckError' do
 	redirect "../"
 end
 
-# at getSlotConfigStep(PretestSiteIdentification)
+# at 2122
 =begin
 	how are we going to get the data for the PS settings for the pretest?
 	1777
