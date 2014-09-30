@@ -22,11 +22,11 @@ class ThermalSiteDevices
         # End of 'def initialize'
     end
     
-    def setTemp(uart1,gPIO2,tcusToSkip,temParam)
+    def setTHCPID(uart1Param,keyParam,tcusToSkip,temParam)
         dutNum = 0;
         while  dutNum<TOTAL_DUTS_TO_LOOK_AT do
             if  tcusToSkip[dutNum].nil?  
-                dBase.setTemp(dutNum,uart1,gPIO2,temParam)
+                dBase.setTHCPID(keyParam,uart1Param,temParam)
                 dutNum = TOTAL_DUTS_TO_LOOK_AT # break out of the loop since we're doing it only in one call.
             end
             dutNum +=1;
