@@ -66,12 +66,75 @@ module MigrationCount
 						#
 						# Parse out the data sent from the board					
 						#
+						$SAFE = 0
+
 						receivedData = params['Duts']
 						hash = JSON.parse(receivedData)
 
 						sharedMem = @@sharedMemService.getSharedMem()		 
 						sharedMem.setDataFromBoardToPc(hash)
-						######################
+						
+						directory = "../steps\\ log\\ records"
+						asdf = `[ -d #{directory} ] && echo "yes" || echo "no"`
+						if asdf.chomp == "no"
+							`mkdir #{directory}`
+						end
+						configDateUpload = Time.at(sharedMem.GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
+						dBaseFileName = "#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}.db"
+						puts "dBaseFileName='#{dBaseFileName}'"
+						# logging code.
+						runningOnCentos = true
+						if runningOnCentos == false
+							if File.file?("#{dBaseFileName}") == false
+								# The file does not exists.
+								dbRecord = SQLite3::Database.new( "#{dBaseFileName}" )
+								if dbRecord.nil?
+									SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
+								else
+										dbRecord.execute("create table log ("+
+										"idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
+										");")
+								end
+							else
+								# The file already exists.
+								dbRecord = SQLite3::Database.open dBaseFileName
+							end
+
+							forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(receivedData)
+
+							str = "Insert into log(idLogTime, data) "+
+							"values(#{GetDispSlotTime()},\"#{forDbase}\")"
+
+							puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
+							begin
+								dbRecord.execute "#{str}"
+								rescue SQLite3::Exception => e 
+								puts "\n\n"
+								SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
+								SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
+								# End of 'rescue SQLite3::Exception => e'
+								ensure
+
+								# End of 'begin' code block that will handle exceptions...
+							end
+						else
+							if sharedMem.GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner]) == SharedLib::No && 
+								sharedMem.GetDispBbbMode(hash[SharedLib::SlotOwner]) == SharedLib::InRunMode
+								str = "#{sharedMem.GetDispSlotTime(hash[SharedLib::SlotOwner]).to_i},#{hash.to_json}"
+								ct = 0
+								newStr = ""
+								while ct < str.length
+									if str[ct] == "\""
+										newStr += "\\\""
+									else
+										newStr += str[ct]
+									end
+									ct += 1
+								end
+								puts "dBaseFileName='#{dBaseFileName}', newStr=#{newStr}"
+								`cd #{directory}; echo "#{newStr}" >> \"#{dBaseFileName}\"`
+							end
+						end
 						rescue Exception => e
 							# The data didn't parse properly.  Do nothing.
 							puts e.message  
