@@ -1,5 +1,5 @@
 # Delete the given file when ever this script gets executed.
-# rm -rf ../TcuDisabledSites.txt
+rm -rf ../TcuDisabledSites.txt
 
 #
 # Make sure only one process is running for the TCU Sampler.

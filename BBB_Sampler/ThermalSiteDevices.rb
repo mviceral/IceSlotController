@@ -26,8 +26,8 @@ class ThermalSiteDevices
         dutNum = 0;
         while  dutNum<TOTAL_DUTS_TO_LOOK_AT do
             if  tcusToSkip[dutNum].nil?  
-                # puts "B - dutNum='#{dutNum}' #{__LINE__}-#{__FILE__}"
                 dBase.setTemp(dutNum,uart1,gPIO2,temParam)
+                dutNum = TOTAL_DUTS_TO_LOOK_AT # break out of the loop since we're doing it only in one call.
             end
             dutNum +=1;
         end            
