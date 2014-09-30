@@ -4,7 +4,7 @@ require_relative '../lib/SharedMemory'
 # is so an existing logger can be looked up by name, but also
 # to prevent loggers from being garbage collected.  A dRuby
 # reference to an object is not sufficient to prevent it being
-# garbage collected!
+# garbage collected !
 class LoggerFactory
 	def initialize()
 		@data = {}
