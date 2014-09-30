@@ -2330,11 +2330,11 @@ puts "knownRowNames = #{knownRowNames}"
 					slotConfigStep[configFileType][columns[nameCol]] = Hash.new
 				end
 				
-				slotConfigStep[configFileType][columns[nameCol]]["EthernetOrSlotPcb"] = columns[5]
-				slotConfigStep[configFileType][columns[nameCol]]["SeqUp"] = columns[6]
-				slotConfigStep[configFileType][columns[nameCol]]["SUDlyms"] = columns[7]
-				slotConfigStep[configFileType][columns[nameCol]]["SeqDown"] = columns[8]
-				slotConfigStep[configFileType][columns[nameCol]]["SDDlyms"] = columns[9]
+				slotConfigStep[configFileType][columns[nameCol]]["EthernetOrSlotPcb"] = columns[4]
+				slotConfigStep[configFileType][columns[nameCol]]["SeqUp"] = columns[5]
+				slotConfigStep[configFileType][columns[nameCol]]["SUDlyms"] = columns[6]
+				slotConfigStep[configFileType][columns[nameCol]]["SeqDown"] = columns[7]
+				slotConfigStep[configFileType][columns[nameCol]]["SDDlyms"] = columns[8]
 				# End of 'if columns[unitCol] == "SEQ"'
 			end
 			ct += 1
