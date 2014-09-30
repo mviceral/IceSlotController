@@ -449,7 +449,7 @@ class SharedMemory
 
     def GetSlotTime(fromParam)
         # puts "A GetSlotTime got called. #{fromParam} @#{__LINE__}-#{__FILE__}"
-        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        ds = getMemory()
         # puts "B GetSlotTime got called. #{fromParam} @#{__LINE__}-#{__FILE__}"
         return ds[SharedLib::SlotTime]
     end

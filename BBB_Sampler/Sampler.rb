@@ -501,6 +501,10 @@ class TCUSampler
                                         ThermalSiteDevices.setTHCPID(uart1,"I",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["I"])
                                         ThermalSiteDevices.setTHCPID(uart1,"D",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["D"])
 
+                                        puts "P = '#{getConfiguration()[Steps][key]["TempConfig"]["P"]}'"
+                                        puts "I = '#{getConfiguration()[Steps][key]["TempConfig"]["I"]}'" 
+                                        puts "D = '#{getConfiguration()[Steps][key]["TempConfig"]["D"]}'" 
+
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
                                         @shareMem.SetStepName("#{key}")
