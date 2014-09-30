@@ -220,7 +220,8 @@ class SharedMemory
 			puts "StepNumber = #{GetDispStepNumber(hash[SharedLib::SlotOwner])}"
 			puts "StepTotalTime = #{GetDispStepTimeLeft(hash[SharedLib::SlotOwner])}"
 			puts "SlotIpAddress = #{GetDispSlotIpAddress(hash[SharedLib::SlotOwner])}"
-			puts "SlotTime = #{Time.at(GetDispSlotTime(hash[SharedLib::SlotOwner]).to_i).inspect}"
+			slotTime = GetDispSlotTime(hash[SharedLib::SlotOwner]).to_i
+			puts "SlotTime = #{Time.at(slotTime).inspect}"
 			# puts "AdcInput = #{GetDispAdcInput(hash[SharedLib::SlotOwner])}"
 			puts "MuxData = #{GetDispMuxData(hash[SharedLib::SlotOwner])}"
 			puts "Tcu = #{GetDispTcu(hash[SharedLib::SlotOwner])}"
@@ -228,53 +229,6 @@ class SharedMemory
 			puts "TotalStepDuration = #{GetDispTotalStepDuration(hash[SharedLib::SlotOwner])}"
 			# puts "Eips = #{GetDispEips(hash[SharedLib::SlotOwner])}"
 			configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
-			dBaseFileName = "../steps log records/#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}.db"
-=begin
-			# logging code.
-			runningOnCentos = true
-			if runningOnCentos == false
-				if File.file?("#{dBaseFileName}") == false
-					# The file does not exists.
-					dbRecord = SQLite3::Database.new( "#{dBaseFileName}" )
-					if dbRecord.nil?
-						SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
-					else
-							dbRecord.execute("create table log ("+
-							"idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
-							");")
-					end
-				else
-					# The file already exists.
-					dbRecord = SQLite3::Database.open dBaseFileName
-				end
-
-				forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(receivedData)
-
-				str = "Insert into log(idLogTime, data) "+
-				"values(#{GetDispSlotTime()},\"#{forDbase}\")"
-
-				puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
-				begin
-					dbRecord.execute "#{str}"
-					rescue SQLite3::Exception => e 
-					puts "\n\n"
-					SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
-					SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
-					# End of 'rescue SQLite3::Exception => e'
-					ensure
-
-					# End of 'begin' code block that will handle exceptions...
-				end
-			else
-				if GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner]) == SharedLib::No && 
-					GetDispBbbMode(hash[SharedLib::SlotOwner]) == SharedLib::InRunMode
-					str = "#{GetDispSlotTime(hash[SharedLib::SlotOwner])},#{receivedData}"
-					open("#{dBaseFileName}", 'a') { |f|
-					  f.puts "#{str}"
-					}
-				end
-			end
-=end
 		end
 	end
 
@@ -449,7 +403,7 @@ class SharedMemory
 
     def GetSlotTime(fromParam)
         # puts "A GetSlotTime got called. #{fromParam} @#{__LINE__}-#{__FILE__}"
-        ds = getMemory()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
         # puts "B GetSlotTime got called. #{fromParam} @#{__LINE__}-#{__FILE__}"
         return ds[SharedLib::SlotTime]
     end
