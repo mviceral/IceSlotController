@@ -2051,14 +2051,28 @@ puts "knownRowNames = #{knownRowNames}"
 			ct += 1
 		end
 
+
+		puts "stepName = '#{stepName}'"
+		puts "configFileType = '#{configFileType}'"
+		slotConfigStep = getSlotConfigStep(stepName)
+		if slotConfigStep[configFileType].nil?
+			slotConfigStep[configFileType] = Hash.new
+		end
+		
 		ct = 2
 		while ct < config.length do
 			colName = config[ct].split(",")[0].upcase
 			colContent = config[ct].split(",")[3].upcase
-			puts "colContent=#{colContent}"
-			ct += 1
-			puts "colName=#{colName} colContent=#{colContent}"
+			slotConfigStep[configFileType][colName] = colContent
+			ct+=1
 		end
+=begin		
+		slotConfigStep[configFileType]["EthernetOrSlotPcb"] = columns[5]
+		slotConfigStep[configFileType][columns[nameCol]]["SeqUp"] = columns[6]
+		slotConfigStep[configFileType][columns[nameCol]]["SUDlyms"] = columns[7]
+		slotConfigStep[configFileType][columns[nameCol]]["SeqDown"] = columns[8]
+		slotConfigStep[configFileType][columns[nameCol]]["SDDlyms"] = columns[9]
+=end		
 	end
 
 	def checkFaultyPsConfig(fileNameParam,fromParam)
