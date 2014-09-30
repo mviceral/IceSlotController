@@ -626,9 +626,9 @@ class SharedMemory
         totalStepDuration = 0
         if hold.nil? == false
             hold["Steps"].each do |key, array|
-                puts "key='#{key}'#{__LINE__}-#{__FILE__}"
-                PP.pp(array)
-                sleep(1.0)
+                # puts "key='#{key}'#{__LINE__}-#{__FILE__}"
+                # PP.pp(array)
+                # sleep(1.0)
                 hold["Steps"][key]["StepTimeLeft"] = 60.0*hold["Steps"][key]["Step Time"].to_f
                 totalStepDuration += hold["Steps"][key]["StepTimeLeft"]
             end

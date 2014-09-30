@@ -463,7 +463,7 @@ class TCUSampler
         end
     end                                                            
 
-    def initStepToWorkOnVar
+    def initStepToWorkOnVar(uart1,gPIO2,tcusToSkip)
         @shareMem.SetStepTimeLeft("")
         @shareMem.SetStepName("")
         @shareMem.SetStepNumber("")
@@ -491,6 +491,11 @@ class TCUSampler
                                     # puts "A4 getConfiguration()[Steps][key][StepTimeLeft].to_i=#{getConfiguration()[Steps][key][StepTimeLeft].to_i} #{__LINE__}-#{__FILE__}"
                                     if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0
                                         # This is the step we want to work on.  Set the temperature settings.
+                                        PP.pp(getConfiguration()[Steps][key])
+                                        puts "Checking content of 'TempConfig' #{__LINE__}-#{__FILE__}"
+                                        sleep(2.0)
+                                        ThermalSiteDevices.setTemp(uart1,gPIO2,tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"])
+
                                         
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
@@ -590,10 +595,10 @@ class TCUSampler
         # end
     end
 
-    def setBoardStateForCurrentStep
+    def setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
         @boardData[SeqDownPsArr] = nil
         @boardData[SeqUpPsArr] = nil
-        initStepToWorkOnVar()
+        initStepToWorkOnVar(uart1,gPIO2,tcusToSkip)
         getSeqDownPsArr()
         getSeqUpPsArr()
         
@@ -609,7 +614,7 @@ class TCUSampler
         # @shareMem.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
     end
     
-    def setBoardData(boardDataParam)
+    def setBoardData(boardDataParam,uart1,gPIO2,tcusToSkip)
         # The configuration was just loaded from file.  We must setup the system to be in a given state.
         # For example, if the system is in runmode, when starting the system over, the PS must sequence up
         # properly then set the system to run mode.
@@ -617,7 +622,7 @@ class TCUSampler
         # The file in the hard drive only stores two states of the system: running or in idle.
         @boardData = boardDataParam
         if getConfiguration().nil? == false
-            setBoardStateForCurrentStep()
+            setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
         end
     end
     
@@ -691,7 +696,7 @@ class TCUSampler
         @shareMem.SetAllStepsDone_YesNo(allStepsDone_YesNoParam,"#{__LINE__}-#{__FILE__}")
     end    
 
-    def loadConfigurationFromHoldingTank()
+    def loadConfigurationFromHoldingTank(uart1,gPIO2,tcusToSkip)
         begin
 			fileRead = ""
 			File.open(HoldingTankFilename, "r") do |f|
@@ -700,7 +705,7 @@ class TCUSampler
 				end
 			end
 			# puts fileRead
-			setBoardData(JSON.parse(fileRead))
+			setBoardData(JSON.parse(fileRead),uart1,gPIO2,tcusToSkip)
 			# @boardData[SharedLib::AllStepsDone_YesNo] = SharedLib::No
 			
 			# puts "Checking content of getConfiguration() function"
@@ -711,7 +716,7 @@ class TCUSampler
                 puts "e.message=#{e.message }"
                 puts "e.backtrace.inspect=#{e.backtrace.inspect}" 
         		SharedLib.bbbLog("There's no data in the holding tank.  New machine starting up. #{__LINE__}-#{__FILE__}")
-        		setBoardData(Hash.new)
+        		setBoardData(Hash.new,uart1,gPIO2,tcusToSkip)
         		setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
 	    end
     end
@@ -962,7 +967,27 @@ class TCUSampler
             ct += 1
 		end
     end
-    
+
+    def turnOffDuts(tcusToSkipParam)
+        SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
+        ct = 0
+        while ct<24 do
+            if tcusToSkipParam[ct].nil? == true
+                bitToUse = etsEnaBit(ct)
+                if 0<=ct && ct <=7  
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    gPIO2.etsEna1SetOff(bitToUse)
+                elsif 8<=ct && ct <=15
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna2Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    gPIO2.etsEna2SetOff(bitToUse)
+                elsif 16<=ct && ct <=23
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna3Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    gPIO2.etsEna3SetOff(bitToUse)
+                end
+            end
+            ct += 1
+        end
+    end
     def runTCUSampler
         @socketIp = nil
     	@setupAtHome = false
@@ -1055,33 +1080,13 @@ class TCUSampler
             }
         end
     
-        # Turn on the control for TCUs that are not disabled.
-        SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
-        ct = 0
-        while ct<24 do
-            if tcusToSkip[ct].nil? == true
-                bitToUse = etsEnaBit(ct)
-                if 0<=ct && ct <=7  
-                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
-                    gPIO2.etsEna1SetOn(bitToUse)
-                elsif 8<=ct && ct <=15
-                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna2Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
-                    gPIO2.etsEna2SetOn(bitToUse)
-                elsif 16<=ct && ct <=23
-                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna3Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
-                    gPIO2.etsEna3SetOn(bitToUse)
-                end
-            end
-            ct += 1
-        end
-
         # Make sure that the UART is functional again.        
 
         #
         # Get the board configuration
         #
         SharedLib.bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
-        loadConfigurationFromHoldingTank()
+        loadConfigurationFromHoldingTank(uart1,gPIO2,tcusToSkip)
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration][FileName].nil? == false
 	        @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
@@ -1100,8 +1105,10 @@ class TCUSampler
         else
             @shareMem.SetAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # so it will not run
         end
-
-	    initStepToWorkOnVar()
+        
+        turnOffDuts(tcusToSkip)
+        
+	    initStepToWorkOnVar(uart1,gPIO2,tcusToSkip)
         waitTime = Time.now
         skipLimboStateCheck = false
         while true
@@ -1123,7 +1130,7 @@ class TCUSampler
                         # We're in limbo for some reason
                         #
                         puts "We're in limbo @shareMem.GetBbbMode()='#{@shareMem.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
-                        loadConfigurationFromHoldingTank()
+                        loadConfigurationFromHoldingTank(uart1,gPIO2,tcusToSkip)
 
             		    case @lastPcCmd
             		    when SharedLib::RunFromPc
@@ -1137,14 +1144,14 @@ class TCUSampler
                 		else
             		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                 		end
-                        setBoardStateForCurrentStep()
+                        setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
                     end
                     configName = @shareMem.GetConfigurationFileName()
                     if ((@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
                          @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false) ||
                          (configName.nil? == false && configName.length>0 && (stepNum.nil? || (stepNum.nil? ==false && stepNum.length==0)) && @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No)
-                        loadConfigurationFromHoldingTank()
-                        setBoardStateForCurrentStep()
+                        loadConfigurationFromHoldingTank(uart1,gPIO2,tcusToSkip)
+                        setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
                         if @stepToWorkOn.nil?
                             setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
                         else
@@ -1168,7 +1175,7 @@ class TCUSampler
             			    else
             			        # Step just finished.
                                 setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-                                setBoardStateForCurrentStep()
+                                setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
                                 # SharedLib.pause "Finished step. @stepToWorkOn.nil?=#{@stepToWorkOn.nil?}","#{__LINE__}-#{__FILE__}"
                                 if @stepToWorkOn.nil? == false
                                     # There's more step to process
@@ -1203,14 +1210,37 @@ class TCUSampler
             		    case pcCmd
             		    when SharedLib::RunFromPc
                 		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
+                		    
+                            # Turn on the control for TCUs that are not disabled.
+                            SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
+                            ct = 0
+                            while ct<24 do
+                                if tcusToSkip[ct].nil? == true
+                                    bitToUse = etsEnaBit(ct)
+                                    if 0<=ct && ct <=7  
+                                        # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                                        gPIO2.etsEna1SetOn(bitToUse)
+                                    elsif 8<=ct && ct <=15
+                                        # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna2Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                                        gPIO2.etsEna2SetOn(bitToUse)
+                                    elsif 16<=ct && ct <=23
+                                        # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna3Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                                        gPIO2.etsEna3SetOn(bitToUse)
+                                    end
+                                end
+                                ct += 1
+                            end
             		    when SharedLib::StopFromPc
             		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+                            # Turn on the control for TCUs that are not disabled.
+                            turnOffDuts(tcusToSkip)
             		    when SharedLib::ClearConfigFromPc
-                		    setBoardData(Hash.new)
+                		    setBoardData(Hash.new,uart1,gPIO2,tcusToSkip)
             		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-            		        setBoardStateForCurrentStep()
+            		        setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
                 		    @shareMem.SetConfigurationFileName("")
                 		    gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+                            # turnOffDuts(tcusToSkip)
             		    when SharedLib::LoadConfigFromPc
             		        # close the sockets of the Ethernet PS if they're on.
             		        if @socketIp.nil? == false
@@ -1222,15 +1252,17 @@ class TCUSampler
             		        end
             		        @socketIp = nil
             		        
+                            turnOffDuts(tcusToSkip)
+            		        
                             SharedLib.bbbLog("New configuration step file uploaded.")
-                		    setBoardData(Hash.new)
+                		    setBoardData(Hash.new,uart1,gPIO2,tcusToSkip)
                 		    @boardData[Configuration] = @shareMem.GetConfiguration()
                 		    # puts "#{@boardData[Configuration]} - Checking @boardData[Configuration] content."
                 		    @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
                 		    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
                             setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
             		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-            		        setBoardStateForCurrentStep()
+            		        setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
                 		    saveBoardStateToHoldingTank()
 
                 		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
