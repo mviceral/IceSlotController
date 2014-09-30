@@ -975,7 +975,15 @@ class TCUSampler
             ct += 1
 		end
     end
+    
+    def setTcuToStopMode(gPIO2)
+        bitToUse = GPIO2::X9_ETS7|GPIO2::X9_ETS6|GPIO2::X9_ETS5|GPIO2::X9_ETS4|GPIO2::X9_ETS3|GPIO2::X9_ETS2|GPIO2::X9_ETS1|GPIO2::X9_ETS0
+        gPIO2.etsEna1SetOff(bitToUse)
+        gPIO2.etsEna2SetOff(bitToUse)
+        gPIO2.etsEna3SetOff(bitToUse)
+    end
 
+=begin    
     def turnOffDuts(tcusToSkipParam)
         SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
         ct = 0
@@ -996,6 +1004,8 @@ class TCUSampler
             ct += 1
         end
     end
+=end
+
     def runTCUSampler
         @socketIp = nil
     	@setupAtHome = false
@@ -1114,7 +1124,7 @@ class TCUSampler
             @shareMem.SetAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # so it will not run
         end
         
-        turnOffDuts(tcusToSkip)
+        setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
         
 	    initStepToWorkOnVar(uart1,gPIO2,tcusToSkip)
         waitTime = Time.now
@@ -1194,7 +1204,8 @@ class TCUSampler
 
                                     # Done processing all steps listed in configuration.step file
                                     saveBoardStateToHoldingTank()
-                                    turnOffDuts(tcusToSkip)
+                                    puts"\n\n\n\nSettings DUTs to cool mode.\n\n\n\n"
+                                    setTcuToStopMode(gPIO2)
                                     # We're done proce@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNewssing all the steps.
                                 end
                             end
@@ -1242,14 +1253,14 @@ class TCUSampler
             		    when SharedLib::StopFromPc
             		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                             # Turn on the control for TCUs that are not disabled.
-                            turnOffDuts(tcusToSkip)
+                            setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
             		    when SharedLib::ClearConfigFromPc
                 		    setBoardData(Hash.new,uart1,gPIO2,tcusToSkip)
             		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
             		        setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
                 		    @shareMem.SetConfigurationFileName("")
                 		    gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
-                            # turnOffDuts(tcusToSkip)
+                            setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
             		    when SharedLib::LoadConfigFromPc
             		        # close the sockets of the Ethernet PS if they're on.
             		        if @socketIp.nil? == false
@@ -1261,7 +1272,7 @@ class TCUSampler
             		        end
             		        @socketIp = nil
             		        
-                            turnOffDuts(tcusToSkip)
+                            setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
             		        
                             SharedLib.bbbLog("New configuration step file uploaded.")
                 		    setBoardData(Hash.new,uart1,gPIO2,tcusToSkip)
@@ -1376,4 +1387,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# @ # This is the step we want to work on.  Set the temperature settings.
+# 979

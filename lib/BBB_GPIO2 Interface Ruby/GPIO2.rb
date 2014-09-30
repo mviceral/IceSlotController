@@ -755,12 +755,26 @@ class GPIO2
         return getGPIO2(ETS_ALM3_x8)
     end
     
+    def etsEna3SetOff(bitParam)
+        #
+        # Write bitwise to enabled or disable a temperature controller unit on register ETS_ENA1_x9.
+        #
+        setBitOff(ETS_ENA3_xB,bitParam)
+    end
+    
 
+    def etsEna2SetOff(bitParam)
+        #
+        # Write bitwise to enabled or disable a temperature controller unit on register ETS_ENA1_x9.
+        #
+        setBitOff(ETS_ENA2_xA,bitParam)
+    end
+    
     def etsEna1SetOff(bitParam)
         #
         # Write bitwise to enabled or disable a temperature controller unit on register ETS_ENA1_x9.
         #
-        setBitOff(EXT_INPUTS_x2,bitParam)
+        setBitOff(ETS_ENA1_x9,bitParam)
     end
     
     def etsEna1SetOn(bitParam)
