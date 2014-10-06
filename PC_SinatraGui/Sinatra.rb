@@ -117,8 +117,8 @@ class UserInterface
 	def getBoardIp(slotParam)
 		if @slotToIp.nil?
 			@slotToIp = Hash.new
-			@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
-			#@slotToIp[SLOT2] = ""
+			#@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
+			@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
 			#@slotToIp[SLOT3] = ""
 		else
 			return @slotToIp[slotParam]
@@ -509,7 +509,7 @@ class UserInterface
 		return getSlotProperties()[BtnDisplayImg]
 	end
 	
-	def getButtonDisplay(slotLabel2Param)
+	def getButtonDisplay(slotLabel2Param,fromParam)
 		# puts "getButtonDisplay() got called."
 		tbr = "" # To be returned
 		configFileName = @sharedMem.GetDispConfigurationFileName(slotLabel2Param)
@@ -537,7 +537,6 @@ class UserInterface
 			else
 				return Run
 			end
-			getSlotProperties()[ButtonDisplay] = Clear
 		elsif @sharedMem.GetDispAllStepsDone_YesNo(slotLabel2Param) == SharedLib::No &&
 			@sharedMem.GetDispBbbMode(slotLabel2Param) == SharedLib::InStopMode
 			return Run
@@ -586,7 +585,7 @@ class UserInterface
 			@response = 
 		    RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 			puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
-			@sharedMem.SetDispButton(slotOwnerParam,"Loading")
+			@sharedMem.SetDispButton(slotOwnerParam,"Loading")			
 			# hash1 = JSON.parse(@response)
 			# puts "check A #{__LINE__}-#{__FILE__}"
 			# hash2 = JSON.parse(hash1["bbbResponding"])
@@ -647,21 +646,11 @@ class UserInterface
 		return toBeReturned
 		# End of 'DutCell("S20",dut20[2])'
 	end
-
-	def PNPCellSub(slotLabel2Param,posVoltParam)
-		if @sharedMem.GetDispMuxData(slotLabel2Param).nil? == false && @sharedMem.GetDispMuxData(slotLabel2Param)[posVoltParam].nil? == false
-			posVolt = @sharedMem.GetDispMuxData(slotLabel2Param)[posVoltParam]
-			posVolt = (posVolt.to_f/1000.0).round(3)
-		else
-			posVolt = "---"
-		end
-		return posVolt
-	end
-
+	
 	def PNPCell(slotLabel2Param,posVoltParam, negVoltParam, largeVoltParam)
-		posVolt = PNPCellSub(slotLabel2Param,posVoltParam)
-		negVolt = PNPCellSub(slotLabel2Param,negVoltParam)
-		largeVolt = PNPCellSub(slotLabel2Param,largeVoltParam)
+		posVolt = @sharedMem.PNPCellSub(slotLabel2Param,posVoltParam)
+		negVolt = @sharedMem.PNPCellSub(slotLabel2Param,negVoltParam)
+		largeVolt = @sharedMem.PNPCellSub(slotLabel2Param,largeVoltParam)
 		bkcolor = setBkColor(slotLabel2Param,"#6699aa")
 		toBeReturned = "<table bgcolor=\"#{bkcolor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">P5V</font></td><td><font size=\"1\">#{posVolt}V</font></td></tr>"
@@ -689,31 +678,11 @@ class UserInterface
 
 	def PsCell(slotLabel2Param,labelParam,rawDataParam, iIndexParam)
 		muxData = @sharedMem.GetDispMuxData(slotLabel2Param)
-		if rawDataParam.to_i >= 48
-			if @sharedMem.GetDispAdcInput(slotLabel2Param).nil? == false && @sharedMem.GetDispAdcInput(slotLabel2Param)[rawDataParam].nil? == false
-				rawDataParam = (@sharedMem.GetDispAdcInput(slotLabel2Param)[rawDataParam].to_f/1000.0).round(3)
-			else
-				rawDataParam = "---"
-			end
-		else
-			if muxData.nil? == false && muxData[rawDataParam].nil? == false
-				rawDataParam = (muxData[rawDataParam].to_f/1000.0).round(3)
-			else
-				rawDataParam = "---"
-			end
-		end
+		adcData = @sharedMem.GetDispAdcInput(slotLabel2Param)
+		rawDataParam = @sharedMem.getPsVolts(muxData,adcData,rawDataParam)
 
-		if iIndexParam.nil? == false && 
-			muxData.nil? == false && 
-			muxData[iIndexParam].nil? == false
-			current = (muxData[iIndexParam].to_f/1000.0).round(3)
-		else
-			if @sharedMem.GetDispEips(slotLabel2Param)[labelParam].nil? == false
-				current = (@sharedMem.GetDispEips(slotLabel2Param)[labelParam][0..4]) #.to_f*10.0/10.0).round(3)
-			else
-				current = "---"
-			end
-		end
+		eiPs = @sharedMem.GetDispEips(slotLabel2Param)
+		current = @sharedMem.getPsCurrent(muxData,eiPs,iIndexParam,labelParam)
 
 		cellColor = setBkColor(slotLabel2Param,"#6699aa")
 		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
@@ -739,11 +708,7 @@ class UserInterface
 
 	def DutCell(slotLabel2Param, labelParam,rawDataParam)
 		muxData = @sharedMem.GetDispMuxData(slotLabel2Param)
-		if muxData.nil? == false && muxData[rawDataParam].nil? == false
-			current = (muxData[rawDataParam].to_f/1000.0).round(3)
-		else
-			current = "---"
-		end
+		current = SharedLib::getCurrentDutDisplay(muxData,rawDataParam)
 
 		if @sharedMem.GetDispTcu(slotLabel2Param).nil? == false && @sharedMem.GetDispTcu(slotLabel2Param)["#{rawDataParam}"].nil? == false
 			tcuData = @sharedMem.GetDispTcu(slotLabel2Param)["#{rawDataParam}"]
@@ -751,10 +716,10 @@ class UserInterface
 			tcuData = "---"
 		end
 		cellColor = setBkColor(slotLabel2Param,"#99bb11")
-		if tcuData.nil?
+		if tcuData == "---"
 			cellColor = "#B6B6B4"
 		else
-			temperature = tcuData.split(',')[2]
+			temperature = SharedLib.make5point2Format(tcuData.split(',')[2])
 		end
 		# puts "rawDataParam=#{rawDataParam}, tcuData=#{tcuData} #{__LINE__}-#{__FILE__}"
 		
@@ -999,7 +964,7 @@ class UserInterface
 				stepNum = @sharedMem.GetDispStepNumber(slotLabel2Param)
 			end
 			topTable += "
-				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{stepNum}' COMPLETION</td></tr>
+				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{stepNum}' COMPLETION AT</td></tr>
 				 			<tr>
 				 				<td align=\"center\">
 				 					<font 				 						
@@ -1013,6 +978,7 @@ class UserInterface
 				 				</td>
 				 			</tr>"
 		end
+		btnState = getButtonDisplay(slotLabel2Param,"#{__LINE__}-#{__FILE__}")
 		topTable += "
 				 			<tr>
 				 				<td>
@@ -1022,7 +988,7 @@ class UserInterface
 				 			<tr>
 				 				<td align = \"center\">
 				 					<button 
-										onclick=\"window.location='/TopBtnPressed?slot=#{slotLabel2Param}&BtnState=#{getButtonDisplay(slotLabel2Param)}'\"
+										onclick=\"window.location='/TopBtnPressed?slot=#{slotLabel2Param}&BtnState=#{btnState}'\"
 										type=\"button\" 
 				 						style=\"width:100;height:25\" 
 				 						id=\"btn_#{slotLabel2Param}\" "
@@ -1032,9 +998,16 @@ class UserInterface
 			disabled = ""
 		end
 		btnStateDisp = @sharedMem.GetDispButton(slotLabel2Param)
-		toDisplay = getButtonDisplay(slotLabel2Param)
+		toDisplay = getButtonDisplay(slotLabel2Param,"#{__LINE__}-#{__FILE__}")
+		# puts "toDisplay=#{toDisplay} #{__LINE__}-#{__FILE__}"
+		# puts "btnStateDisp=#{btnStateDisp} #{__LINE__}-#{__FILE__}"
 		if btnStateDisp.nil? == false 
+			if btnStateDisp != SharedLib::NormalButtonDisplay
+				toDisplay = btnStateDisp
+			end
 			if btnStateDisp == "Seq Up"
+				toDisplay = btnStateDisp
+			elsif  btnStateDisp == "Clearing"
 				toDisplay = btnStateDisp
 			elsif  btnStateDisp == "Seq Down"
 				toDisplay = btnStateDisp
@@ -1135,8 +1108,9 @@ class UserInterface
 				 			<tr>
 				 				<td align=\"center\">"
 				 				
-				 				if getButtonDisplay(slotLabel2Param) == Run	
+				 				if getButtonDisplay(slotLabel2Param,"#{__LINE__}-#{__FILE__}") == Run	
 btnStateDisp = @sharedMem.GetDispButton(slotLabel2Param)
+puts "btnStateDisp='#{btnStateDisp}' #{__LINE__}-#{__FILE__}"
 toDisplay = Clear
 if btnStateDisp.nil? == false 
 	if btnStateDisp == "Clearing"
@@ -2664,6 +2638,5 @@ end
 
 # at 2122
 =begin
-	how are we going to get the data for the PS settings for the pretest?
-	1777
+741
 =end

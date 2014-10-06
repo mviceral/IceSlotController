@@ -244,6 +244,25 @@ class SharedLib
         extend Forwardable
         def_delegators :instance, *SharedLib.instance_methods(false)
     end
+    
+    def self.make5point2Format(numberParam)
+    	numParam = numberParam.to_s
+			if numParam.length > 6
+				numParam = numParam[0..5]
+			end
+			return numParam
+    end
+
+    def self.getCurrentDutDisplay(muxData,rawDataParam)
+			if muxData.nil? == false && muxData[rawDataParam].nil? == false
+				current = make5point2Format((muxData[rawDataParam].to_f/1000.0).round(3))
+			else
+				current = "---"
+			end
+			return current
+    	# End of 'getCurrentDutDisplay()'
+    end
+
   # End of 'class Constants'
 end
     
