@@ -129,6 +129,13 @@ class SharedLib
 	Gpio = "G" # for general purpose IO values
 	Eips = "E" # for Ethernet I (current) ps
 
+
+	# Config file types
+	StepFileConfig = "StepFileConfig"
+	PsConfig = "PsConfig"
+	TempConfig = "TempConfig"
+	MinCurrConfig = "MinCurrConfig"
+
 	# Shared memory accessor
 	MemAccessor = "MemAccessor"
     
@@ -160,7 +167,24 @@ class SharedLib
   def uriToStr(stringParam)
   	return makeUriFriendlySub(stringParam,false)
   end
-
+  
+	def getKnownRowNamesFor(fileTypeParam)
+		if fileTypeParam == PsConfig				
+			configTemplateRows = psConfigFileTemplate.split("\n")
+			colToUse = 1
+		elsif fileTypeParam  == TempConfig
+			configTemplateRows = tempConfigFileTemplate.split("\n")
+			colToUse = 0
+		end
+		rowCt = 0
+		while rowCt<configTemplateRows.length do
+			columns = configTemplateRows[rowCt].split(",")
+			colName = columns[colToUse].to_s.upcase
+			colName = colName.gsub "\t", '' # Removes the trailing tab characters at front of the string if any.
+			@knownConfigRowNames[colName] = "nn" # nn - not nil.
+			rowCt += 1
+		end
+	end
 	def minCurrConfigFileTemplate
 		return "Pre-Test Config File,,,
 		,,,Nom
