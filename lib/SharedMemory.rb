@@ -166,12 +166,24 @@ class SharedMemory
 				if errMsgParam.nil? == false
 					# There were some errors from the board.
 					# Write the error into a log file
+=begin
 					newErrLogFileName = "../\"error logs\"/NewErrors_#{slotOwnerParam}.log"
 					while errMsgParam.length>0
 						errItem = errMsgParam.shift
 						File.open(newErrLogFileName, "a") { 
 							|file| file.write("#{errItem.to_json}\n") 
 						}
+					end
+=end					
+					newErrLogFileName = "../\"error logs\""
+					while errMsgParam.length>0
+						errItem = errMsgParam.shift
+						`cd #{newErrLogFileName}; echo \"SharedLib::uriToStr(errItem.to_json)\" >> NewErrors_#{slotOwnerParam}.log`
+=begin						
+						File.open(newErrLogFileName, "a") { 
+							|file| file.write("#{errItem.to_json}\n") 
+						}
+=end						
 					end
 				end
 				rescue

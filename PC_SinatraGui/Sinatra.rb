@@ -325,112 +325,6 @@ class UserInterface
 		@upLoadConfigErrorValue
 	end
 
-	def minCurrConfigFileTemplate
-		return "Pre-Test Config File,,,
-		,,,Nom
-		Name,Type,Unit,SET
-		IDUT,DUT MINIMUM CURRENT [1:24],A,0"
-	end
-
-	def tempConfigFileTemplate
-		#
-		# Temperature config file template.
-		#
-		return "Temperature,Comment,,Nom,Trip,Trip,FLAG,FLAG,Enable,IDLE,LOAD,START,RUN,STOP,CLEAR
-		Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,control,,,,,,
-		TDUT,DUT TEMPERATURE [1:24],C,25,15,135,23.75,26.25,YES,OFF,OFF,ON,ON,OFF,OFF
-		Timer,Delay Ramp Up to full power,seconds,500,,,,,,,,,,,
-		Timer,Delay Ramp Dn to FP,seconds,60,,,,,,,,,,,
-		H,Delay UP Max PWM Heat ,Percent,25%,,,,,0-255,,,,,,
-		C,Ramp down PWM COOL,Percent,100%,,,,,0-255,,,,,,
-		P,Propotional,Value,6,,,,,,,,,,,
-		I,Integral,Value,0.6,,,,,,,,,,,
-		D,Derivitive,Value,0.15,,,,,,,,,,,"
-	end
-
-	def stepConfigFileTemplate
-		return "Item,Name,Description,Type,Value
-		,Pretest (site identification),,T,STRING
-		1,Power Supplies,PS Config For Pretest.ps_config,File,
-		2,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		3,DUT Site Activation Min Current File ,SiteMin.mincurr_config,File,
-		,Step Name,File Name A ,N,1
-		1,Power Supplies,PS Config A.ps_config,File,
-		2,Temperature,TMP File Name Z,File,
-		3,Step Name,Step Name,T,STRING
-		4,TIME,STEP TIME,M,2400
-		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10
-		6,Alarm Wait,WAIT TIME ON ALARM,M,1
-		7,Auto Restart,Auto restart,B,1
-		8,Stop on Tolerance,Stop on tolerance limit,B,0
-		9,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		10,Next Step,Next Step Name 'B',T,STRING
-		,Step Name,File Name B,N,2
-		1,Power Supplies,PS Config B.ps_config,File,
-		2,Temperature,TMP File Name Z,File,
-		3,Step Name,Step Name,T,STRING
-		4,TIME,STEP TIME,M,2400
-		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10
-		6,Alarm Wait,WAIT TIME ON ALARM,M,1
-		7,Auto Restart,Auto restart,B,1
-		8,Stop on Tolerance,Stop on tolerance limit,B,0
-		9,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		10,Next Step,Next Step Name 'C',T,STRING
-		,Step Name,File Name C,N,3
-		1,Power Supplies,PS Config C.ps_config,File,
-		2,Temperature,TMP File Name Z,File,
-		3,Step Name,Step Name,T,STRING
-		4,TIME,STEP TIME,M,2400
-		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10
-		6,Alarm Wait,WAIT TIME ON ALARM,M,1
-		7,Auto Restart,Auto restart,B,1
-		8,Stop on Tolerance,Stop on tolerance limit,B,0
-		9,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		10,Next Step,Next Step Name 'END',T,STRING
-		,if Condition,Count >= 10 END,F,FUNCTION
-		,Count ++,incrament count,F,FUNCTION"
-	end
-	
-	def psConfigFileTemplate
-		return "Config File,,,,,,,,,,Condition,,,,,,
-			,,Comment,,Nom,Trip,Trip,FLAG,FLAG,Enable,IDLE,LOAD,START,RUN,STOP,CLEAR,
-			index,Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,control,,,,,,,
-			15,VPS0,Slot PS Voltage 0,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			16,IPS0,Slot PS Current 0,A,125,0,140,14,131.25,,,,,,,,
-			17,VPS1,Slot PS Voltage 1,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			18,IPS1,Slot PS Current 1,A,125,0,140,14,131.25,,,,,,,,
-			19,VPS2,Slot PS Voltage 2  (shared PS2),V,1.5,1.35,1.65,1.425,1.575,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			20,IPS2,Slot PS Current 2 (shared PS2),A,70,0,70,7,73.5,,,,,,,,
-			21,VPS3,Slot PS Voltage 3,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			22,IPS3,Slot PS Current 3,A,125,0,140,14,131.25,,,,,,,,
-			23,VPS4,Slot PS Voltage 4  (shared PS2),V,1.5,1.35,1.65,1.425,1.575,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			24,IPS4,Slot PS Current 4  (shared PS2),A,70,0,70,7,73.5,,,,,,,,
-			25,VPS5,Slot PS Voltage 5,V,ph,ph,ph,ph,ph,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			26,IPS5,Slot PS Current 5,A,ph,ph,ph,ph,ph,,,,,,,,
-			27,VPS6,Slot PS Voltage 6,V,3.3,2.97,3.63,3.135,3.465,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
-			28,IPS6,Slot PS Current 6,A,3,0,5,0.5,3.15,,,,,,,,
-			29,VPS7,Slot PS Voltage 7,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			30,IPS7,Slot PS Current 7,A,125,0,140,14,131.25,,,,,,,,
-			31,VPS8,Slot PS Voltage 8,V,5,4.5,5.5,4.75,5.25,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
-			32,IPS8,Slot PS Current 8,A,1,0,3,0.3,1.05,,,,,,,,
-			33,VPS9,Slot PS Voltage 9,V,2.1,1.89,2.31,1.995,2.205,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
-			34,IPS9,Slot PS Current 9,A,1,0,3,0.3,1.05,,,,,,,,
-			35,VPS10,Slot PS Voltage 10,V,2.5,2.25,2.75,2.375,2.625,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
-			36,IPS10,Slot PS Current 10,A,3,0,5,0.5,3.15,,,,,,,,
-			37,IDUT,Dut PS current 24 [1:24],A,23,0,27,2.7,24.15,,,,,,,,
-			,,,,,UP,DLYms,DN,DLYms,,,,,,,,
-			39,SPS0,Enable-Disable ,SEQ,Ethernent,1,200,9,200,,,,,,,,
-			40,SPS1,Enable-Disable ,SEQ,Ethernent,2,200,8,200,,,,,,,,
-			41,SPS2,Enable-Disable ,SEQ,Ethernent,3,200,7,200,,,,,,,,
-			42,SPS3,Enable-Disable ,SEQ,Ethernent,4,200,6,200,,,,,,,,
-			43,SPS4,Enable-Disable ,SEQ,Ethernent,0,0,0,0,,,,,,,,
-			44,SPS5,Enable-Disable ,SEQ,Ethernent,0,0,0,0,,,,,,,,
-			45,SPS6,Enable-Disable ,SEQ,Slot PCB,5,200,5,200,,,,,,,,
-			46,SPS7,Enable-Disable ,SEQ,Ethernent,6,200,4,200,,,,,,,,
-			47,SPS8,Enable-Disable ,SEQ,Slot PCB,7,200,3,200,,,,,,,,
-			48,SPS9,Enable-Disable ,SEQ,Slot PCB,8,200,2,200,,,,,,,,
-			49,SPS10,Enable-Disable ,SEQ,Slot PCB,9,200,1,200,,,,,,,,"
-	end
 	
 	def upLoadConfigErrorRow
 		@upLoadConfigErrorRow
@@ -1450,13 +1344,16 @@ end
 			
 			if fileTypeParam == UserInterface::PsConfig				
 				configTemplateRows = psConfigFileTemplate.split("\n")
+				colToUse = 1
 			elsif fileTypeParam  == UserInterface::TempConfig
 				configTemplateRows = tempConfigFileTemplate.split("\n")
+				colToUse = 0
 			end
 			rowCt = 0
 			while rowCt<configTemplateRows.length do
 				columns = configTemplateRows[rowCt].split(",")
-				colName = columns[1].to_s.upcase
+				colName = columns[colToUse].to_s.upcase
+				colName = colName.gsub "\t", '' # Removes the trailing tab characters at front of the string if any.
 				@knownConfigRowNames[colName] = "nn" # nn - not nil.
 				rowCt += 1
 			end
@@ -2006,15 +1903,13 @@ end
 		end
 		
 		knownRowNames = getKnownRowNamesFor(configFileType)
-puts "knownRowNames = #{knownRowNames}"
-
 		#
 		# Make sure that each row have a column name that is found within the template which Mike provided.
 		#
 		ct = 0
 		while ct < config.length do
-			colContent = config[ct].split(",")[1].upcase
-			if colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn")
+			colContent = config[ct].split(",")[0].upcase
+			if (colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn"))
 				#
 				# How are we going to inform the user that the file is not a good one?
 				#
@@ -2037,6 +1932,7 @@ puts "knownRowNames = #{knownRowNames}"
 		while ct < config.length do
 			colName = config[ct].split(",")[0].upcase
 			colContent = config[ct].split(",")[3].upcase
+			puts "colName='#{colName}' colContent='#{colContent}' #{__LINE__}-#{__FILE__}"
 			slotConfigStep[configFileType][colName] = colContent
 			ct+=1
 		end
@@ -2621,8 +2517,8 @@ post '/AckError' do
 end
  
 get '/AckError' do
-	newErrLogFileName = "../NewErrors_#{params[:slot]}.log"
-	errLogFileName = "../ErrorLog_#{params[:slot]}.log"
+	newErrLogFileName = "../\"error logs\"/NewErrors_#{params[:slot]}.log"
+	errLogFileName = "../\"error logs\"/ErrorLog_#{params[:slot]}.log"
 	errorItem = `head -1 #{newErrLogFileName}`
 	File.open(errLogFileName, "a") { 
 		|file| file.write("#{errorItem}") 
