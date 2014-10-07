@@ -1,0 +1,19 @@
+# To run racetrack, put in the following.
+~/MoSys/racetrack_v1.0.4/bin/racetrack -dongle dlp3_jtag_bi -dongle_sn 77790102A -ppath ~/MoSys/racetrack_v1.0.4/lib
+
+source ~/TDBI/temp_sens_test.tcl
+
+# for 125C
+bib_prep_temp_sens 10.3125 bi0011id 
+
+# for the other temperatures
+bib_prep_temp_sens
+
+bib_read_temperature
+
+# Make sure that there is at least one minute of power-off period between steps.
+# When the board is properly powered up, execute this command in Linux:
+
+~/TDBI/be2stress INT5,5,5 102 Debug Test  # The numbers after INT are hours. 
+
+# A “BIB_DUT_Map” window will pop up. Make sure that all sites with DUTs are labeled with “PASS”.
