@@ -176,15 +176,18 @@ class SharedLib
 			configTemplateRows = tempConfigFileTemplate.split("\n")
 			colToUse = 0
 		end
+		knownConfigRowNames = Hash.new
 		rowCt = 0
 		while rowCt<configTemplateRows.length do
 			columns = configTemplateRows[rowCt].split(",")
 			colName = columns[colToUse].to_s.upcase
 			colName = colName.gsub "\t", '' # Removes the trailing tab characters at front of the string if any.
-			@knownConfigRowNames[colName] = "nn" # nn - not nil.
+			knownConfigRowNames[colName] = "nn" # nn - not nil.
 			rowCt += 1
 		end
+		return knownConfigRowNames
 	end
+	
 	def minCurrConfigFileTemplate
 		return "Pre-Test Config File,,,
 		,,,Nom

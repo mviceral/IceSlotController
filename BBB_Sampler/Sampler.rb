@@ -1216,9 +1216,112 @@ class TCUSampler
             			        # Check for the trip points.  How are we going to check them?
             			        # First, display the trip points, then display the current values.
             			        # Then compare the two values.  If trip points fail
+						
             			        @stepToWorkOn.each do |key, array|
                                     puts "#{key}----- #{__LINE__}-#{__FILE__}"
-                                    puts array
+                                    if key == "PsConfig"
+                                        adcData = @shareMem.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
+                                        muxData = @shareMem.GetDataMuxData("#{__LINE__}-#{__FILE__}")
+                                        eiPs = @shareMem.GetDataEips()
+                                        tcu = @shareMem.GetDataTcu("#{__LINE__}-#{__FILE__}")
+                                        array.each do |key2, array2|
+                                            nomSet = array2["NomSet"]
+                    			            tripMin = array2["TripMin"]
+                    			            tripMax = array2["TripMax"]
+                    			            flagTolP = array2["FlagTolP"]
+                    			            flagTolN = array2["FlagTolN"]
+                    			            puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
+                                            case key2
+                                            when "VPS0"
+				                                puts "PS0V = #{@shareMem.getPsVolts(muxData,adcData,"32")}"
+                                            when "IPS0"
+				                                puts "PS0I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+                                            when "VPS1"
+				                                puts "PS1V = #{@shareMem.getPsVolts(muxData,adcData,"33")}"
+                                            when "IPS1"
+				                                puts "PS1I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+                                            when "VPS2"
+				                                puts "PS2V = #{@shareMem.getPsVolts(muxData,adcData,"34")}"
+                                            when "IPS2"
+				                                puts "PS2I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+                                            when "VPS3"
+				                                puts "PS3V = #{@shareMem.getPsVolts(muxData,adcData,"35")}"
+                                            when "IPS3"
+				                                puts "PS3I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+                                            when "VPS4"
+				                                puts "PS4V = #{@shareMem.getPsVolts(muxData,adcData,"36")}"
+                                            when "IPS4"
+				                                puts "PS4I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+                                            when "VPS5"
+				                                puts "PS5V = #{@shareMem.getPsVolts(muxData,adcData,"37")}"
+                                            when "IPS5"
+				                                puts "PS5I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+                                            when "VPS6"
+				                                puts "PS6V = #{@shareMem.getPsVolts(muxData,adcData,"38")}"
+                                            when "IPS6"
+				                                puts "PS6I = #{@shareMem.getPsCurrent(muxData,eiPs,"24",nil)}"
+                                            when "VPS7"
+				                                puts "PS7V = #{@shareMem.getPsVolts(muxData,adcData,"39")}"
+                                            when "IPS7"
+				                                puts "PS7I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+                                            when "VPS8"
+				                                puts "PS8V = #{@shareMem.getPsVolts(muxData,adcData,"40")}"
+                                            when "IPS8"
+				                                puts "PS8I = #{@shareMem.getPsCurrent(muxData,eiPs,"25",nil)}"
+                                            when "VPS9"
+				                                puts "PS9V = #{@shareMem.getPsVolts(muxData,adcData,"41")}"
+                                            when "IPS9"
+				                                puts "PS9I = #{@shareMem.getPsCurrent(muxData,eiPs,"26",nil)}"
+                                            when "VPS10"
+				                                puts "PS10V = #{@shareMem.getPsVolts(muxData,adcData,"42")}"
+                                            when "IPS10"
+                                            when "IDUT"                                       
+                                            else
+                                                @shareMem.ReportError("key='#{key2}' is not recognized. #{__LINE__}-#{__FILE__}")
+                                            	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                            end                    			            
+                                        end
+                                    elsif key == "TempConfig"
+                                        array.each do |key2, array2|
+                                            nomSet = array2["NomSet"]
+                    			            tripMin = array2["TripMin"]
+                    			            tripMax = array2["TripMax"]
+                    			            flagTolP = array2["FlagTolP"]
+                    			            flagTolN = array2["FlagTolN"]
+                    			            puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
+                                            case key2
+                                            when "VPS0"
+                                            when "IPS0"
+                                            when "VPS1"
+                                            when "IPS1"
+                                            when "VPS2"
+                                            when "IPS2"
+                                            when "VPS3"
+                                            when "IPS3"
+                                            when "VPS4"
+                                            when "IPS4"
+                                            when "VPS5"
+                                            when "IPS5"
+                                            when "VPS6"
+                                            when "IPS6"
+                                            when "VPS7"
+                                            when "IPS7"
+                                            when "VPS8"
+                                            when "IPS8"
+                                            when "VPS9"
+                                            when "IPS9"
+                                            when "VPS10"
+                                            when "IPS10"
+                                            when "IDUT"                                       
+                                            else
+                                                @shareMem.ReportError("key='#{key2}' is not recognized. #{__LINE__}-#{__FILE__}")
+                                            	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                            end                    			            
+                                        end
+                                    else
+                                        @shareMem.ReportError("key='#{key}' is not recognized. #{__LINE__}-#{__FILE__}")
+                                    	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                    end
                                 end
                                 @shareMem.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
             			    else
@@ -1246,8 +1349,8 @@ class TCUSampler
     			    end
                 end
 
-        		if @shareMem.GetPcCmd().length != 0
-        		    pcCmdObj = @shareMem.GetPcCmd()[0]
+        		if @shareMem.GetPcCmd().length > 0
+        		    pcCmdObj = @shareMem.GetPcCmd()
         		    pcCmd = pcCmdObj[0]
         		    timeOfCmd = pcCmdObj[1]
         		    if @lastPcCmd != pcCmd && @lastTimeOfCmd != timeOfCmd
@@ -1334,7 +1437,7 @@ class TCUSampler
                     end
                     
             		SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
-
+=begin
     		        arrItem = Array.new
     		        arrItem.push(pcCmd)
        		        arrItem.push(timeOfCmd)
@@ -1343,7 +1446,7 @@ class TCUSampler
     		        ds[SharedMemory::CmdProcessed] = arrItem
     		        @shareMem.writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
                     @shareMem.PopPcCmd()        		    
-        		    
+=end                    
         		end
     
 
@@ -1421,4 +1524,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 979
+# 1232
