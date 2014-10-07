@@ -474,6 +474,9 @@ class TCUSampler
 
         # Setup the @stepToWorkOn
 	    stepNumber = 0
+        timerRUFP = 0
+        timerRDFP = 0
+
 	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
 	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
 	    	stepNumber<getConfiguration()["Steps"].length && 
@@ -501,12 +504,30 @@ class TCUSampler
                                         ThermalSiteDevices.setTHCPID(uart1,"I",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["I"])
                                         ThermalSiteDevices.setTHCPID(uart1,"D",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["D"])
 
+
                                         puts "P = '#{getConfiguration()[Steps][key]["TempConfig"]["P"]}'"
                                         puts "I = '#{getConfiguration()[Steps][key]["TempConfig"]["I"]}'" 
-                                        puts "D = '#{getConfiguration()[Steps][key]["TempConfig"]["D"]}'" 
-
+                                        puts "D = '#{getConfiguration()[Steps][key]["TempConfig"]["D"]}'"
+                                        
+                                        # Make sure all the duts have the settings PIDTH we sent.
+                                        SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
+                                        ct = 0
+                                        while ct<24 do
+                                            if tcusToSkip[ct].nil? == true
+                                                vStatus = DutObj::getTcuStatusV(ct, uart1,gPIO2)
+                                                SharedLib.bbbLog("Code not done.  Make sure that the vStatus are what was set to be.  Try to set for 5 times.  If failed, add to tcusToSkip list, and report an error. #{__LINE__}-#{__FILE__}")
+                                            end
+                                            ct += 1
+                                        end
+                                        
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
+                                        puts "TIMERRUFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRUFP"]}'"
+                                        puts "TIMERRDFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRDFP"]}'"
+
+                                        timerRUFP = getConfiguration()[Steps][key]["TempConfig"]["TIMERRUFP"]
+                                        timerRDFP = getConfiguration()[Steps][key]["TempConfig"]["TIMERRDFP"]
+
                                         @shareMem.SetStepName("#{key}")
                                         @shareMem.SetStepNumber("#{stepNumber+1}")
 
@@ -594,13 +615,10 @@ class TCUSampler
 	        stepNumber += 1
 	    end
 
-        # if @stepToWorkOn.nil?
-        #   setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
-        # else
-            # In principle, once it's loaded, the YesNo is set too
-            # puts caller # Kernel#caller returns an array of strings
-        #    setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
-        # end
+        if @stepToWorkOn.nil? == false
+            @stepToWorkOn["TIMERRUFP"] = timerRUFP
+            @stepToWorkOn["TIMERRDFP"] = timerRDFP
+        end
     end
 
     def setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
@@ -1036,9 +1054,10 @@ class TCUSampler
         
         SharedLib.bbbLog("Initializing machine using system's time. #{__LINE__}-#{__FILE__}")
         
+        tcusToSkip = Hash.new
+=begin        
         # Read the file that lists the dead TCUs.
         lineNum = 0
-        tcusToSkip = Hash.new
         SharedLib.bbbLog("Processing '#{FaultyTcuList_SkipPolling}' file. #{__LINE__}-#{__FILE__}")
 	    begin
     		File.open(FaultyTcuList_SkipPolling, "r") do |f|
@@ -1061,13 +1080,14 @@ class TCUSampler
 		    rescue Exception => e
 		        SharedLib.bbbLog("Error: #{e.message}  #{__LINE__}-#{__FILE__}")
 	    end
-        
+=end        
+
         SharedLib.bbbLog "Searching for disabled TCUs aside the listed ones in '#{FaultyTcuList_SkipPolling}' file. #{__LINE__}-#{__FILE__}"
         ct = 0
         newDeadTcu = false
         dutObj = DutObj.new()
         while ct<24 && tcusToSkip[ct].nil? do 
-            uartResponse = dutObj.getTcuStatusS(ct,uart1,gPIO2)
+            uartResponse = DutObj::getTcuStatusS(ct,uart1,gPIO2)
             if uartResponse == DutObj::FaultyTcu
                 tcusToSkip[ct] = ct
                 newDeadTcu = true
@@ -1080,7 +1100,8 @@ class TCUSampler
             end
             ct += 1
         end
-        
+
+=begin        
         if newDeadTcu
             # Write the new FaultyTcuList file
             SharedLib.bbbLog "Updating #{FaultyTcuList_SkipPolling} file due to new faulty TCU.  See log."
@@ -1097,7 +1118,8 @@ class TCUSampler
     	        end
             }
         end
-    
+=end
+
         # Make sure that the UART is functional again.        
 
         #
@@ -1138,6 +1160,7 @@ class TCUSampler
                     # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
                     stepNum = @stepToWorkOn[StepNum]
                 end
+                
                 puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
                 @shareMem.SetSlotTime(Time.now.to_i)
                 if skipLimboStateCheck
@@ -1189,6 +1212,14 @@ class TCUSampler
         			    else
     			            puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
             			    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
+            			        # We're still running.
+            			        # Check for the trip points.  How are we going to check them?
+            			        # First, display the trip points, then display the current values.
+            			        # Then compare the two values.  If trip points fail
+            			        @stepToWorkOn.each do |key, array|
+                                    puts "#{key}----- #{__LINE__}-#{__FILE__}"
+                                    puts array
+                                end
                                 @shareMem.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
             			    else
             			        # Step just finished.
@@ -1250,10 +1281,12 @@ class TCUSampler
                                 end
                                 ct += 1
                             end
+                            
             		    when SharedLib::StopFromPc
             		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                             # Turn on the control for TCUs that are not disabled.
                             setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
+                            
             		    when SharedLib::ClearConfigFromPc
                 		    setBoardData(Hash.new,uart1,gPIO2,tcusToSkip)
             		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
@@ -1261,6 +1294,7 @@ class TCUSampler
                 		    @shareMem.SetConfigurationFileName("")
                 		    gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
                             setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
+                            
             		    when SharedLib::LoadConfigFromPc
             		        # close the sockets of the Ethernet PS if they're on.
             		        if @socketIp.nil? == false
