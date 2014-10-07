@@ -21,15 +21,15 @@ class DutObj
         return tbr
     end
     
-    def getTcuStatusV(dutNumParam,uart1Param,gPIO2)
+    def self.getTcuStatusV(dutNumParam,uart1Param,gPIO2)
         getTcuStatus(dutNumParam,uart1Param,gPIO2,"V")
     end
     
-    def getTcuStatusS(dutNumParam,uart1Param,gPIO2)
+    def self.getTcuStatusS(dutNumParam,uart1Param,gPIO2)
         getTcuStatus(dutNumParam,uart1Param,gPIO2,"S")
     end
     
-    def getTcuStatus(dutNumParam,uart1Param,gPIO2,singleCharParam)
+    def self.getTcuStatus(dutNumParam,uart1Param,gPIO2,singleCharParam)
         gPIO2.etsRxSel(dutNumParam)
         tbr = "" # tbr - to be returned
         uartStatusCmd = "#{singleCharParam}?\n"
@@ -115,28 +115,13 @@ class DutObj
                 ""
             end
 =end            
-        sleep(0.01)
+            sleep(0.01)
             return tbr
         #end
     end
     
     def poll(dutNumParam, uart1Param,gPIO2)
-        @statusResponse[dutNumParam] = getTcuStatusS(dutNumParam, uart1Param,gPIO2)
-        
-        if @vCounter.nil?
-            @vCounter = Hash.new
-        end
-        
-        if @vCounter[dutNumParam].nil?
-            @vCounter[dutNumParam] = 0
-        end
-        
-        if @vCounter[dutNumParam] < 0
-            @vCounter[dutNumParam] += 1
-        else
-            @vCounter[dutNumParam] = 0
-            puts "Dut##{dutNumParam}#{getTcuStatusV(dutNumParam, uart1Param,gPIO2)}"
-        end
+        @statusResponse[dutNumParam] = DutObj::getTcuStatusS(dutNumParam, uart1Param,gPIO2)
     end
 
     def saveAllData(parentMemory, timeNowParam)
