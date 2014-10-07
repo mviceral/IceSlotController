@@ -42,10 +42,6 @@ class UserInterface
 	#
 	# Template flags
 	#
-	StepFileConfig = "StepFileConfig"
-	PsConfig = "PsConfig"
-	TempConfig = "TempConfig"
-	MinCurrConfig = "MinCurrConfig"
 	PretestSiteIdentification = "Pretest (site identification)"
 	
 	StepConfigFileFolder = "../steps\ config\ file\ repository"
@@ -117,8 +113,8 @@ class UserInterface
 	def getBoardIp(slotParam)
 		if @slotToIp.nil?
 			@slotToIp = Hash.new
-			@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
-			#@slotToIp[SLOT2] = ""
+			#@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
+			@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
 			#@slotToIp[SLOT3] = ""
 		else
 			return @slotToIp[slotParam]
@@ -159,6 +155,7 @@ class UserInterface
 				error = "Step File '#{configFileName}' - '#{itemNameParam}' '#{stepTime}' on line "
 				error += "'#{ct+1}' must be a boolean (1 or 0)."
 				@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			else
 				slotConfigStep = getSlotConfigStep(stepName)
@@ -194,6 +191,7 @@ class UserInterface
 					puts "A error =>#{error}<= @#{__LINE__}-#{__FILE__}"
 					@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 					puts "B @redirectWithError =>#{@redirectWithError}<= @#{__LINE__}-#{__FILE__}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 					return false
 				else				
 					slotConfigStep = getSlotConfigStep(stepName)
@@ -325,112 +323,6 @@ class UserInterface
 		@upLoadConfigErrorValue
 	end
 
-	def minCurrConfigFileTemplate
-		return "Pre-Test Config File,,,
-		,,,Nom
-		Name,Type,Unit,SET
-		IDUT,DUT MINIMUM CURRENT [1:24],A,0"
-	end
-
-	def tempConfigFileTemplate
-		#
-		# Temperature config file template.
-		#
-		return "Temperature,Comment,,Nom,Trip,Trip,FLAG,FLAG,Enable,IDLE,LOAD,START,RUN,STOP,CLEAR
-		Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,control,,,,,,
-		TDUT,DUT TEMPERATURE [1:24],C,25,15,135,23.75,26.25,YES,OFF,OFF,ON,ON,OFF,OFF
-		Timer,Delay Ramp Up to full power,seconds,500,,,,,,,,,,,
-		Timer,Delay Ramp Dn to FP,seconds,60,,,,,,,,,,,
-		H,Delay UP Max PWM Heat ,Percent,25%,,,,,0-255,,,,,,
-		C,Ramp down PWM COOL,Percent,100%,,,,,0-255,,,,,,
-		P,Propotional,Value,6,,,,,,,,,,,
-		I,Integral,Value,0.6,,,,,,,,,,,
-		D,Derivitive,Value,0.15,,,,,,,,,,,"
-	end
-
-	def stepConfigFileTemplate
-		return "Item,Name,Description,Type,Value
-		,Pretest (site identification),,T,STRING
-		1,Power Supplies,PS Config For Pretest.ps_config,File,
-		2,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		3,DUT Site Activation Min Current File ,SiteMin.mincurr_config,File,
-		,Step Name,File Name A ,N,1
-		1,Power Supplies,PS Config A.ps_config,File,
-		2,Temperature,TMP File Name Z,File,
-		3,Step Name,Step Name,T,STRING
-		4,TIME,STEP TIME,M,2400
-		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10
-		6,Alarm Wait,WAIT TIME ON ALARM,M,1
-		7,Auto Restart,Auto restart,B,1
-		8,Stop on Tolerance,Stop on tolerance limit,B,0
-		9,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		10,Next Step,Next Step Name 'B',T,STRING
-		,Step Name,File Name B,N,2
-		1,Power Supplies,PS Config B.ps_config,File,
-		2,Temperature,TMP File Name Z,File,
-		3,Step Name,Step Name,T,STRING
-		4,TIME,STEP TIME,M,2400
-		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10
-		6,Alarm Wait,WAIT TIME ON ALARM,M,1
-		7,Auto Restart,Auto restart,B,1
-		8,Stop on Tolerance,Stop on tolerance limit,B,0
-		9,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		10,Next Step,Next Step Name 'C',T,STRING
-		,Step Name,File Name C,N,3
-		1,Power Supplies,PS Config C.ps_config,File,
-		2,Temperature,TMP File Name Z,File,
-		3,Step Name,Step Name,T,STRING
-		4,TIME,STEP TIME,M,2400
-		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10
-		6,Alarm Wait,WAIT TIME ON ALARM,M,1
-		7,Auto Restart,Auto restart,B,1
-		8,Stop on Tolerance,Stop on tolerance limit,B,0
-		9,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		10,Next Step,Next Step Name 'END',T,STRING
-		,if Condition,Count >= 10 END,F,FUNCTION
-		,Count ++,incrament count,F,FUNCTION"
-	end
-	
-	def psConfigFileTemplate
-		return "Config File,,,,,,,,,,Condition,,,,,,
-			,,Comment,,Nom,Trip,Trip,FLAG,FLAG,Enable,IDLE,LOAD,START,RUN,STOP,CLEAR,
-			index,Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,control,,,,,,,
-			15,VPS0,Slot PS Voltage 0,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			16,IPS0,Slot PS Current 0,A,125,0,140,14,131.25,,,,,,,,
-			17,VPS1,Slot PS Voltage 1,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			18,IPS1,Slot PS Current 1,A,125,0,140,14,131.25,,,,,,,,
-			19,VPS2,Slot PS Voltage 2  (shared PS2),V,1.5,1.35,1.65,1.425,1.575,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			20,IPS2,Slot PS Current 2 (shared PS2),A,70,0,70,7,73.5,,,,,,,,
-			21,VPS3,Slot PS Voltage 3,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			22,IPS3,Slot PS Current 3,A,125,0,140,14,131.25,,,,,,,,
-			23,VPS4,Slot PS Voltage 4  (shared PS2),V,1.5,1.35,1.65,1.425,1.575,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			24,IPS4,Slot PS Current 4  (shared PS2),A,70,0,70,7,73.5,,,,,,,,
-			25,VPS5,Slot PS Voltage 5,V,ph,ph,ph,ph,ph,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			26,IPS5,Slot PS Current 5,A,ph,ph,ph,ph,ph,,,,,,,,
-			27,VPS6,Slot PS Voltage 6,V,3.3,2.97,3.63,3.135,3.465,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
-			28,IPS6,Slot PS Current 6,A,3,0,5,0.5,3.15,,,,,,,,
-			29,VPS7,Slot PS Voltage 7,V,0.9,0.81,0.99,0.855,0.945,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Ethernet
-			30,IPS7,Slot PS Current 7,A,125,0,140,14,131.25,,,,,,,,
-			31,VPS8,Slot PS Voltage 8,V,5,4.5,5.5,4.75,5.25,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
-			32,IPS8,Slot PS Current 8,A,1,0,3,0.3,1.05,,,,,,,,
-			33,VPS9,Slot PS Voltage 9,V,2.1,1.89,2.31,1.995,2.205,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
-			34,IPS9,Slot PS Current 9,A,1,0,3,0.3,1.05,,,,,,,,
-			35,VPS10,Slot PS Voltage 10,V,2.5,2.25,2.75,2.375,2.625,YES,OFF,OFF,SEQUP,ON,SEQDN,OFF,Slot PCB
-			36,IPS10,Slot PS Current 10,A,3,0,5,0.5,3.15,,,,,,,,
-			37,IDUT,Dut PS current 24 [1:24],A,23,0,27,2.7,24.15,,,,,,,,
-			,,,,,UP,DLYms,DN,DLYms,,,,,,,,
-			39,SPS0,Enable-Disable ,SEQ,Ethernent,1,200,9,200,,,,,,,,
-			40,SPS1,Enable-Disable ,SEQ,Ethernent,2,200,8,200,,,,,,,,
-			41,SPS2,Enable-Disable ,SEQ,Ethernent,3,200,7,200,,,,,,,,
-			42,SPS3,Enable-Disable ,SEQ,Ethernent,4,200,6,200,,,,,,,,
-			43,SPS4,Enable-Disable ,SEQ,Ethernent,0,0,0,0,,,,,,,,
-			44,SPS5,Enable-Disable ,SEQ,Ethernent,0,0,0,0,,,,,,,,
-			45,SPS6,Enable-Disable ,SEQ,Slot PCB,5,200,5,200,,,,,,,,
-			46,SPS7,Enable-Disable ,SEQ,Ethernent,6,200,4,200,,,,,,,,
-			47,SPS8,Enable-Disable ,SEQ,Slot PCB,7,200,3,200,,,,,,,,
-			48,SPS9,Enable-Disable ,SEQ,Slot PCB,8,200,2,200,,,,,,,,
-			49,SPS10,Enable-Disable ,SEQ,Slot PCB,9,200,1,200,,,,,,,,"
-	end
 	
 	def upLoadConfigErrorRow
 		@upLoadConfigErrorRow
@@ -509,7 +401,7 @@ class UserInterface
 		return getSlotProperties()[BtnDisplayImg]
 	end
 	
-	def getButtonDisplay(slotLabel2Param)
+	def getButtonDisplay(slotLabel2Param,fromParam)
 		# puts "getButtonDisplay() got called."
 		tbr = "" # To be returned
 		configFileName = @sharedMem.GetDispConfigurationFileName(slotLabel2Param)
@@ -537,7 +429,6 @@ class UserInterface
 			else
 				return Run
 			end
-			getSlotProperties()[ButtonDisplay] = Clear
 		elsif @sharedMem.GetDispAllStepsDone_YesNo(slotLabel2Param) == SharedLib::No &&
 			@sharedMem.GetDispBbbMode(slotLabel2Param) == SharedLib::InStopMode
 			return Run
@@ -586,7 +477,7 @@ class UserInterface
 			@response = 
 		    RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 			puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
-			@sharedMem.SetDispButton(slotOwnerParam,"Loading")
+			@sharedMem.SetDispButton(slotOwnerParam,"Loading")			
 			# hash1 = JSON.parse(@response)
 			# puts "check A #{__LINE__}-#{__FILE__}"
 			# hash2 = JSON.parse(hash1["bbbResponding"])
@@ -647,21 +538,11 @@ class UserInterface
 		return toBeReturned
 		# End of 'DutCell("S20",dut20[2])'
 	end
-
-	def PNPCellSub(slotLabel2Param,posVoltParam)
-		if @sharedMem.GetDispMuxData(slotLabel2Param).nil? == false && @sharedMem.GetDispMuxData(slotLabel2Param)[posVoltParam].nil? == false
-			posVolt = @sharedMem.GetDispMuxData(slotLabel2Param)[posVoltParam]
-			posVolt = (posVolt.to_f/1000.0).round(3)
-		else
-			posVolt = "---"
-		end
-		return posVolt
-	end
-
+	
 	def PNPCell(slotLabel2Param,posVoltParam, negVoltParam, largeVoltParam)
-		posVolt = PNPCellSub(slotLabel2Param,posVoltParam)
-		negVolt = PNPCellSub(slotLabel2Param,negVoltParam)
-		largeVolt = PNPCellSub(slotLabel2Param,largeVoltParam)
+		posVolt = @sharedMem.PNPCellSub(slotLabel2Param,posVoltParam)
+		negVolt = @sharedMem.PNPCellSub(slotLabel2Param,negVoltParam)
+		largeVolt = @sharedMem.PNPCellSub(slotLabel2Param,largeVoltParam)
 		bkcolor = setBkColor(slotLabel2Param,"#6699aa")
 		toBeReturned = "<table bgcolor=\"#{bkcolor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">P5V</font></td><td><font size=\"1\">#{posVolt}V</font></td></tr>"
@@ -689,31 +570,11 @@ class UserInterface
 
 	def PsCell(slotLabel2Param,labelParam,rawDataParam, iIndexParam)
 		muxData = @sharedMem.GetDispMuxData(slotLabel2Param)
-		if rawDataParam.to_i >= 48
-			if @sharedMem.GetDispAdcInput(slotLabel2Param).nil? == false && @sharedMem.GetDispAdcInput(slotLabel2Param)[rawDataParam].nil? == false
-				rawDataParam = (@sharedMem.GetDispAdcInput(slotLabel2Param)[rawDataParam].to_f/1000.0).round(3)
-			else
-				rawDataParam = "---"
-			end
-		else
-			if muxData.nil? == false && muxData[rawDataParam].nil? == false
-				rawDataParam = (muxData[rawDataParam].to_f/1000.0).round(3)
-			else
-				rawDataParam = "---"
-			end
-		end
+		adcData = @sharedMem.GetDispAdcInput(slotLabel2Param)
+		rawDataParam = @sharedMem.getPsVolts(muxData,adcData,rawDataParam)
 
-		if iIndexParam.nil? == false && 
-			muxData.nil? == false && 
-			muxData[iIndexParam].nil? == false
-			current = (muxData[iIndexParam].to_f/1000.0).round(3)
-		else
-			if @sharedMem.GetDispEips(slotLabel2Param)[labelParam].nil? == false
-				current = (@sharedMem.GetDispEips(slotLabel2Param)[labelParam][0..4]) #.to_f*10.0/10.0).round(3)
-			else
-				current = "---"
-			end
-		end
+		eiPs = @sharedMem.GetDispEips(slotLabel2Param)
+		current = @sharedMem.getPsCurrent(muxData,eiPs,iIndexParam,labelParam)
 
 		cellColor = setBkColor(slotLabel2Param,"#6699aa")
 		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
@@ -739,11 +600,7 @@ class UserInterface
 
 	def DutCell(slotLabel2Param, labelParam,rawDataParam)
 		muxData = @sharedMem.GetDispMuxData(slotLabel2Param)
-		if muxData.nil? == false && muxData[rawDataParam].nil? == false
-			current = (muxData[rawDataParam].to_f/1000.0).round(3)
-		else
-			current = "---"
-		end
+		current = SharedLib::getCurrentDutDisplay(muxData,rawDataParam)
 
 		if @sharedMem.GetDispTcu(slotLabel2Param).nil? == false && @sharedMem.GetDispTcu(slotLabel2Param)["#{rawDataParam}"].nil? == false
 			tcuData = @sharedMem.GetDispTcu(slotLabel2Param)["#{rawDataParam}"]
@@ -751,10 +608,10 @@ class UserInterface
 			tcuData = "---"
 		end
 		cellColor = setBkColor(slotLabel2Param,"#99bb11")
-		if tcuData.nil?
+		if tcuData == "---"
 			cellColor = "#B6B6B4"
 		else
-			temperature = tcuData.split(',')[2]
+			temperature = SharedLib.make5point2Format(tcuData.split(',')[2])
 		end
 		# puts "rawDataParam=#{rawDataParam}, tcuData=#{tcuData} #{__LINE__}-#{__FILE__}"
 		
@@ -999,7 +856,7 @@ class UserInterface
 				stepNum = @sharedMem.GetDispStepNumber(slotLabel2Param)
 			end
 			topTable += "
-				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{stepNum}' COMPLETION</td></tr>
+				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{stepNum}' COMPLETION AT</td></tr>
 				 			<tr>
 				 				<td align=\"center\">
 				 					<font 				 						
@@ -1013,6 +870,7 @@ class UserInterface
 				 				</td>
 				 			</tr>"
 		end
+		btnState = getButtonDisplay(slotLabel2Param,"#{__LINE__}-#{__FILE__}")
 		topTable += "
 				 			<tr>
 				 				<td>
@@ -1022,7 +880,7 @@ class UserInterface
 				 			<tr>
 				 				<td align = \"center\">
 				 					<button 
-										onclick=\"window.location='/TopBtnPressed?slot=#{slotLabel2Param}&BtnState=#{getButtonDisplay(slotLabel2Param)}'\"
+										onclick=\"window.location='/TopBtnPressed?slot=#{slotLabel2Param}&BtnState=#{btnState}'\"
 										type=\"button\" 
 				 						style=\"width:100;height:25\" 
 				 						id=\"btn_#{slotLabel2Param}\" "
@@ -1032,9 +890,16 @@ class UserInterface
 			disabled = ""
 		end
 		btnStateDisp = @sharedMem.GetDispButton(slotLabel2Param)
-		toDisplay = getButtonDisplay(slotLabel2Param)
+		toDisplay = getButtonDisplay(slotLabel2Param,"#{__LINE__}-#{__FILE__}")
+		# puts "toDisplay=#{toDisplay} #{__LINE__}-#{__FILE__}"
+		# puts "btnStateDisp=#{btnStateDisp} #{__LINE__}-#{__FILE__}"
 		if btnStateDisp.nil? == false 
+			if btnStateDisp != SharedLib::NormalButtonDisplay
+				toDisplay = btnStateDisp
+			end
 			if btnStateDisp == "Seq Up"
+				toDisplay = btnStateDisp
+			elsif  btnStateDisp == "Clearing"
 				toDisplay = btnStateDisp
 			elsif  btnStateDisp == "Seq Down"
 				toDisplay = btnStateDisp
@@ -1135,8 +1000,9 @@ class UserInterface
 				 			<tr>
 				 				<td align=\"center\">"
 				 				
-				 				if getButtonDisplay(slotLabel2Param) == Run	
+				 				if getButtonDisplay(slotLabel2Param,"#{__LINE__}-#{__FILE__}") == Run	
 btnStateDisp = @sharedMem.GetDispButton(slotLabel2Param)
+puts "btnStateDisp='#{btnStateDisp}' #{__LINE__}-#{__FILE__}"
 toDisplay = Clear
 if btnStateDisp.nil? == false 
 	if btnStateDisp == "Clearing"
@@ -1441,11 +1307,11 @@ end
 			#
 			# Get the max column in the template so we could draw our table correcty
 			#
-			if configFileType == PsConfig
+			if configFileType == SharedLib::PsConfig
 				configTemplateRows = psConfigFileTemplate.split("\n")
-			elsif configFileType == StepFileConfig
+			elsif configFileType == SharedLib::StepFileConfig
 				configTemplateRows = stepConfigFileTemplate.split("\n")
-			elsif configFileType == UserInterface::MinCurrConfig
+			elsif configFileType == SharedLib::MinCurrConfig
 				configTemplateRows = minCurrConfigFileTemplate.split("\n")
 			else
 				configTemplateRows = tempConfigFileTemplate.split("\n")
@@ -1469,26 +1335,17 @@ end
 	end	
 	
 	def getKnownRowNamesFor(fileTypeParam)
+=begin	
 		if @lastKnownFileType != fileTypeParam
-			@lastKnownFileType == fileTypeParam
-			@knownConfigRowNames = Hash.new
-			@hashUniqueIndex = Hash.new
-			
-			if fileTypeParam == UserInterface::PsConfig				
-				configTemplateRows = psConfigFileTemplate.split("\n")
-			elsif fileTypeParam  == UserInterface::TempConfig
-				configTemplateRows = tempConfigFileTemplate.split("\n")
-			end
-			rowCt = 0
-			while rowCt<configTemplateRows.length do
-				columns = configTemplateRows[rowCt].split(",")
-				colName = columns[1].to_s.upcase
-				@knownConfigRowNames[colName] = "nn" # nn - not nil.
-				rowCt += 1
-			end
+			@lastKnownFileType = fileTypeParam
+			@hashUniqueIndex = Hash.new			
+			@knownConfigRowNames = SharedLib.getKnownRowNamesFor(fileTypeParam)
 		end
 		
 		return @knownConfigRowNames
+=end
+		@hashUniqueIndex = Hash.new			
+		return SharedLib.getKnownRowNamesFor(fileTypeParam)
 	end
 	
 	def hashUniqueIndex
@@ -1504,16 +1361,19 @@ end
 				SharedLib.is_a_number?(valueParam) == false)
 			@redirectWithError+="&ErrIndex=#{indexParam}&ErrColType=#{colnameParam}"
 			@redirectWithError+="&ErrValue="+SharedLib.makeUriFriendly("#{valueParam}")
+puts "Error here #{__LINE__}-#{__FILE__}"
 			return @redirectWithError
 		elsif colnameParam == IndexCol
 			#
 			# Make sure that the index is unique, and not repeated.
 			#
 			if valueParam.length>0 && colnameParam==UserInterface::IndexCol
+			puts "valueParam=#{valueParam} hashUniqueIndex[valueParam]=#{hashUniqueIndex[valueParam]} hashUniqueIndex=#{hashUniqueIndex}"
 				if hashUniqueIndex[valueParam].nil? == false
 					redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 					redirectWithError += "&ErrRow=#{rowParam}&ErrColType=#{colnameParam}&ErrValue="+
 						SharedLib.makeUriFriendly("#{valueParam}")
+puts "Error here #{__LINE__}-#{__FILE__}"
 					return redirectWithError
 				else
 					hashUniqueIndex[valueParam] = "u" # u for unique
@@ -1680,12 +1540,13 @@ end
 			@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 			@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 			@redirectWithError += "&ErrStepPsNotFound=#{SharedLib.makeUriFriendly(colContent)}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 			return false
 		else 
 			#
 			# Make sure the PS File config is good.
 			#
-			@configFileType = UserInterface::MinCurrConfig
+			@configFileType = SharedLib::MinCurrConfig
 			if checkFaultyDutSiteActivationMinCurrentConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 				return false
 			end
@@ -1704,12 +1565,13 @@ end
 			@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 			@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 			@redirectWithError += "&ErrStepPsNotFound=#{SharedLib.makeUriFriendly(colContent)}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 			return false
 		else 
 			#
 			# Make sure the PS File config is good.
 			#
-			@configFileType = UserInterface::PsConfig
+			@configFileType = SharedLib::PsConfig
 			if checkFaultyPsConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 				return false
 			end
@@ -1726,7 +1588,7 @@ end
 		# The following are the known rows
 		# Ideally, get the the known row names from the template above vice having a separate column names here.
 		#
-		if @configFileType == UserInterface::StepFileConfig
+		if @configFileType == SharedLib::StepFileConfig
 			#
 			# We're going to parse a step file.  Hard code settings:  "Item","Name","Description","Type","Value" are
 			# starting on row 2, col A if viewed from Excel.
@@ -1736,22 +1598,27 @@ end
 			if (colContent[0].upcase.strip != "ITEM")
 				@redirectWithError += "&ErrStepFormat=A"
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			elsif (colContent[1].upcase.strip != "NAME")
 				@redirectWithError += "&ErrStepFormat=B"
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			elsif (colContent[2].upcase.strip != "DESCRIPTION")
 				@redirectWithError += "&ErrStepFormat=C"
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			elsif (colContent[3].upcase.strip != "TYPE")
 				@redirectWithError += "&ErrStepFormat=D"
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			elsif (colContent[4].upcase.strip != "VALUE")
 				@redirectWithError += "&ErrStepFormat=E"
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			end
 			
@@ -1770,6 +1637,7 @@ end
 				@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 				@redirectWithError += "&ErrPsFileNotGiven=Y"
 				@redirectWithError = SharedLib.makeUriFriendly(@redirectWithError)				
+puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			else
 				if psConfigFileInFileSystem(colContent,configFileName) == false
@@ -1789,6 +1657,7 @@ end
 				@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 				@redirectWithError += "&ErrPsFileNotGiven=Y"
 				@redirectWithError = SharedLib.makeUriFriendly(@redirectWithError)
+puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			else
 				if dutSiteActivationMinCurrentFileInFileSystem(colContent,configFileName) == false
@@ -1865,6 +1734,7 @@ end
 					@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
 					@redirectWithError += "&ErrStepNameAlreadyFound="
 					@redirectWithError += "#{SharedLib.makeUriFriendly(colContent)}"					
+puts "Error here #{__LINE__}-#{__FILE__}"
 					return false
 				else
 					if colContent.nil? == true || colContent.length == 0
@@ -1875,6 +1745,7 @@ end
 						@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 						@redirectWithError += "&ErrStepNameNotGiven=Y"
 						@redirectWithError += "&ErrRow=#{(ct+1)}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					else
 						#
@@ -1901,9 +1772,10 @@ end
 						@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 						@redirectWithError += "&ErrPsFileNotGiven=Y"
 						@redirectWithError = SharedLib.makeUriFriendly(@redirectWithError)
+puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					else
-						@configFileType = UserInterface::PsConfig
+						@configFileType = SharedLib::PsConfig
 						if psConfigFileInFileSystem(colContent,configFileName) == false
 							return false
 						end
@@ -1927,6 +1799,7 @@ end
 					@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 					@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 					@redirectWithError += "&ErrTempFileNotGiven=Y"
+puts "Error here #{__LINE__}-#{__FILE__}"
 					return false
 				else
 					#
@@ -1940,12 +1813,13 @@ end
 						@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 						@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 						@redirectWithError += "&ErrStepTempNotFound=#{SharedLib.makeUriFriendly(colContent)}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					else 
 						#
 						# Make sure the Temp File config is good.
 						#
-						@configFileType = UserInterface::TempConfig 
+						@configFileType = SharedLib::TempConfig 
 						if checkFaultyTempConfig(colContent,"#{__LINE__}-#{__FILE__}") == false
 							return false
 						end
@@ -1989,7 +1863,7 @@ end
 			# Get the sequence up and sequence down of power supplies
 			#
 			
-		elsif @configFileType == UserInterface::PsConfig 
+		elsif @configFileType == SharedLib::PsConfig 
 			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}"
 			@redirectWithError += "&BtnState=#{Load}"
 			if checkFaultyPsConfig("#{configFileName}",
@@ -1998,7 +1872,7 @@ end
 			end
 			@redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(configFileName)}"
 			return false
-		elsif @configFileType == UserInterface::TempConfig 
+		elsif @configFileType == SharedLib::TempConfig 
 			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}"
 			@redirectWithError += "&BtnState=#{Load}"
 			if checkFaultyTempConfig("#{configFileName}",
@@ -2007,7 +1881,7 @@ end
 			end
 			@redirectWithError += "&MsgFileUpload=#{SharedLib.makeUriFriendly(configFileName)}"
 			return false
-		elsif @configFileType == UserInterface::MinCurrConfig					
+		elsif @configFileType == SharedLib::MinCurrConfig					
 			@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}"
 			@redirectWithError += "&BtnState=#{Load}"
 			if checkFaultyDutSiteActivationMinCurrentConfig("#{configFileName}",
@@ -2032,25 +1906,24 @@ end
 		end
 		
 		knownRowNames = getKnownRowNamesFor(configFileType)
-puts "knownRowNames = #{knownRowNames}"
-
+		puts "knownRowNames=#{knownRowNames} #{__LINE__}-#{__FILE__}"
 		#
 		# Make sure that each row have a column name that is found within the template which Mike provided.
 		#
 		ct = 0
 		while ct < config.length do
-			colContent = config[ct].split(",")[1].upcase
-			if colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn")
+			colContent = config[ct].split(",")[0].upcase
+			if (colContent.length>0 && (knownRowNames[colContent].nil? || knownRowNames[colContent] != "nn"))
 				#
 				# How are we going to inform the user that the file is not a good one?
 				#
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
 				@redirectErrorFaultyPsConfig = redirectWithError
+puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			end
 			ct += 1
 		end
-
 
 		puts "stepName = '#{stepName}'"
 		puts "configFileType = '#{configFileType}'"
@@ -2062,24 +1935,41 @@ puts "knownRowNames = #{knownRowNames}"
 		ct = 2
 		while ct < config.length do
 			colName = config[ct].split(",")[0].upcase
-			colContent = config[ct].split(",")[3].upcase
-			slotConfigStep[configFileType][colName] = colContent
+			if colName == "TDUT"
+				name = colName
+				unit = nil
+				nomSet = config[ct].split(",")[3].upcase
+				tripMin = config[ct].split(",")[4].upcase
+				tripMax = config[ct].split(",")[5].upcase
+				flagTolP = config[ct].split(",")[6].upcase
+				flagTolN = config[ct].split(",")[7].upcase
+				enableBit = nil
+				idleState = nil
+				loadState = nil
+				startState = nil
+				runState = nil
+				stopState = nil
+				clearState = nil				
+				setDataSetup(
+					name,unit,nomSet,tripMin,tripMax,flagTolP,flagTolN,enableBit,idleState,
+					loadState,startState,runState,stopState,clearState
+				)
+			else
+				colContent = config[ct].split(",")[3].upcase
+				puts "colName='#{colName}' colContent='#{colContent}' #{__LINE__}-#{__FILE__}"
+				slotConfigStep[configFileType][colName] = colContent
+			end
 			ct+=1
 		end
-=begin		
-		slotConfigStep[configFileType]["EthernetOrSlotPcb"] = columns[5]
-		slotConfigStep[configFileType][columns[nameCol]]["SeqUp"] = columns[6]
-		slotConfigStep[configFileType][columns[nameCol]]["SUDlyms"] = columns[7]
-		slotConfigStep[configFileType][columns[nameCol]]["SeqDown"] = columns[8]
-		slotConfigStep[configFileType][columns[nameCol]]["SDDlyms"] = columns[9]
-=end		
 	end
 
 	def checkFaultyPsConfig(fileNameParam,fromParam)
-		puts "checkFaultyPsConfig got called."
-		puts "fileNameParam=#{fileNameParam}"
-		puts "fromParam=#{fromParam}"
-		puts "configFileType=#{configFileType}"
+=begin	
+		puts "checkFaultyPsConfig got called. #{__LINE__}-#{__FILE__}"
+		puts "fileNameParam=#{fileNameParam} #{__LINE__}-#{__FILE__}"
+		puts "fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
+		puts "configFileType=#{configFileType} #{__LINE__}-#{__FILE__}"
+=end		
 		#
 		# Returns true if no fault, false if there is error
 		#
@@ -2091,6 +1981,7 @@ puts "knownRowNames = #{knownRowNames}"
 			end
 		end
 		knownRowNames = getKnownRowNamesFor(configFileType)
+		puts "knownRowNames=#{knownRowNames} #{__LINE__}-#{__FILE__}"
 		#
 		# Make sure that each row have a column name that is found within the template which Mike provided.
 		#
@@ -2103,6 +1994,7 @@ puts "knownRowNames = #{knownRowNames}"
 				#
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
 				@redirectErrorFaultyPsConfig = redirectWithError
+puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			end
 			ct += 1
@@ -2147,7 +2039,7 @@ puts "knownRowNames = #{knownRowNames}"
 			loadState = columns[loadStateCol].upcase
 			startState = columns[startStateCol].upcase
 			runState = columns[runStateCol].upcase
-			if configFileType != UserInterface::TempConfig
+			if configFileType != SharedLib::TempConfig
 				stopState = columns[stopStateCol].upcase
 				clearState = columns[clearStateCol].upcase
 			end
@@ -2169,6 +2061,8 @@ puts "knownRowNames = #{knownRowNames}"
 					index,UserInterface::IndexCol,columns[indexCol],(ct+1),"#{__LINE__}","#{__FILE__}")				
 				if error.length > 0
 					@redirectErrorFaultyPsConfig = error
+puts "index=#{index} columns[indexCol]=#{columns[indexCol]} #{__LINE__}-#{__FILE__}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 					return false
 				end
 		
@@ -2179,6 +2073,7 @@ puts "knownRowNames = #{knownRowNames}"
 					error  = checkConfigValue(nomSet,"nomSetCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
+puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					end
 					# End of 'if unit == "M"'
@@ -2189,30 +2084,35 @@ puts "knownRowNames = #{knownRowNames}"
 					error = checkConfigValue(nomSet,"nomSetCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
+puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					end
 		
 					error = checkConfigValue(tripMin,"tripMinCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
+puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					end
 		
 					error = checkConfigValue(tripMax,"tripMaxCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
+puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					end
 		
 					error = checkConfigValue(flagTolP,"flagTolPCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
+puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					end
 		
 					error = checkConfigValue(flagTolN,"flagTolNCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
+puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					end
 					# End of 'elsif unit == "V" || unit == "A" || unit == "C"'
@@ -2236,6 +2136,7 @@ puts "knownRowNames = #{knownRowNames}"
 				#
 				@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 				@redirectWithError += "&ErrRow=#{ct+1}&ErrCol=3&ErrName=#{colContent}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			end
 			ct += 1
@@ -2342,7 +2243,6 @@ puts "knownRowNames = #{knownRowNames}"
 		end
 		return true
 		# End of 'checkFaultyPsConfig'	
-
 	end
 	
 	def setupBbbSlotProcess(fileNameParam, slotOwnerParam)
@@ -2410,16 +2310,17 @@ puts "knownRowNames = #{knownRowNames}"
 		minCurrFile = uploadedFileName[uploadedFileName.length-minCurrFileExtension.length..-1]
 		
 		if stepFile == stepFileExtension
-			@configFileType = UserInterface::StepFileConfig
+			@configFileType = SharedLib::StepFileConfig
 		elsif psFile == psFileExtension
-			@configFileType = UserInterface::PsConfig
+			@configFileType = SharedLib::PsConfig
 		elsif tempFile == temperatureFileExtension
-			@configFileType = UserInterface::TempConfig
+			@configFileType = SharedLib::TempConfig
 		elsif minCurrFile == minCurrFileExtension
-			@configFileType = UserInterface::MinCurrConfig
+			@configFileType = SharedLib::MinCurrConfig
 		else
 			puts "error @#{__LINE__}-#{__FILE__}"
 			@redirectWithError += "&ErrGeneral=FileNotKnown&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
+puts "Error here #{__LINE__}-#{__FILE__}"
 			return false
 		end
 		
@@ -2647,8 +2548,8 @@ post '/AckError' do
 end
  
 get '/AckError' do
-	newErrLogFileName = "../NewErrors_#{params[:slot]}.log"
-	errLogFileName = "../ErrorLog_#{params[:slot]}.log"
+	newErrLogFileName = "../\"error logs\"/NewErrors_#{params[:slot]}.log"
+	errLogFileName = "../\"error logs\"/ErrorLog_#{params[:slot]}.log"
 	errorItem = `head -1 #{newErrLogFileName}`
 	File.open(errLogFileName, "a") { 
 		|file| file.write("#{errorItem}") 
@@ -2662,8 +2563,4 @@ get '/AckError' do
 	redirect "../"
 end
 
-# at 2122
-=begin
-	how are we going to get the data for the PS settings for the pretest?
-	1777
-=end
+# at 1940

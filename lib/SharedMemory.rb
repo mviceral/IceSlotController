@@ -24,7 +24,8 @@ class SharedMemory
     
     TimeOfPcUpload = "TimeOfPcUpload"
     TimeOfPcLastCmd = "TimeOfPcLastCmd"
-    SlotOwner = "SlotOwner"    
+    SlotOwner = "SlotOwner"
+    StepsLogRecordsPath = "../steps\\ log\\ records"
 
     def writeAndFreeLocked(strParam, fromParam)
 =begin
@@ -165,12 +166,24 @@ class SharedMemory
 				if errMsgParam.nil? == false
 					# There were some errors from the board.
 					# Write the error into a log file
-					newErrLogFileName = "../NewErrors_#{slotOwnerParam}.log"
+=begin
+					newErrLogFileName = "../\"error logs\"/NewErrors_#{slotOwnerParam}.log"
 					while errMsgParam.length>0
 						errItem = errMsgParam.shift
 						File.open(newErrLogFileName, "a") { 
 							|file| file.write("#{errItem.to_json}\n") 
 						}
+					end
+=end					
+					newErrLogFileName = "../\"error logs\""
+					while errMsgParam.length>0
+						errItem = errMsgParam.shift
+						`cd #{newErrLogFileName}; echo \"SharedLib::uriToStr(errItem.to_json)\" >> NewErrors_#{slotOwnerParam}.log`
+=begin						
+						File.open(newErrLogFileName, "a") { 
+							|file| file.write("#{errItem.to_json}\n") 
+						}
+=end						
 					end
 				end
 				rescue
@@ -208,28 +221,98 @@ class SharedMemory
 			SetDataBoardToPc(hash)
 			SetDispSlotOwner(hash[SharedLib::SlotOwner])
 
-			puts "\n\n\n"
-			puts "Display button = '#{GetDispButton(hash[SharedLib::SlotOwner])}'"
-			print "TotalTimeOfStepsInQueue ="
-	puts " '#{GetDispTotalTimeOfStepsInQueue(hash[SharedLib::SlotOwner])}'"
-			puts "ConfigurationFileName = #{GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}"
-			puts "ConfigDateUpload = #{GetDispConfigDateUpload(hash[SharedLib::SlotOwner])}"
-			puts "AllStepsDone_YesNo = #{GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner])}"
-			puts "BbbMode = #{GetDispBbbMode(hash[SharedLib::SlotOwner])}"
-			puts "StepName = #{GetDispStepName(hash[SharedLib::SlotOwner])}"
-			puts "StepNumber = #{GetDispStepNumber(hash[SharedLib::SlotOwner])}"
-			puts "StepTotalTime = #{GetDispStepTimeLeft(hash[SharedLib::SlotOwner])}"
-			puts "SlotIpAddress = #{GetDispSlotIpAddress(hash[SharedLib::SlotOwner])}"
-			slotTime = GetDispSlotTime(hash[SharedLib::SlotOwner]).to_i
-			puts "SlotTime = #{Time.at(slotTime).inspect}"
-			# puts "AdcInput = #{GetDispAdcInput(hash[SharedLib::SlotOwner])}"
-			puts "MuxData = #{GetDispMuxData(hash[SharedLib::SlotOwner])}"
-			puts "Tcu = #{GetDispTcu(hash[SharedLib::SlotOwner])}"
-			puts "AllStepsCompletedAt = #{GetDispAllStepsCompletedAt(hash[SharedLib::SlotOwner])}"
-			puts "TotalStepDuration = #{GetDispTotalStepDuration(hash[SharedLib::SlotOwner])}"
-			# puts "Eips = #{GetDispEips(hash[SharedLib::SlotOwner])}"
+			# printDataContent(hash[SharedLib::SlotOwner])
 			configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
 		end
+	end
+	
+	def initialize()
+		puts "SharedMemory got initialized. #{__LINE__}-#{__FILE__}"
+		@lockedAt = ""		
+	end
+	
+	def getLogFileName(slotOwnerParam)
+		configDateUpload = Time.at(GetDispConfigDateUpload(slotOwnerParam).to_i)
+		fileName = GetDispConfigurationFileName(slotOwnerParam)
+		ct = 0
+		tbsubmitted = ""
+		while ct<fileName.length
+			if fileName[ct] == "(" || fileName[ct] == ")" || fileName[ct] == "+" || fileName[ct] == " "
+				tbsubmitted += "_"
+			else
+				tbsubmitted += fileName[ct]
+			end
+			ct += 1
+		end
+		return "#{slotOwnerParam}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{tbsubmitted}.log"
+	end
+
+	def getPsVolts(muxData,adcData,rawDataParam)
+		if rawDataParam.to_i >= 48
+			if adcData.nil? == false && adcData[rawDataParam].nil? == false
+				rawDataParam = (adcData[rawDataParam].to_f/1000.0).round(3)
+			else
+				rawDataParam = "-"
+			end
+		else
+			if muxData.nil? == false && muxData[rawDataParam].nil? == false
+				rawDataParam = (muxData[rawDataParam].to_f/1000.0).round(3)
+			else
+				rawDataParam = "-"
+			end
+		end
+		return rawDataParam
+	end
+
+	def getPsCurrent(muxData,eiPs,iIndexParam,labelParam)
+		if iIndexParam.nil? == false && 
+			muxData.nil? == false && 
+			muxData[iIndexParam].nil? == false
+			current = (muxData[iIndexParam].to_f/1000.0).round(3)
+		else
+			if eiPs[labelParam].nil? == false
+				current = (eiPs[labelParam][0..4]) #.to_f*10.0/10.0).round(3)
+			else
+				current = "-"
+			end
+		end
+		return current
+	end	
+	
+	def PNPCellSub(slotLabel2Param,posVoltParam)
+		if GetDispMuxData(slotLabel2Param).nil? == false && GetDispMuxData(slotLabel2Param)[posVoltParam].nil? == false
+			posVolt = GetDispMuxData(slotLabel2Param)[posVoltParam]
+			posVolt = (posVolt.to_f/1000.0).round(3)
+		else
+			posVolt = "-"
+		end
+		return posVolt
+	end
+
+	def printDataContent(slotOwnerParam)
+		if getMemory()[SharedLib::PC][slotOwnerParam].nil?
+			# There's no data in this slot.
+			return 
+		end
+# puts "printDataContent('#{slotOwnerParam}') - #{__LINE__}-#{__FILE__}"
+		puts "Display button = '#{GetDispButton(slotOwnerParam)}'"
+		print "TotalTimeOfStepsInQueue ="
+		puts " '#{GetDispTotalTimeOfStepsInQueue(slotOwnerParam)}'"
+		puts "ConfigurationFileName = #{GetDispConfigurationFileName(slotOwnerParam)}"
+		puts "ConfigDateUpload = #{GetDispConfigDateUpload(slotOwnerParam)}"
+		puts "AllStepsDone_YesNo = #{GetDispAllStepsDone_YesNo(slotOwnerParam)}"
+		puts "BbbMode = #{GetDispBbbMode(slotOwnerParam)}"
+		puts "StepName = #{GetDispStepName(slotOwnerParam)}"
+		puts "StepNumber = #{GetDispStepNumber(slotOwnerParam)}"
+		puts "StepTotalTime = #{GetDispStepTimeLeft(slotOwnerParam)}"
+		puts "SlotIpAddress = #{GetDispSlotIpAddress(slotOwnerParam)}"
+		slotTime = GetDispSlotTime(slotOwnerParam).to_i
+		puts "SlotTime = #{Time.at(slotTime).inspect}"
+		# puts "AdcInput = #{GetDispAdcInput(slotOwnerParam)}"
+		puts "MuxData = #{GetDispMuxData(slotOwnerParam)}"
+		puts "Tcu = #{GetDispTcu(slotOwnerParam)}"
+		puts "AllStepsCompletedAt = #{GetDispAllStepsCompletedAt(slotOwnerParam)}"
+		puts "TotalStepDuration = #{GetDispTotalStepDuration(slotOwnerParam)}"
 	end
 
 	def GetDispErrorMsg(slotOwnerParam)
@@ -238,7 +321,7 @@ class SharedMemory
 		slotOwner = slotOwnerParam
 		if pcShared[slotOwner].nil? == false && pcShared[slotOwner][SharedLib::ErrorMsg].nil?
 			begin
-				newErrLogFileName = "../NewErrors_#{slotOwner}.log"
+				newErrLogFileName = "../\"error logs\"/NewErrors_#{slotOwner}.log"
 				errorItem = `head -1 #{newErrLogFileName}`
 				#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
 				if errorItem.length > 0
@@ -275,7 +358,6 @@ class SharedMemory
 	end
 	
 	def GetDispMuxData(slotOwnerParam)
-		# puts "slotOwnerParam=#{slotOwnerParam} #{__LINE__}-#{__FILE__}"
 		slotOwner = getPCShared()[slotOwnerParam]
 		if slotOwner.nil?
 			return ""
@@ -350,24 +432,24 @@ class SharedMemory
     end
     
     def GetDispBbbMode(slotOwnerParam)
-		if getPCShared()[slotOwnerParam].nil?
-			return ""
-		end
-		return getPCShared()[slotOwnerParam][SharedLib::BbbMode]
+			if getPCShared()[slotOwnerParam].nil?
+				return ""
+			end
+			return getPCShared()[slotOwnerParam][SharedLib::BbbMode]
     end
     
     def GetDispStepName(slotOwnerParam)
-		if getPCShared()[slotOwnerParam].nil?
-			return ""
-		end
-		return getPCShared()[slotOwnerParam][SharedLib::StepName]
+			if getPCShared()[slotOwnerParam].nil?
+				return ""
+			end
+			return getPCShared()[slotOwnerParam][SharedLib::StepName]
     end
     
     def GetDispStepNumber(slotOwnerParam)
-		if getPCShared()[slotOwnerParam].nil?
-			return ""
-		end
-		return getPCShared()[slotOwnerParam][SharedLib::StepNumber]
+			if getPCShared()[slotOwnerParam].nil?
+				return ""
+			end
+			return getPCShared()[slotOwnerParam][SharedLib::StepNumber]
     end
 
 	def GetDispTotalStepDuration(slotOwnerParam)
@@ -493,6 +575,14 @@ class SharedMemory
     
 		if hash[SharedLib::ButtonDisplay].nil? == false
 			ds = lockMemory("#{__LINE__}-#{__FILE__}")
+			if ds[SharedLib::PC].nil?
+				ds[SharedLib::PC] = Hash.new
+			end
+			
+			if ds[SharedLib::PC][hash[SharedLib::SlotOwner]].nil?
+				ds[SharedLib::PC][hash[SharedLib::SlotOwner]] = Hash.new
+			end
+			
 			ds[SharedLib::PC][hash[SharedLib::SlotOwner]][SharedLib::ButtonDisplay] = hash[SharedLib::ButtonDisplay]
 			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 		end
@@ -613,10 +703,6 @@ class SharedMemory
         rescue
     end
     
-    def Initialize()
-    	@lockedAt = ""
-    end
-    
     def CheckInit(slotOwnerParam)
     	return GetDispErrorMsg(slotOwnerParam)
     end
@@ -627,7 +713,7 @@ class SharedMemory
 			pcShared = getPCShared()
 			slotOwner = slotOwnerParam
 			if pcShared[slotOwner].nil? == false && pcShared[slotOwner][SharedLib::ErrorMsg].nil?
-				newErrLogFileName = "../NewErrors_#{slotOwner}.log"
+				newErrLogFileName = "../\"error logs\"/NewErrors_#{slotOwner}.log"
 				errorItem = `head -1 #{newErrLogFileName}`
 				#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
 				if errorItem.length > 0
@@ -683,9 +769,8 @@ class SharedMemory
     
     def PopPcCmd()
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
-        tbr = ds[Cmd].shift # tbr - to be returned
+        ds[Cmd] = "" # tbr - to be returned
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-        return tbr
     end
     
 	def GetPcCmd()
@@ -702,6 +787,7 @@ class SharedMemory
 	
     def SetPcCmdThread(cmdParam,timeOfCmdParam)
         ds = getMemory()
+=begin
         if ds[Cmd].nil? || ds[Cmd].class.to_s != "Array"
             ds = lockMemory("#{__LINE__}-#{__FILE__}")
             ds[Cmd] = Array.new
@@ -710,15 +796,16 @@ class SharedMemory
         
         samplerNotProcessed = true
         while samplerNotProcessed
+=end        
             # Put the command and the time stamp of command in one object.
             arrItem = Array.new
             arrItem.push(cmdParam)
             arrItem.push(timeOfCmdParam)
             
             ds = lockMemory("#{__LINE__}-#{__FILE__}")
-            ds[Cmd].push(arrItem)
+            ds[Cmd] = arrItem
             writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-            
+=begin            
             totalCmdInStack = ds[Cmd].length
             puts "Total sent cmds in stack: '#{totalCmdInStack}'"
     
@@ -732,11 +819,13 @@ class SharedMemory
             
             if ds[CmdProcessed].nil? == false && ds[CmdProcessed].length > 0 && ds[CmdProcessed][0] == cmdParam  && ds[CmdProcessed][1] == timeOfCmdParam
                 samplerNotProcessed = false
-                puts "Processed the command: '#{ds[CmdProcessed][0]}'"
+                puts "A Processed the command: '#{ds[CmdProcessed][0]}'"
             #else
                 # Keep looping until the board processed it.
             end
         end
+=end            
+        puts "B Processed the command: '#{ds[CmdProcessed][0]}'"
     end
 	
     def SetPcCmd(cmdParam,calledFrom)
@@ -921,4 +1010,4 @@ class SharedMemory
     end
 =end    
 end
-# 638
+# 347

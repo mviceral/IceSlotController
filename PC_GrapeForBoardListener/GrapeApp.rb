@@ -40,7 +40,6 @@ module MigrationCount
 
 	# This is the Grape REST API implementation
 	class API < Grape::API
-		puts "Calling DRb.start_service."
 		DRb.start_service			
 		@@sharedMemService =  DRbObject.new_with_uri(SERVER_URI)
 		# This makes it so you have to specifiy the API version in the
@@ -74,14 +73,13 @@ module MigrationCount
 						sharedMem = @@sharedMemService.getSharedMem()		 
 						sharedMem.setDataFromBoardToPc(hash)
 						
-						directory = "../steps\\ log\\ records"
+						directory = SharedMemory::StepsLogRecordsPath
 						asdf = `[ -d #{directory} ] && echo "yes" || echo "no"`
 						if asdf.chomp == "no"
 							`mkdir #{directory}`
 						end
-						configDateUpload = Time.at(sharedMem.GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
-						dBaseFileName = "#{hash[SharedLib::SlotOwner]}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{sharedMem.GetDispConfigurationFileName(hash[SharedLib::SlotOwner])}.db"
-						puts "dBaseFileName='#{dBaseFileName}'"
+						dBaseFileName = sharedMem.getLogFileName(hash[SharedLib::SlotOwner])
+						# puts "dBaseFileName='#{dBaseFileName}'"
 						# logging code.
 						runningOnCentos = true
 						if runningOnCentos == false
@@ -118,6 +116,7 @@ module MigrationCount
 								# End of 'begin' code block that will handle exceptions...
 							end
 						else
+=begin						
 							if sharedMem.GetDispAllStepsDone_YesNo(hash[SharedLib::SlotOwner]) == SharedLib::No && 
 								sharedMem.GetDispBbbMode(hash[SharedLib::SlotOwner]) == SharedLib::InRunMode
 								str = "#{sharedMem.GetDispSlotTime(hash[SharedLib::SlotOwner]).to_i},#{hash.to_json}"
@@ -131,9 +130,10 @@ module MigrationCount
 									end
 									ct += 1
 								end
-								puts "dBaseFileName='#{dBaseFileName}', newStr=#{newStr}"
+								# puts "dBaseFileName='#{dBaseFileName}', newStr=#{newStr}"
 								`cd #{directory}; echo "#{newStr}" >> \"#{dBaseFileName}\"`
 							end
+=end							
 						end
 						rescue Exception => e
 							# The data didn't parse properly.  Do nothing.
