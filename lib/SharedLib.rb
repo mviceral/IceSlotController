@@ -176,6 +176,7 @@ class SharedLib
 			configTemplateRows = tempConfigFileTemplate.split("\n")
 			colToUse = 0
 		end
+		knownConfigRowNames = Hash.new
 		rowCt = 0
 		knownConfigRowNames = Hash.new
 		while rowCt<configTemplateRows.length do
@@ -187,6 +188,7 @@ class SharedLib
 		end
 		return knownConfigRowNames
 	end
+	
 	def minCurrConfigFileTemplate
 		return "Pre-Test Config File,,,
 		,,,Nom

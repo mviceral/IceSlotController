@@ -769,9 +769,8 @@ class SharedMemory
     
     def PopPcCmd()
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
-        tbr = ds[Cmd].shift # tbr - to be returned
+        ds[Cmd] = "" # tbr - to be returned
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-        return tbr
     end
     
 	def GetPcCmd()
@@ -788,6 +787,7 @@ class SharedMemory
 	
     def SetPcCmdThread(cmdParam,timeOfCmdParam)
         ds = getMemory()
+=begin
         if ds[Cmd].nil? || ds[Cmd].class.to_s != "Array"
             ds = lockMemory("#{__LINE__}-#{__FILE__}")
             ds[Cmd] = Array.new
@@ -796,15 +796,16 @@ class SharedMemory
         
         samplerNotProcessed = true
         while samplerNotProcessed
+=end        
             # Put the command and the time stamp of command in one object.
             arrItem = Array.new
             arrItem.push(cmdParam)
             arrItem.push(timeOfCmdParam)
             
             ds = lockMemory("#{__LINE__}-#{__FILE__}")
-            ds[Cmd].push(arrItem)
+            ds[Cmd] = arrItem
             writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-            
+=begin            
             totalCmdInStack = ds[Cmd].length
             puts "Total sent cmds in stack: '#{totalCmdInStack}'"
     
@@ -823,6 +824,7 @@ class SharedMemory
                 # Keep looping until the board processed it.
             end
         end
+=end            
         puts "B Processed the command: '#{ds[CmdProcessed][0]}'"
     end
 	
