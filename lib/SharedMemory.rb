@@ -178,7 +178,8 @@ class SharedMemory
 					newErrLogFileName = "../\"error logs\""
 					while errMsgParam.length>0
 						errItem = errMsgParam.shift
-						`cd #{newErrLogFileName}; echo \"SharedLib::uriToStr(errItem.to_json)\" >> NewErrors_#{slotOwnerParam}.log`
+						puts "Got a message from the board: '#{errItem}'"
+						`cd #{newErrLogFileName}; echo \"SharedLib.uriToStr(errItem.to_json)\" >> NewErrors_#{slotOwnerParam}.log`
 =begin						
 						File.open(newErrLogFileName, "a") { 
 							|file| file.write("#{errItem.to_json}\n") 
@@ -322,6 +323,7 @@ class SharedMemory
 		if pcShared[slotOwner].nil? == false && pcShared[slotOwner][SharedLib::ErrorMsg].nil?
 			begin
 				newErrLogFileName = "../\"error logs\"/NewErrors_#{slotOwner}.log"
+				# newErrLogFileName = "../NewErrors_#{slotOwner}.log"
 				errorItem = `head -1 #{newErrLogFileName}`
 				#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
 				if errorItem.length > 0
@@ -714,6 +716,7 @@ class SharedMemory
 			slotOwner = slotOwnerParam
 			if pcShared[slotOwner].nil? == false && pcShared[slotOwner][SharedLib::ErrorMsg].nil?
 				newErrLogFileName = "../\"error logs\"/NewErrors_#{slotOwner}.log"
+				# newErrLogFileName = "../NewErrors_#{slotOwner}.log"
 				errorItem = `head -1 #{newErrLogFileName}`
 				#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
 				if errorItem.length > 0

@@ -113,8 +113,8 @@ class UserInterface
 	def getBoardIp(slotParam)
 		if @slotToIp.nil?
 			@slotToIp = Hash.new
-			#@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
-			@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
+			@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
+			#@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
 			#@slotToIp[SLOT3] = ""
 		else
 			return @slotToIp[slotParam]
@@ -1308,13 +1308,13 @@ end
 			# Get the max column in the template so we could draw our table correcty
 			#
 			if configFileType == SharedLib::PsConfig
-				configTemplateRows = psConfigFileTemplate.split("\n")
+				configTemplateRows = SharedLib.psConfigFileTemplate.split("\n")
 			elsif configFileType == SharedLib::StepFileConfig
-				configTemplateRows = stepConfigFileTemplate.split("\n")
+				configTemplateRows = SharedLib.stepConfigFileTemplate.split("\n")
 			elsif configFileType == SharedLib::MinCurrConfig
-				configTemplateRows = minCurrConfigFileTemplate.split("\n")
+				configTemplateRows = SharedLib.minCurrConfigFileTemplate.split("\n")
 			else
-				configTemplateRows = tempConfigFileTemplate.split("\n")
+				configTemplateRows = SharedLib.tempConfigFileTemplate.split("\n")
 			end
 			rowCt = 0
 			maxColCt = getMaxColCt(configTemplateRows)
