@@ -231,6 +231,7 @@ class TCUSampler
         else
             @boardData["LastPsSeqStateCall"] = powerUpParam
         end
+        
 	    if @stepToWorkOn.nil? 
 	        # All steps are done their run process.  Terminate the code.
 	        return true
@@ -640,6 +641,24 @@ class TCUSampler
         # @shareMem.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
     end
     
+    def stopMachineIfTripped(gPIO2Param, key2, tripMin, actualValue, tripMax)
+        if (tripMin <= actualValue && actualValue <= tripMax) == false
+            stopMachine(gPIO2Param)
+            unit = key2[0]
+            if unit == "I"
+                unit = "A"
+            end
+            @shareMem.ReportError("#{key2} TRIPPED!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} is FALSE.")
+        	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+        end
+    end
+    
+    def stopMachine(gPIO2Param)
+        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+        # Turn on the control for TCUs that are not disabled.
+        setTcuToStopMode(gPIO2Param) # turnOffDuts(tcusToSkip)
+    end
+
     def setBoardData(boardDataParam,uart1,gPIO2,tcusToSkip)
         # The configuration was just loaded from file.  We must setup the system to be in a given state.
         # For example, if the system is in runmode, when starting the system over, the PS must sequence up
@@ -1151,6 +1170,7 @@ class TCUSampler
 	    initStepToWorkOnVar(uart1,gPIO2,tcusToSkip)
         waitTime = Time.now
         skipLimboStateCheck = false
+        @shareMem.ReportError("Error test. #{__LINE__}-#{__FILE__}")
         while true
             @mutex.synchronize do
                 waitTime += getPollIntervalInSeconds()
@@ -1226,59 +1246,123 @@ class TCUSampler
                                         tcu = @shareMem.GetDataTcu("#{__LINE__}-#{__FILE__}")
                                         array.each do |key2, array2|
                                             nomSet = array2["NomSet"]
-                    			            tripMin = array2["TripMin"]
-                    			            tripMax = array2["TripMax"]
-                    			            flagTolP = array2["FlagTolP"]
-                    			            flagTolN = array2["FlagTolN"]
-                    			            puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
+                    			            tripMin = array2["TripMin"].to_f
+                    			            tripMax = array2["TripMax"].to_f
+                    			            flagTolP = array2["FlagTolP"].to_f
+                    			            flagTolN = array2["FlagTolN"].to_f
+                    			            # puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
                                             case key2
                                             when "VPS0"
-				                                puts "PS0V = #{@shareMem.getPsVolts(muxData,adcData,"32")}"
-                                            when "IPS0"
-				                                puts "PS0I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+                                                actualValue = @shareMem.getPsVolts(muxData,adcData,"32").to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
+                                           when "IPS0"
+                                                actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,key2).to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "VPS1"
-				                                puts "PS1V = #{@shareMem.getPsVolts(muxData,adcData,"33")}"
+				                                # puts "PS1V = #{@shareMem.getPsVolts(muxData,adcData,"33")}"
+                                                actualValue = @shareMem.getPsVolts(muxData,adcData,"33").to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "IPS1"
-				                                puts "PS1I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+				                                # puts "PS1I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,key2)}"
+                                                actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,key2).to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "VPS2"
-				                                puts "PS2V = #{@shareMem.getPsVolts(muxData,adcData,"34")}"
+				                                # puts "PS2V = #{@shareMem.getPsVolts(muxData,adcData,"34")}"
+                                                actualValue = @shareMem.getPsVolts(muxData,adcData,"34").to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "IPS2"
-				                                puts "PS2I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+				                                # puts "PS2I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,key2)}"
+                                                actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,key2).to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "VPS3"
-				                                puts "PS3V = #{@shareMem.getPsVolts(muxData,adcData,"35")}"
+				                                # puts "PS3V = #{@shareMem.getPsVolts(muxData,adcData,"35")}"
+                                                actualValue = @shareMem.getPsVolts(muxData,adcData,"35").to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "IPS3"
-				                                puts "PS3I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+				                                # puts "PS3I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,key2)}"
+                                                actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,key2).to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "VPS4"
-				                                puts "PS4V = #{@shareMem.getPsVolts(muxData,adcData,"36")}"
+				                                # puts "PS4V = #{@shareMem.getPsVolts(muxData,adcData,"36")}"
+                                                actualValue = @shareMem.getPsVolts(muxData,adcData,"36").to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "IPS4"
-				                                puts "PS4I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+				                                # puts "PS4I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,"IPS2")}"
+                                                actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,"IPS2").to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "VPS5"
-				                                puts "PS5V = #{@shareMem.getPsVolts(muxData,adcData,"37")}"
+				                                # puts "PS5V = #{@shareMem.getPsVolts(muxData,adcData,"37")}"
+                                                actualValue = @shareMem.getPsVolts(muxData,adcData,"37").to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "IPS5"
-				                                puts "PS5I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+				                                # puts "PS5I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+                                                actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,nil).to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "VPS6"
-				                                puts "PS6V = #{@shareMem.getPsVolts(muxData,adcData,"38")}"
+				                                # puts "PS6V = #{@shareMem.getPsVolts(muxData,adcData,"38")}"
+                                                actualValue = @shareMem.getPsVolts(muxData,adcData,"38").to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "IPS6"
-				                                puts "PS6I = #{@shareMem.getPsCurrent(muxData,eiPs,"24",nil)}"
+				                                # puts "PS6I = #{@shareMem.getPsCurrent(muxData,eiPs,"24",nil)}"
+                                                actualValue = @shareMem.getPsCurrent(muxData,eiPs,"24",nil).to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "VPS7"
-				                                puts "PS7V = #{@shareMem.getPsVolts(muxData,adcData,"39")}"
+				                                # puts "PS7V = #{@shareMem.getPsVolts(muxData,adcData,"39")}"
+                                                actualValue = @shareMem.getPsVolts(muxData,adcData,"39").to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "IPS7"
-				                                puts "PS7I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+				                                # puts "PS7I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
+                                                actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,key2).to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "VPS8"
-				                                puts "PS8V = #{@shareMem.getPsVolts(muxData,adcData,"40")}"
+				                                # puts "PS8V = #{@shareMem.getPsVolts(muxData,adcData,"40")}"
+                                                actualValue = @shareMem.getPsVolts(muxData,adcData,"40").to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "IPS8"
-				                                puts "PS8I = #{@shareMem.getPsCurrent(muxData,eiPs,"25",nil)}"
+				                                # puts "PS8I = #{@shareMem.getPsCurrent(muxData,eiPs,"25",nil)}"
+                                                actualValue = @shareMem.getPsCurrent(muxData,eiPs,"25",nil).to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "VPS9"
-				                                puts "PS9V = #{@shareMem.getPsVolts(muxData,adcData,"41")}"
+				                                # puts "PS9V = #{@shareMem.getPsVolts(muxData,adcData,"41")}"
+                                                actualValue = @shareMem.getPsVolts(muxData,adcData,"41").to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "IPS9"
-				                                puts "PS9I = #{@shareMem.getPsCurrent(muxData,eiPs,"26",nil)}"
+				                                # puts "PS9I = #{@shareMem.getPsCurrent(muxData,eiPs,"26",nil)}"
+                                                actualValue = @shareMem.getPsCurrent(muxData,eiPs,"26",nil).to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "VPS10"
-				                                puts "PS10V = #{@shareMem.getPsVolts(muxData,adcData,"42")}"
+				                                # puts "PS10V = #{@shareMem.getPsVolts(muxData,adcData,"42")}"
+                                                actualValue = @shareMem.getPsVolts(muxData,adcData,"42").to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "IPS10"
+                                                # puts "PS10I = #{@shareMem.getPsCurrent(muxData,eiPs,"27",nil)}"
+                                                actualValue = @shareMem.getPsCurrent(muxData,eiPs,"27",nil).to_f
+                                                stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax)
                                             when "IDUT"                                       
+                                                ct = 0
+                                                while ct<24 do
+                                                    if tcusToSkip[ct].nil? == true
+                                						puts "dutI#{ct} = '#{SharedLib.getCurrentDutDisplay(muxData,"#{ct}")}'"
+                                                        actualValue = SharedLib.getCurrentDutDisplay(muxData,"#{ct}").to_f
+                                                        if (tripMin <= actualValue && actualValue <= tripMax) == false
+                                                            stopMachine(gPIO2)
+                                                            @shareMem.ReportError("IDUT#{ct} (zero base) TRIPPED!  '#{tripMin}'A < '#{actualValue}'A  < '#{tripMax}'A key='#{key2}' is FALSE.")
+                                                        	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                                        end
+                                                    end
+                                                    ct += 1
+                                                end
                                             else
-                                                @shareMem.ReportError("key='#{key2}' is not recognized. #{__LINE__}-#{__FILE__}")
-                                            	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                                if @spsList.nil?
+                                                    # Make the list a global var so it will not keep creating the list per loop.
+                                                    @spsList =  ['SPS0','SPS1','SPS2','SPS3','SPS4','SPS5','SPS6','SPS7','SPS8','SPS9','SPS10']
+                                                end
+                                                
+                                                # Code don't seem to work.
+                                                if .include? key2 == false
+                                                    @shareMem.ReportError("key='#{key2}' is not recognized. #{__LINE__}-#{__FILE__}")
+                                                	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                                end
                                             end                    			            
                                         end
                                     elsif key == "TempConfig"
@@ -1290,39 +1374,31 @@ class TCUSampler
                     			            flagTolN = array2["FlagTolN"]
                     			            puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
                                             case key2
-                                            when "VPS0"
-                                            when "IPS0"
-                                            when "VPS1"
-                                            when "IPS1"
-                                            when "VPS2"
-                                            when "IPS2"
-                                            when "VPS3"
-                                            when "IPS3"
-                                            when "VPS4"
-                                            when "IPS4"
-                                            when "VPS5"
-                                            when "IPS5"
-                                            when "VPS6"
-                                            when "IPS6"
-                                            when "VPS7"
-                                            when "IPS7"
-                                            when "VPS8"
-                                            when "IPS8"
-                                            when "VPS9"
-                                            when "IPS9"
-                                            when "VPS10"
-                                            when "IPS10"
-                                            when "IDUT"                                       
+                                            when "TDUT"
                                             else
-                                                @shareMem.ReportError("key='#{key2}' is not recognized. #{__LINE__}-#{__FILE__}")
-                                            	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                                if @tempStuff.nil?
+                                                    # Make the list a global var so it will not keep creating the list per loop.
+                                                    @tempStuff = ['TIMERRUFP','TIMERRDFP','H','C','P','I','D']
+                                                end
+                                                if @tempStuff.include? key2 == false
+                                                    @shareMem.ReportError("key='#{key2}' is not recognized. #{__LINE__}-#{__FILE__}")
+                                                	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                                end
                                             end                    			            
                                         end
                                     else
-                                        @shareMem.ReportError("key='#{key}' is not recognized. #{__LINE__}-#{__FILE__}")
-                                    	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                        if @otherStuff.nil?
+                                            # Make the list a global var so it will not keep creating the list per loop.
+                                            @otherStuff = ['xStdep Num','Step Time','TEMP WAIT','Alarm Wait','Auto Restart','Stop on Tolerance','StepTimeLeft','TIMERRUFP','TIMERRDFP']
+                                        end
+                                        
+                                        if @otherStuff.include? key == false
+                                            @shareMem.ReportError("key='#{key}' is not recognized. #{__LINE__}-#{__FILE__}")
+                                        	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                        end
                                     end
                                 end
+                                
                                 @shareMem.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
             			    else
             			        # Step just finished.
@@ -1338,9 +1414,10 @@ class TCUSampler
 
                                     # Done processing all steps listed in configuration.step file
                                     saveBoardStateToHoldingTank()
+                                    
                                     puts"\n\n\n\nSettings DUTs to cool mode.\n\n\n\n"
                                     setTcuToStopMode(gPIO2)
-                                    # We're done proce@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNew@pcCmdNewssing all the steps.
+                                    # We're done processing all the steps.
                                 end
                             end
         			    end
@@ -1386,9 +1463,7 @@ class TCUSampler
                             end
                             
             		    when SharedLib::StopFromPc
-            		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-                            # Turn on the control for TCUs that are not disabled.
-                            setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
+            		        stopMachine(gPIO2)
                             
             		    when SharedLib::ClearConfigFromPc
                 		    setBoardData(Hash.new,uart1,gPIO2,tcusToSkip)
