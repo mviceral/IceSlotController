@@ -4,6 +4,10 @@ require 'singleton'
 require 'forwardable'
 require_relative '../lib/SharedMemory'
 
+# DRuby stuff
+require 'drb/drb'
+SERVER_URI="druby://localhost:8787"
+
 class SendSampledTcuToPCLib
     include Singleton
     NO_GOOD_DBASE_FOLDER = "No good database folder"
@@ -29,6 +33,12 @@ class SendSampledTcuToPCLib
     end
     
     def RunSender
+		# DRb are the two lines below
+		DRb.start_service
+		@sharedMemService = DRbObject.new_with_uri(SERVER_URI)
+        
+        lastStepNumOfSentLog = -1 # initial value
+
     	@dirFileRepository = "/mnt/card"
     	if Dir.exists?(@dirFileRepository) == false
     		#
@@ -37,70 +47,53 @@ class SendSampledTcuToPCLib
     		system("umount /mnt/card") # unmount the card, case it crashes and the user # puts in a new card.
     	end
     
-        @pollIntervalInSeconds = 10 
-        @sharedMem = SharedMemory.new()
-        # initialize
-        #
-        # The goal is - the moment the new data becomes available from the sampler, that's when you start processing
-        # like send data to PC for immediate display and for saving it, and saving the data into BBB local storage.
-        # This way, there's lots of lee-way for recovery case something happens before the next polling.
-        #
-        @timeOfData = @sharedMem.GetSlotTime("#{__LINE__}-#{__FILE__}")
-        SendDataToPC(@sharedMem,"#{__LINE__} #{__FILE__}")
-        waitTime = Time.now+@pollIntervalInSeconds
-        while @sharedMem.GetSlotTime("#{__LINE__}-#{__FILE__}") == @timeOfData
-            sleep(0.01) 
-            # puts("Data is the same!!!")
-            # puts "Test RunSender G #{__FILE__}-#{__LINE__}"
-            if waitTime < Time.now
-                #
-                # The Sampler does not seem to be updating the shared memory data.  It must be down.
-                # Start the sampler process.
-                #
-                runSampler
-            end
-        end
-        # puts "Test RunSender H #{__FILE__}-#{__LINE__}"
-        
-        waitTime = Time.now+@pollIntervalInSeconds
-        sentSampledData = @timeOfData
+        loggingTime = 5 # 5 seconds for now
+        pollingTime = 1 # check every second
+        pollIntervalInSeconds = pollingTime
+        waitTime = Time.now+pollIntervalInSeconds
         while true
-            # puts "Test RunSender C #{__FILE__}-#{__LINE__}"
-            @timeOfData = @sharedMem.GetSlotTime("#{__LINE__}-#{__FILE__}")
-            if (sentSampledData != @timeOfData)
-                SendDataToPC(@sharedMem,"#{__LINE__}-#{__FILE__}")
-                # puts "Test RunSender E #{__FILE__}-#{__LINE__}"
-                sentSampledData = @timeOfData
-            else
-                #
-                # Data is still the same?  Perhaps the sampler died?  Run the sampler.
-                #
-                # puts "Test RunSender G - SAMPLER DIED!!! #{__FILE__}-#{__LINE__}"
-                runSampler
-                # puts "Test RunSender H - RESTARTED SAMPLER #{__FILE__}-#{__LINE__}"
+            puts "Polled. #{__LINE__}-#{__FILE__}"
+            sharedMem = @sharedMemService.getSharedMem()
+            if sharedMem.GetBbbMode() == SharedLib::InRunMode
+                puts "Polled - in run mode #{Time.now.inspect}. #{__LINE__}-#{__FILE__}"
+                if pollIntervalInSeconds == pollingTime
+                    # The board started processing.
+                    pollIntervalInSeconds = loggingTime
+                end
+                
+                if lastStepNumOfSentLog != sharedMem.GetStepNumber()
+                    lastStepNumOfSentLog = sharedMem.GetStepNumber()
+                    puts "Sending log data.  #{Time.now.inspect}. #{__LINE__}-#{__FILE__}"
+
+# tbs - to be sent                    
+tbs  = "Test Step: step# #{sharedMem.GetStepNumber()}-#{sharedMem.GetStepName()}/n"
+tbs += "Power Supply Setting:/n"
+stepToWorkOn = sharedMem.getStepToWorkOn()
+stepToWorkOn["PsConfig"].each do |key, array|
+tbs += "key = #{key}/n"
+tbs += "array = #{array}/n"
+end
+=begin
+PS0 Setting: <voltage setting> <compliance limit> <sequence #>
+<one line each for other power supplies>
+Temperature Setting: <temp>
+=end
+                    slotInfo = Hash.new()
+                    slotInfo[SharedLib::DataLog] = tbs
+                    slotInfo[SharedLib::SlotOwner] = sharedMem.GetSlotOwner# GetSlotIpAddress()
+                    slotInfo[SharedLib::ConfigurationFileName] = sharedMem.GetConfigurationFileName()
+                    slotInfo[SharedLib::ConfigDateUpload] = sharedMem.GetConfigDateUpload()
+                    sendSlotInfoToPc(slotInfoJson)
+                end
+            elsif sharedMem.GetBbbMode() == SharedLib::InStopMode
+                # The board is done its run mode
+                puts "Polled - in stop mode #{Time.now.inspect}. #{__LINE__}-#{__FILE__}"
+                if pollIntervalInSeconds != pollingTime
+                    pollIntervalInSeconds = pollingTime
+                end
             end
-            # puts "Test RunSender F #{__FILE__}-#{__LINE__}"
-            
-            #
-            # What if there was a hiccup and waitTime-Time.now becomes negative
-            # The code ensures that the process is exactly going to take place at the given interval.  No lag that
-            # takes place on processing data.
-            #
-            if (waitTime-Time.now)<0
-                #
-                # The code fix for the scenario above.  I can't get it to activate the code below, unless
-                # the code was killed...
-                #
-                puts "#{Time.now.inspect} Warning - time to ship data to PC and save it to local BBB dbase took"
-                puts  " longer than poll interval!!!"
-                # exit # - the exit code...
-                #
-                # waitTime = Time.now+pollInterval
-            else
-            	# puts "Sleeping for #{waitTime.to_f-Time.now.to_f}"
-                sleep(waitTime.to_f-Time.now.to_f) 
-            end
-            waitTime = waitTime+@pollIntervalInSeconds
+            sleep(waitTime.to_f-Time.now.to_f)
+            waitTime = Time.now+pollIntervalInSeconds
         end
     end
 
@@ -118,7 +111,6 @@ class SendSampledTcuToPCLib
         slotInfo[SharedLib::AdcInput] = sharedMemParam.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::MuxData] = sharedMemParam.GetDataMuxData("#{__LINE__}-#{__FILE__}")
         slotInfo[SharedLib::Tcu] = sharedMemParam.GetDataTcu("#{__LINE__}-#{__FILE__}")
-        # puts "Check slotInfo[SharedLib::Tcu] = '#{slotInfo[SharedLib::Tcu]}' #{__LINE__}-#{__FILE__}"
         slotInfo[SharedLib::Eips] = sharedMemParam.GetDataEips()
         slotInfo[SharedLib::SlotOwner] = sharedMemParam.GetSlotOwner# GetSlotIpAddress()
         slotInfo[SharedLib::AllStepsCompletedAt] = sharedMemParam.GetAllStepsCompletedAt()
@@ -158,7 +150,7 @@ class SendSampledTcuToPCLib
             	forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(slotInfoJson)
             	
     	        str = "Insert into log(idLogTime, data) "+
-        		       "values(#{@timeOfData},\"#{forDbase}\")"
+        		       "values(#{timeOfData},\"#{forDbase}\")"
     
                 begin
                     @db.execute "#{str}"
@@ -177,6 +169,10 @@ class SendSampledTcuToPCLib
     	
 
         # puts "#{__LINE__}-#{__FILE__} slotInfoJson=#{slotInfoJson}"
+        sendSlotInfoToPc(slotInfoJson)
+    end    
+    
+    def sendSlotInfoToPc(slotInfoJson)
         begin
 		# puts "SendToPc = #{SendToPc} #{__LINE__}-#{__FILE__}"
             resp = 
@@ -184,9 +180,9 @@ class SendSampledTcuToPCLib
             rescue Exception => e  
                 puts e.message  
                 puts e.backtrace.inspect
-                `echo "#{@timeOfData},#{slotInfoJson}" >> PcDown.BackLog`
+                `echo "#{timeOfData},#{slotInfoJson}" >> PcDown.BackLog`
         end
-    end    
+    end
 
     def nextLogCreation
         # puts "Within 'nextLogCreation' - @logCompletedAt = #{@logCompletedAt.inspect}  #{__FILE__} - #{__LINE__}"

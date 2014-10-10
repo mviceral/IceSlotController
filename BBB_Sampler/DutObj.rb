@@ -14,10 +14,13 @@ class DutObj
         tbr = "" # tbr - to be returned
         uartStatusCmd = "#{keyParam}:\n"
         uart1Param.write("#{uartStatusCmd}");
+        # `echo \"w #{uartStatusCmd}\" >> uart.log`
         sleep(0.01)
         uartStatusCmd = "#{temParam}\n"
+        b = uartStatusCmd
         uart1Param.write("#{uartStatusCmd}");
         sleep(0.01)
+        # `echo \"w #{uartStatusCmd}\" >> uart.log`
         return tbr
     end
     
@@ -44,6 +47,7 @@ class DutObj
         # while keepLooping
             begin
                 complete_results = Timeout.timeout(0.1) do      
+=begin                    
                     keepLooping = true
                     while keepLooping
                         c = uart1Param.readchar
@@ -64,15 +68,15 @@ class DutObj
                             end
                         end
                     end
-                        
-=begin                    
+=end                        
                     uart1Param.each_line { 
                         |line| 
                         tbr = line
+# puts "dut#{dutNumParam} line='#{line}' #{__LINE__}-#{__FILE__}"
+# `echo \"r #{line}\" >> uart.log`
                         keepLooping = false     # loops out of the keepLooping loop.
                         break if line =~ /^@/   # loops out of the each_line loop.
                     }
-=end                    
                 end
                 rescue Timeout::Error
                     puts "\n\n\n\nTimed out Error. dutNumParam=#{dutNumParam}"
@@ -116,12 +120,14 @@ class DutObj
             end
 =end            
             sleep(0.01)
+            # puts "getTcuStatus(#{dutNumParam})='#{tbr}' #{__LINE__}-#{__FILE__}"
             return tbr
         #end
     end
     
     def poll(dutNumParam, uart1Param,gPIO2)
         @statusResponse[dutNumParam] = DutObj::getTcuStatusS(dutNumParam, uart1Param,gPIO2)
+        # puts "poll @statusResponse[#{dutNumParam}] = '#{@statusResponse[dutNumParam]}'"
     end
 
     def saveAllData(parentMemory, timeNowParam)
@@ -140,6 +146,7 @@ class DutObj
                 # return
                 allDutData += "|#{dutNum}"
                 allDutData += @statusResponse[dutNum]
+                # puts "#{__LINE__}-#{__FILE__} @statusResponse[dutNum]='#{@statusResponse[dutNum]}'"
             end
             # puts "@statusResponse[#{dutNum}] = #{@statusResponse[dutNum]}"
             dutNum +=1;
@@ -151,6 +158,7 @@ class DutObj
 		allDutData = "-"+allDutData
 		# puts "Poll A #{Time.now.inspect}"
         # @sharedMem.WriteDataTcu(allDutData,"#{__LINE__}-#{__FILE__}")
+        # puts "#{__LINE__}-#{__FILE__} allDutData='#{allDutData}'"
         parentMemory.WriteDataTcu(allDutData,"#{__LINE__}-#{__FILE__}")
 		# puts "Poll B #{Time.now.inspect}"
         
