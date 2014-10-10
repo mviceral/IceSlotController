@@ -22,6 +22,7 @@ class SharedLib
 	#
 	# Constants used for sending data to PC
 	#
+	DataLog = "DataLog"
 	ConfigurationFileName = "ConfigurationFileName"
 	ConfigDateUpload = "ConfigDateUpload"
 	AllStepsDone_YesNo = "AllStepsDone_YesNo"
