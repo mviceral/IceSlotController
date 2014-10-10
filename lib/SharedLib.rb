@@ -296,6 +296,21 @@ class SharedLib
 			49,SPS10,Enable-Disable ,SEQ,Slot PCB,9,200,1,200,,,,,,,,"
 	end
   
+  def getFileNameRecord(fileName,configDateUpload,slotOwnerParam)
+  	configDateUpload = Time.at(configDateUpload.to_i)
+		ct = 0
+		tbsubmitted = ""
+		while ct<fileName.length
+			if fileName[ct] == "(" || fileName[ct] == ")" || fileName[ct] == "+" || fileName[ct] == " "
+				tbsubmitted += "_"
+			else
+				tbsubmitted += fileName[ct]
+			end
+			ct += 1
+		end
+		return "#{slotOwnerParam}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{tbsubmitted}"
+	end
+  
   def makeUriFriendly(stringParam)  
   	return makeUriFriendlySub(stringParam,true)
   end

@@ -191,7 +191,7 @@ class DataLogger
 				setDataForLogging("PS2V",@sharedMem.getPsVolts(muxData,adcData,"34"))
 				setDataForLogging("PS2I",@sharedMem.getPsCurrent(muxData,eiPs,nil,"IPS2"))
 				setDataForLogging("PS3V",@sharedMem.getPsVolts(muxData,adcData,"35"))
-				setDataForLogging("PS3I",@sharedMem.getPsCurrent(muxData,eiPs,nil,nil))
+				setDataForLogging("PS3I",@sharedMem.getPsCurrent(muxData,eiPs,nil,"IPS3"))
 				setDataForLogging("PS4V",@sharedMem.getPsVolts(muxData,adcData,"36"))
 				setDataForLogging("PS4I",@sharedMem.getPsCurrent(muxData,eiPs,nil,"IPS2"))
 				setDataForLogging("PS5V",@sharedMem.getPsVolts(muxData,adcData,"37"))
