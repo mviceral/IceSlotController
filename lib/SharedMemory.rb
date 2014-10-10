@@ -106,7 +106,7 @@ class SharedMemory
     # Known functions of SharedMemoryExtension
     #
     def getPCShared()
-	ds = getMemory()
+				ds = getMemory()
         if ds[SharedLib::PC].nil?
         	ds = lockMemory("#{__LINE__}-#{__FILE__}")
         	ds[SharedLib::PC] = Hash.new
@@ -179,8 +179,8 @@ class SharedMemory
 					while errMsgParam.length>0
 						errItem = errMsgParam.shift
 						puts "Got a message from the board: '#{errItem}'"
-						`cd #{newErrLogFileName}; echo \"SharedLib.uriToStr(errItem.to_json)\" >> NewErrors_#{slotOwnerParam}.log`
-=begin						
+						`cd #{newErrLogFileName}; echo \"#{SharedLib.makeUriFriendly(errItem.to_json)}\" >> NewErrors_#{slotOwnerParam}.log`
+=begin						  
 						File.open(newErrLogFileName, "a") { 
 							|file| file.write("#{errItem.to_json}\n") 
 						}
@@ -235,17 +235,8 @@ class SharedMemory
 	def getLogFileName(slotOwnerParam)
 		configDateUpload = Time.at(GetDispConfigDateUpload(slotOwnerParam).to_i)
 		fileName = GetDispConfigurationFileName(slotOwnerParam)
-		ct = 0
-		tbsubmitted = ""
-		while ct<fileName.length
-			if fileName[ct] == "(" || fileName[ct] == ")" || fileName[ct] == "+" || fileName[ct] == " "
-				tbsubmitted += "_"
-			else
-				tbsubmitted += fileName[ct]
-			end
-			ct += 1
-		end
-		return "#{slotOwnerParam}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{tbsubmitted}.log"
+		genFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,slotOwnerParam)
+		return genFileName+".log"
 	end
 
 	def getPsVolts(muxData,adcData,rawDataParam)
@@ -315,8 +306,9 @@ class SharedMemory
 		puts "AllStepsCompletedAt = #{GetDispAllStepsCompletedAt(slotOwnerParam)}"
 		puts "TotalStepDuration = #{GetDispTotalStepDuration(slotOwnerParam)}"
 	end
-
-	def GetDispErrorMsg(slotOwnerParam)
+	
+	def getDispErrorMsg(slotOwnerParam)
+		# puts "checkFunc got called. slotOwnerParam='#{slotOwnerParam}'"
 		# Display what ever un-acknowledged errors are in the record.
 		pcShared = getPCShared()
 		slotOwner = slotOwnerParam
@@ -325,14 +317,15 @@ class SharedMemory
 				newErrLogFileName = "../\"error logs\"/NewErrors_#{slotOwner}.log"
 				# newErrLogFileName = "../NewErrors_#{slotOwner}.log"
 				errorItem = `head -1 #{newErrLogFileName}`
-				#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
+				errorItem = errorItem.chomp
 				if errorItem.length > 0
+					# puts "C errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
 					ds = lockMemory("#{__LINE__}-#{__FILE__}")
-					ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(errorItem)
+					ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(SharedLib.uriToStr(errorItem))
 					writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 				end
-				rescue Exception => e  
-		                puts "e.message=#{e.message }"
+				rescue Exception => e
+					puts "e.message=#{e.message }"
 			end
 		end
 
@@ -401,22 +394,25 @@ class SharedMemory
 =end
 	
 	def SetDispSlotOwner(slotOwnerParam)
-    		ds = lockMemory("#{__LINE__}-#{__FILE__}")
-			if ds[SharedLib::PC].nil?
-				ds[SharedLib::PC] = Hash.new
-			end
-			if ds[SharedLib::PC][slotOwnerParam].nil? 
-				ds[SharedLib::PC][slotOwnerParam] = Hash.new
-			end
-			ds[SharedLib::PC][SlotOwner] = slotOwnerParam
-			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+		ds = lockMemory("#{__LINE__}-#{__FILE__}")
+		if ds[SharedLib::PC].nil?
+			ds[SharedLib::PC] = Hash.new
+		end
+		
+		if ds[SharedLib::PC][slotOwnerParam].nil? 
+			ds[SharedLib::PC][slotOwnerParam] = Hash.new
+		end
+		
+		ds[SharedLib::PC][SlotOwner] = slotOwnerParam
+		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 	end		
+	
 	def GetDispConfigurationFileName(slotOwnerParam)
 		if getPCShared()[slotOwnerParam].nil?
 			return ""
 		end
 		return getPCShared()[slotOwnerParam][SharedLib::ConfigurationFileName]
-    end
+  end
     
 	def GetDispConfigDateUpload(slotOwnerParam)
 		if getPCShared()[slotOwnerParam].nil?
@@ -706,9 +702,9 @@ class SharedMemory
     end
     
     def CheckInit(slotOwnerParam)
-    	return GetDispErrorMsg(slotOwnerParam)
+    	return getDispErrorMsg(slotOwnerParam)
     end
-
+=begin
 	def GetDispErrorMsg(slotOwnerParam)
 		begin
 			# Display what ever un-acknowledged errors are in the record.
@@ -734,7 +730,7 @@ class SharedMemory
 			rescue  Exception => e
 		end
 	end
-
+=end
     
     def initialize()
     end 
@@ -1068,4 +1064,4 @@ class SharedMemory
     end
 =end    
 end
-# 347
+# 182

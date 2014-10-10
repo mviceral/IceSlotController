@@ -104,7 +104,7 @@ class UserInterface
 	attr_accessor :redirectErrorFaultyPsConfig	
 	
 	def clearErrorSlot(slotOwnerParam)
-		puts "clearErrorSlot(slotOwnerParam) got called. slotOwnerParam='#{slotOwnerParam}' SharedLib::ErrorMsg='#{SharedLib::ErrorMsg}'"
+		# puts "clearErrorSlot(slotOwnerParam) got called. slotOwnerParam='#{slotOwnerParam}' SharedLib::ErrorMsg='#{SharedLib::ErrorMsg}'"
 		ds = @sharedMem.lockMemory("#{__LINE__}-#{__FILE__}")
 		ds[SharedLib::PC][slotOwnerParam][SharedLib::ErrorMsg] = nil
 		@sharedMem.writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
@@ -113,8 +113,8 @@ class UserInterface
 	def getBoardIp(slotParam)
 		if @slotToIp.nil?
 			@slotToIp = Hash.new
-			@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
-			#@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
+			#@@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
+			@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
 			#@slotToIp[SLOT3] = ""
 		else
 			return @slotToIp[slotParam]
@@ -155,7 +155,6 @@ class UserInterface
 				error = "Step File '#{configFileName}' - '#{itemNameParam}' '#{stepTime}' on line "
 				error += "'#{ct+1}' must be a boolean (1 or 0)."
 				@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			else
 				slotConfigStep = getSlotConfigStep(stepName)
@@ -191,7 +190,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 					puts "A error =>#{error}<= @#{__LINE__}-#{__FILE__}"
 					@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 					puts "B @redirectWithError =>#{@redirectWithError}<= @#{__LINE__}-#{__FILE__}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 					return false
 				else				
 					slotConfigStep = getSlotConfigStep(stepName)
@@ -443,17 +441,13 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 			hash = Hash.new
 			hash[SharedLib::SlotOwner] = slotOwnerParam
 			slotData = hash.to_json
-			puts "C #{__LINE__}-#{__FILE__}"
 			@response = 			
 		    RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::ClearConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
-			puts "a #{__LINE__}-#{__FILE__}"
 			@sharedMem.SetDispButton(slotOwnerParam,"Clearing")
-			puts "b #{__LINE__}-#{__FILE__}"
 			rescue
 			@redirectWithError = "/TopBtnPressed?slot=#{slotOwnerParam}&BtnState=#{Load}"
 			#@redirectWithError += "&ErrGeneral=bbbDown"
 			@redirectWithError += "&ErrGeneral=ABDC"
-			puts "B At pause #{__LINE__}-#{__FILE__}"
 			# gets
 			return false
 		end
@@ -466,10 +460,84 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 		# puts "C Checking.  #{__LINE__}-#{__FILE__}"
 	end
 
+	def writeToSettingsLog(toBeWritten,settingsFileName)
+		`cd #{SharedMemory::StepsLogRecordsPath}; echo \"#{toBeWritten}\" >> #{settingsFileName}`
+	end
+
 	def setBbbConfigUpload(slotOwnerParam)
 		slotProperties[slotOwnerParam][SharedLib::ConfigDateUpload] = Time.now.to_f
 		slotProperties[slotOwnerParam][SharedLib::SlotOwner] = slotOwnerParam
 		slotData = slotProperties[slotOwnerParam].to_json
+
+		fileName = getSlotProperties()["FileName"]
+		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
+		genFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,slotOwnerParam)
+		settingsFileName =  genFileName+".StepSettings"
+		recipeStepFile = "../steps config file repository/#{fileName}"
+		recipeLastModified = File.mtime(recipeStepFile)
+		
+		writeToSettingsLog("Program: #{fileName}, Last modified: #{recipeLastModified}",settingsFileName)
+		
+		# Get the oven ID
+		# Read the content of the file "Mosys ICEngInc.config" file to get the needed information...
+		config = Array.new
+		File.open("../Mosys ICEngInc.config", "r") do |f|
+			f.each_line do |line|
+				config.push(line)
+			end			
+		end
+		
+		# Parse each lines and mind the information we need for the report.
+		ct = 0
+		while ct < config.length 
+			colContent = config[ct].split(":")
+			if colContent[0] == "Oven ID"
+				oven = colContent[1].chomp
+				oven = oven.strip
+			elsif colContent[0] == "#{slotOwnerParam} BIB#" 
+				bibNumber = colContent[1].chomp
+				bibNumber = bibNumber.strip
+			end
+			ct += 1
+		end
+		writeToSettingsLog("Oven: #{oven}, Slot: #{slotOwnerParam}",settingsFileName)
+		writeToSettingsLog("BIB: #{bibNumber}",settingsFileName)
+		writeToSettingsLog("Test Step: #{bibNumber}",settingsFileName)
+		
+		writeToSettingsLog("Configuration Upload Date: #{Time.at(configDateUpload).inspect}",settingsFileName)
+		writeToSettingsLog("Slot Owner: #{slotOwnerParam}",settingsFileName)
+		
+=begin
+		psItems = ["VPS0","IPS0","VPS1","IPS1","VPS2","IPS2","VPS3","IPS3","VPS4","IPS4","VPS5","IPS5","VPS6","IPS6","VPS7","IPS7","VPS8","IPS8","VPS9","IPS9","VPS10","IPS10","IDUT"]
+		ct = 0
+		getSlotProperties()["LastPrintedStepNum"] = 0
+		getSlotProperties()["LastPrintedStepName"] = ""
+		getSlotProperties().each do |key, array|
+			puts "key='#{key}' array=#{array}\n\n\n"			
+			if ct == 1
+				# This is the first step.
+			end
+			if key == "Steps"
+				ct = 0
+				array.each do |key2, array2|
+					if ct == 0
+						# We're working on the pretest.
+						array2.each do  |key3, array3|
+							array3.each do |key4, array4|
+								if psItems.include? key4
+									if key4 == "VPS0"
+									end
+								end
+							end
+						end
+					end
+					ct += 1
+				end
+			end
+			ct += 1
+		end
+=end
+
 		# PP.pp(getSlotProperties())
 		# puts "About to send to the Board. #{__LINE__}-#{__FILE__}"
 		# exit
@@ -801,8 +869,8 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell(slotLabel2Param)+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
-		getSlotDisplay_ToBeReturned += 	"</table>"		
-		errMsg = @sharedMem.GetDispErrorMsg(slotLabel2Param)
+		getSlotDisplay_ToBeReturned += 	"</table>"
+		errMsg = @sharedMem.getDispErrorMsg(slotLabel2Param)
 		topTable = "
 			<table>
 				<tr><td></td><td/></tr>
@@ -1002,23 +1070,23 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 				 				
 				 				if getButtonDisplay(slotLabel2Param,"#{__LINE__}-#{__FILE__}") == Run	
 btnStateDisp = @sharedMem.GetDispButton(slotLabel2Param)
-puts "btnStateDisp='#{btnStateDisp}' #{__LINE__}-#{__FILE__}"
+# puts "btnStateDisp='#{btnStateDisp}' #{__LINE__}-#{__FILE__}"
 toDisplay = Clear
 if btnStateDisp.nil? == false 
-	if btnStateDisp == "Clearing"
-		toDisplay = btnStateDisp
+	if btnStateDisp != "Clearing"
+		# toDisplay = btnStateDisp
+		topTable+=				 					
+			"
+		<button 
+			onclick=\"window.location='/TopBtnPressed?slot=#{slotLabel2Param}&BtnState=Clear'\"
+			type=\"button\" 
+			style=\"width:100;height:25\" 
+			id=\"btn_LoadStartStop\"
+			>
+				#{toDisplay}
+		</button>"
 	end
 end
-				 					topTable+=				 					
-				 						"
-				 					<button 
-										onclick=\"window.location='/TopBtnPressed?slot=#{slotLabel2Param}&BtnState=Clear'\"
-										type=\"button\" 
-				 						style=\"width:100;height:25\" 
-				 						id=\"btn_LoadStartStop\"
-				 						>
-				 							#{toDisplay}
-				 					</button>"
 				 				end
 				 				
 					topTable+=				 					
@@ -1361,19 +1429,17 @@ end
 				SharedLib.is_a_number?(valueParam) == false)
 			@redirectWithError+="&ErrIndex=#{indexParam}&ErrColType=#{colnameParam}"
 			@redirectWithError+="&ErrValue="+SharedLib.makeUriFriendly("#{valueParam}")
-puts "Error here #{__LINE__}-#{__FILE__}"
 			return @redirectWithError
 		elsif colnameParam == IndexCol
 			#
 			# Make sure that the index is unique, and not repeated.
 			#
 			if valueParam.length>0 && colnameParam==UserInterface::IndexCol
-			puts "valueParam=#{valueParam} hashUniqueIndex[valueParam]=#{hashUniqueIndex[valueParam]} hashUniqueIndex=#{hashUniqueIndex}"
+				#puts "valueParam=#{valueParam} hashUniqueIndex[valueParam]=#{hashUniqueIndex[valueParam]} hashUniqueIndex=#{hashUniqueIndex}"
 				if hashUniqueIndex[valueParam].nil? == false
 					redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 					redirectWithError += "&ErrRow=#{rowParam}&ErrColType=#{colnameParam}&ErrValue="+
 						SharedLib.makeUriFriendly("#{valueParam}")
-puts "Error here #{__LINE__}-#{__FILE__}"
 					return redirectWithError
 				else
 					hashUniqueIndex[valueParam] = "u" # u for unique
@@ -1540,7 +1606,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 			@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 			@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 			@redirectWithError += "&ErrStepPsNotFound=#{SharedLib.makeUriFriendly(colContent)}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 			return false
 		else 
 			#
@@ -1565,7 +1630,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 			@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 			@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 			@redirectWithError += "&ErrStepPsNotFound=#{SharedLib.makeUriFriendly(colContent)}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 			return false
 		else 
 			#
@@ -1598,27 +1662,22 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 			if (colContent[0].upcase.strip != "ITEM")
 				@redirectWithError += "&ErrStepFormat=A"
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			elsif (colContent[1].upcase.strip != "NAME")
 				@redirectWithError += "&ErrStepFormat=B"
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			elsif (colContent[2].upcase.strip != "DESCRIPTION")
 				@redirectWithError += "&ErrStepFormat=C"
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			elsif (colContent[3].upcase.strip != "TYPE")
 				@redirectWithError += "&ErrStepFormat=D"
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			elsif (colContent[4].upcase.strip != "VALUE")
 				@redirectWithError += "&ErrStepFormat=E"
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			end
 			
@@ -1637,7 +1696,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 				@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 				@redirectWithError += "&ErrPsFileNotGiven=Y"
 				@redirectWithError = SharedLib.makeUriFriendly(@redirectWithError)				
-puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			else
 				if psConfigFileInFileSystem(colContent,configFileName) == false
@@ -1657,7 +1715,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 				@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 				@redirectWithError += "&ErrPsFileNotGiven=Y"
 				@redirectWithError = SharedLib.makeUriFriendly(@redirectWithError)
-puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			else
 				if dutSiteActivationMinCurrentFileInFileSystem(colContent,configFileName) == false
@@ -1734,7 +1791,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 					@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(configFileName)}"
 					@redirectWithError += "&ErrStepNameAlreadyFound="
 					@redirectWithError += "#{SharedLib.makeUriFriendly(colContent)}"					
-puts "Error here #{__LINE__}-#{__FILE__}"
 					return false
 				else
 					if colContent.nil? == true || colContent.length == 0
@@ -1745,7 +1801,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 						@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 						@redirectWithError += "&ErrStepNameNotGiven=Y"
 						@redirectWithError += "&ErrRow=#{(ct+1)}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					else
 						#
@@ -1772,7 +1827,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 						@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 						@redirectWithError += "&ErrPsFileNotGiven=Y"
 						@redirectWithError = SharedLib.makeUriFriendly(@redirectWithError)
-puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					else
 						@configFileType = SharedLib::PsConfig
@@ -1791,7 +1845,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 			ct = beginningLineOfSteps+2
 			while ct < config.length do
 				@stepName = config[ct-2].split(",")[2].strip # Get the row data for the step file name.
-				puts "@stepName='#{@stepName}' #{__LINE__}-#{__FILE__}"
 				colContent = config[ct].split(",")[2].strip
 				if colContent.nil? == true || colContent.length == 0
 					fromHere = "#{__LINE__}-#{__FILE__}"
@@ -1799,7 +1852,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 					@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 					@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 					@redirectWithError += "&ErrTempFileNotGiven=Y"
-puts "Error here #{__LINE__}-#{__FILE__}"
 					return false
 				else
 					#
@@ -1813,7 +1865,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 						@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 						@redirectWithError += "&ErrInStep=#{SharedLib.makeUriFriendly(@stepName)}"
 						@redirectWithError += "&ErrStepTempNotFound=#{SharedLib.makeUriFriendly(colContent)}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					else 
 						#
@@ -1906,7 +1957,7 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 		end
 		
 		knownRowNames = getKnownRowNamesFor(configFileType)
-		puts "knownRowNames=#{knownRowNames} #{__LINE__}-#{__FILE__}"
+		# puts "knownRowNames=#{knownRowNames} #{__LINE__}-#{__FILE__}"
 		#
 		# Make sure that each row have a column name that is found within the template which Mike provided.
 		#
@@ -1919,14 +1970,11 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 				#
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
 				@redirectErrorFaultyPsConfig = redirectWithError
-puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			end
 			ct += 1
 		end
 
-		puts "stepName = '#{stepName}'"
-		puts "configFileType = '#{configFileType}'"
 		slotConfigStep = getSlotConfigStep(stepName)
 		if slotConfigStep[configFileType].nil?
 			slotConfigStep[configFileType] = Hash.new
@@ -1956,7 +2004,7 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 				)
 			else
 				colContent = config[ct].split(",")[3].upcase
-				puts "colName='#{colName}' colContent='#{colContent}' #{__LINE__}-#{__FILE__}"
+				# puts "colName='#{colName}' colContent='#{colContent}' #{__LINE__}-#{__FILE__}"
 				slotConfigStep[configFileType][colName] = colContent
 			end
 			ct+=1
@@ -1981,7 +2029,7 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 			end
 		end
 		knownRowNames = getKnownRowNamesFor(configFileType)
-		puts "knownRowNames=#{knownRowNames} #{__LINE__}-#{__FILE__}"
+		# puts "knownRowNames=#{knownRowNames} #{__LINE__}-#{__FILE__}"
 		#
 		# Make sure that each row have a column name that is found within the template which Mike provided.
 		#
@@ -1994,7 +2042,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 				#
 				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
 				@redirectErrorFaultyPsConfig = redirectWithError
-puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			end
 			ct += 1
@@ -2061,8 +2108,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 					index,UserInterface::IndexCol,columns[indexCol],(ct+1),"#{__LINE__}","#{__FILE__}")				
 				if error.length > 0
 					@redirectErrorFaultyPsConfig = error
-puts "index=#{index} columns[indexCol]=#{columns[indexCol]} #{__LINE__}-#{__FILE__}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 					return false
 				end
 		
@@ -2073,7 +2118,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 					error  = checkConfigValue(nomSet,"nomSetCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
-puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					end
 					# End of 'if unit == "M"'
@@ -2084,35 +2128,30 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 					error = checkConfigValue(nomSet,"nomSetCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
-puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					end
 		
 					error = checkConfigValue(tripMin,"tripMinCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
-puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					end
 		
 					error = checkConfigValue(tripMax,"tripMaxCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
-puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					end
 		
 					error = checkConfigValue(flagTolP,"flagTolPCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
-puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					end
 		
 					error = checkConfigValue(flagTolN,"flagTolNCol",columns[1],(ct+1),"#{__LINE__}","#{__FILE__}")
 					if error.length > 0
 						@redirectErrorFaultyPsConfig = error
-puts "Error here #{__LINE__}-#{__FILE__}"
 						return false
 					end
 					# End of 'elsif unit == "V" || unit == "A" || unit == "C"'
@@ -2136,7 +2175,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 				#
 				@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 				@redirectWithError += "&ErrRow=#{ct+1}&ErrCol=3&ErrName=#{colContent}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 				return false
 			end
 			ct += 1
@@ -2320,7 +2358,6 @@ puts "Error here #{__LINE__}-#{__FILE__}"
 		else
 			puts "error @#{__LINE__}-#{__FILE__}"
 			@redirectWithError += "&ErrGeneral=FileNotKnown&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
-puts "Error here #{__LINE__}-#{__FILE__}"
 			return false
 		end
 		
@@ -2494,7 +2531,7 @@ end
 
 
 
-post '/TopBtnPressed' do
+post '/TopBtnPressed' do		
 	if settings.ui.slotOwnerThe.nil? || settings.ui.slotOwnerThe == ""
 		redirect "../"
 	end
@@ -2551,16 +2588,28 @@ get '/AckError' do
 	newErrLogFileName = "../\"error logs\"/NewErrors_#{params[:slot]}.log"
 	errLogFileName = "../\"error logs\"/ErrorLog_#{params[:slot]}.log"
 	errorItem = `head -1 #{newErrLogFileName}`
+	errorItem = errorItem.chomp
+	`echo \"#{errorItem}\" >> #{errLogFileName}`	
+=begin
 	File.open(errLogFileName, "a") { 
 		|file| file.write("#{errorItem}") 
 	}
+=end	
 
 	trimmed = `sed -e '1,1d' < #{newErrLogFileName}`
+	trimmed = trimmed.chomp
+	if trimmed.length > 0
+		`echo \"#{trimmed}\" > #{newErrLogFileName}`
+	else
+		`rm #{newErrLogFileName}`
+	end
+=begin	
 	File.open(newErrLogFileName, "w") { 
 		|file| file.write(trimmed) 
 	}
+=end	
 	settings.ui.clearErrorSlot("#{params[:slot]}")
 	redirect "../"
 end
 
-# at 1940
+# at 485
