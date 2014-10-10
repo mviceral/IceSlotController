@@ -369,7 +369,6 @@ class SharedLib
             @oldMessage = sentMessage
     	    log = "#{Time.new.inspect} : #{sentMessage}"
     	    puts "#{log}"
-            `echo "#{log}">>../slot\ activity.log`
         end
     end
     

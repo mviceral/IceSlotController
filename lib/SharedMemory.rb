@@ -773,6 +773,8 @@ class SharedMemory
     end
     
 	def GetPcCmd()
+	    return getMemory()[Cmd]
+=begin	    
 	    pcCmd = getMemory()[Cmd]
 	    if pcCmd.class.to_s == "Array"
             return pcCmd
@@ -782,7 +784,51 @@ class SharedMemory
             writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
             return ds[Cmd];
 	    end
+=end	    
 	end
+	
+	def getHashConfigFromPC()
+	    return @hashConfigFromPC
+			# SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
+	end
+	
+    def dataFromPCGetSlotOwner()
+        return @slotOwner
+    end
+    
+    def setDataFromPcToBoard(hash)
+        puts "setDataFromPcToBoard got called. #{__LINE__}-#{__FILE__}"
+        hashSocket = hash
+        # puts "f uritostr = '#{clientStr}'"
+        mode = hashSocket["Cmd"]
+        hash = hashSocket["Data"]
+		@slotOwner = hash["SlotOwner"]
+        puts "mode='#{mode}'"
+		case mode
+		when SharedLib::ClearConfigFromPc
+			# ClearConfiguration("#{__LINE__}-#{__FILE__}")
+			# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
+		when SharedLib::RunFromPc
+		when SharedLib::StopFromPc
+		when SharedLib::LoadConfigFromPc
+			puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
+			# puts "hash=#{hash}"
+			puts "SlotOwner=#{hash["SlotOwner"]}"
+			date = Time.at(hash[SharedLib::ConfigDateUpload])
+			#puts "PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
+			# Sync the board time with the pc time
+			`echo "date before setting:";date`
+			`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}"`
+			`echo "date after setting:";date`
+			# SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
+			@hashConfigFromPC = hash
+			# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
+		else
+			`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
+		end
+		SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
+        puts "User input @pcCmdNew='#{@pcCmdNew}'"
+    end
 	
     def SetPcCmdThread(cmdParam,timeOfCmdParam)
         ds = getMemory()
@@ -824,11 +870,12 @@ class SharedMemory
             end
         end
 =end            
-        puts "B Processed the command: '#{ds[CmdProcessed][0]}'"
+        # puts "B Processed the command: '#{ds[CmdProcessed][0]}'"
     end
 	
     def SetPcCmd(cmdParam,calledFrom)
-        t1=Thread.new{SetPcCmdThread(cmdParam,Time.now.to_i)}
+        SetPcCmdThread(cmdParam,Time.now.to_i)
+        # t1=Thread.new{SetPcCmdThread(cmdParam,Time.now.to_i)}
     end
 
 	def GetBbbMode()
@@ -981,6 +1028,14 @@ class SharedMemory
 		    writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");		
 		end
 		return ds[SharedLib::TotalTimeOfStepsInQueue]
+    end
+    
+    def setStepToWorkOn(stepToWorkOnParam)
+        @stepToWorkOn = stepToWorkOnParam
+    end
+    
+    def getStepToWorkOn()
+        return @stepToWorkOn
     end
     
     def SetData(dataTypeParam,indexParam,dataValueParam,multiplierParam)

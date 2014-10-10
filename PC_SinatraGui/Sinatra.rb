@@ -29,8 +29,8 @@ require_relative '../PC_DRbSharedMemory/ServerLib'
 require_relative '../lib/SharedMemory'
 #require_relative '../PC_GrapeForBoardListener/ServerLib'
 require 'pp' # Pretty print to see the hash values.
-require 'drb/drb'
 
+require 'drb/drb'
 SERVER_URI="druby://localhost:8787"
 
 class UserInterface

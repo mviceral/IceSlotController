@@ -4,13 +4,18 @@ require 'grape'
 #require 'forwardable'
 require 'pp'
 require 'sqlite3'
+require 'drb/drb'
+
 require_relative '../lib/SharedLib'
 require_relative '../lib/SharedMemory'
 require_relative '../BBB_Sender/SendSampledTcuToPcLib'
+require_relative '../PC_DRbSharedMemory/ServerLib'
 
 # If you set this true, it will put out some debugging info to STDOUT
 # (usually the termninal that you started rackup with)
 $debug = true 
+
+SERVER_URI="druby://localhost:8787"
 
 module PcListenerModule
 	# This is the resource we're managing. Not perssistant!
@@ -37,6 +42,8 @@ module PcListenerModule
 
 	# This is the Grape REST API implementation
 	class API < Grape::API
+		DRb.start_service			
+		@@sharedMemService =  DRbObject.new_with_uri(SERVER_URI)
 		# This makes it so you have to specifiy the API version in the
 		# path string
 		version 'v1', using: :path
@@ -96,6 +103,12 @@ module PcListenerModule
 					puts "PC sent '#{hash["Cmd"]}'"
 					sharedMem = SharedMemory.new()
 					hash["Data"] = JSON.parse(params["#{SharedLib::PcToBbbData}"])
+					
+					sharedMem = @@sharedMemService.getSharedMem()		 
+					sharedMem.setDataFromPcToBoard(hash)
+					
+					return # dead code below
+					
 					forEcho = hash.to_json
 			        #
 			        # Send data to real time register data viewer

@@ -1,5 +1,5 @@
 require 'drb/drb'
-require_relative '../lib/SharedMemory'
+require_relative '../SharedMemory'
 # This retains a local reference to all loggers created.  This
 # is so an existing logger can be looked up by name, but also
 # to prevent loggers from being garbage collected.  A dRuby
