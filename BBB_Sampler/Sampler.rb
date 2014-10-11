@@ -38,8 +38,19 @@ class TCUSampler
     
     NomSet = "NomSet"
     
-    IntervalSecInStopMode = 1
-    IntervalSecInRunMode = 10
+    # IntervalSecInStopMode = 1
+    # IntervalSecInRunMode = 10
+
+    # Variables used for log file
+    PSNameLogger = "  Name"
+    NomSetLogger = "NomSet"
+    TripMinLogger = "TripMin"
+    TripMaxLogger = "TripMax"
+    FlagTolPLogger = "FlagTolP"
+    FlagTolNLogger = "FlagTolN"
+    SeqUpLogger = "SeqUp"
+    SeqDownLogger = "SeqDown"
+
     
     FIXNUM_MAX = (2**(0.size * 8 -2) -1) # Had to get its value one time.  Might still be useful.
 
@@ -124,7 +135,7 @@ class TCUSampler
     end
     
     def setToMode(modeParam, calledFrom)
-        @shareMem.SetBbbMode(modeParam,"called from #{calledFrom} #{__LINE__}-#{__FILE__}")
+        @samplerData.SetBbbMode(modeParam,"called from #{calledFrom} #{__LINE__}-#{__FILE__}")
         @boardData[BbbMode] = modeParam
         @boardMode = modeParam
 
@@ -137,9 +148,9 @@ class TCUSampler
             if modeParam == SharedLib::InRunMode
                 psSeqUp()
                 setTimeOfRun()
-                setPollIntervalInSeconds(IntervalSecInRunMode,"#{__LINE__}-#{__FILE__}")
+                # setPollIntervalInSeconds(IntervalSecInRunMode,"#{__LINE__}-#{__FILE__}")
             else
-                setPollIntervalInSeconds(IntervalSecInStopMode,"#{__LINE__}-#{__FILE__}")
+                # setPollIntervalInSeconds(IntervalSecInStopMode,"#{__LINE__}-#{__FILE__}")
                 #
                 # Calculate the total time left before sequencing down.
                 #
@@ -225,7 +236,7 @@ class TCUSampler
                 end
             end        
         end
-        @shareMem.WriteDataEips(@eIps,"#{__LINE__}-#{__FILE__}")
+        @samplerData.WriteDataEips(@eIps,"#{__LINE__}-#{__FILE__}")
     end
     
     def doPsSeqPower(powerUpParam)
@@ -329,10 +340,10 @@ class TCUSampler
 	    # Write configuartion to holding tank case there's a power outage.
 	    if @stepToWorkOn.nil? == false
 	        # PP.pp(@stepToWorkOn)
-            @shareMem.SetStepNumber(@stepToWorkOn["Step Num"])
-            @shareMem.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
+            @samplerData.SetStepNumber(@stepToWorkOn["Step Num"])
+            @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
         else
-            @shareMem.SetAllStepsCompletedAt(@boardData[SharedLib::AllStepsCompletedAt])
+            @samplerData.SetAllStepsCompletedAt(@boardData[SharedLib::AllStepsCompletedAt])
 	        # SharedLib.pause "PP @stepToWorkOn","#{__LINE__}-#{__FILE__}"
 	    end
 
@@ -350,12 +361,14 @@ class TCUSampler
         # puts "getPollIntervalInSeconds=#{@boardData[PollIntervalInSeconds]} #{__LINE__}-#{__FILE__}"
         return @boardData[PollIntervalInSeconds]
     end
-    
+
+=begin    
     def setPollIntervalInSeconds(timeInSecParam,fromParam)
         # puts "setPollIntervalInSeconds=#{timeInSecParam} [#{fromParam}] #{__LINE__}-#{__FILE__}"
         @boardData[PollIntervalInSeconds] = timeInSecParam
     end
-    
+=end
+
     def getSeqDownPsArr()
         if @boardData[SeqDownPsArr].nil?
             @boardData[SeqDownPsArr] = getSeqPs(false)
@@ -461,33 +474,41 @@ class TCUSampler
     end
     
     def openEthernetPsSocket(host,port)
-        tries = 0
-        goodConnection = false
-        while tries<5 && goodConnection == false
-            begin
-                @socketIp[host] = TCPSocket.open(host,port)
-                goodConnection = true
-                rescue
-                    SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
-                    sleep(0.25)
-            end
-            tries += 1
+        if @ethernetPS.nil?
+            @ethernetPS = Hash.new
         end
         
-        if tries == 5
-            @socketIp[host] = nil
-            # Show a message to the PC that Ethernet PS on IP=host can't be accessed.  Show the time too of incident too.
-            @shareMem.ReportError("Cannot open Ethernet power supply socket on IP='#{host}'.  This power supply will be disabled.")
-        	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+        if @ethernetPS[host].nil?
+            @ethernetPS[host] = true
+
+            tries = 0
+            goodConnection = false
+            while tries<5 && goodConnection == false
+                begin
+                    @socketIp[host] = TCPSocket.open(host,port)
+                    goodConnection = true
+                    rescue
+                        SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
+                        sleep(0.25)
+                end
+                tries += 1
+            end
+            
+            if tries == 5
+                @socketIp[host] = nil
+                # Show a message to the PC that Ethernet PS on IP=host can't be accessed.  Show the time too of incident too.
+                @samplerData.ReportError("Cannot open Ethernet power supply socket on IP='#{host}'.  This power supply will be disabled.")
+            	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
+            end
         end
     end                                                            
 
     def initStepToWorkOnVar(uart1,gPIO2,tcusToSkip)
         @disabledPS = nil # clears out the list when gathering data for the new step
-        @shareMem.SetStepTimeLeft("")
-        @shareMem.SetStepName("")
-        @shareMem.SetStepNumber("")
-        @shareMem.SetTotalTimeOfStepsInQueue(0.0)
+        @samplerData.SetStepTimeLeft("")
+        @samplerData.SetStepName("")
+        @samplerData.SetStepNumber("")
+        @samplerData.SetTotalTimeOfStepsInQueue(0.0)
         # puts "\n\n\ninitStepToWorkOnVar got called."
         # puts caller
         @stepToWorkOn = nil
@@ -542,15 +563,14 @@ class TCUSampler
                                         
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
-                                        @sharedMemService.getSharedMem().setStepToWorkOn(@stepToWorkOn)
                                         # puts "TIMERRUFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRUFP"]}'"
                                         # puts "TIMERRDFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRDFP"]}'"
 
                                         timerRUFP = getConfiguration()[Steps][key]["TempConfig"]["TIMERRUFP"]
                                         timerRDFP = getConfiguration()[Steps][key]["TempConfig"]["TIMERRDFP"]
 
-                                        @shareMem.SetStepName("#{key}")
-                                        @shareMem.SetStepNumber("#{stepNumber+1}")
+                                        @samplerData.SetStepName("#{key}")
+                                        @samplerData.SetStepNumber("#{stepNumber+1}")
 
                         		        # Setup the power supplies...
                                         @stepToWorkOn["PsConfig"].each do |key, data|
@@ -622,10 +642,10 @@ class TCUSampler
                     if key2 == StepNum 
                         if @stepToWorkOn != getConfiguration()[Steps][key]
                             if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0 && hash[key].nil?
-                                puts "Add time #{getConfiguration()[Steps][key][StepTimeLeft]} key='#{key}' @shareMem.GetTotalTimeOfStepsInQueue()='#{@shareMem.GetTotalTimeOfStepsInQueue()}'"
+                                puts "Add time #{getConfiguration()[Steps][key][StepTimeLeft]} key='#{key}' @samplerData.GetTotalTimeOfStepsInQueue()='#{@samplerData.GetTotalTimeOfStepsInQueue()}'"
                                 hash[key] = key
-                                @shareMem.SetTotalTimeOfStepsInQueue(getConfiguration()[Steps][key][StepTimeLeft].to_f+@shareMem.GetTotalTimeOfStepsInQueue().to_f)
-                                puts "New total @shareMem.GetTotalTimeOfStepsInQueue()='#{@shareMem.GetTotalTimeOfStepsInQueue()}'"
+                                @samplerData.SetTotalTimeOfStepsInQueue(getConfiguration()[Steps][key][StepTimeLeft].to_f+@samplerData.GetTotalTimeOfStepsInQueue().to_f)
+                                puts "New total @samplerData.GetTotalTimeOfStepsInQueue()='#{@samplerData.GetTotalTimeOfStepsInQueue()}'"
                             end
                         end
                     end
@@ -652,13 +672,13 @@ class TCUSampler
         if @boardData[BbbMode] == SharedLib::InStopMode
             # Run the sequence down process on the system
             psSeqDown("#{__LINE__}-#{__FILE__}")
-            setPollIntervalInSeconds(IntervalSecInStopMode,"#{__LINE__}-#{__FILE__}")
+            # setPollIntervalInSeconds(IntervalSecInStopMode,"#{__LINE__}-#{__FILE__}")
         else
             # Run the sequence up process on the system
             psSeqUp()
-            setPollIntervalInSeconds(IntervalSecInRunMode,"#{__LINE__}-#{__FILE__}")
+            # setPollIntervalInSeconds(IntervalSecInRunMode,"#{__LINE__}-#{__FILE__}")
         end
-        # @shareMem.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
+        # @samplerData.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
     end
     
     def stopMachineIfTripped(gPIO2Param, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
@@ -673,14 +693,14 @@ class TCUSampler
             end
             
             if (flagTolN <= actualValue && actualValue <= flagTolP) == false
-                @shareMem.ReportError("NOTICE - #{key2} out of bound flag points.  '#{flagTolN}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolP}'#{unit} failed.  .")
-            	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                @samplerData.ReportError("NOTICE - #{key2} out of bound flag points.  '#{flagTolN}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolP}'#{unit} failed.  .")
+            	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
             end
 
             if (tripMin <= actualValue && actualValue <= tripMax) == false
                 stopMachine(gPIO2Param)
-                @shareMem.ReportError("ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
-            	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                @samplerData.ReportError("ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
+            	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
             end
         end
     end
@@ -720,11 +740,11 @@ class TCUSampler
                     puts "f uritostr = '#{clientStr}'"
                     mode = hashSocket["Cmd"]
                     hash = hashSocket["Data"]
-					@shareMem.SetSlotOwner(hash["SlotOwner"])
+					@samplerData.SetSlotOwner(hash["SlotOwner"])
                     puts "mode='#{mode}'"
 					case mode
 					when SharedLib::ClearConfigFromPc
-						@shareMem.ClearConfiguration("#{__LINE__}-#{__FILE__}")
+						@samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
 						# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
 					when SharedLib::RunFromPc
 					when SharedLib::StopFromPc
@@ -738,12 +758,12 @@ class TCUSampler
 						`echo "date before setting:";date`
 						`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}"`
 						`echo "date after setting:";date`
-						@shareMem.SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
+						@samplerData.SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
 						# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
 					else
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 					end
-					@shareMem.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
+					@samplerData.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
                     puts "User input @pcCmdNew='#{@pcCmdNew}'"
                 end
                 client.close                 # Disconnect from the client
@@ -760,7 +780,7 @@ class TCUSampler
         	while true
                 sleep(waitTime.to_f-Time.now.to_f)
                 waitTime += 60*10
-                if @shareMem.GetBbbMode() == SharedLib::InRunMode && @shareMem.GetAllStepsDone_YesNo() == SharedLib::No
+                if @samplerData.GetBbbMode() == SharedLib::InRunMode && @samplerData.GetAllStepsDone_YesNo() == SharedLib::No
                     saveBoardStateToHoldingTank()
                 end
         	end
@@ -773,7 +793,7 @@ class TCUSampler
         #    SharedLib.pause "Bingo! caled from #{calledFrom}","#{__LINE__}-#{__FILE__}"
         #end
         @boardData[SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
-        @shareMem.SetAllStepsDone_YesNo(allStepsDone_YesNoParam,"#{__LINE__}-#{__FILE__}")
+        @samplerData.SetAllStepsDone_YesNo(allStepsDone_YesNoParam,"#{__LINE__}-#{__FILE__}")
     end    
 
     def loadConfigurationFromHoldingTank(uart1,gPIO2,tcusToSkip)
@@ -819,32 +839,32 @@ class TCUSampler
             # puts "g #{__LINE__}-#{__FILE__}"
             # puts "pAin.read=#{pAin.read}"
             # puts "g.1 #{__LINE__}-#{__FILE__}"
-            @shareMem.SetData(SharedLib::AdcInput,SharedLib::SLOTP5V,pAin.read,@multiplier)
+            @samplerData.SetData(SharedLib::AdcInput,SharedLib::SLOTP5V,pAin.read,@multiplier)
             # puts "h #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_40)
             # puts "i #{__LINE__}-#{__FILE__}"
-            @shareMem.SetData(SharedLib::AdcInput,SharedLib::SLOTP3V3,pAin.read,@multiplier)
+            @samplerData.SetData(SharedLib::AdcInput,SharedLib::SLOTP3V3,pAin.read,@multiplier)
             # puts "j #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_37)
             # puts "k #{__LINE__}-#{__FILE__}"
-            @shareMem.SetData(SharedLib::AdcInput,SharedLib::SLOTP1V8,pAin.read,@multiplier)
+            @samplerData.SetData(SharedLib::AdcInput,SharedLib::SLOTP1V8,pAin.read,@multiplier)
             # puts "l #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_38)
             # puts "m #{__LINE__}-#{__FILE__}"
-            @shareMem.SetData(SharedLib::AdcInput,SharedLib::SlotTemp1,pAin.read,@multiplier)
+            @samplerData.SetData(SharedLib::AdcInput,SharedLib::SlotTemp1,pAin.read,@multiplier)
             # puts "n #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_36)
             # puts "o #{__LINE__}-#{__FILE__}"
-            @shareMem.SetData(SharedLib::AdcInput,SharedLib::CALREF,pAin.read,@multiplier)
+            @samplerData.SetData(SharedLib::AdcInput,SharedLib::CALREF,pAin.read,@multiplier)
             # puts "p #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_35)
             # puts "q #{__LINE__}-#{__FILE__}"
-            @shareMem.SetData(SharedLib::AdcInput,SharedLib::SlotTemp2,pAin.read,@multiplier)
+            @samplerData.SetData(SharedLib::AdcInput,SharedLib::SlotTemp2,pAin.read,@multiplier)
             # puts "r #{__LINE__}-#{__FILE__}"
         else
             # The code is not initialized to run this function
@@ -886,7 +906,7 @@ class TCUSampler
                 else
                     useIndex = aMux
                 end
-                @shareMem.SetData(SharedLib::MuxData,useIndex,retval,@multiplier)
+                @samplerData.SetData(SharedLib::MuxData,useIndex,retval,@multiplier)
                 # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) "
                 aMux += 1
                 # sleep(1)
@@ -1078,7 +1098,7 @@ class TCUSampler
     end
 =end
     def limboCheck(stepNum,uart1,gPIO2,tcusToSkip)
-        configName = @shareMem.GetConfigurationFileName()
+        configName = @samplerData.GetConfigurationFileName()
         if ((@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
              @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false) ||
              (configName.nil? == false && configName.length>0 && (stepNum.nil? || (stepNum.nil? ==false && stepNum.length==0)) && @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No)
@@ -1090,11 +1110,11 @@ class TCUSampler
                 setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
             end
         end
-        if (@shareMem.GetBbbMode() == SharedLib::InRunMode || @shareMem.GetBbbMode() == SharedLib::InStopMode) == false  
+        if (@samplerData.GetBbbMode() == SharedLib::InRunMode || @samplerData.GetBbbMode() == SharedLib::InStopMode) == false  
             #
             # We're in limbo for some reason
             #
-            puts "We're in limbo @shareMem.GetBbbMode()='#{@shareMem.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
+            puts "We're in limbo @samplerData.GetBbbMode()='#{@samplerData.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
             loadConfigurationFromHoldingTank(uart1,gPIO2,tcusToSkip)
 
 		    case @lastPcCmd
@@ -1113,6 +1133,15 @@ class TCUSampler
         end
     end
     
+    
+    def makeItFit(itemToPrint,column)
+        itemToPrint = itemToPrint.to_s
+        while itemToPrint.length < column.length
+            itemToPrint = " "+itemToPrint
+        end
+        return itemToPrint
+    end
+
     def runTCUSampler
         @socketIp = nil
     	@setupAtHome = false
@@ -1120,10 +1149,9 @@ class TCUSampler
     	@initpollAdcInputFunc = false
     	@multiplier = Hash.new
     	
-        @shareMem = SharedMemory.new
-    	@shareMem.SetupData()
-    	@shareMem.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
-    	@mutex = Mutex.new
+        @samplerData = SharedMemory.new
+    	@samplerData.SetupData()
+    	@samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
     	initMuxValueFunc()
     	initpollAdcInputFunc()
     	readInBbbDefaultsFile()
@@ -1222,21 +1250,21 @@ class TCUSampler
         loadConfigurationFromHoldingTank(uart1,gPIO2,tcusToSkip)
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration][FileName].nil? == false
-	        @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
+	        @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
 	    else
-	        @shareMem.SetConfigurationFileName("")
+	        @samplerData.SetConfigurationFileName("")
         end
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration]["ConfigDateUpload"].nil? == false
-    	    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
+    	    @samplerData.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
     	else
-    	    @shareMem.SetConfigDateUpload("")
+    	    @samplerData.SetConfigDateUpload("")
         end
 
         if @boardData[SharedLib::AllStepsDone_YesNo].nil? == false
-            @shareMem.SetAllStepsDone_YesNo(@boardData[SharedLib::AllStepsDone_YesNo],"#{__LINE__}-#{__FILE__}")
+            @samplerData.SetAllStepsDone_YesNo(@boardData[SharedLib::AllStepsDone_YesNo],"#{__LINE__}-#{__FILE__}")
         else
-            @shareMem.SetAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # so it will not run
+            @samplerData.SetAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # so it will not run
         end
         
         setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
@@ -1247,11 +1275,14 @@ class TCUSampler
             # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
             limboCheck(@stepToWorkOn[StepNum],uart1,gPIO2,tcusToSkip)
         end
-        waitTime = Time.now
+        loggingTime = 5 # 5 seconds for now
+        pollingTime = 1 # check every second
+        lastStepNumOfSentLog = -1
+        pollIntervalInSeconds = pollingTime
         skipLimboStateCheck = false
-        @shareMem.ReportError("Error test. #{__LINE__}-#{__FILE__}")
+        @samplerData.ReportError("Error test. #{__LINE__}-#{__FILE__}")
+        
         while true
-            waitTime += getPollIntervalInSeconds()
             stepNum = ""
             if @stepToWorkOn.nil? == false
                 # PP.pp(@stepToWorkOn)
@@ -1259,15 +1290,15 @@ class TCUSampler
                 stepNum = @stepToWorkOn[StepNum]
             end
             
-            puts "ping Mode()=#{@shareMem.GetBbbMode()} Done()=#{@shareMem.GetAllStepsDone_YesNo()} CfgName()=#{@shareMem.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
-            @shareMem.SetSlotTime(Time.now.to_i)
+            puts "ping Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{@samplerData.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+            @samplerData.SetSlotTime(Time.now.to_i)
             if skipLimboStateCheck
                 skipLimboStateCheck = false
             else
                 limboCheck(stepNum,uart1,gPIO2,tcusToSkip)
             end
     
-			case @shareMem.GetBbbMode()
+			case @samplerData.GetBbbMode()
 			when SharedLib::InRunMode
 			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No
     			    if @stepToWorkOn.nil?
@@ -1286,10 +1317,10 @@ class TCUSampler
         			        @stepToWorkOn.each do |key, array|
                                 # puts "#{key}----- #{__LINE__}-#{__FILE__}"
                                 if key == "PsConfig"
-                                    adcData = @shareMem.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
-                                    muxData = @shareMem.GetDataMuxData("#{__LINE__}-#{__FILE__}")
-                                    eiPs = @shareMem.GetDataEips()
-                                    tcu = @shareMem.GetDataTcu("#{__LINE__}-#{__FILE__}")
+                                    adcData = @samplerData.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
+                                    muxData = @samplerData.GetDataMuxData("#{__LINE__}-#{__FILE__}")
+                                    eiPs = @samplerData.GetDataEips()
+                                    tcu = @samplerData.GetDataTcu("#{__LINE__}-#{__FILE__}")
                                     array.each do |key2, array2|
                                         nomSet = array2["NomSet"]
                 			            tripMin = array2["TripMin"].to_f
@@ -1299,90 +1330,90 @@ class TCUSampler
                 			            # puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
                                         case key2
                                         when "VPS0"
-                                            actualValue = @shareMem.getPsVolts(muxData,adcData,"32").to_f
+                                            actualValue = @samplerData.getPsVolts(muxData,adcData,"32").to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax,flagTolP,flagTolN)
                                        when "IPS0"
-                                            actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,key2).to_f
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "VPS1"
-			                                # puts "PS1V = #{@shareMem.getPsVolts(muxData,adcData,"33")}"
-                                            actualValue = @shareMem.getPsVolts(muxData,adcData,"33").to_f
+			                                # puts "PS1V = #{@samplerData.getPsVolts(muxData,adcData,"33")}"
+                                            actualValue = @samplerData.getPsVolts(muxData,adcData,"33").to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "IPS1"
-			                                # puts "PS1I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,key2)}"
-                                            actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,key2).to_f
+			                                # puts "PS1I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "VPS2"
-			                                # puts "PS2V = #{@shareMem.getPsVolts(muxData,adcData,"34")}"
-                                            actualValue = @shareMem.getPsVolts(muxData,adcData,"34").to_f
+			                                # puts "PS2V = #{@samplerData.getPsVolts(muxData,adcData,"34")}"
+                                            actualValue = @samplerData.getPsVolts(muxData,adcData,"34").to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "IPS2"
-			                                # puts "PS2I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,key2)}"
-                                            actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,key2).to_f
+			                                # puts "PS2I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "VPS3"
-			                                # puts "PS3V = #{@shareMem.getPsVolts(muxData,adcData,"35")}"
-                                            actualValue = @shareMem.getPsVolts(muxData,adcData,"35").to_f
+			                                # puts "PS3V = #{@samplerData.getPsVolts(muxData,adcData,"35")}"
+                                            actualValue = @samplerData.getPsVolts(muxData,adcData,"35").to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "IPS3"
-			                                # puts "PS3I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,key2)}"
-                                            actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,key2).to_f
+			                                # puts "PS3I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "VPS4"
-			                                # puts "PS4V = #{@shareMem.getPsVolts(muxData,adcData,"36")}"
-                                            actualValue = @shareMem.getPsVolts(muxData,adcData,"36").to_f
+			                                # puts "PS4V = #{@samplerData.getPsVolts(muxData,adcData,"36")}"
+                                            actualValue = @samplerData.getPsVolts(muxData,adcData,"36").to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "IPS4"
-			                                # puts "PS4I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,"IPS2")}"
-                                            actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,"IPS2").to_f
+			                                # puts "PS4I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2")}"
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2").to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "VPS5"
-			                                # puts "PS5V = #{@shareMem.getPsVolts(muxData,adcData,"37")}"
-                                            actualValue = @shareMem.getPsVolts(muxData,adcData,"37").to_f
+			                                # puts "PS5V = #{@samplerData.getPsVolts(muxData,adcData,"37")}"
+                                            actualValue = @samplerData.getPsVolts(muxData,adcData,"37").to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "IPS5"
-			                                # puts "PS5I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
-                                            actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,nil).to_f
+			                                # puts "PS5I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,nil)}"
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,nil).to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "VPS6"
-			                                # puts "PS6V = #{@shareMem.getPsVolts(muxData,adcData,"38")}"
-                                            actualValue = @shareMem.getPsVolts(muxData,adcData,"38").to_f
+			                                # puts "PS6V = #{@samplerData.getPsVolts(muxData,adcData,"38")}"
+                                            actualValue = @samplerData.getPsVolts(muxData,adcData,"38").to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "IPS6"
-			                                # puts "PS6I = #{@shareMem.getPsCurrent(muxData,eiPs,"24",nil)}"
-                                            actualValue = @shareMem.getPsCurrent(muxData,eiPs,"24",nil).to_f
+			                                # puts "PS6I = #{@samplerData.getPsCurrent(muxData,eiPs,"24",nil)}"
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,"24",nil).to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "VPS7"
-			                                # puts "PS7V = #{@shareMem.getPsVolts(muxData,adcData,"39")}"
-                                            actualValue = @shareMem.getPsVolts(muxData,adcData,"39").to_f
+			                                # puts "PS7V = #{@samplerData.getPsVolts(muxData,adcData,"39")}"
+                                            actualValue = @samplerData.getPsVolts(muxData,adcData,"39").to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "IPS7"
-			                                # puts "PS7I = #{@shareMem.getPsCurrent(muxData,eiPs,nil,nil)}"
-                                            actualValue = @shareMem.getPsCurrent(muxData,eiPs,nil,key2).to_f
+			                                # puts "PS7I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,nil)}"
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "VPS8"
-			                                # puts "PS8V = #{@shareMem.getPsVolts(muxData,adcData,"40")}"
-                                            actualValue = @shareMem.getPsVolts(muxData,adcData,"40").to_f
+			                                # puts "PS8V = #{@samplerData.getPsVolts(muxData,adcData,"40")}"
+                                            actualValue = @samplerData.getPsVolts(muxData,adcData,"40").to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "IPS8"
-			                                # puts "PS8I = #{@shareMem.getPsCurrent(muxData,eiPs,"25",nil)}"
-                                            actualValue = @shareMem.getPsCurrent(muxData,eiPs,"25",nil).to_f
+			                                # puts "PS8I = #{@samplerData.getPsCurrent(muxData,eiPs,"25",nil)}"
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,"25",nil).to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "VPS9"
-			                                # puts "PS9V = #{@shareMem.getPsVolts(muxData,adcData,"41")}"
-                                            actualValue = @shareMem.getPsVolts(muxData,adcData,"41").to_f
+			                                # puts "PS9V = #{@samplerData.getPsVolts(muxData,adcData,"41")}"
+                                            actualValue = @samplerData.getPsVolts(muxData,adcData,"41").to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "IPS9"
-			                                # puts "PS9I = #{@shareMem.getPsCurrent(muxData,eiPs,"26",nil)}"
-                                            actualValue = @shareMem.getPsCurrent(muxData,eiPs,"26",nil).to_f
+			                                # puts "PS9I = #{@samplerData.getPsCurrent(muxData,eiPs,"26",nil)}"
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,"26",nil).to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "VPS10"
-			                                # puts "PS10V = #{@shareMem.getPsVolts(muxData,adcData,"42")}"
-                                            actualValue = @shareMem.getPsVolts(muxData,adcData,"42").to_f
+			                                # puts "PS10V = #{@samplerData.getPsVolts(muxData,adcData,"42")}"
+                                            actualValue = @samplerData.getPsVolts(muxData,adcData,"42").to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "IPS10"
-                                            # puts "PS10I = #{@shareMem.getPsCurrent(muxData,eiPs,"27",nil)}"
-                                            actualValue = @shareMem.getPsCurrent(muxData,eiPs,"27",nil).to_f
+                                            # puts "PS10I = #{@samplerData.getPsCurrent(muxData,eiPs,"27",nil)}"
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,"27",nil).to_f
                                             stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                         when "IDUT"                                       
                                             ct = 0
@@ -1392,8 +1423,8 @@ class TCUSampler
                                                     actualValue = SharedLib.getCurrentDutDisplay(muxData,"#{ct}").to_f
                                                     if (tripMin <= actualValue && actualValue <= tripMax) == false
                                                         stopMachine(gPIO2)
-                                                        @shareMem.ReportError("IDUT#{ct} (zero base) TRIPPED!  '#{tripMin}'A <= '#{actualValue}'A  <= '#{tripMax}'A key='#{key2}' is FALSE.")
-                                                    	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                                        @samplerData.ReportError("IDUT#{ct} (zero base) TRIPPED!  '#{tripMin}'A <= '#{actualValue}'A  <= '#{tripMax}'A key='#{key2}' is FALSE.")
+                                                    	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
                                                     end
                                                 end
                                                 ct += 1
@@ -1406,8 +1437,8 @@ class TCUSampler
                                             
                                             # Code don't seem to work.
                                             if @spsList.include? key2 == false
-                                                @shareMem.ReportError("key='#{key2}' is not recognized. #{__LINE__}-#{__FILE__}")
-                                            	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                                @samplerData.ReportError("key='#{key2}' is not recognized. #{__LINE__}-#{__FILE__}")
+                                            	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
                                             end
                                         end                    			            
                                     end
@@ -1427,8 +1458,8 @@ class TCUSampler
                                                 @tempStuff = ['TIMERRUFP','TIMERRDFP','H','C','P','I','D']
                                             end
                                             if @tempStuff.include? key2 == false
-                                                @shareMem.ReportError("key='#{key2}' is not recognized. #{__LINE__}-#{__FILE__}")
-                                            	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                                @samplerData.ReportError("key='#{key2}' is not recognized. #{__LINE__}-#{__FILE__}")
+                                            	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
                                             end
                                         end                    			            
                                     end
@@ -1439,13 +1470,51 @@ class TCUSampler
                                     end
                                     
                                     if @otherStuff.include? key == false
-                                        @shareMem.ReportError("key='#{key}' is not recognized. #{__LINE__}-#{__FILE__}")
-                                    	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+                                        @samplerData.ReportError("key='#{key}' is not recognized. #{__LINE__}-#{__FILE__}")
+                                    	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
                                     end
                                 end
                             end
 =end                            
-                            @shareMem.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
+                            # We're in run mode.
+                            if pollIntervalInSeconds == pollingTime
+                                # The board started processing.
+                                pollIntervalInSeconds = loggingTime
+                            end
+                            
+                            if lastStepNumOfSentLog != @samplerData.GetStepNumber()
+                                lastStepNumOfSentLog = @samplerData.GetStepNumber()
+                                puts "Sending log data.  #{Time.now.inspect}. #{__LINE__}-#{__FILE__}"
+# tbs - to be sent                    
+tbs  = "Test Step: step##{@samplerData.GetStepNumber()}-#{@samplerData.GetStepName()}\n"
+tbs += "Power Supply Setting:\n"
+tbs += "#{PSNameLogger}|#{NomSetLogger}|#{TripMinLogger}|#{TripMaxLogger}|#{FlagTolPLogger}|#{FlagTolNLogger}|#{SeqUpLogger}|#{SeqDownLogger}\n"
+@stepToWorkOn["PsConfig"].each do |key, array|
+    if key[0] == "V"
+        tbs += "#{makeItFit(key,PSNameLogger)}|"
+        tbs += "#{makeItFit(array["NomSet"],NomSetLogger)}|"
+        tbs += "#{makeItFit(array["TripMin"],TripMinLogger)}|"
+        tbs += "#{makeItFit(array["TripMax"],TripMaxLogger)}|"
+        tbs += "#{makeItFit(array["FlagTolP"],FlagTolPLogger)}|"
+        tbs += "#{makeItFit(array["FlagTolN"],FlagTolNLogger)}|"
+        tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqUp"],SeqUpLogger)}|"
+        tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqDown"],SeqUpLogger)}\n"
+    end
+end
+=begin
+PS0 Setting: <voltage setting> <compliance limit> <sequence #>
+<one line each for other power supplies>
+Temperature Setting: <temp>
+=end
+                                slotInfo = Hash.new()
+                                slotInfo[SharedLib::DataLog] = tbs
+                                slotInfo[SharedLib::SlotOwner] = @samplerData.GetSlotOwner# GetSlotIpAddress()
+                                slotInfo[SharedLib::ConfigurationFileName] = @samplerData.GetConfigurationFileName()
+                                slotInfo[SharedLib::ConfigDateUpload] = @samplerData.GetConfigDateUpload()
+                                slotInfoJson = slotInfo.to_json
+                                SendSampledTcuToPCLib::sendSlotInfoToPc(slotInfoJson)
+                            end
+                            @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
         			    else
         			        # Step just finished.
                             setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
@@ -1470,21 +1539,21 @@ class TCUSampler
     			    setToMode(SharedLib::InStopMode,"#{__LINE__}-#{__FILE__}")
 			    end
             end
-
-    		pcCmdObj = @sharedMemService.getSharedMem().GetPcCmd()
+            
+            memFromService = @sharedMemService.getSharedMem()
+    		pcCmdObj = memFromService.GetPcCmd()
     		if pcCmdObj.nil? == false && pcCmdObj.length > 0
-	            @shareMem.SetSlotOwner(@sharedMemService.getSharedMem().dataFromPCGetSlotOwner())
+	            @samplerData.SetSlotOwner(memFromService.dataFromPCGetSlotOwner())
     		    pcCmd = pcCmdObj[0]
     		    timeOfCmd = pcCmdObj[1]
     		    if @lastTimeOfCmd != timeOfCmd # @lastPcCmd != pcCmd && 
     		        puts "new pc command. #{pcCmdObj}"
                     # @lastPcCmd = pcCmd 
                     @lastTimeOfCmd = timeOfCmd
-
-    		        # getTimeOfPcLastCmd() < @shareMem.GetTimeOfPcLastCmd()
-        		    puts "\n\n\nNew command from PC - '#{pcCmd}' @shareMem.GetPcCmd().length='#{pcCmdObj.length}'  #{__LINE__}-#{__FILE__}"
-        		    puts "B getTimeOfPcLastCmd()=#{getTimeOfPcLastCmd()} @shareMem.GetTimeOfPcLastCmd()=#{@shareMem.GetTimeOfPcLastCmd()} diff=#{getTimeOfPcLastCmd() - @shareMem.GetTimeOfPcLastCmd()}"
-                    @shareMem.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
+                    
+    		        # getTimeOfPcLastCmd() < @samplerData.GetTimeOfPcLastCmd()
+        		    puts "\n\n\nNew command from PC - '#{pcCmd}' @samplerData.GetPcCmd().length='#{pcCmdObj.length}'  #{__LINE__}-#{__FILE__}"
+                    @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    case pcCmd
         		    when SharedLib::RunFromPc
             		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
@@ -1513,17 +1582,19 @@ class TCUSampler
         		        stopMachine(gPIO2)
                         
         		    when SharedLib::ClearConfigFromPc
-        		        @shareMem.ClearConfiguration("#{__LINE__}-#{__FILE__}")
+        		        @samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
 
             		    setBoardData(Hash.new,uart1,gPIO2,tcusToSkip)
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
         		        setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
-            		    @shareMem.SetConfigurationFileName("")
+            		    @samplerData.SetConfigurationFileName("")
             		    gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
                         setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
                         
         		    when SharedLib::LoadConfigFromPc
+        		        lastStepNumOfSentLog = -1 # initial value
         		        # close the sockets of the Ethernet PS if they're on.
+        		        @ethernetPS = nil # Reset the check for new configuration.
         		        if @socketIp.nil? == false
                             @socketIp.each do |key, array|
                                 if @socketIp[key].nil? == false
@@ -1536,13 +1607,13 @@ class TCUSampler
                         setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
         		        
                         SharedLib.bbbLog("New configuration step file uploaded.")
-                        @shareMem.SetConfiguration(@sharedMemService.getSharedMem().getHashConfigFromPC(),"#{__LINE__}-#{__FILE__}")
+                        @samplerData.SetConfiguration(memFromService.getHashConfigFromPC(),"#{__LINE__}-#{__FILE__}")
 
             		    setBoardData(Hash.new,uart1,gPIO2,tcusToSkip)
-            		    @boardData[Configuration] = @shareMem.GetConfiguration()
+            		    @boardData[Configuration] = @samplerData.GetConfiguration()
             		    # puts "#{@boardData[Configuration]} - Checking @boardData[Configuration] content."
-            		    @shareMem.SetConfigurationFileName(@boardData[Configuration][FileName])
-            		    @shareMem.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
+            		    @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
+            		    @samplerData.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
         		        setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
@@ -1550,19 +1621,19 @@ class TCUSampler
 
             		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
             		    # by clearing it out.
-            		    @shareMem.SetConfiguration(nil,"#{__LINE__}-#{__FILE__}") 
+            		    memFromService.SetConfiguration(nil,"#{__LINE__}-#{__FILE__}") 
             		    gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
             		    skipLimboStateCheck = true
             		else
-            		    SharedLib.bbbLog("Unknown PC command @shareMem.GetPcCmd()='#{@shareMem.GetPcCmd()}'.")
+            		    SharedLib.bbbLog("Unknown PC command @samplerData.GetPcCmd()='#{@samplerData.GetPcCmd()}'.")
             		end
             		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
-        		    setTimeOfPcLastCmd(@shareMem.GetTimeOfPcLastCmd())
+        		    setTimeOfPcLastCmd(@samplerData.GetTimeOfPcLastCmd())
         		    # Code block below tells the PcListener that it got the message.
 
                 end
                 
-        		SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+        		SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
     		end
 
 
@@ -1573,13 +1644,13 @@ class TCUSampler
                 pollAdcInput()
                 pollMuxValues()
                 ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
-                ThermalSiteDevices.logData(@shareMem)
+                ThermalSiteDevices.logData(@samplerData)
                 getEthernetPsCurrent()
             end
 
             
         	# This line of code makes the 'Sender' process useless.  This gives the fastest time of data update to the display.
-        	SendSampledTcuToPCLib::SendDataToPC(@shareMem,"#{__LINE__}-#{__FILE__}")
+        	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
             # The code ensures that the process is exactly going to take place at the given interval.  No lag that
@@ -1600,4 +1671,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# @ 544
+# @ 1474

@@ -656,6 +656,8 @@ class SharedMemory
     end
         
     def SetConfiguration(dataParam,fromParam)
+        # puts "SetConfiguration got called. #{__LINE__}-#{__FILE__}"
+        # puts "dataParam:#{__LINE__}-#{__FILE__}\n#{dataParam}"
         configDataUpload = dataParam["ConfigDateUpload"]
         configurationFileName = dataParam["FileName"]
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
@@ -796,13 +798,13 @@ class SharedMemory
         return @slotOwner
     end
     
-    def setDataFromPcToBoard(hash)
+    def setDataFromPcToBoard(hashSocket)
         puts "setDataFromPcToBoard got called. #{__LINE__}-#{__FILE__}"
-        hashSocket = hash
-        # puts "f uritostr = '#{clientStr}'"
         mode = hashSocket["Cmd"]
         hash = hashSocket["Data"]
-		@slotOwner = hash["SlotOwner"]
+        @hashConfigFromPC = hash
+        @slotOwner = hash["SlotOwner"]
+		SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
         puts "mode='#{mode}'"
 		case mode
 		when SharedLib::ClearConfigFromPc
@@ -821,12 +823,10 @@ class SharedMemory
 			`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}"`
 			`echo "date after setting:";date`
 			# SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
-			@hashConfigFromPC = hash
 			# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
 		else
 			`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 		end
-		SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
         puts "User input @pcCmdNew='#{@pcCmdNew}'"
     end
 	
@@ -1028,14 +1028,6 @@ class SharedMemory
 		    writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");		
 		end
 		return ds[SharedLib::TotalTimeOfStepsInQueue]
-    end
-    
-    def setStepToWorkOn(stepToWorkOnParam)
-        @stepToWorkOn = stepToWorkOnParam
-    end
-    
-    def getStepToWorkOn()
-        return @stepToWorkOn
     end
     
     def SetData(dataTypeParam,indexParam,dataValueParam,multiplierParam)

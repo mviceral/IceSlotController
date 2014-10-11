@@ -47,7 +47,6 @@ class DutObj
         # while keepLooping
             begin
                 complete_results = Timeout.timeout(0.1) do      
-=begin                    
                     keepLooping = true
                     while keepLooping
                         c = uart1Param.readchar
@@ -68,7 +67,7 @@ class DutObj
                             end
                         end
                     end
-=end                        
+=begin
                     uart1Param.each_line { 
                         |line| 
                         tbr = line
@@ -77,6 +76,7 @@ class DutObj
                         keepLooping = false     # loops out of the keepLooping loop.
                         break if line =~ /^@/   # loops out of the each_line loop.
                     }
+=end                    
                 end
                 rescue Timeout::Error
                     puts "\n\n\n\nTimed out Error. dutNumParam=#{dutNumParam}"

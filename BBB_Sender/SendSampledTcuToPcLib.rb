@@ -54,6 +54,7 @@ class SendSampledTcuToPCLib
         while true
             puts "Polled. #{__LINE__}-#{__FILE__}"
             sharedMem = @sharedMemService.getSharedMem()
+            puts "sharedMem.GetBbbMode()='#{sharedMem.GetBbbMode()}'. #{__LINE__}-#{__FILE__}"
             if sharedMem.GetBbbMode() == SharedLib::InRunMode
                 puts "Polled - in run mode #{Time.now.inspect}. #{__LINE__}-#{__FILE__}"
                 if pollIntervalInSeconds == pollingTime
@@ -180,7 +181,7 @@ Temperature Setting: <temp>
             rescue Exception => e  
                 puts e.message  
                 puts e.backtrace.inspect
-                `echo "#{timeOfData},#{slotInfoJson}" >> PcDown.BackLog`
+                `echo "#{slotInfoJson}" >> PcDown.BackLog`
         end
     end
 
