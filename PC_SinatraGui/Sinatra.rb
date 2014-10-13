@@ -110,15 +110,15 @@ class UserInterface
 		@sharedMem.writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 	end
 
-	def getBoardIp(slotParam)
-		if @slotToIp.nil?
+	def getBoardIp(slotParam, fromParam)
+		if @slotToIp.nil? # || @slotToIp[slotParam].nil? ||@slotToIp[slotParam].length == 0
 			@slotToIp = Hash.new
-			#@@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
-			@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
+			@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
+			#@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
 			#@slotToIp[SLOT3] = ""
-		else
-			return @slotToIp[slotParam]
 		end
+		# puts "slotParam='#{slotParam}' @slotToIp='#{@slotToIp}' fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
+		return @slotToIp[slotParam]
 	end
 	
 	def redirectErrorFaultyPsConfig
@@ -437,12 +437,12 @@ class UserInterface
 	
 	def setToLoadMode(slotOwnerParam)
 		begin
-			puts "Clearing board IP=#{getBoardIp(slotOwnerParam)} #{__LINE__}-#{__FILE__}"
+			puts "Clearing board IP=#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")} #{__LINE__}-#{__FILE__}"
 			hash = Hash.new
 			hash[SharedLib::SlotOwner] = slotOwnerParam
 			slotData = hash.to_json
 			@response = 			
-		    RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::ClearConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
+		    RestClient.post "#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::ClearConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 			@sharedMem.SetDispButton(slotOwnerParam,"Clearing")
 			rescue
 			@redirectWithError = "/TopBtnPressed?slot=#{slotOwnerParam}&BtnState=#{Load}"
@@ -538,7 +538,7 @@ class UserInterface
 		# exit
 		begin
 			@response = 
-		    RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
+		    RestClient.post "#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 			puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
 			@sharedMem.SetDispButton(slotOwnerParam,"Loading")			
 			# hash1 = JSON.parse(@response)
@@ -561,7 +561,8 @@ class UserInterface
 		return 95
 	end
 
-	def initialize		
+	def initialize
+		@slotToIp = nil		
 		DRb.start_service
 		@sharedMemService = DRbObject.new_with_uri(SERVER_URI)
 		# end of 'def initialize'
@@ -948,7 +949,7 @@ class UserInterface
 										type=\"button\" 
 				 						style=\"width:100;height:25\" 
 				 						id=\"btn_#{slotLabel2Param}\" "
-		if getBoardIp(slotLabel2Param).nil?
+		if getBoardIp(slotLabel2Param,"#{__LINE__}-#{__FILE__}").nil?
 			disabled = "disabled"
 		else
 			disabled = ""
@@ -1510,7 +1511,7 @@ end
 		hash[SharedLib::SlotOwner] = slotOwnerParam
 		slotData = hash.to_json
 		@response = 
-      RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
+      RestClient.post "#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::StopFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 		@sharedMem.SetDispButton(slotOwnerParam,"Seq Down")
 	end
 	
@@ -1530,7 +1531,7 @@ end
 		hash[SharedLib::SlotOwner] = slotOwnerParam
 		slotData = hash.to_json
 		@response = 
-      RestClient.post "#{getBoardIp(slotOwnerParam)}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
+      RestClient.post "#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::RunFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 		@sharedMem.SetDispButton(slotOwnerParam,"Seq Up")
 	end	
 
