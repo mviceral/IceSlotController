@@ -115,6 +115,25 @@ class SharedMemory
         return ds[SharedLib::PC]
     end
     
+    def parseOutTcuData(tcuParam)
+		tcuData = tcuParam
+		datArr = Array.new
+		ct = 1
+		while ct<tcuData.split('|').length
+			datArr.push(tcuData.split('|')[ct])
+			ct += 1
+		end
+
+		hash = Hash.new
+		ct = 0
+		while ct<datArr.length
+			hold = datArr[ct].split('@')
+			hash[hold[0]] = hold[1]
+			ct += 1
+		end
+		return hash
+    end
+    
 	def SetDispBoardData(configurationFileNameParam, configDateUploadParam, allStepsDone_YesNoParam, bbbModeParam,
 		stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotOwnerParam, allStepsCompletedAtParam, dispTotalStepDurationParam, adcInputParam, muxDataParam, tcuParam,eipsParam, errMsgParam,totalTimeOfStepsInQueue)      
 		# puts "tcuParam = #{}"
@@ -144,21 +163,7 @@ class SharedMemory
 			ds[SharedLib::PC][slotOwnerParam][SharedLib::Eips] = eipsParam
 
 			if tcuParam.nil? == false && tcuParam.length > 0
-				tcuData = tcuParam
-				datArr = Array.new
-				ct = 1
-				while ct<tcuData.split('|').length
-					datArr.push(tcuData.split('|')[ct])
-					ct += 1
-				end
-
-				hash = Hash.new
-				ct = 0
-				while ct<datArr.length
-					hold = datArr[ct].split('@')
-					hash[hold[0]] = hold[1]
-					ct += 1
-				end
+			    hash = parseOutTcuData(tcuParam)
 				ds[SharedLib::PC][slotOwnerParam][SharedLib::Tcu] = hash
 			end
 

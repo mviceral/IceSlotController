@@ -100,13 +100,13 @@ module PcListenerModule
 					#
 					#	Tell sampler to Run if mode = run, Stop if mode = stop, etc.
 					#
-					puts "PC sent '#{hash["Cmd"]}'"
+					mode = hash["Cmd"]
 					sharedMem = SharedMemory.new()
 					hash["Data"] = JSON.parse(params["#{SharedLib::PcToBbbData}"])
 					
 					sharedMem = @@sharedMemService.getSharedMem()		 
 					sharedMem.setDataFromPcToBoard(hash)
-					
+=begin
 					return # dead code below
 					
 					forEcho = hash.to_json
@@ -150,10 +150,10 @@ module PcListenerModule
 						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 					end
 					sharedMem.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
+=end
 				end
 				{bbbResponding:"#{mode}"}
 			end
 		end
 	end		
 end
-""
