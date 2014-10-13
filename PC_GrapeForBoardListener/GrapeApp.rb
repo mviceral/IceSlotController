@@ -6,7 +6,7 @@ require 'pp'
 require 'drb/drb'
 # require 'sqlite3'
 require_relative '../lib/SharedMemory'
-require_relative '../PC_DRbSharedMemory/ServerLib'
+require_relative '../lib/DRbSharedMemory/ServerLib'
 
 # If you set this true, it will put out some debugging info to STDOUT
 # (usually the termninal that you started rackup with)
@@ -42,6 +42,13 @@ module MigrationCount
 	class API < Grape::API
 		DRb.start_service			
 		@@sharedMemService =  DRbObject.new_with_uri(SERVER_URI)
+		
+		directory = SharedMemory::StepsLogRecordsPath
+		asdf = `[ -d #{directory} ] && echo "yes" || echo "no"`
+		if asdf.chomp == "no"
+			`mkdir #{directory}`
+		end
+
 		# This makes it so you have to specifiy the API version in the
 		# path string
 		version 'v1', using: :path
@@ -71,14 +78,8 @@ module MigrationCount
 						hash = JSON.parse(receivedData)
 						
 						if hash[SharedLib::DataLog].nil? == false
-							# The sent data is a log data.  Write it to file
-							puts "Rec'd data for logging. #{__LINE__}-#{__FILE__}"
-							directory = SharedMemory::StepsLogRecordsPath
-							asdf = `[ -d #{directory} ] && echo "yes" || echo "no"`
-							if asdf.chomp == "no"
-								`mkdir #{directory}`
-							end
-							
+							# The sent data is a log data.  Write it to file							
+							puts "Rec'd data for display. #{__LINE__}-#{__FILE__}"
 							configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
 							fileName = hash[SharedLib::ConfigurationFileName]
 							slotOwnerParam = hash[SharedLib::SlotOwner]
@@ -88,6 +89,8 @@ module MigrationCount
 							`cd #{directory}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
 						else
 							# The sent data is for display
+							# puts "hash[SharedLib::SlotOwner]=#{hash[SharedLib::SlotOwner]} #{__LINE__}-#{__FILE__}"
+							# puts "hash:#{__LINE__}-#{__FILE__}\n#{hash}"
 							sharedMem = @@sharedMemService.getSharedMem()		 
 							sharedMem.setDataFromBoardToPc(hash)
 						
@@ -128,6 +131,7 @@ module MigrationCount
 									# End of 'begin' code block that will handle exceptions...
 								end
 							else
+=begin
 								if sharedMem.logData(hash[SharedLib::SlotOwner]).nil? == false &&
 									sharedMem.logData(hash[SharedLib::SlotOwner]).length > 0							
 									str = "#{sharedMem.logData(hash[SharedLib::SlotOwner])}"
@@ -144,7 +148,8 @@ module MigrationCount
 									# puts "dBaseFileName='#{dBaseFileName}', newStr=#{newStr}"
 									`cd #{directory}; echo "#{newStr}" >> \"#{dBaseFileName}\"`
 								end
-							end						
+=end							
+							end
 						end
 							
 						rescue Exception => e
