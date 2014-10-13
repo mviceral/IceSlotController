@@ -397,10 +397,13 @@ class SharedLib
     
     def self.make5point2Format(numberParam)
     	numParam = numberParam.to_s
-			if numParam.length > 6
-				numParam = numParam[0..5]
-			end
-			return numParam
+		if numParam.length > 6
+			numParam = numParam[0..5]
+		end
+		while numParam.length < 5
+			numParam += "0"
+		end
+		return numParam
     end
     
     def self.makeTime2colon2Format(hours,min)

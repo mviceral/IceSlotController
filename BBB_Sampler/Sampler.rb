@@ -1538,6 +1538,7 @@ class TCUSampler
                                 muxData = @samplerData.GetDataMuxData("#{__LINE__}-#{__FILE__}")
                                 adcData = @samplerData.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
                                 eiPs = @samplerData.GetDataEips()
+                                # tbs += "eiPs=#{eiPs}\n"
                 				while dutCt<24
                 					dutIndex = "Dut#{dutCt}"
                 					tcuData = @samplerData.parseOutTcuData(@samplerData.GetDataTcu("#{__LINE__}-#{__FILE__}"))
@@ -1561,23 +1562,23 @@ class TCUSampler
                                 tbs += "#{PSNameLogger}|#{VMeas}|#{IMeas}\n"
                                 tbs += "#{makeItFit("VPS0",PSNameLogger)}|"
                                 tbs += "#{makeItFit(@samplerData.getPsVolts(muxData,adcData,"32"),VMeas)}|"
-                                tbs += "#{makeItFit(@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS0"),IMeas)}\n"
+                                tbs += "#{makeItFit(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS0"),IMeas)}\n"
 
                                 tbs += "#{makeItFit("VPS1",PSNameLogger)}|"
                                 tbs += "#{makeItFit(@samplerData.getPsVolts(muxData,adcData,"33"),VMeas)}|"
-                                tbs += "#{makeItFit(@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS1"),IMeas)}\n"
+                                tbs += "#{makeItFit(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS1"),IMeas)}\n"
 
                                 tbs += "#{makeItFit("VPS2",PSNameLogger)}|"
                                 tbs += "#{makeItFit(@samplerData.getPsVolts(muxData,adcData,"34"),VMeas)}|"
-                                tbs += "#{makeItFit(@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2"),IMeas)}\n"
+                                tbs += "#{makeItFit(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS2"),IMeas)}\n"
 
                                 tbs += "#{makeItFit("VPS3",PSNameLogger)}|"
                                 tbs += "#{makeItFit(@samplerData.getPsVolts(muxData,adcData,"35"),VMeas)}|"
-                                tbs += "#{makeItFit(@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS3"),IMeas)}\n"
+                                tbs += "#{makeItFit(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS3"),IMeas)}\n"
 
                                 tbs += "#{makeItFit("VPS4",PSNameLogger)}|"
                                 tbs += "#{makeItFit(@samplerData.getPsVolts(muxData,adcData,"36"),VMeas)}|"
-                                tbs += "#{makeItFit(@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2"),IMeas)}\n"
+                                tbs += "#{makeItFit(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS2"),IMeas)}\n"
 
                                 tbs += "#{makeItFit("VPS5",PSNameLogger)}|"
                                 tbs += "#{makeItFit(@samplerData.getPsVolts(muxData,adcData,"37"),VMeas)}|"
@@ -1589,7 +1590,7 @@ class TCUSampler
 
                                 tbs += "#{makeItFit("VPS7",PSNameLogger)}|"
                                 tbs += "#{makeItFit(@samplerData.getPsVolts(muxData,adcData,"39"),VMeas)}|"
-                                tbs += "#{makeItFit(@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS7"),IMeas)}\n"
+                                tbs += "#{makeItFit(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS7"),IMeas)}\n"
 
                                 tbs += "#{makeItFit("VPS8",PSNameLogger)}|"
                                 tbs += "#{makeItFit(@samplerData.getPsVolts(muxData,adcData,"40"),VMeas)}|"
@@ -1606,7 +1607,7 @@ class TCUSampler
                                 tbs += "#{makeItFit((adcData[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3),Temp1)}|"
                                 tbs += "#{makeItFit((adcData[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3),Temp2)}\n"
                                 
-                                if hours == 0 && mins == 0
+                                if hours == 0 && mins == 1
                                     tbs += "End Step (step##{@samplerData.GetStepNumber()})\n"
                                 end
                             end
