@@ -34,8 +34,8 @@ require 'drb/drb'
 SERVER_URI="druby://localhost:8787"
 
 class UserInterface
-	BbbPcListener = 'http://192.168.7.2'
 	SERVER_URI="druby://localhost:8787"
+	BbbPcListener = 'http://192.168.7.2'
 	# BbbPcListener = 'http://192.168.1.211'
 	LinuxBoxPcListener = "localhost"
 	PcListener = BbbPcListener # Chose which ethernet address the PcListener is sitting on.
@@ -472,7 +472,7 @@ class UserInterface
 		fileName = getSlotProperties()["FileName"]
 		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
 		genFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,slotOwnerParam)
-		settingsFileName =  genFileName+".StepSettings"
+		settingsFileName =  genFileName+".log"
 		recipeStepFile = "../steps config file repository/#{fileName}"
 		recipeLastModified = File.mtime(recipeStepFile)
 		
@@ -502,11 +502,6 @@ class UserInterface
 		end
 		writeToSettingsLog("Oven: #{oven}, Slot: #{slotOwnerParam}",settingsFileName)
 		writeToSettingsLog("BIB: #{bibNumber}",settingsFileName)
-		writeToSettingsLog("Test Step: #{bibNumber}",settingsFileName)
-		
-		writeToSettingsLog("Configuration Upload Date: #{Time.at(configDateUpload).inspect}",settingsFileName)
-		writeToSettingsLog("Slot Owner: #{slotOwnerParam}",settingsFileName)
-		
 =begin
 		psItems = ["VPS0","IPS0","VPS1","IPS1","VPS2","IPS2","VPS3","IPS3","VPS4","IPS4","VPS5","IPS5","VPS6","IPS6","VPS7","IPS7","VPS8","IPS8","VPS9","IPS9","VPS10","IPS10","IDUT"]
 		ct = 0
@@ -554,6 +549,7 @@ class UserInterface
 			# puts "check C #{__LINE__}-#{__FILE__}"
 			return true
 			rescue
+			puts "No response.#{__LINE__}-#{__FILE__} @response=#{@response}"
 			@redirectWithError = "/TopBtnPressed?slot=#{slotOwnerParam}&BtnState=#{Load}"
 			@redirectWithError += "&ErrGeneral=bbbDown"
 			#@redirectWithError += "&ErrGeneral=EFGH"
