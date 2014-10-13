@@ -402,6 +402,19 @@ class SharedLib
 			end
 			return numParam
     end
+    
+    def self.makeTime2colon2Format(hours,min)
+        shours = hours.to_s
+        while shours.length<2
+            shours = "0"+shours
+        end
+        
+        smin = min.to_s
+        while smin.length<2
+            smin = "0"+smin
+        end
+        return shours+":"+smin
+    end
 
     def self.getCurrentDutDisplay(muxData,rawDataParam)
 			if muxData.nil? == false && muxData[rawDataParam].nil? == false
