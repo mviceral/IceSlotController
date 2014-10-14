@@ -113,8 +113,8 @@ class UserInterface
 	def getBoardIp(slotParam, fromParam)
 		if @slotToIp.nil? # || @slotToIp[slotParam].nil? ||@slotToIp[slotParam].length == 0
 			@slotToIp = Hash.new
-			@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
-			#@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
+			#@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
+			@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
 			#@slotToIp[SLOT3] = ""
 		end
 		# puts "slotParam='#{slotParam}' @slotToIp='#{@slotToIp}' fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
@@ -494,14 +494,10 @@ class UserInterface
 			if colContent[0] == "Oven ID"
 				oven = colContent[1].chomp
 				oven = oven.strip
-			elsif colContent[0] == "#{slotOwnerParam} BIB#" 
-				bibNumber = colContent[1].chomp
-				bibNumber = bibNumber.strip
 			end
 			ct += 1
 		end
 		writeToSettingsLog("Oven: #{oven}, Slot: #{slotOwnerParam}",settingsFileName)
-		writeToSettingsLog("BIB: #{bibNumber}",settingsFileName)
 =begin
 		psItems = ["VPS0","IPS0","VPS1","IPS1","VPS2","IPS2","VPS3","IPS3","VPS4","IPS4","VPS5","IPS5","VPS6","IPS6","VPS7","IPS7","VPS8","IPS8","VPS9","IPS9","VPS10","IPS10","IDUT"]
 		ct = 0
