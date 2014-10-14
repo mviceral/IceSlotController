@@ -27,6 +27,8 @@ class SharedMemory
     SlotOwner = "SlotOwner"
     StepsLogRecordsPath = "../steps\\ log\\ records"
 
+    WaitTempMsg = "WaitTempMsg"
+    
     def writeAndFreeLocked(strParam, fromParam)
 =begin
         if @lockedAt == ""
@@ -934,6 +936,20 @@ class SharedMemory
         return ds[SharedLib::AdcInput]
     end
 
+	def getWaitTempMsg()
+	    if getMemory()[WaitTempMsg].nil?
+            ds = lockMemory("#{__LINE__}-#{__FILE__}")
+            ds[WaitTempMsg] = ""
+            writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+	    end
+	    return getMemory()[WaitTempMsg]
+	end
+	
+	def setWaitTempMsg(msgParam)
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        ds[WaitTempMsg] = msgParam
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+	end
 	
     def GetDataV1() # Changed function so other calls to it will fail and have to adhere to the new data structure
         #   - Gets the data sitting in the shared memory.
@@ -950,7 +966,6 @@ class SharedMemory
         if ds[SharedLib::Gpio].nil?
             ds[SharedLib::Gpio] = Hash.new
         end
-        
         ds[SharedLib::Gpio] = stringParam 
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
