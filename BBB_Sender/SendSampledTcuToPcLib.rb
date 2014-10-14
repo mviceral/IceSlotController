@@ -100,11 +100,14 @@ Temperature Setting: <temp>
 
 	def GetDataToSendPc(sharedMemParam)
         slotInfo = Hash.new()
+        if sharedMemParam.getWaitTempMsg().length > 0
+            slotInfo[SharedMemory::WaitTempMsg] = sharedMemParam.getWaitTempMsg()
+        end
+        
         slotInfo[SharedLib::ConfigurationFileName] = sharedMemParam.GetConfigurationFileName()
         slotInfo[SharedLib::ConfigDateUpload] = sharedMemParam.GetConfigDateUpload()
         slotInfo[SharedLib::AllStepsDone_YesNo] = sharedMemParam.GetAllStepsDone_YesNo()
         slotInfo[SharedLib::BbbMode] = sharedMemParam.GetBbbMode()
-
         slotInfo[SharedLib::StepName] = sharedMemParam.GetStepName()
         slotInfo[SharedLib::StepNumber] = sharedMemParam.GetStepNumber()
         slotInfo[SharedLib::StepTimeLeft] = sharedMemParam.GetStepTimeLeft()
@@ -118,10 +121,12 @@ Temperature Setting: <temp>
         slotInfo[SharedLib::TotalStepDuration] = sharedMemParam.GetTotalStepDuration();
         slotInfo[SharedLib::ErrorMsg] = sharedMemParam.GetErrors();
         slotInfo[SharedLib::TotalTimeOfStepsInQueue] = sharedMemParam.GetTotalTimeOfStepsInQueue()
+        
         if sharedMemParam.GetButtonDisplayToNormal() != nil
             slotInfo[SharedLib::ButtonDisplay] = sharedMemParam.GetButtonDisplayToNormal()
             sharedMemParam.SetButtonDisplayToNormal(nil)
         end
+        
         slotInfoJson = slotInfo.to_json
 		return slotInfoJson
 	end
