@@ -216,6 +216,10 @@ class SharedMemory
 	def GetDispTotalTimeOfStepsInQueue(slotOwnerParam)
 		return getMemory()[SharedLib::PC][slotOwnerParam][SharedLib::TotalTimeOfStepsInQueue]
 	end
+	
+	def GetDispWaitTempMsg(slotOwnerParam)
+		return getMemory()[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg]
+	end
 
 	def GetDispButton(slotOwnerParam)
 		return getMemory()[SharedLib::PC][slotOwnerParam][SharedLib::ButtonDisplay]
@@ -237,18 +241,20 @@ class SharedMemory
 	
 	def processRecDataFromPC(hash)
 		# puts "hash[SharedLib::SlotOwner].nil? = #{hash[SharedLib::SlotOwner].nil?}"
-		if (hash[SharedLib::SlotOwner].nil? == false &&
-		       (hash[SharedLib::SlotOwner] != SharedLib::SLOT1 &&
-			hash[SharedLib::SlotOwner] != SharedLib::SLOT2 &&
-			hash[SharedLib::SlotOwner] != SharedLib::SLOT3) == true) || hash[SharedLib::SlotOwner].nil?
-			# Flush out the  memory...
-			# @data.WriteDataV1("","")
-		else
-			SetDataBoardToPc(hash)
-			SetDispSlotOwner(hash[SharedLib::SlotOwner])
+		if hash.nil? == false 
+			if ((hash[SharedLib::SlotOwner].nil? == false &&
+			       (hash[SharedLib::SlotOwner] != SharedLib::SLOT1 &&
+				hash[SharedLib::SlotOwner] != SharedLib::SLOT2 &&
+				hash[SharedLib::SlotOwner] != SharedLib::SLOT3) == true) || hash[SharedLib::SlotOwner].nil?)
+				# Flush out the  memory...
+				# @data.WriteDataV1("","")
+			else
+				SetDataBoardToPc(hash)
+				SetDispSlotOwner(hash[SharedLib::SlotOwner])
 
-			printDataContent(hash[SharedLib::SlotOwner])
-			configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
+				printDataContent(hash[SharedLib::SlotOwner])
+				configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
+			end
 		end
 	end
 	
@@ -614,18 +620,35 @@ class SharedMemory
     end
 
 	def SetDataBoardToPc(hash)
+		ds = lockMemory("#{__LINE__}-#{__FILE__}")
+		if ds[SharedLib::PC].nil?
+			ds[SharedLib::PC] = Hash.new
+		end
+		
 		if hash[SharedLib::ButtonDisplay].nil? == false
-			ds = lockMemory("#{__LINE__}-#{__FILE__}")
-			if ds[SharedLib::PC].nil?
-				ds[SharedLib::PC] = Hash.new
-			end
-			
 			if ds[SharedLib::PC][hash[SharedLib::SlotOwner]].nil?
 				ds[SharedLib::PC][hash[SharedLib::SlotOwner]] = Hash.new
 			end
 			
 			ds[SharedLib::PC][hash[SharedLib::SlotOwner]][SharedLib::ButtonDisplay] = hash[SharedLib::ButtonDisplay]
 			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+		end
+
+		if ds[SharedLib::PC].nil?
+			ds[SharedLib::PC] = Hash.new
+		end
+
+		slotOwnerParam = hash[SharedLib::SlotOwner]
+		if slotOwnerParam.nil? == false && slotOwnerParam.length > 0
+			if ds[SharedLib::PC][slotOwnerParam].nil?
+				ds[SharedLib::PC][slotOwnerParam] = Hash.new
+			end
+		end
+
+		if hash[SharedMemory::WaitTempMsg].nil? == false
+			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = hash[SharedMemory::WaitTempMsg]
+		else
+			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = nil
 		end
 
 		SetDispBoardData(
@@ -1112,4 +1135,4 @@ class SharedMemory
     end
 =end    
 end
-# 182
+# 642

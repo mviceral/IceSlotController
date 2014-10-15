@@ -113,8 +113,8 @@ class UserInterface
 	def getBoardIp(slotParam, fromParam)
 		if @slotToIp.nil? # || @slotToIp[slotParam].nil? ||@slotToIp[slotParam].length == 0
 			@slotToIp = Hash.new
-			#@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
-			@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
+			@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
+			#@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
 			#@slotToIp[SLOT3] = ""
 		end
 		# puts "slotParam='#{slotParam}' @slotToIp='#{@slotToIp}' fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
@@ -1002,7 +1002,15 @@ class UserInterface
 									</center>
 								</td>
 							</tr>"
-		if @sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? == false && 
+		if @sharedMem.GetDispWaitTempMsg(slotLabel2Param).nil? == false
+			topTable += "								
+				<tr>
+					<td align = \"center\">&nbsp;</td>
+				</tr>
+				<tr>
+					<td align = \"center\">&nbsp;</td>
+				</tr>"
+		elsif @sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? == false && 
 			@sharedMem.GetDispConfigurationFileName(slotLabel2Param).length > 0
 			topTable += "								
 				<tr>
@@ -1031,7 +1039,22 @@ class UserInterface
 				</tr>"
 		end							
 		
-		if @sharedMem.GetDispBbbMode(slotLabel2Param) == SharedLib::InRunMode && @sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? == false && @sharedMem.GetDispConfigurationFileName(slotLabel2Param).length > 0
+		if @sharedMem.GetDispWaitTempMsg(slotLabel2Param).nil? == false
+			topTable += "								
+				<tr>
+					<td align=\"center\">
+							<font size=\"1\">Waiting Temp Tolerance</font>
+					</td>
+				</tr>
+				<tr>
+					<td align = \"center\">
+						<font size=\"1.25\" style=\"font-style: italic;\">"
+							disp = @sharedMem.GetDispWaitTempMsg(slotLabel2Param)
+			topTable += "		#{disp}
+						</font>								
+					</td>
+				</tr>"
+		elsif @sharedMem.GetDispBbbMode(slotLabel2Param) == SharedLib::InRunMode && @sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? == false && @sharedMem.GetDispConfigurationFileName(slotLabel2Param).length > 0
 			topTable += "								
 					<tr>
 						<td align=\"left\">
@@ -1151,7 +1174,6 @@ end
 		xmlhttp.send();
 	}
 	
-	// setInterval(function(){loadXMLDoc()},10000);
 	setInterval(function(){loadXMLDoc()},1000);  
 	</script>
 
@@ -2622,4 +2644,4 @@ get '/AckError' do
 	redirect "../"
 end
 
-# at 485
+# at 1013
