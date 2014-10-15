@@ -561,6 +561,7 @@ class UserInterface
 		@slotToIp = nil		
 		DRb.start_service
 		@sharedMemService = DRbObject.new_with_uri(SERVER_URI)
+		@sharedMem = SharedMemory.new
 		# end of 'def initialize'
 	end
 
@@ -1100,7 +1101,7 @@ end
 	
 	def display
 		# Get a fresh data...
-		@sharedMem = @sharedMemService.getSharedMem()		 
+		@sharedMem.processRecDataFromPC(@sharedMemService.getSharedMem().getDataFromBoardToPc())
 		displayForm =  "	
 	<style>
 	#slotA
@@ -2582,25 +2583,41 @@ get '/AckError' do
 	errLogFileName = "../\"error logs\"/ErrorLog_#{params[:slot]}.log"
 	errorItem = `head -1 #{newErrLogFileName}`
 	errorItem = errorItem.chomp
-	`echo \"#{errorItem}\" >> #{errLogFileName}`	
+	puts "errorItem='#{errorItem}' errorItem.length=#{errorItem.length} #{__FILE__}-#{__LINE__}"
+	if errorItem.length>0
+		puts "at errLogFileName='#{errLogFileName}' #{__FILE__}-#{__LINE__}"
+		newStr = SharedLib::MakeShellFriendly(errorItem)
+		`echo \"#{newStr}\" >> #{errLogFileName}`	
+	puts "at #{__FILE__}-#{__LINE__}"
 =begin
 	File.open(errLogFileName, "a") { 
 		|file| file.write("#{errorItem}") 
 	}
 =end	
+	puts "at #{__FILE__}-#{__LINE__}"
 
-	trimmed = `sed -e '1,1d' < #{newErrLogFileName}`
-	trimmed = trimmed.chomp
-	if trimmed.length > 0
-		`echo \"#{trimmed}\" > #{newErrLogFileName}`
-	else
-		`rm #{newErrLogFileName}`
-	end
+		trimmed = `sed -e '1,1d' < #{newErrLogFileName}`
+	puts "at #{__FILE__}-#{__LINE__}"
+		trimmed = trimmed.chomp
+	puts "at #{__FILE__}-#{__LINE__}"
+		if trimmed.length > 0
+	puts "at #{__FILE__}-#{__LINE__}"
+	puts "newErrLogFileName='#{newErrLogFileName}' #{__FILE__}-#{__LINE__}"
+			trimmed = SharedLib::MakeShellFriendly(trimmed)
+			`echo \"#{trimmed}\" > #{newErrLogFileName}`
+	puts "at #{__FILE__}-#{__LINE__}"
+		else
+	puts "at #{__FILE__}-#{__LINE__}"
+			`rm #{newErrLogFileName}`
+	puts "at #{__FILE__}-#{__LINE__}"
+		end
+	puts "at #{__FILE__}-#{__LINE__}"
 =begin	
 	File.open(newErrLogFileName, "w") { 
 		|file| file.write(trimmed) 
 	}
 =end	
+	end
 	settings.ui.clearErrorSlot("#{params[:slot]}")
 	redirect "../"
 end

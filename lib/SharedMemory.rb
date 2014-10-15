@@ -173,20 +173,30 @@ class SharedMemory
 				if errMsgParam.nil? == false
 					# There were some errors from the board.
 					# Write the error into a log file
+					errorLogPath = "../\"error logs\""
 =begin
-					newErrLogFileName = "../\"error logs\"/NewErrors_#{slotOwnerParam}.log"
 					while errMsgParam.length>0
 						errItem = errMsgParam.shift
 						File.open(newErrLogFileName, "a") { 
 							|file| file.write("#{errItem.to_json}\n") 
 						}
 					end
-=end					
-					newErrLogFileName = "../\"error logs\""
+=end
 					while errMsgParam.length>0
 						errItem = errMsgParam.shift
 						puts "Got a message from the board: '#{errItem}'"
-						`cd #{newErrLogFileName}; echo \"#{SharedLib.makeUriFriendly(errItem.to_json)}\" >> NewErrors_#{slotOwnerParam}.log`
+						str = "#{errItem.to_json}"
+						ct = 0
+						newStr = ""
+						while ct < str.length
+							if str[ct] == "\""
+								newStr += "\\\""
+							else
+								newStr += str[ct]
+							end
+							ct += 1
+						end
+						`cd #{errorLogPath}; echo \"#{newStr}\" >> NewErrors_#{slotOwnerParam}.log`
 =begin						  
 						File.open(newErrLogFileName, "a") { 
 							|file| file.write("#{errItem.to_json}\n") 
@@ -218,6 +228,14 @@ class SharedMemory
 	end
 
 	def setDataFromBoardToPc(hash)
+		@dataFromBoardToPc = hash
+	end
+	
+	def getDataFromBoardToPc()
+		return @dataFromBoardToPc
+	end
+	
+	def processRecDataFromPC(hash)
 		# puts "hash[SharedLib::SlotOwner].nil? = #{hash[SharedLib::SlotOwner].nil?}"
 		if (hash[SharedLib::SlotOwner].nil? == false &&
 		       (hash[SharedLib::SlotOwner] != SharedLib::SLOT1 &&
@@ -229,7 +247,7 @@ class SharedMemory
 			SetDataBoardToPc(hash)
 			SetDispSlotOwner(hash[SharedLib::SlotOwner])
 
-			printDataContent(hash[SharedLib::SlotOwner])
+			# printDataContent(hash[SharedLib::SlotOwner])
 			configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
 		end
 	end
@@ -321,18 +339,38 @@ class SharedMemory
 		slotOwner = slotOwnerParam
 		if pcShared[slotOwner].nil? == false && pcShared[slotOwner][SharedLib::ErrorMsg].nil?
 			begin
+				# Make sure that the directory is present.
+				errorLogFileName = "error\ logs"
+				newErrLogFileName = "../#{errorLogFileName}"
+				`if [ ! -d "#{newErrLogFileName}" ]; then
+					cd ../
+					mkdir "#{errorLogFileName}"
+				fi`
 				newErrLogFileName = "../\"error logs\"/NewErrors_#{slotOwner}.log"
-				# newErrLogFileName = "../NewErrors_#{slotOwner}.log"
-				errorItem = `head -1 #{newErrLogFileName}`
-				errorItem = errorItem.chomp
-				if errorItem.length > 0
-					# puts "C errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
-					ds = lockMemory("#{__LINE__}-#{__FILE__}")
-					ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(SharedLib.uriToStr(errorItem))
-					writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+				
+				fileExists = `if [ -f #{newErrLogFileName} ];
+				then
+					 echo "yes"
+				else
+					 echo "no"
+				fi`
+				
+				# puts "newErrLogFileName='#{newErrLogFileName}' fileExists='#{fileExists}' #{__LINE__}-#{__FILE__}"
+				
+				if fileExists.chomp == "yes"
+					begin
+						errorItem = `head -1 #{newErrLogFileName}`
+						errorItem = errorItem.chomp
+						if errorItem.length > 0
+							# puts "C errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
+							ds = lockMemory("#{__LINE__}-#{__FILE__}")
+							ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(errorItem)
+							writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+						end
+						rescue Exception => e
+							puts "e.message=#{e.message }"
+					end
 				end
-				rescue Exception => e
-					puts "e.message=#{e.message }"
 			end
 		end
 
@@ -340,7 +378,7 @@ class SharedMemory
 			return ""
 		end
 		errItem = pcShared[slotOwner][SharedLib::ErrorMsg]
-		return "&nbsp;&nbsp;#{Time.at(errItem[1]).inspect} - #{errItem[0]}"
+		return "&nbsp;&nbsp;#{errItem[1]} - #{errItem[0]}"
 		rescue
 			return ""
 	end
@@ -575,9 +613,7 @@ class SharedMemory
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
 
-	def SetDataBoardToPc(hashParam)
-		hash = hashParam
-    
+	def SetDataBoardToPc(hash)
 		if hash[SharedLib::ButtonDisplay].nil? == false
 			ds = lockMemory("#{__LINE__}-#{__FILE__}")
 			if ds[SharedLib::PC].nil?
