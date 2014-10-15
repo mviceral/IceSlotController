@@ -1219,7 +1219,7 @@ class TCUSampler
         @gPIO2.getForInitGetImagesOf16Addrs
 
         @socketIp = nil
-    	@setupAtHome = true # So we can do some work at home
+    	@setupAtHome = false # So we can do some work at home
     	@initMuxValueFunc = false
     	@initpollAdcInputFunc = false
         @allDutTempTolReached = false
@@ -1385,7 +1385,7 @@ class TCUSampler
                 ctw = "---"
                 twtimeleft = "---"
             end
-            puts "Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} ctw='#{ctw}', tw='#{tw}', temp time wait left ='#{twtimeleft}' #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+            puts "Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} ctw='#{ctw}', tw='#{tw}', temp time ='#{twtimeleft}' #{Time.now.inspect}"
             @samplerData.SetSlotTime(Time.now.to_i)
             if skipLimboStateCheck
                 skipLimboStateCheck = false
@@ -1928,6 +1928,7 @@ class TCUSampler
                     @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    case pcCmd
         		    when SharedLib::RunFromPc
+        		        setToMode(SharedLib::InRunMode, "#{__LINE__}-#{__FILE__}")
         		        runMachine()
                         
         		    when SharedLib::StopFromPc
