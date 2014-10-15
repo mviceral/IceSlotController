@@ -113,8 +113,8 @@ class UserInterface
 	def getBoardIp(slotParam, fromParam)
 		if @slotToIp.nil? # || @slotToIp[slotParam].nil? ||@slotToIp[slotParam].length == 0
 			@slotToIp = Hash.new
-			@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
-			#@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
+			#@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
+			@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
 			#@slotToIp[SLOT3] = ""
 		end
 		# puts "slotParam='#{slotParam}' @slotToIp='#{@slotToIp}' fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
@@ -494,14 +494,10 @@ class UserInterface
 			if colContent[0] == "Oven ID"
 				oven = colContent[1].chomp
 				oven = oven.strip
-			elsif colContent[0] == "#{slotOwnerParam} BIB#" 
-				bibNumber = colContent[1].chomp
-				bibNumber = bibNumber.strip
 			end
 			ct += 1
 		end
 		writeToSettingsLog("Oven: #{oven}, Slot: #{slotOwnerParam}",settingsFileName)
-		writeToSettingsLog("BIB: #{bibNumber}",settingsFileName)
 =begin
 		psItems = ["VPS0","IPS0","VPS1","IPS1","VPS2","IPS2","VPS3","IPS3","VPS4","IPS4","VPS5","IPS5","VPS6","IPS6","VPS7","IPS7","VPS8","IPS8","VPS9","IPS9","VPS10","IPS10","IDUT"]
 		ct = 0
@@ -565,6 +561,7 @@ class UserInterface
 		@slotToIp = nil		
 		DRb.start_service
 		@sharedMemService = DRbObject.new_with_uri(SERVER_URI)
+		@sharedMem = SharedMemory.new
 		# end of 'def initialize'
 	end
 
@@ -1104,7 +1101,7 @@ end
 	
 	def display
 		# Get a fresh data...
-		@sharedMem = @sharedMemService.getSharedMem()		 
+		@sharedMem.processRecDataFromPC(@sharedMemService.getSharedMem().getDataFromBoardToPc())
 		displayForm =  "	
 	<style>
 	#slotA
@@ -2586,25 +2583,41 @@ get '/AckError' do
 	errLogFileName = "../\"error logs\"/ErrorLog_#{params[:slot]}.log"
 	errorItem = `head -1 #{newErrLogFileName}`
 	errorItem = errorItem.chomp
-	`echo \"#{errorItem}\" >> #{errLogFileName}`	
+	puts "errorItem='#{errorItem}' errorItem.length=#{errorItem.length} #{__FILE__}-#{__LINE__}"
+	if errorItem.length>0
+		puts "at errLogFileName='#{errLogFileName}' #{__FILE__}-#{__LINE__}"
+		newStr = SharedLib::MakeShellFriendly(errorItem)
+		`echo \"#{newStr}\" >> #{errLogFileName}`	
+	puts "at #{__FILE__}-#{__LINE__}"
 =begin
 	File.open(errLogFileName, "a") { 
 		|file| file.write("#{errorItem}") 
 	}
 =end	
+	puts "at #{__FILE__}-#{__LINE__}"
 
-	trimmed = `sed -e '1,1d' < #{newErrLogFileName}`
-	trimmed = trimmed.chomp
-	if trimmed.length > 0
-		`echo \"#{trimmed}\" > #{newErrLogFileName}`
-	else
-		`rm #{newErrLogFileName}`
-	end
+		trimmed = `sed -e '1,1d' < #{newErrLogFileName}`
+	puts "at #{__FILE__}-#{__LINE__}"
+		trimmed = trimmed.chomp
+	puts "at #{__FILE__}-#{__LINE__}"
+		if trimmed.length > 0
+	puts "at #{__FILE__}-#{__LINE__}"
+	puts "newErrLogFileName='#{newErrLogFileName}' #{__FILE__}-#{__LINE__}"
+			trimmed = SharedLib::MakeShellFriendly(trimmed)
+			`echo \"#{trimmed}\" > #{newErrLogFileName}`
+	puts "at #{__FILE__}-#{__LINE__}"
+		else
+	puts "at #{__FILE__}-#{__LINE__}"
+			`rm #{newErrLogFileName}`
+	puts "at #{__FILE__}-#{__LINE__}"
+		end
+	puts "at #{__FILE__}-#{__LINE__}"
 =begin	
 	File.open(newErrLogFileName, "w") { 
 		|file| file.write(trimmed) 
 	}
 =end	
+	end
 	settings.ui.clearErrorSlot("#{params[:slot]}")
 	redirect "../"
 end

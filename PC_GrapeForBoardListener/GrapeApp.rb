@@ -79,7 +79,7 @@ module MigrationCount
 						
 						if hash[SharedLib::DataLog].nil? == false
 							# The sent data is a log data.  Write it to file							
-							puts "Rec'd data for display. #{__LINE__}-#{__FILE__}"
+								puts "Rec'd data for display. #{__LINE__}-#{__FILE__}"
 							configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
 							fileName = hash[SharedLib::ConfigurationFileName]
 							slotOwnerParam = hash[SharedLib::SlotOwner]
@@ -93,7 +93,7 @@ module MigrationCount
 							# puts "hash:#{__LINE__}-#{__FILE__}\n#{hash}"
 							sharedMem = @@sharedMemService.getSharedMem()		 
 							sharedMem.setDataFromBoardToPc(hash)
-						
+=begin						
 							# puts "dBaseFileName='#{dBaseFileName}'"
 							# logging code.
 							runningOnCentos = true
@@ -131,7 +131,6 @@ module MigrationCount
 									# End of 'begin' code block that will handle exceptions...
 								end
 							else
-=begin
 								if sharedMem.logData(hash[SharedLib::SlotOwner]).nil? == false &&
 									sharedMem.logData(hash[SharedLib::SlotOwner]).length > 0							
 									str = "#{sharedMem.logData(hash[SharedLib::SlotOwner])}"
@@ -148,10 +147,9 @@ module MigrationCount
 									# puts "dBaseFileName='#{dBaseFileName}', newStr=#{newStr}"
 									`cd #{directory}; echo "#{newStr}" >> \"#{dBaseFileName}\"`
 								end
-=end							
 							end
+=end							
 						end
-							
 						rescue Exception => e
 							# The data didn't parse properly.  Do nothing.
 							puts e.message  
