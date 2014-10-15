@@ -37,6 +37,7 @@ class TCUSampler
     BbbMode = "BbbMode"
     SeqDownPsArr = "SeqDownPsArr"
     SeqUpPsArr = "SeqUpPsArr"
+	CalculatedTempWait = "CalcTW"
     
     NomSet = "NomSet"
     
@@ -128,14 +129,6 @@ class TCUSampler
         @boardData[TimeOfPcUpload] = timeInIntegerParam
     end
 	
-	def gPIO2
-	    if @gpio2.nil?
-	        @gpio2 = GPIO2.new
-	        @gpio2.getForInitGetImagesOf16Addrs
-	    end
-	    return @gpio2
-	end
-	
 	def getTimeOfRun
         if @boardData[TimeOfRun].nil?
             @boardData[TimeOfRun] = Time.now.to_i
@@ -159,6 +152,7 @@ class TCUSampler
         SharedLib.bbbLog("Changed to '#{modeParam}' called from [#{calledFrom}].  Saving state to holding tank.")
         if modeParam == SharedLib::InRunMode || modeParam == SharedLib::InStopMode
             if modeParam == SharedLib::InRunMode
+                runMachine()
                 psSeqUp()
                 setTimeOfRun()
                 # setPollIntervalInSeconds(IntervalSecInRunMode,"#{__LINE__}-#{__FILE__}")
@@ -306,29 +300,29 @@ class TCUSampler
                         # SharedLib::pause "Called #{PsSeqItem::SPS6}", "#{__LINE__}-#{__FILE__}"
                         if powerUpParam
                             # SharedLib::pause "Powering UP", "#{__LINE__}-#{__FILE__}"
-                            gPIO2.setBitOn((GPIO2::PS_ENABLE_x3).to_i,(GPIO2::W3_PS6).to_i)
+                            @gPIO2.setBitOn((GPIO2::PS_ENABLE_x3).to_i,(GPIO2::W3_PS6).to_i)
                         else
                             # SharedLib::pause "Powering DOWN", "#{__LINE__}-#{__FILE__}"
-                            gPIO2.setBitOff((GPIO2::PS_ENABLE_x3).to_i,(GPIO2::W3_PS6).to_i)
+                            @gPIO2.setBitOff((GPIO2::PS_ENABLE_x3).to_i,(GPIO2::W3_PS6).to_i)
                         end
                         
                         when PsSeqItem::SPS8
                             if powerUpParam
-                                gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS8)
+                                @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS8)
                             else
-                                gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS8)
+                                @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS8)
                             end
                         when PsSeqItem::SPS9
                             if powerUpParam
-                                gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS9)
+                                @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS9)
                             else
-                                gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS9)
+                                @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS9)
                             end
                         when PsSeqItem::SPS10
                             if powerUpParam
-                                gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS10)
+                                @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS10)
                             else
-                                gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS10)
+                                @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS10)
                             end
                         else
                             `echo "#{Time.new.inspect} : psItem.keyName='#{psItem.keyName}' not recognized.  #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
@@ -495,29 +489,35 @@ class TCUSampler
         if @ethernetPS[host].nil?
             @ethernetPS[host] = true
 
-            tries = 0
-            goodConnection = false
-            while tries<5 && goodConnection == false
-                begin
-                    @socketIp[host] = TCPSocket.open(host,port)
-                    goodConnection = true
-                    rescue
-                        SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
-                        sleep(0.25)
-                end
-                tries += 1
-            end
-            
-            if tries == 5
+
+            if @setupAtHome
+                puts "Skipping PS host='#{host}' setup due to @setupAtHome == true."
                 @socketIp[host] = nil
-                # Show a message to the PC that Ethernet PS on IP=host can't be accessed.  Show the time too of incident too.
-                @samplerData.ReportError("Cannot open Ethernet power supply socket on IP='#{host}'.  This power supply will be disabled.")
-            	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
+            else
+                tries = 0
+                goodConnection = false
+                while tries<5 && goodConnection == false
+                    begin
+                        @socketIp[host] = TCPSocket.open(host,port)
+                        goodConnection = true
+                        rescue
+                            SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
+                            sleep(0.25)
+                    end
+                    tries += 1
+                end
+                
+                if tries == 5
+                    @socketIp[host] = nil
+                    # Show a message to the PC that Ethernet PS on IP=host can't be accessed.  Show the time too of incident too.
+                    @samplerData.ReportError("Cannot open Ethernet power supply socket on IP='#{host}'.  This power supply will be disabled.")
+                	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
+                end
             end
         end
     end                                                            
 
-    def initStepToWorkOnVar(uart1,gPIO2,tcusToSkip)
+    def initStepToWorkOnVar(uart1)
         @disabledPS = nil # clears out the list when gathering data for the new step
         @samplerData.SetStepTimeLeft("")
         @samplerData.SetStepName("")
@@ -552,12 +552,12 @@ class TCUSampler
                                         # PP.pp(getConfiguration()[Steps][key]["TempConfig"])
                                         # puts "Checking content of 'TempConfig' #{__LINE__}-#{__FILE__}"
                                         sleep(2.0)
-                                        ThermalSiteDevices.setTHCPID(uart1,"T",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"])
-                                        ThermalSiteDevices.setTHCPID(uart1,"H",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["H"][0..-2].to_f/100.0*255)
-                                        ThermalSiteDevices.setTHCPID(uart1,"C",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["C"][0..-2].to_f/100.0*255)
-                                        ThermalSiteDevices.setTHCPID(uart1,"P",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["P"])
-                                        ThermalSiteDevices.setTHCPID(uart1,"I",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["I"])
-                                        ThermalSiteDevices.setTHCPID(uart1,"D",tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["D"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"T",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["H"][0..-2].to_f/100.0*255)
+                                        ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["C"][0..-2].to_f/100.0*255)
+                                        ThermalSiteDevices.setTHCPID(uart1,"P",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["P"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"I",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["I"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"D",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["D"])
 
 
                                         # puts "P = '#{getConfiguration()[Steps][key]["TempConfig"]["P"]}'"
@@ -568,17 +568,18 @@ class TCUSampler
                                         SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
                                         ct = 0
                                         while ct<24 do
-                                            if tcusToSkip[ct].nil? == true
-                                                vStatus = DutObj::getTcuStatusV(ct, uart1,gPIO2)
-                                                SharedLib.bbbLog("Code not done.  Make sure that the vStatus are what was set to be.  Try to set for 5 times.  If failed, add to tcusToSkip list, and report an error. #{__LINE__}-#{__FILE__}")
+                                            if @tcusToSkip[ct].nil? == true
+                                                vStatus = DutObj::getTcuStatusV(ct, uart1,@gPIO2)
+                                                SharedLib.bbbLog("Code not done.  Make sure that the vStatus are what was set to be.  Try to set for 5 times.  If failed, add to @tcusToSkip list, and report an error. #{__LINE__}-#{__FILE__}")
                                             end
                                             ct += 1
                                         end
                                         
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
-                                        PP.pp(@stepToWorkOn)
-                                        SharedLib.pause "Checking content of @stepToWorkOn","#{__LINE__}-#{__FILE__}"
+                                        
+                                        # PP.pp(@stepToWorkOn)
+                                        # SharedLib.pause "Checking content of @stepToWorkOn","#{__LINE__}-#{__FILE__}"
                                         # puts "TIMERRUFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRUFP"]}'"
                                         # puts "TIMERRDFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRDFP"]}'"
 
@@ -671,20 +672,21 @@ class TCUSampler
 	        # puts "G #{__LINE__}-#{__FILE__}"
 	        stepNumber += 1
 	    end
-
+	    
         if @stepToWorkOn.nil? == false
             @stepToWorkOn["TIMERRUFP"] = timerRUFP
             @stepToWorkOn["TIMERRDFP"] = timerRDFP
+            @stepToWorkOn[CalculatedTempWait] = @stepToWorkOn[SharedMemory::TempWait].to_f*60
         end
     end
 
-    def setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
+    def setBoardStateForCurrentStep(uart1)
         @boardData[SeqDownPsArr] = nil
         @boardData[SeqUpPsArr] = nil
-        initStepToWorkOnVar(uart1,gPIO2,tcusToSkip)
+        initStepToWorkOnVar(uart1)
         getSeqDownPsArr()
         getSeqUpPsArr()
-        
+
         if @boardData[BbbMode] == SharedLib::InStopMode
             # Run the sequence down process on the system
             psSeqDown("#{__LINE__}-#{__FILE__}")
@@ -695,6 +697,33 @@ class TCUSampler
             # setPollIntervalInSeconds(IntervalSecInRunMode,"#{__LINE__}-#{__FILE__}")
         end
         # @samplerData.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
+    end
+    
+    def runMachine()
+        @waitTempStartTime = Time.now.to_f
+        
+        @dutTempTolReached = Hash.new
+        @allDutTempTolReached = false
+                				
+        # Turn on the control for TCUs that are not disabled.
+        SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
+        ct = 0
+        while ct<24 do
+            if @tcusToSkip[ct].nil? == true
+                bitToUse = etsEnaBit(ct)
+                if 0<=ct && ct <=7  
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    @gPIO2.etsEna1SetOn(bitToUse)
+                elsif 8<=ct && ct <=15
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna2Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    @gPIO2.etsEna2SetOn(bitToUse)
+                elsif 16<=ct && ct <=23
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna3Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    @gPIO2.etsEna3SetOn(bitToUse)
+                end
+            end
+            ct += 1
+        end
     end
     
     def stopMachineIfTripped(gPIO2Param, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
@@ -713,7 +742,7 @@ class TCUSampler
             end
 
             if (tripMin <= actualValue && actualValue <= tripMax) == false
-                stopMachine(gPIO2Param)
+                stopMachine()
                 @samplerData.ReportError("ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
                 return true                
             end
@@ -721,17 +750,17 @@ class TCUSampler
         return false
     end
     
-    def stopMachine(gPIO2Param)
+    def stopMachine()
         setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                 
         # Turn on the control for TCUs that are not disabled.
-        setTcuToStopMode(gPIO2Param) # turnOffDuts(tcusToSkip)
+        setTcuToStopMode() # turnOffDuts(@tcusToSkip)
         
         @samplerData.setWaitTempMsg("")
         @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
     end
 
-    def setBoardData(boardDataParam,uart1,gPIO2,tcusToSkip)
+    def setBoardData(boardDataParam,uart1)
         # The configuration was just loaded from file.  We must setup the system to be in a given state.
         # For example, if the system is in runmode, when starting the system over, the PS must sequence up
         # properly then set the system to run mode.
@@ -739,7 +768,7 @@ class TCUSampler
         # The file in the hard drive only stores two states of the system: running or in idle.
         @boardData = boardDataParam
         if getConfiguration().nil? == false
-            setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
+            setBoardStateForCurrentStep(uart1)
         end
     end
 
@@ -816,7 +845,7 @@ class TCUSampler
         @samplerData.SetAllStepsDone_YesNo(allStepsDone_YesNoParam,"#{__LINE__}-#{__FILE__}")
     end    
 
-    def loadConfigurationFromHoldingTank(uart1,gPIO2,tcusToSkip)
+    def loadConfigurationFromHoldingTank(uart1)
         begin
 			fileRead = ""
 			File.open(HoldingTankFilename, "r") do |f|
@@ -825,7 +854,7 @@ class TCUSampler
 				end
 			end
 			# puts fileRead
-			setBoardData(JSON.parse(fileRead),uart1,gPIO2,tcusToSkip)
+			setBoardData(JSON.parse(fileRead),uart1)
 			# @boardData[SharedLib::AllStepsDone_YesNo] = SharedLib::No
 			
 			# puts "Checking content of getConfiguration() function"
@@ -836,14 +865,14 @@ class TCUSampler
                 puts "e.message=#{e.message }"
                 puts "e.backtrace.inspect=#{e.backtrace.inspect}" 
         		SharedLib.bbbLog("There's no data in the holding tank.  New machine starting up. #{__LINE__}-#{__FILE__}")
-        		setBoardData(Hash.new,uart1,gPIO2,tcusToSkip)
+        		setBoardData(Hash.new,uart1)
         		setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
 	    end
     end
     
     def getMuxValue(aMuxParam)
         a=0
-        gPIO2.setGPIO2(GPIO2::ANA_MEAS4_SEL_xD, aMuxParam)
+        @gPIO2.setGPIO2(GPIO2::ANA_MEAS4_SEL_xD, aMuxParam)
         while a<5
             readValue = @pAinMux.read
             a += 1
@@ -1088,11 +1117,11 @@ class TCUSampler
 		end
     end
     
-    def setTcuToStopMode(gPIO2)
+    def setTcuToStopMode()
         bitToUse = GPIO2::X9_ETS7|GPIO2::X9_ETS6|GPIO2::X9_ETS5|GPIO2::X9_ETS4|GPIO2::X9_ETS3|GPIO2::X9_ETS2|GPIO2::X9_ETS1|GPIO2::X9_ETS0
-        gPIO2.etsEna1SetOff(bitToUse)
-        gPIO2.etsEna2SetOff(bitToUse)
-        gPIO2.etsEna3SetOff(bitToUse)
+        @gPIO2.etsEna1SetOff(bitToUse)
+        @gPIO2.etsEna2SetOff(bitToUse)
+        @gPIO2.etsEna3SetOff(bitToUse)
     end
 
 =begin    
@@ -1103,14 +1132,14 @@ class TCUSampler
             if tcusToSkipParam[ct].nil? == true
                 bitToUse = etsEnaBit(ct)
                 if 0<=ct && ct <=7  
-                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
-                    gPIO2.etsEna1SetOff(bitToUse)
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    @gPIO2.etsEna1SetOff(bitToUse)
                 elsif 8<=ct && ct <=15
-                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna2Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
-                    gPIO2.etsEna2SetOff(bitToUse)
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna2Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    @gPIO2.etsEna2SetOff(bitToUse)
                 elsif 16<=ct && ct <=23
-                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna3Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
-                    gPIO2.etsEna3SetOff(bitToUse)
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna3Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    @gPIO2.etsEna3SetOff(bitToUse)
                 end
             end
             ct += 1
@@ -1118,13 +1147,13 @@ class TCUSampler
     end
 =end
 
-    def limboCheck(stepNum,uart1,gPIO2,tcusToSkip)
+    def limboCheck(stepNum,uart1)
         configName = @samplerData.GetConfigurationFileName()
         if ((@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
              @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false) ||
              (configName.nil? == false && configName.length>0 && (stepNum.nil? || (stepNum.nil? ==false && stepNum.length==0)) && @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No)
-            loadConfigurationFromHoldingTank(uart1,gPIO2,tcusToSkip)
-            setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
+            loadConfigurationFromHoldingTank(uart1)
+            setBoardStateForCurrentStep(uart1)
             if @stepToWorkOn.nil?
                 setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
             else
@@ -1136,7 +1165,7 @@ class TCUSampler
             # We're in limbo for some reason
             #
             puts "We're in limbo @samplerData.GetBbbMode()='#{@samplerData.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
-            loadConfigurationFromHoldingTank(uart1,gPIO2,tcusToSkip)
+            loadConfigurationFromHoldingTank(uart1)
 
 		    case @lastPcCmd
 		    when SharedLib::RunFromPc
@@ -1150,7 +1179,7 @@ class TCUSampler
     		else
 		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     		end
-            setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
+            setBoardStateForCurrentStep(uart1)
         end
     end
     
@@ -1186,8 +1215,11 @@ class TCUSampler
     end
 
     def runTCUSampler
+        @gPIO2 = GPIO2.new
+        @gPIO2.getForInitGetImagesOf16Addrs
+
         @socketIp = nil
-    	@setupAtHome = false
+    	@setupAtHome = true # So we can do some work at home
     	@initMuxValueFunc = false
     	@initpollAdcInputFunc = false
         @allDutTempTolReached = false
@@ -1219,7 +1251,7 @@ class TCUSampler
 
         SharedLib.bbbLog("Initializing machine using system's time. #{__LINE__}-#{__FILE__}")
         
-        tcusToSkip = Hash.new
+        @tcusToSkip = Hash.new
 =begin        
         # Read the file that lists the dead TCUs.
         lineNum = 0
@@ -1233,7 +1265,7 @@ class TCUSampler
     			        readLine = line.chomp
         			    if SharedLib.is_a_number?(readLine)
         			        intVal = readLine.to_i
-        			        tcusToSkip[intVal] = intVal
+        			        @tcusToSkip[intVal] = intVal
         			        # puts "Skipping TCU(#{intVal}) based on file list. #{__LINE__}-#{__FILE__}"
         			    else
         			        SharedLib.bbbLog("Not processing line# '#{lineNum+1}' on file '#{FaultyTcuList_SkipPolling}' because it's not a number. #{__LINE__}-#{__FILE__}")
@@ -1251,10 +1283,10 @@ class TCUSampler
         ct = 0
         newDeadTcu = false
         dutObj = DutObj.new()
-        while ct<24 && tcusToSkip[ct].nil? do 
-            uartResponse = DutObj::getTcuStatusS(ct,uart1,gPIO2)
+        while ct<24 && @tcusToSkip[ct].nil? do 
+            uartResponse = DutObj::getTcuStatusS(ct,uart1,@gPIO2)
             if uartResponse == DutObj::FaultyTcu
-                tcusToSkip[ct] = ct
+                @tcusToSkip[ct] = ct
                 newDeadTcu = true
                 SharedLib.bbbLog("UART not responding to TCU#{ct} (zero based index), adding item to be skipped when polling. #{__LINE__}-#{__FILE__}")
             else
@@ -1275,7 +1307,7 @@ class TCUSampler
     	        file.write("This file lists the TCUs that are to be skipped when running the system.  Items not listed during initial boot might be added in this list by the system if UART don't reply properly.\n")
     	        ct = 0
     	        while ct<24 do
-    	            if tcusToSkip[ct].nil? == false
+    	            if @tcusToSkip[ct].nil? == false
     	                file.write("#{ct}\n") 
     	                puts "Wrote #{ct} into file. #{__LINE__}-#{__FILE__}"
     	            end
@@ -1291,7 +1323,7 @@ class TCUSampler
         # Get the board configuration
         #
         SharedLib.bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
-        loadConfigurationFromHoldingTank(uart1,gPIO2,tcusToSkip)
+        loadConfigurationFromHoldingTank(uart1)
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration][FileName].nil? == false
 	        @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
@@ -1311,13 +1343,13 @@ class TCUSampler
             @samplerData.SetAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # so it will not run
         end
         
-        setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
+        setTcuToStopMode() # turnOffDuts(@tcusToSkip)
         
-	    initStepToWorkOnVar(uart1,gPIO2,tcusToSkip)
+	    initStepToWorkOnVar(uart1)
         if @stepToWorkOn.nil? == false
             # PP.pp(@stepToWorkOn)
             # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
-            limboCheck(@stepToWorkOn[StepNum],uart1,gPIO2,tcusToSkip)
+            limboCheck(@stepToWorkOn[StepNum],uart1)
         end
         loggingTime = 60 # 5 seconds for now
         pollingTime = 1 # check every second
@@ -1338,12 +1370,27 @@ class TCUSampler
             else
                 cfgName = "No"
             end
-            puts "ping Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+            
+            if @stepToWorkOn.nil? == false
+                tw = @stepToWorkOn[SharedMemory::TempWait]
+                ctw = @stepToWorkOn[CalculatedTempWait]
+                if @waitTempStartTime.nil?
+                    wts = 0
+                else
+                    wts = @waitTempStartTime
+                end
+                twtimeleft = (ctw-(Time.now.to_f-wts)).to_i
+            else
+                tw = "---"
+                ctw = "---"
+                twtimeleft = "---"
+            end
+            puts "Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} ctw='#{ctw}', tw='#{tw}', temp time wait left ='#{twtimeleft}' #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             @samplerData.SetSlotTime(Time.now.to_i)
             if skipLimboStateCheck
                 skipLimboStateCheck = false
             else
-                limboCheck(stepNum,uart1,gPIO2,tcusToSkip)
+                limboCheck(stepNum,uart1)
             end
     
 			case @samplerData.GetBbbMode()
@@ -1395,157 +1442,175 @@ class TCUSampler
                                         case key2
                                         when "VPS0"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"32").to_f
-                                            #actualValue = 0.9
+                                            if @setupAtHome
+                                                actualValue = 0.9
+                                            end
                                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax,flagTolP,flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax,flagTolP,flagTolN)
                                                 break
                                             end
                                        when "IPS0"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "VPS1"
 			                                # puts "PS1V = #{@samplerData.getPsVolts(muxData,adcData,"33")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"33").to_f
-                                            #actualValue = 0.9
+                                            if @setupAtHome
+                                                actualValue = 0.9
+                                            end
                                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "IPS1"
 			                                # puts "PS1I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "VPS2"
 			                                # puts "PS2V = #{@samplerData.getPsVolts(muxData,adcData,"34")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"34").to_f
-                                            #actualValue = 1.5
+                                            if @setupAtHome
+                                                actualValue = 1.5
+                                            end
                                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "IPS2"
 			                                # puts "PS2I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "VPS3"
 			                                # puts "PS3V = #{@samplerData.getPsVolts(muxData,adcData,"35")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"35").to_f
-                                            #actualValue = 0.9
+                                            if @setupAtHome
+                                                actualValue = 0.9
+                                            end
                                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "IPS3"
 			                                # puts "PS3I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "VPS4"
 			                                # puts "PS4V = #{@samplerData.getPsVolts(muxData,adcData,"36")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"36").to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "IPS4"
 			                                # puts "PS4I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2")}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2").to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "VPS5"
 			                                # puts "PS5V = #{@samplerData.getPsVolts(muxData,adcData,"37")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"37").to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "IPS5"
 			                                # puts "PS5I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,nil)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,nil).to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "VPS6"
 			                                # puts "PS6V = #{@samplerData.getPsVolts(muxData,adcData,"38")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"38").to_f
-                                            #actualValue = 3.3
+                                            if @setupAtHome
+                                                actualValue = 3.3
+                                            end
                                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "IPS6"
 			                                # puts "PS6I = #{@samplerData.getPsCurrent(muxData,eiPs,"24",nil)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,"24",nil).to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "VPS7"
 			                                # puts "PS7V = #{@samplerData.getPsVolts(muxData,adcData,"39")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"39").to_f
                                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            #actualValue = 0.9
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if @setupAtHome
+                                                actualValue = 0.9
+                                            end
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "IPS7"
 			                                # puts "PS7I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,nil)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "VPS8"
 			                                # puts "PS8V = #{@samplerData.getPsVolts(muxData,adcData,"40")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"40").to_f
                                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            #actualValue = 5.0
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if @setupAtHome
+                                                actualValue = 5.0
+                                            end
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "IPS8"
 			                                # puts "PS8I = #{@samplerData.getPsCurrent(muxData,eiPs,"25",nil)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,"25",nil).to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "VPS9"
 			                                # puts "PS9V = #{@samplerData.getPsVolts(muxData,adcData,"41")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"41").to_f
                                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            #actualValue = 2.1
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if @setupAtHome
+                                                actualValue = 2.1
+                                            end
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "IPS9"
 			                                # puts "PS9I = #{@samplerData.getPsCurrent(muxData,eiPs,"26",nil)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,"26",nil).to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "VPS10"
 			                                # puts "PS10V = #{@samplerData.getPsVolts(muxData,adcData,"42")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"42").to_f
                                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            #actualValue = 2.5
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if @setupAtHome
+                                                actualValue = 2.5
+                                            end
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "IPS10"
                                             # puts "PS10I = #{@samplerData.getPsCurrent(muxData,eiPs,"27",nil)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,"27",nil).to_f
-                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "IDUT"
                                             unit = "A"
                                             ct = 0
                                             while ct<24 do
-                                                if tcusToSkip[ct].nil? == true
+                                                if @tcusToSkip[ct].nil? == true
                             						puts "dutI#{ct} = '#{SharedLib.getCurrentDutDisplay(muxData,"#{ct}")}'"
                                                     actualValue = SharedLib.getCurrentDutDisplay(muxData,"#{ct}").to_f
                                                     if (flagTolP <= actualValue && actualValue <= flagTolN) == false
@@ -1553,7 +1618,7 @@ class TCUSampler
                                                         ct = 24 # break out of the loop.
                                                     end
                                                     if (tripMin <= actualValue && actualValue <= tripMax) == false
-                                                        stopMachine(gPIO2)
+                                                        stopMachine()
                                                         @samplerData.ReportError("ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
                                                         ct = 24 # break out of the loop.
                                                     end
@@ -1617,6 +1682,10 @@ class TCUSampler
                                                 end
                             				    dutCt += 1
                             				end
+                            				
+                            				if @allDutTempTolReached == false && @stepToWorkOn[CalculatedTempWait]-(Time.now.to_f-@waitTempStartTime)<0
+                            				    totDutTempReached = totDutsAvailable
+                            				end
 
                             				if totDutTempReached == totDutsAvailable
                             				    if @allDutTempTolReached == false 
@@ -1645,7 +1714,7 @@ class TCUSampler
                                             
                                                         if (tripMin <= actualValue && actualValue <= tripMax) == false
                                                             puts "trip points failure. #{__LINE__}-#{__FILE__}"
-                                                            stopMachine(gPIO2Param)
+                                                            stopMachine()
                                                             dutCt = 24 
                                                             @samplerData.ReportError("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
                                                         end
@@ -1821,7 +1890,7 @@ class TCUSampler
                             end
                             
                             setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-                            setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
+                            setBoardStateForCurrentStep(uart1)
                             # SharedLib.pause "Finished step. @stepToWorkOn.nil?=#{@stepToWorkOn.nil?}","#{__LINE__}-#{__FILE__}"
                             if @stepToWorkOn.nil? == false
                                 # There's more step to process
@@ -1833,7 +1902,7 @@ class TCUSampler
                                 # Done processing all steps listed in configuration.step file
                                 saveBoardStateToHoldingTank()
                                 
-                                setTcuToStopMode(gPIO2)
+                                setTcuToStopMode()
                                 # We're done processing all the steps.
                             end
                         end
@@ -1859,43 +1928,20 @@ class TCUSampler
                     @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    case pcCmd
         		    when SharedLib::RunFromPc
-                        @dutTempTolReached = Hash.new
-                        @allDutTempTolReached = false
-                                				
-            		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
-            		    
-                        # Turn on the control for TCUs that are not disabled.
-                        SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
-                        ct = 0
-                        while ct<24 do
-                            if tcusToSkip[ct].nil? == true
-                                bitToUse = etsEnaBit(ct)
-                                if 0<=ct && ct <=7  
-                                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
-                                    gPIO2.etsEna1SetOn(bitToUse)
-                                elsif 8<=ct && ct <=15
-                                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna2Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
-                                    gPIO2.etsEna2SetOn(bitToUse)
-                                elsif 16<=ct && ct <=23
-                                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  gPIO2.etsEna3Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
-                                    gPIO2.etsEna3SetOn(bitToUse)
-                                end
-                            end
-                            ct += 1
-                        end
+        		        runMachine()
                         
         		    when SharedLib::StopFromPc
-        		        stopMachine(gPIO2)
+        		        stopMachine()
                         
         		    when SharedLib::ClearConfigFromPc
         		        @samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
 
-            		    setBoardData(Hash.new,uart1,gPIO2,tcusToSkip)
+            		    setBoardData(Hash.new,uart1)
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-        		        setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
+        		        setBoardStateForCurrentStep(uart1)
             		    @samplerData.SetConfigurationFileName("")
-            		    gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
-                        setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
+            		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+                        setTcuToStopMode() # turnOffDuts(@tcusToSkip)
                         
         		    when SharedLib::LoadConfigFromPc
         		        @boardData[LastStepNumOfSentLog] = -1 # initial value
@@ -1910,25 +1956,25 @@ class TCUSampler
         		        end
         		        @socketIp = nil
         		        
-                        setTcuToStopMode(gPIO2) # turnOffDuts(tcusToSkip)
+                        setTcuToStopMode() # turnOffDuts(@tcusToSkip)
         		        
                         SharedLib.bbbLog("New configuration step file uploaded.")
                         @samplerData.SetConfiguration(memFromService.getHashConfigFromPC(),"#{__LINE__}-#{__FILE__}")
 
-            		    setBoardData(Hash.new,uart1,gPIO2,tcusToSkip)
+            		    setBoardData(Hash.new,uart1)
             		    @boardData[Configuration] = @samplerData.GetConfiguration()
             		    # puts "#{@boardData[Configuration]} - Checking @boardData[Configuration] content."
             		    @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
             		    @samplerData.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-        		        setBoardStateForCurrentStep(uart1,gPIO2,tcusToSkip)
+        		        setBoardStateForCurrentStep(uart1)
             		    saveBoardStateToHoldingTank()
 
             		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
             		    # by clearing it out.
-            		    memFromService.SetConfiguration(nil,"#{__LINE__}-#{__FILE__}") 
-            		    gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+            		    # memFromService.SetConfiguration(nil,"#{__LINE__}-#{__FILE__}") 
+            		    @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
             		    skipLimboStateCheck = true
             		else
             		    SharedLib.bbbLog("Unknown PC command @samplerData.GetPcCmd()='#{@samplerData.GetPcCmd()}'.")
@@ -1944,14 +1990,11 @@ class TCUSampler
             #
             # Gather data regardless of whether it's in run mode or not...
             #
-            if @setupAtHome == false
-                pollAdcInput()
-                pollMuxValues()
-                ThermalSiteDevices.pollDevices(uart1,gPIO2,tcusToSkip)
-                ThermalSiteDevices.logData(@samplerData)
-                getEthernetPsCurrent()
-            end
-
+            pollAdcInput()
+            pollMuxValues()
+            ThermalSiteDevices.pollDevices(uart1,@gPIO2,@tcusToSkip)
+            ThermalSiteDevices.logData(@samplerData)
+            getEthernetPsCurrent()
             
         	# This line of code makes the 'Sender' process useless.  This gives the fastest time of data update to the display.
         	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
@@ -1976,4 +2019,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# @ 1784
+# @ 1656
