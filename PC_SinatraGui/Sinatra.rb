@@ -1,23 +1,5 @@
-#{__LINE__}-#{__FILE__}
-=begin
-Trying to get the creation date of the uploaded file.
-http://stackoverflow.com/questions/3018123/php-how-to-get-creation-date-from-uploaded-file
-
-Solution, send the whole data and see if anything is different from what's send and what's in the BBB system.
-If there's a difference, update the data in BBB.
------------------------
-To get images so it'll probably display on Sinatra
-http://stackoverflow.com/questions/3493505/ruby-sinatra-serving-up-css-javascript-or-image-files
-get '/notes/images/:file' do
-  send_file('/root/dev/notes/images/'+SharedLib.uriToStr(params[:file]), :disposition => 'inline')
-end
-=end
 # Code to look at:
-# "The run duration is complete."
 # "BBB PcListener is down.  Need to handle this in production code level."
-# [***] - code not verified.
-#
-# make sure all the sequence code are working
 # 
 require 'rubygems'
 require 'sinatra'
@@ -27,7 +9,6 @@ require 'rest_client'
 require_relative '../lib/SharedLib'
 require_relative '../lib/DRbSharedMemory/ServerLib'
 require_relative '../lib/SharedMemory'
-#require_relative '../PC_GrapeForBoardListener/ServerLib'
 require 'pp' # Pretty print to see the hash values.
 
 require 'drb/drb'
@@ -497,7 +478,7 @@ class UserInterface
 			end
 			ct += 1
 		end
-		writeToSettingsLog("Oven: #{oven}, Slot: #{slotOwnerParam}",settingsFileName)
+		writeToSettingsLog("System: #{oven}, Slot: #{slotOwnerParam}",settingsFileName)
 =begin
 		psItems = ["VPS0","IPS0","VPS1","IPS1","VPS2","IPS2","VPS3","IPS3","VPS4","IPS4","VPS5","IPS5","VPS6","IPS6","VPS7","IPS7","VPS8","IPS8","VPS9","IPS9","VPS10","IPS10","IDUT"]
 		ct = 0
@@ -1907,22 +1888,23 @@ end
 					return false
 			end
 			
-			if mustBeNumber(configFileName,7+offset,config,"TEMP WAIT") == false
+			if mustBeNumber(configFileName,7+offset,config,SharedMemory::TempWait) == false
 					return false
 			end
-			
-			if mustBeNumber(configFileName,8+offset,config,"Alarm Wait") == false
+
+			if mustBeNumber(configFileName,8+offset,config,SharedMemory::AlarmWait) == false
 					return false
 			end
 			
 			#
 			# Make sure that 'Auto Restart' and 'Stop on Tolerance' are boolean (1 or 0)
 			#
-			if mustBeBoolean(configFileName,9+offset,config,"Auto Restart") == false
+
+			if mustBeBoolean(configFileName,9+offset,config,SharedMemory::AutoRestart) == false
 					return false
 			end
-			
-			if mustBeBoolean(configFileName,10+offset,config,"Stop on Tolerance") == false
+						
+			if mustBeBoolean(configFileName,10+offset,config,SharedMemory::StopOnTolerance) == false
 					return false
 			end
 			

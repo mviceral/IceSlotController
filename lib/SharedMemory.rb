@@ -28,6 +28,11 @@ class SharedMemory
     StepsLogRecordsPath = "../steps\\ log\\ records"
 
     WaitTempMsg = "WaitTempMsg"
+		TempWait = "TEMP WAIT"
+		AlarmWait = "Alarm Wait"
+		AutoRestart = "Auto Restart"
+		StopOnTolerance = "Stop on Tolerance"
+    
     
     def writeAndFreeLocked(strParam, fromParam)
 =begin
