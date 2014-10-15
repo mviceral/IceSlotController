@@ -769,7 +769,7 @@ class SharedMemory
         
         errItem = Array.new
         errItem.push(errMsgParam)
-        errItem.push(Time.new.to_i)
+        errItem.push("#{Time.new.inspect}")
         
         ds[SharedLib::ErrorMsg].push(errItem)
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
