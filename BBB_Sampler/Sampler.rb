@@ -577,6 +577,8 @@ class TCUSampler
                                         
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
+                                        PP.pp(@stepToWorkOn)
+                                        SharedLib.pause "Checking content of @stepToWorkOn","#{__LINE__}-#{__FILE__}"
                                         # puts "TIMERRUFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRUFP"]}'"
                                         # puts "TIMERRDFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRDFP"]}'"
 
