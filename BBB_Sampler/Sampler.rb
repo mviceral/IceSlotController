@@ -1530,9 +1530,9 @@ class TCUSampler
                             
                             if timeOfLog <= Time.now.to_i
                                 timeOfLog += pollIntervalInSeconds
-                                hours =  (@samplerData.GetStepTimeLeft().to_i/3600.0).to_i
-                                mins =  ((@samplerData.GetStepTimeLeft().to_i-hours*3600.0)/60.0).to_i
-                                tbs += "Log Time Left: #{SharedLib::makeTime2colon2Format(hours,mins)} (hh:mm)\n"
+                                mins =  ((@samplerData.GetStepTimeLeft())/60.0).to_i
+                                secs =  (@samplerData.GetStepTimeLeft()-mins*60.0).to_i
+                                tbs += "Log Time Left: #{SharedLib::makeTime2colon2Format(mins,secs)} (mm:ss)\n"
                                 tbs += "#{DutNum}|#{DutStatus}|#{DutTemp}|#{DutCurrent}|#{DutHeatDuty}|#{DutControllerTemp}|#{DutPwmOutput}|\n"
                                 dutCt = 0
                                 muxData = @samplerData.GetDataMuxData("#{__LINE__}-#{__FILE__}")
@@ -1550,7 +1550,11 @@ class TCUSampler
                                         tbs += "#{makeItFit(temperature,DutTemp)}|"
                                         tbs += "#{makeItFit(SharedLib.getCurrentDutDisplay(muxData,"#{dutCt}"),DutCurrent)}|"
                 						pWMoutput = splitted[4]
-                                        heatDuty = SharedLib::make5point2Format(pWMoutput.to_f/255.0*100.0)
+                						if splitted[3] == "1"
+                                            heatDuty = 0.0
+                						else
+                                            heatDuty = SharedLib::make5point2Format(pWMoutput.to_f/255.0*100.0)
+                						end
                                         tbs += "#{makeItFit(heatDuty,DutHeatDuty)}|"
                 						controllerTemp = SharedLib::make5point2Format(splitted[1])
                                         tbs += "#{makeItFit(controllerTemp,DutControllerTemp)}|"
@@ -1607,9 +1611,6 @@ class TCUSampler
                                 tbs += "#{makeItFit((adcData[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3),Temp1)}|"
                                 tbs += "#{makeItFit((adcData[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3),Temp2)}\n"
                                 
-                                if hours == 0 && mins == 1
-                                    tbs += "End Step (step##{@samplerData.GetStepNumber()})\n"
-                                end
                             end
                             
                             if tbs.length>0
@@ -1625,6 +1626,16 @@ class TCUSampler
                             
                             @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
         			    else
+        			        tbs = "End Step (step##{lastStepNumOfSentLog})\n"
+        			        
+                            slotInfo = Hash.new()
+                            slotInfo[SharedLib::DataLog] = tbs
+                            slotInfo[SharedLib::SlotOwner] = @samplerData.GetSlotOwner# GetSlotIpAddress()
+                            slotInfo[SharedLib::ConfigurationFileName] = @samplerData.GetConfigurationFileName()
+                            slotInfo[SharedLib::ConfigDateUpload] = @samplerData.GetConfigDateUpload()
+                            slotInfoJson = slotInfo.to_json
+                            SendSampledTcuToPCLib::sendSlotInfoToPc(slotInfoJson)
+        			        
         			        # Step just finished.
                             # We're in polling mode.
                             if pollIntervalInSeconds == loggingTime
