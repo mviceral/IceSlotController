@@ -870,8 +870,21 @@ class UserInterface
 					</td>
 					<td valign=\"top\" rowspan=\"2\">
 				 		<table>"
-				 		
-		if @sharedMem.GetDispAllStepsDone_YesNo(slotLabel2Param) == SharedLib::Yes &&
+		if @sharedMem.GetDispWaitTempMsg(slotLabel2Param).nil? == false
+			stepNum = @sharedMem.GetDispStepNumber(slotLabel2Param)
+			topTable += "								
+				 			<tr><td align=\"center\"><font size=\"1.75\"/>Step '#{stepNum}' Waiting Temp Tolerance</td></tr>
+				 			<tr>
+				 				<td align=\"center\">
+				 					<font 				 						
+				 						size=\"2\" 
+				 						style=\"font-style: italic;\">"
+			disp = @sharedMem.GetDispWaitTempMsg(slotLabel2Param)
+			topTable += "		#{disp}				 							
+				 					</font>
+				 				</td>
+				 			</tr>"
+		elsif @sharedMem.GetDispAllStepsDone_YesNo(slotLabel2Param) == SharedLib::Yes &&
 				@sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? == false &&
 				@sharedMem.GetDispConfigurationFileName(slotLabel2Param).length > 0
 			topTable += "
@@ -983,15 +996,7 @@ class UserInterface
 									</center>
 								</td>
 							</tr>"
-		if @sharedMem.GetDispWaitTempMsg(slotLabel2Param).nil? == false
-			topTable += "								
-				<tr>
-					<td align = \"center\">&nbsp;</td>
-				</tr>
-				<tr>
-					<td align = \"center\">&nbsp;</td>
-				</tr>"
-		elsif @sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? == false && 
+		if @sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? == false && 
 			@sharedMem.GetDispConfigurationFileName(slotLabel2Param).length > 0
 			topTable += "								
 				<tr>
@@ -1020,22 +1025,7 @@ class UserInterface
 				</tr>"
 		end							
 		
-		if @sharedMem.GetDispWaitTempMsg(slotLabel2Param).nil? == false
-			topTable += "								
-				<tr>
-					<td align=\"center\">
-							<font size=\"1\">Waiting Temp Tolerance</font>
-					</td>
-				</tr>
-				<tr>
-					<td align = \"center\">
-						<font size=\"1.25\" style=\"font-style: italic;\">"
-							disp = @sharedMem.GetDispWaitTempMsg(slotLabel2Param)
-			topTable += "		#{disp}
-						</font>								
-					</td>
-				</tr>"
-		elsif @sharedMem.GetDispBbbMode(slotLabel2Param) == SharedLib::InRunMode && @sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? == false && @sharedMem.GetDispConfigurationFileName(slotLabel2Param).length > 0
+		if @sharedMem.GetDispBbbMode(slotLabel2Param) == SharedLib::InRunMode && @sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? == false && @sharedMem.GetDispConfigurationFileName(slotLabel2Param).length > 0
 			topTable += "								
 					<tr>
 						<td align=\"left\">
