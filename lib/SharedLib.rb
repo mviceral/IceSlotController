@@ -297,6 +297,20 @@ class SharedLib
 			49,SPS10,Enable-Disable ,SEQ,Slot PCB,9,200,1,200,,,,,,,,"
 	end
   
+  def MakeShellFriendly(str)
+		ct = 0
+		newStr = ""
+		while ct < str.length
+			if str[ct] == "\""
+				newStr += "\\\""
+			else
+				newStr += str[ct]
+			end
+			ct += 1
+		end
+		return newStr
+	end
+  
   def getFileNameRecord(fileName,configDateUpload,slotOwnerParam)
   	configDateUpload = Time.at(configDateUpload.to_i)
 		ct = 0
