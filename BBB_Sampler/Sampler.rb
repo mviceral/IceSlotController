@@ -171,6 +171,7 @@ class TCUSampler
                     @stepToWorkOn[StepTimeLeft] = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun())
                 end
                 psSeqDown("#{__LINE__}-#{__FILE__}")
+                @samplerData.setWaitTempMsg("")
             end
             
             saveBoardStateToHoldingTank()
@@ -698,29 +699,17 @@ class TCUSampler
         # puts "'#{key2}' checking for trip points. #{__LINE__}-#{__FILE__}"
         if @disabledPS.include?(key2) == false
             # puts "'#{key2}' is not disabled.  Checking for trip points."
-            @samplerData.ReportError("key2 = #{key2}, tripMin='#{tripMin}', actualValue='#{actualValue}', tripMax='#{tripMax}', flagTolP='#{flagTolP}', flagTolN='#{flagTolN}'")
+            # @samplerData.ReportError("key2 = #{key2}, tripMin='#{tripMin}', actualValue='#{actualValue}', tripMax='#{tripMax}', flagTolP='#{flagTolP}', flagTolN='#{flagTolN}'")
             
             unit = key2[0]
             if unit == "I"
                 unit = "A"
             end
             
-            if (flagTolP.to_f > flagTolN.to_f)
-                hold = flagTolP
-                flagTolP = flagTolN
-                flagTolN = hold
-            end
-                
             if (flagTolP <= actualValue && actualValue <= flagTolN) == false
                 @samplerData.ReportError("NOTICE - #{key2} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.  .")
             end
 
-            if (tripMin > tripMax)
-                hold = tripMin
-                tripMin = tripMax
-                tripMax = hold
-            end
-                
             if (tripMin <= actualValue && actualValue <= tripMax) == false
                 stopMachine(gPIO2Param)
                 @samplerData.ReportError("ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
@@ -732,8 +721,12 @@ class TCUSampler
     
     def stopMachine(gPIO2Param)
         setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+                
         # Turn on the control for TCUs that are not disabled.
         setTcuToStopMode(gPIO2Param) # turnOffDuts(tcusToSkip)
+        
+        @samplerData.setWaitTempMsg("")
+        @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
     end
 
     def setBoardData(boardDataParam,uart1,gPIO2,tcusToSkip)
@@ -1328,7 +1321,7 @@ class TCUSampler
         pollingTime = 1 # check every second
         pollIntervalInSeconds = pollingTime
         skipLimboStateCheck = false
-        @samplerData.ReportError("Error test. #{__LINE__}-#{__FILE__}")
+        # @samplerData.ReportError("Error test. #{__LINE__}-#{__FILE__}")
         timeOfLog = Time.now
         while true
             stepNum = ""
@@ -1338,7 +1331,12 @@ class TCUSampler
                 stepNum = @stepToWorkOn[StepNum]
             end
             
-            puts "ping Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{@samplerData.GetConfigurationFileName()} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+            if @samplerData.GetConfigurationFileName().length>0
+                cfgName = "Yes"
+            else
+                cfgName = "No"
+            end
+            puts "ping Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             @samplerData.SetSlotTime(Time.now.to_i)
             if skipLimboStateCheck
                 skipLimboStateCheck = false
@@ -1355,12 +1353,13 @@ class TCUSampler
     			        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     			        setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
     			    else
-			            puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
+		                puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
         			    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
         			        # We're still running.
         			        
         			        tcuData = @samplerData.parseOutTcuData(@samplerData.GetDataTcu("#{__LINE__}-#{__FILE__}"))
-
+                            tempTolP="P Not Set"
+                            tempTolN="N Not Set"
         			        # Check for the trip points.  How are we going to check them?
         			        # First, display the trip points, then display the current values.
         			        # Then compare the two values.  If trip points fail
@@ -1377,12 +1376,25 @@ class TCUSampler
                 			            tripMax = array2["TripMax"].to_f
                 			            flagTolP = array2["FlagTolP"].to_f
                 			            flagTolN = array2["FlagTolN"].to_f
+
+                                        if (tripMin < tripMax) == false
+                                            hold = tripMin
+                                            tripMin = tripMax
+                                            tripMax = hold
+                                        end
+
+                			            if (flagTolP < flagTolN) == false
+                			                hold = flagTolP
+                			                flagTolP = flagTolN
+                			                flagTolN = hold
+                			            end
+                			            
                 			            # puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
                                         case key2
                                         when "VPS0"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"32").to_f
-                                            actualValue = 0.9
-                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            #actualValue = 0.9
+                                            #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                                             if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax,flagTolP,flagTolN)
                                                 break
                                             end
@@ -1394,8 +1406,8 @@ class TCUSampler
                                         when "VPS1"
 			                                # puts "PS1V = #{@samplerData.getPsVolts(muxData,adcData,"33")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"33").to_f
-                                            actualValue = 0.9
-                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            #actualValue = 0.9
+                                            #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                                             if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1408,8 +1420,8 @@ class TCUSampler
                                         when "VPS2"
 			                                # puts "PS2V = #{@samplerData.getPsVolts(muxData,adcData,"34")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"34").to_f
-                                            actualValue = 1.5
-                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            #actualValue = 1.5
+                                            #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                                             if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1422,8 +1434,8 @@ class TCUSampler
                                         when "VPS3"
 			                                # puts "PS3V = #{@samplerData.getPsVolts(muxData,adcData,"35")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"35").to_f
-                                            actualValue = 0.9
-                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            #actualValue = 0.9
+                                            #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                                             if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1460,8 +1472,8 @@ class TCUSampler
                                         when "VPS6"
 			                                # puts "PS6V = #{@samplerData.getPsVolts(muxData,adcData,"38")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"38").to_f
-                                            actualValue = 3.3
-                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            #actualValue = 3.3
+                                            #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                                             if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1474,8 +1486,8 @@ class TCUSampler
                                         when "VPS7"
 			                                # puts "PS7V = #{@samplerData.getPsVolts(muxData,adcData,"39")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"39").to_f
-                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            actualValue = 0.9
+                                            #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            #actualValue = 0.9
                                             if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1488,8 +1500,8 @@ class TCUSampler
                                         when "VPS8"
 			                                # puts "PS8V = #{@samplerData.getPsVolts(muxData,adcData,"40")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"40").to_f
-                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            actualValue = 5.0
+                                            #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            #actualValue = 5.0
                                             if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1502,8 +1514,8 @@ class TCUSampler
                                         when "VPS9"
 			                                # puts "PS9V = #{@samplerData.getPsVolts(muxData,adcData,"41")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"41").to_f
-                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            actualValue = 2.1
+                                            #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            #actualValue = 2.1
                                             if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1516,8 +1528,8 @@ class TCUSampler
                                         when "VPS10"
 			                                # puts "PS10V = #{@samplerData.getPsVolts(muxData,adcData,"42")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"42").to_f
-                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
-                                            actualValue = 2.5
+                                            #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            #actualValue = 2.5
                                             if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1527,15 +1539,20 @@ class TCUSampler
                                             if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
-                                        when "IDUT"                                       
+                                        when "IDUT"
+                                            unit = "A"
                                             ct = 0
                                             while ct<24 do
                                                 if tcusToSkip[ct].nil? == true
                             						puts "dutI#{ct} = '#{SharedLib.getCurrentDutDisplay(muxData,"#{ct}")}'"
                                                     actualValue = SharedLib.getCurrentDutDisplay(muxData,"#{ct}").to_f
+                                                    if (flagTolP <= actualValue && actualValue <= flagTolN) == false
+                                                        @samplerData.ReportError("NOTICE - IDUT#{ct} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.  .")
+                                                        ct = 24 # break out of the loop.
+                                                    end
                                                     if (tripMin <= actualValue && actualValue <= tripMax) == false
                                                         stopMachine(gPIO2)
-                                                        @samplerData.ReportError("IDUT#{ct} (zero base) TRIPPED!  '#{tripMin}'A <= '#{actualValue}'A  <= '#{tripMax}'A key='#{key2}' is FALSE.")
+                                                        @samplerData.ReportError("ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
                                                         ct = 24 # break out of the loop.
                                                     end
                                                 end
@@ -1563,18 +1580,32 @@ class TCUSampler
                 			            # puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
                                         case key2
                                         when "TDUT"
+                                            if (tripMin < tripMax) == false
+                                                hold = tripMin
+                                                tripMin = tripMax
+                                                tripMax = hold
+                                            end
+
+                    			            if (flagTolP < flagTolN) == false
+                    			                hold = flagTolP
+                    			                flagTolP = flagTolN
+                    			                flagTolN = hold
+                    			            end
+                                        
                                             dutCt = 0
                                             totDutTempReached = 0
                                             totDutsAvailable = 0
+                                            tempTolP = flagTolP
+                                            tempTolN = flagTolN
                             				while dutCt<24 
                             					if tcuData.nil? == false && tcuData["#{dutCt}"].nil? == false 
             						                splitted = tcuData["#{dutCt}"].split(',')
                             						temperature = SharedLib::make5point2Format(splitted[2]).to_f
+                                                    puts "dut##{dutCt} flagTolP='#{flagTolP}' <= temp='#{temperature}' <= #{flagTolN} : '#{flagTolP<=temperature && temperature<=flagTolN}'"
                                 				    if flagTolP<=temperature && temperature<=flagTolN
-                                				        @dutTempTolReached[dutCt] = true
-                                				    else
-                                				        @dutTempTolReached[dutCt] = false
-                                                        @samplerData.setWaitTempMsg("Waiting Temp")
+                                				        if @dutTempTolReached[dutCt].nil?
+                                    				        @dutTempTolReached[dutCt] = true
+                                				        end
                                 				    end
                                 				    
                                 				    if @dutTempTolReached[dutCt] == true
@@ -1589,8 +1620,15 @@ class TCUSampler
                             				    if @allDutTempTolReached == false 
                             				        @allDutTempTolReached = true
                             				        @samplerData.setWaitTempMsg("")
+                            				        @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
+                            				        setTimeOfRun()
                             				    end
                             				end
+                            				
+                        				    if @allDutTempTolReached == false 
+                        				        setTimeOfRun() # So the countdown will never take place.
+                        				    end
+                                            puts "totDutTempReached='#{totDutTempReached}'/'#{totDutsAvailable}' @allDutTempTolReached = '#{@allDutTempTolReached}'"
                             				
                                             if @allDutTempTolReached
                                                 if tcuData.nil?
@@ -1640,131 +1678,139 @@ class TCUSampler
                                 pollIntervalInSeconds = loggingTime
                             end
                             
-                            tbs = ""
-
-                            if @allDutTempTolReached && @boardData[LastStepNumOfSentLog] != @samplerData.GetStepNumber()
-                                @boardData[LastStepNumOfSentLog] = @samplerData.GetStepNumber()
-                                timeOfLog = Time.new.to_i
-                                puts "Sending log data.  #{Time.now.inspect}. #{__LINE__}-#{__FILE__}"
-                                tbs  = "BIB#: #{@ethernetScheme[SlotBibNum]}\n"
-                                tbs  = "Test Step: step##{@samplerData.GetStepNumber()}-#{@samplerData.GetStepName()}\n"
-                                tbs += "Power Supply Setting:\n"
-                                tbs += "#{PSNameLogger}|#{NomSetLogger}|#{TripMinLogger}|#{TripMaxLogger}|#{FlagTolPLogger}|#{FlagTolNLogger}|#{SeqUpLogger}|#{SeqDownLogger}\n"
-                                @stepToWorkOn["PsConfig"].each do |key, array|
-                                    if key[0] == "V"
-                                        tbs += "#{makeItFit(key,PSNameLogger)}|"
-                                        tbs += "#{makeItFitMeas(array["NomSet"],NomSetLogger)}|"
-                                        tbs += "#{makeItFitMeas(array["TripMin"],TripMinLogger)}|"
-                                        tbs += "#{makeItFitMeas(array["TripMax"],TripMaxLogger)}|"
-                                        tbs += "#{makeItFitMeas(array["FlagTolP"],FlagTolPLogger)}|"
-                                        tbs += "#{makeItFitMeas(array["FlagTolN"],FlagTolNLogger)}|"
-                                        tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqUp"],SeqUpLogger)}|"
-                                        tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqDown"],SeqUpLogger)}\n"
-                                    end
-                                end
-                                tbs += "Temperature Setting:\n"
-                                tbs += "#{PSNameLogger}|#{NomSetLogger}|#{TripMinLogger}|#{TripMaxLogger}|#{FlagTolPLogger}|#{FlagTolNLogger}\n"
-                                @stepToWorkOn["TempConfig"].each do |key, array|
-                                    if key == "TDUT"
-                                        tbs += "#{makeItFit(key,PSNameLogger)}|"
-                                        tbs += "#{makeItFitMeas(array["NomSet"],NomSetLogger)}|"
-                                        tbs += "#{makeItFitMeas(array["TripMin"],TripMinLogger)}|"
-                                        tbs += "#{makeItFitMeas(array["TripMax"],TripMaxLogger)}|"
-                                        tbs += "#{makeItFitMeas(array["FlagTolP"],FlagTolPLogger)}|"
-                                        tbs += "#{makeItFitMeas(array["FlagTolN"],FlagTolNLogger)}\n"
-                                    end
-                                end
-                            end
-                            
-                            if timeOfLog.to_i <= Time.now.to_i
-                                timeOfLog += pollIntervalInSeconds
-                                mins =  ((@samplerData.GetStepTimeLeft().to_i)/60.0).to_i
-                                secs = @samplerData.GetStepTimeLeft().to_i-mins*60.0
-                                tbs += "Log Time Left: #{SharedLib::makeTime2colon2Format(mins,secs)} (mm:ss)\n"
-                                tbs += "#{DutNum}|#{DutStatus}|#{DutTemp}|#{DutCurrent}|#{DutHeatDuty}|#{DutControllerTemp}|#{DutPwmOutput}|\n"
-                                dutCt = 0
-                                muxData = @samplerData.GetDataMuxData("#{__LINE__}-#{__FILE__}")
-                                adcData = @samplerData.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
-                                eiPs = @samplerData.GetDataEips()
-                                # tbs += "eiPs=#{eiPs}\n"
-                				while dutCt<24
-                					dutIndex = "Dut#{dutCt}"
-                					if tcuData.nil? == false && tcuData["#{dutCt}"].nil? == false 
-						                splitted = tcuData["#{dutCt}"].split(',')
-                                        tbs += "#{makeItFit(dutIndex,DutNum)}|"
-                                        tbs += "#{makeItFit(splitted[5],DutStatus)}|"
-                						temperature = SharedLib::make5point2Format(splitted[2])
-                                        tbs += "#{makeItFitMeas(temperature,DutTemp)}|"
-                                        tbs += "#{makeItFitMeas(SharedLib.getCurrentDutDisplay(muxData,"#{dutCt}"),DutCurrent)}|"
-                                        if splitted[3] == "0"
-                    						pWMoutput = splitted[4]
-                                            heatDuty = SharedLib::make5point2Format(pWMoutput.to_f/255.0*100.0)
-                                        else
-                                            heatDuty = 0
-                                        end
-                                        tbs += "#{makeItFitMeas(heatDuty,DutHeatDuty)}|"
-                						controllerTemp = SharedLib::make5point2Format(splitted[1])
-                                        tbs += "#{makeItFitMeas(controllerTemp,DutControllerTemp)}|"
-                                        tbs += "#{makeItFit(pWMoutput,DutPwmOutput)}\n"
-                					end
-                					dutCt += 1
-                				end # of 'while dutCt<24'
-                                # Supply 0 <V set> <V measured> <I measured>
-                                tbs += "#{PSNameLogger}|#{VMeas}|#{IMeas}\n"
-                                tbs += "#{makeItFit("VPS0",PSNameLogger)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"32"),VMeas)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS0"),IMeas)}\n"
-
-                                tbs += "#{makeItFit("VPS1",PSNameLogger)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"33"),VMeas)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS1"),IMeas)}\n"
-
-                                tbs += "#{makeItFit("VPS2",PSNameLogger)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"34"),VMeas)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS2"),IMeas)}\n"
-
-                                tbs += "#{makeItFit("VPS3",PSNameLogger)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"35"),VMeas)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS3"),IMeas)}\n"
-
-                                tbs += "#{makeItFit("VPS4",PSNameLogger)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"36"),VMeas)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS2"),IMeas)}\n"
-
-                                tbs += "#{makeItFit("VPS5",PSNameLogger)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"37"),VMeas)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS5"),IMeas)}\n"
-
-                                tbs += "#{makeItFit("VPS6",PSNameLogger)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"38"),VMeas)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,"24",nil),IMeas)}\n"
-
-                                tbs += "#{makeItFit("VPS7",PSNameLogger)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"39"),VMeas)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS7"),IMeas)}\n"
-
-                                tbs += "#{makeItFit("VPS8",PSNameLogger)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"40"),VMeas)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,"25",nil),IMeas)}\n"
-
-                                tbs += "#{makeItFit("VPS9",PSNameLogger)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"41"),VMeas)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,"26",nil),IMeas)}\n"
-
-                                tbs += "#{makeItFit("VPS10",PSNameLogger)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"42"),VMeas)}|"
-                                tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,"27",nil),IMeas)}\n"
-                                tbs += "#{Temp1}|#{Temp2}\n"
-                                tbs += "#{makeItFitMeas((adcData[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3),Temp1)}|"
-                                tbs += "#{makeItFitMeas((adcData[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3),Temp2)}\n"
-                            end
-                            
-                            sendToLogger(tbs)
-                            
                             if @allDutTempTolReached                             
+                                tbs = ""
+    
+                                if @boardData[LastStepNumOfSentLog] != @samplerData.GetStepNumber()
+                                    @boardData[LastStepNumOfSentLog] = @samplerData.GetStepNumber()
+                                    timeOfLog = Time.new.to_i
+                                    puts "Sending log data.  #{Time.now.inspect}. #{__LINE__}-#{__FILE__}"
+                                    tbs  = "BIB#: #{@ethernetScheme[SlotBibNum]}\n"
+                                    tbs  = "Test Step: step##{@samplerData.GetStepNumber()}-#{@samplerData.GetStepName()}\n"
+                                    tbs += "Power Supply Setting:\n"
+                                    tbs += "#{PSNameLogger}|#{NomSetLogger}|#{TripMinLogger}|#{TripMaxLogger}|#{FlagTolPLogger}|#{FlagTolNLogger}|#{SeqUpLogger}|#{SeqDownLogger}\n"
+                                    @stepToWorkOn["PsConfig"].each do |key, array|
+                                        if key[0] == "V"
+                                            tbs += "#{makeItFit(key,PSNameLogger)}|"
+                                            tbs += "#{makeItFitMeas(array["NomSet"],5)}|"
+                                            tbs += "#{makeItFitMeas(array["TripMin"],5)}|"
+                                            tbs += "#{makeItFitMeas(array["TripMax"],5)}|"
+                                            tbs += "#{makeItFitMeas(array["FlagTolP"],5)}|"
+                                            tbs += "#{makeItFitMeas(array["FlagTolN"],5)}|"
+                                            tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqUp"],SeqUpLogger)}|"
+                                            tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqDown"],SeqUpLogger)}\n"
+                                        end
+                                    end
+                                    tbs += "Temperature Setting:\n"
+                                    tbs += "#{PSNameLogger}|#{NomSetLogger}|#{TripMinLogger}|#{TripMaxLogger}|#{FlagTolPLogger}|#{FlagTolNLogger}\n"
+                                    @stepToWorkOn["TempConfig"].each do |key, array|
+                                        if key == "TDUT"
+                                            tbs += "#{makeItFit(key,PSNameLogger)}|"
+                                            tbs += "#{makeItFitMeas(array["NomSet"],5)}|"
+                                            tbs += "#{makeItFitMeas(array["TripMin"],5)}|"
+                                            tbs += "#{makeItFitMeas(array["TripMax"],5)}|"
+                                            tbs += "#{makeItFitMeas(array["FlagTolP"],5)}|"
+                                            tbs += "#{makeItFitMeas(array["FlagTolN"],5)}\n"
+                                        end
+                                    end
+                                end
+                                
+                                if timeOfLog.to_i <= Time.now.to_i
+                                    timeOfLog += pollIntervalInSeconds
+                                    mins =  ((@samplerData.GetStepTimeLeft())/60.0).to_i
+                                    secs =  (@samplerData.GetStepTimeLeft()-mins*60.0).to_i
+                                    tbs += "Log Time Left: #{SharedLib::makeTime2colon2Format(mins,secs)} (mm:ss)\n"
+                                    tbs += "#{DutNum}|#{DutStatus}|#{DutTemp}|#{DutCurrent}|#{DutHeatDuty}|#{DutControllerTemp}|#{DutPwmOutput}|\n"
+                                    dutCt = 0
+                                    muxData = @samplerData.GetDataMuxData("#{__LINE__}-#{__FILE__}")
+                                    adcData = @samplerData.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
+                                    eiPs = @samplerData.GetDataEips()
+                                    # tbs += "eiPs=#{eiPs}\n"
+                    				while dutCt<24
+                    					dutIndex = "Dut#{dutCt}"
+                    					if tcuData.nil? == false && tcuData["#{dutCt}"].nil? == false 
+    						                splitted = tcuData["#{dutCt}"].split(',')
+                                            tbs += "#{makeItFit(dutIndex,DutNum)}|"
+                                            tbs += "#{makeItFit(splitted[5],DutStatus)}|"
+                    						temperature = SharedLib::make5point2Format(splitted[2])
+                                            tbs += "#{makeItFit(temperature,DutTemp)}|"
+                                            tbs += "#{makeItFit(SharedLib.getCurrentDutDisplay(muxData,"#{dutCt}"),DutCurrent)}|"
+                    						pWMoutput = splitted[4]
+                    						if splitted[3] == "1"
+                                                heatDuty = 0.0
+                    						else
+                                                heatDuty = SharedLib::make5point2Format(pWMoutput.to_f/255.0*100.0)
+                    						end
+                                            tbs += "#{makeItFit(heatDuty,DutHeatDuty)}|"
+                    						controllerTemp = SharedLib::make5point2Format(splitted[1])
+                                            tbs += "#{makeItFitMeas(controllerTemp,6)}|"
+                                            tbs += "#{makeItFit(pWMoutput,DutPwmOutput)}\n"
+                    					end
+                    					dutCt += 1
+                    				end # of 'while dutCt<24'
+                                    # Supply 0 <V set> <V measured> <I measured>
+                                    tbs += "#{PSNameLogger}|#{VMeas}|#{IMeas}\n"
+                                    tbs += "#{makeItFit("VPS0",PSNameLogger)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"32"),5)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS0"),5)}\n"
+    
+                                    tbs += "#{makeItFit("VPS1",PSNameLogger)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"33"),5)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS1"),5)}\n"
+    
+                                    tbs += "#{makeItFit("VPS2",PSNameLogger)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"34"),5)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS2"),5)}\n"
+    
+                                    tbs += "#{makeItFit("VPS3",PSNameLogger)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"35"),5)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS3"),5)}\n"
+    
+                                    tbs += "#{makeItFit("VPS4",PSNameLogger)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"36"),5)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS2"),5)}\n"
+    
+                                    tbs += "#{makeItFit("VPS5",PSNameLogger)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"37"),5)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS5"),5)}\n"
+    
+                                    tbs += "#{makeItFit("VPS6",PSNameLogger)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"38"),5)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,"24",nil),5)}\n"
+    
+                                    tbs += "#{makeItFit("VPS7",PSNameLogger)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"39"),5)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS7"),5)}\n"
+    
+                                    tbs += "#{makeItFit("VPS8",PSNameLogger)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"40"),5)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,"25",nil),5)}\n"
+    
+                                    tbs += "#{makeItFit("VPS9",PSNameLogger)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"41"),5)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,"26",nil),5)}\n"
+    
+                                    tbs += "#{makeItFit("VPS10",PSNameLogger)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"42"),5)}|"
+                                    tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,"27",nil),5)}\n"
+                                    tbs += "#{Temp1}|#{Temp2}\n"
+    
+                                    tbs += "#{makeItFitMeas((adcData[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(3),6)}|"
+                                    tbs += "#{makeItFitMeas((adcData[SharedLib::SlotTemp2.to_s].to_f/1000.0).round(3),6)}\n"
+                                    
+                                end
+                                
+                                sendToLogger(tbs)
+                                
                                 @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
+                            else
+                                @samplerData.setWaitTempMsg("#{tempTolP}C/#{tempTolN}C")
                             end
         			    else
+        			        # We're done running.
+                            @dutTempTolReached = Hash.new
+                            @allDutTempTolReached = false
+                        
                             sendToLogger("End Step (step##{@boardData[LastStepNumOfSentLog]})\n")
         			        # Step just finished.
                             # We're in polling mode.
@@ -1912,7 +1958,7 @@ class TCUSampler
             # The code ensures that the process is exactly going to take place at the given interval.  No lag that
             # takes place on processing data.
             #
-            sleep(0.25) # Get some sleep time so the Grape app will be a bit more responsive.
+            sleep(0.1) # Get some sleep time so the Grape app will be a bit more responsive.
         end
 
         # End of 'def runTCUSampler'
@@ -1928,4 +1974,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# @ 1478
+# @ 1784
