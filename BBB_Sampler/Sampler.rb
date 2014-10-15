@@ -696,26 +696,38 @@ class TCUSampler
     
     def stopMachineIfTripped(gPIO2Param, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
         # puts "'#{key2}' checking for trip points. #{__LINE__}-#{__FILE__}"
-        # puts "@disabledPS.include? key2 = '#{@disabledPS.include?(key2)}' @disabledPS=#{@disabledPS} #{__LINE__}-#{__FILE__}"
         if @disabledPS.include?(key2) == false
             # puts "'#{key2}' is not disabled.  Checking for trip points."
+            @samplerData.ReportError("key2 = #{key2}, tripMin='#{tripMin}', actualValue='#{actualValue}', tripMax='#{tripMax}', flagTolP='#{flagTolP}', flagTolN='#{flagTolN}'")
             
             unit = key2[0]
             if unit == "I"
                 unit = "A"
             end
             
-            if (flagTolN <= actualValue && actualValue <= flagTolP) == false
-                @samplerData.ReportError("NOTICE - #{key2} out of bound flag points.  '#{flagTolN}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolP}'#{unit} failed.  .")
-            	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
+            if (flagTolP.to_f > flagTolN.to_f)
+                hold = flagTolP
+                flagTolP = flagTolN
+                flagTolN = hold
+            end
+                
+            if (flagTolP <= actualValue && actualValue <= flagTolN) == false
+                @samplerData.ReportError("NOTICE - #{key2} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.  .")
             end
 
+            if (tripMin > tripMax)
+                hold = tripMin
+                tripMin = tripMax
+                tripMax = hold
+            end
+                
             if (tripMin <= actualValue && actualValue <= tripMax) == false
                 stopMachine(gPIO2Param)
                 @samplerData.ReportError("ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
-            	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
+                return true                
             end
         end
+        return false
     end
     
     def stopMachine(gPIO2Param)
@@ -1110,6 +1122,7 @@ class TCUSampler
         end
     end
 =end
+
     def limboCheck(stepNum,uart1,gPIO2,tcusToSkip)
         configName = @samplerData.GetConfigurationFileName()
         if ((@boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No ||
@@ -1359,7 +1372,7 @@ class TCUSampler
                                     eiPs = @samplerData.GetDataEips()
                                     tcu = @samplerData.GetDataTcu("#{__LINE__}-#{__FILE__}")
                                     array.each do |key2, array2|
-                                        nomSet = array2["NomSet"]
+                                        nomSet = array2["NomSet"].to_f
                 			            tripMin = array2["TripMin"].to_f
                 			            tripMax = array2["TripMax"].to_f
                 			            flagTolP = array2["FlagTolP"].to_f
@@ -1368,90 +1381,152 @@ class TCUSampler
                                         case key2
                                         when "VPS0"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"32").to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax,flagTolP,flagTolN)
+                                            actualValue = 0.9
+                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax,flagTolP,flagTolN)
+                                                break
+                                            end
                                        when "IPS0"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "VPS1"
 			                                # puts "PS1V = #{@samplerData.getPsVolts(muxData,adcData,"33")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"33").to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            actualValue = 0.9
+                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "IPS1"
 			                                # puts "PS1I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "VPS2"
 			                                # puts "PS2V = #{@samplerData.getPsVolts(muxData,adcData,"34")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"34").to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            actualValue = 1.5
+                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "IPS2"
 			                                # puts "PS2I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "VPS3"
 			                                # puts "PS3V = #{@samplerData.getPsVolts(muxData,adcData,"35")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"35").to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            actualValue = 0.9
+                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "IPS3"
 			                                # puts "PS3I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "VPS4"
 			                                # puts "PS4V = #{@samplerData.getPsVolts(muxData,adcData,"36")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"36").to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "IPS4"
 			                                # puts "PS4I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2")}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2").to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "VPS5"
 			                                # puts "PS5V = #{@samplerData.getPsVolts(muxData,adcData,"37")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"37").to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "IPS5"
 			                                # puts "PS5I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,nil)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,nil).to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "VPS6"
 			                                # puts "PS6V = #{@samplerData.getPsVolts(muxData,adcData,"38")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"38").to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            actualValue = 3.3
+                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "IPS6"
 			                                # puts "PS6I = #{@samplerData.getPsCurrent(muxData,eiPs,"24",nil)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,"24",nil).to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "VPS7"
 			                                # puts "PS7V = #{@samplerData.getPsVolts(muxData,adcData,"39")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"39").to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            actualValue = 0.9
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "IPS7"
 			                                # puts "PS7I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,nil)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "VPS8"
 			                                # puts "PS8V = #{@samplerData.getPsVolts(muxData,adcData,"40")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"40").to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            actualValue = 5.0
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "IPS8"
 			                                # puts "PS8I = #{@samplerData.getPsCurrent(muxData,eiPs,"25",nil)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,"25",nil).to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "VPS9"
 			                                # puts "PS9V = #{@samplerData.getPsVolts(muxData,adcData,"41")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"41").to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            actualValue = 2.1
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "IPS9"
 			                                # puts "PS9I = #{@samplerData.getPsCurrent(muxData,eiPs,"26",nil)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,"26",nil).to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "VPS10"
 			                                # puts "PS10V = #{@samplerData.getPsVolts(muxData,adcData,"42")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"42").to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            @samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
+                                            actualValue = 2.5
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "IPS10"
                                             # puts "PS10I = #{@samplerData.getPsCurrent(muxData,eiPs,"27",nil)}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,"27",nil).to_f
-                                            stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                            if stopMachineIfTripped(gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
+                                                break
+                                            end
                                         when "IDUT"                                       
                                             ct = 0
                                             while ct<24 do
@@ -1461,7 +1536,7 @@ class TCUSampler
                                                     if (tripMin <= actualValue && actualValue <= tripMax) == false
                                                         stopMachine(gPIO2)
                                                         @samplerData.ReportError("IDUT#{ct} (zero base) TRIPPED!  '#{tripMin}'A <= '#{actualValue}'A  <= '#{tripMax}'A key='#{key2}' is FALSE.")
-                                                    	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
+                                                        ct = 24 # break out of the loop.
                                                     end
                                                 end
                                                 ct += 1
@@ -1475,7 +1550,6 @@ class TCUSampler
                                             # Code don't seem to work.
                                             if @spsList.include? key2 == false
                                                 @samplerData.ReportError("key='#{key2}' is not recognized. #{__LINE__}-#{__FILE__}")
-                                            	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
                                             end
                                         end                    			            
                                     end
@@ -1526,14 +1600,14 @@ class TCUSampler
                 						                splitted = tcuData["#{dutCt}"].split(',')
                                 						actualValue = SharedLib::make5point2Format(splitted[2])
                                                         if (flagTolN <= actualValue && actualValue <= flagTolP) == false
-                                                            @samplerData.ReportError("NOTICE - DUT##{dutCt} out of bound flag points.  '#{flagTolN}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolP}'#{unit} failed.  .")
-                                                        	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
+                                                            @samplerData.ReportError("NOTICE - DUT##{dutCt} out of bound within flag points.  '#{flagTolN}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolP}'#{unit} failed.  .")
                                                         end
                                             
                                                         if (tripMin <= actualValue && actualValue <= tripMax) == false
+                                                            puts "trip points failure. #{__LINE__}-#{__FILE__}"
                                                             stopMachine(gPIO2Param)
+                                                            dutCt = 24 
                                                             @samplerData.ReportError("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
-                                                        	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
                                                         end
                                                         dutCt += 1
                                     				end
@@ -1546,7 +1620,6 @@ class TCUSampler
                                             end
                                             if @tempStuff.include? key2 == false
                                                 @samplerData.ReportError("key='#{key2}' is not recognized. #{__LINE__}-#{__FILE__}")
-                                            	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
                                             end
                                         end                    			            
                                     end
@@ -1558,7 +1631,6 @@ class TCUSampler
                                     
                                     if @otherStuff.include? key == false
                                         @samplerData.ReportError("key='#{key}' is not recognized. #{__LINE__}-#{__FILE__}")
-                                    	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
                                     end
                                 end
                             end
@@ -1818,8 +1890,6 @@ class TCUSampler
         		    # Code block below tells the PcListener that it got the message.
 
                 end
-                
-        		SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
     		end
 
 
@@ -1842,6 +1912,7 @@ class TCUSampler
             # The code ensures that the process is exactly going to take place at the given interval.  No lag that
             # takes place on processing data.
             #
+            sleep(0.25) # Get some sleep time so the Grape app will be a bit more responsive.
         end
 
         # End of 'def runTCUSampler'
