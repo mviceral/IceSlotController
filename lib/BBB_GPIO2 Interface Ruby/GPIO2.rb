@@ -699,12 +699,12 @@ class GPIO2
         #
         # Make sure valid bit parameters are sent.
         #
-        if ~(X4_POWER+X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN)&bitsParam == 0
+        if ~(X4_POWER+X4_FAN1+X4_FAN2+X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN)&bitsParam == 0
             setGPIO2(EXT_SLOT_CTRL_x4, bitsParam)
             return true
         else
             puts "failed on SlotCntlExtSet(#{bitsParam.to_s(16)}) #{__LINE__}-#{__FILE__}"
-            print "    ~(X4_POWER+X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN)&bitsParam = "
+            print "    ~(X4_POWER+X4_FAN1+X4_FAN2++X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN)&bitsParam = "
             # print "    #{getBits(~(X4_POWER+X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN))}&#{getBits(bitsParam)}"
             puts
             return false

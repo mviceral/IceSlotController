@@ -1213,7 +1213,102 @@ class TCUSampler
             SendSampledTcuToPCLib::sendSlotInfoToPc(slotInfoJson)
         end
     end
+    
+    def turnOffHeaters
+        @gPIO2.setBitOff(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_POWER)
+    end
+    
+    def fanCtrl(pwmParam, fanParam)
+        @gPIO2.slotFanPulseWidthModulator(pwmParam)
+        case fanParam
+        when 0
+            @gPIO2.slotCntlExtSet(0)
+        when 1
+            @gPIO2.slotCntlExtSet(GPIO2::X4_FAN1)
+        when 2
+            @gPIO2.slotCntlExtSet(GPIO2::X4_FAN2)
+        when 3
+            @gPIO2.slotCntlExtSet(GPIO2::X4_FAN1+GPIO2::X4_FAN2)
+        else
+            @samplerData.ReportError("fanParam='#{fanParam}' is wrong.  Expect value 0-3. #{__LINE__}-#{__FILE__}")
+        end
+    end
+    
+    # Set the values only one time
+    FanPwm0 = 1
+    FanPwm1 = FanPwm0+1
+    FanPwm2 = FanPwm1+1
+    FanPwm3 = FanPwm2+1
+    FanPwm4 = FanPwm3+1
+    FanPwm5 = FanPwm4+1
+    FanPwm6 = FanPwm5+1
+    FanPwm7 = FanPwm6+1
+    FanPwm8 = FanPwm7+1
+    FanPwm9 = FanPwm8+1
+    FanPwm10 = FanPwm9+1
+    FanPwm11 = FanPwm10+1
+    FanPwm12 = FanPwm11+1
+    FanPwm13 = FanPwm12+1
+    FanPwm14 = FanPwm13+1
+    FanPwm15 = FanPwm14+1
+    FanPwm16 = FanPwm15+1
+    FanPwm17 = FanPwm16+1
+    FanPwm18 = FanPwm17+1
+    FanPwm19 = FanPwm18+1
+    FanPwm20 = FanPwm19+1
+    FanPwm21 = FanPwm20+1
 
+    def backFansHandler
+        adcData = @samplerData.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
+        temp1Param = (adcInput[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(4)
+        fanParam = 3
+        if 20.0 <= temp1Param && temp1Param < 25.0
+            fanCtrl(FanPwm0, fanParam)
+        elsif 25.0 <= temp1Param && temp1Param < 30.0
+            fanCtrl(FanPwm1, fanParam)
+        elsif 30.0 <= temp1Param && temp1Param < 35.0
+            fanCtrl(FanPwm2, fanParam)
+        elsif 35.0 <= temp1Param && temp1Param < 40.0
+            fanCtrl(FanPwm3, fanParam)
+        elsif 40.0 <= temp1Param && temp1Param < 45.0
+            fanCtrl(FanPwm4, fanParam)
+        elsif 45.0 <= temp1Param && temp1Param < 50.0
+            fanCtrl(FanPwm5, fanParam)
+        elsif 50.0 <= temp1Param && temp1Param < 55.0
+            fanCtrl(FanPwm6, fanParam)
+        elsif 55.0 <= temp1Param && temp1Param < 60.0
+            fanCtrl(FanPwm7, fanParam)
+        elsif 60.0 <= temp1Param && temp1Param < 65.0
+            fanCtrl(FanPwm8, fanParam)
+        elsif 65.0 <= temp1Param && temp1Param < 70.0
+            fanCtrl(FanPwm9, fanParam)
+        elsif 70.0 <= temp1Param && temp1Param < 75.0
+            fanCtrl(FanPwm10, fanParam)
+        elsif 75.0 <= temp1Param && temp1Param < 80.0
+            fanCtrl(FanPwm11, fanParam)
+        elsif 80.0 <= temp1Param && temp1Param < 85.0
+            fanCtrl(FanPwm12, fanParam)
+        elsif 85.0 <= temp1Param && temp1Param < 90.0
+            fanCtrl(FanPwm13, fanParam)
+        elsif 90.0 <= temp1Param && temp1Param < 95.0
+            fanCtrl(FanPwm14, fanParam)
+        elsif 95.0 <= temp1Param && temp1Param < 100.0
+            fanCtrl(FanPwm15, fanParam)
+        elsif 100.0 <= temp1Param && temp1Param < 105.0
+            fanCtrl(FanPwm16, fanParam)
+        elsif 105.0 <= temp1Param && temp1Param < 110.0
+            fanCtrl(FanPwm17, fanParam)
+        elsif 110.0 <= temp1Param && temp1Param < 115.0
+            fanCtrl(FanPwm18, fanParam)
+        elsif 115.0 <= temp1Param && temp1Param < 120.0
+            fanCtrl(FanPwm19, fanParam)
+        elsif 120.0 <= temp1Param && temp1Param < 125.0
+            fanCtrl(FanPwm20, fanParam)
+        elsif 125.0 <= temp1Param && temp1Param < 130.0
+            fanCtrl(FanPwm21, fanParam)
+        end
+    end
+    
     def runTCUSampler
         @gPIO2 = GPIO2.new
         @gPIO2.getForInitGetImagesOf16Addrs
@@ -1941,6 +2036,7 @@ class TCUSampler
         		        setBoardStateForCurrentStep(uart1)
             		    @samplerData.SetConfigurationFileName("")
             		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+            		    turnOffHeaters()
                         setTcuToStopMode() # turnOffDuts(@tcusToSkip)
                         
         		    when SharedLib::LoadConfigFromPc
@@ -1975,6 +2071,7 @@ class TCUSampler
             		    # by clearing it out.
             		    # memFromService.SetConfiguration(nil,"#{__LINE__}-#{__FILE__}") 
             		    @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+            		    @gPIO2.setBitOn(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_POWER)
             		    skipLimboStateCheck = true
             		else
             		    SharedLib.bbbLog("Unknown PC command @samplerData.GetPcCmd()='#{@samplerData.GetPcCmd()}'.")
@@ -1995,13 +2092,12 @@ class TCUSampler
             ThermalSiteDevices.pollDevices(uart1,@gPIO2,@tcusToSkip)
             ThermalSiteDevices.logData(@samplerData)
             getEthernetPsCurrent()
+            backFansHandler()
             
         	# This line of code makes the 'Sender' process useless.  This gives the fastest time of data update to the display.
         	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
-            # The code ensures that the process is exactly going to take place at the given interval.  No lag that
-            # takes place on processing data.
             #
             sleep(0.1) # Get some sleep time so the Grape app will be a bit more responsive.
         end
@@ -2019,4 +2115,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# @ 1656
+# @ 1232
