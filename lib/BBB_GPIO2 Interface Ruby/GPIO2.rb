@@ -88,6 +88,7 @@ class GPIO2
       # Bitwise for mainly for writing.
       # XOR bit masking
       X4_POWER            = 0x80
+      X4_BLINK            = 0x40
       X4_FAN1             = 0x20
       X4_FAN2             = 0x10
       X4_BUZR             = 0x08
