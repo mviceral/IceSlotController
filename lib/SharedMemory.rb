@@ -825,7 +825,7 @@ class SharedMemory
         end
     end
 
-    def ReportError(errMsgParam)
+    def ReportError(errMsgParam, timeOfErrorParam)
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
         if ds[SharedLib::ErrorMsg].nil?
             ds[SharedLib::ErrorMsg] = Array.new
@@ -833,7 +833,7 @@ class SharedMemory
         
         errItem = Array.new
         errItem.push(errMsgParam)
-        errItem.push("#{Time.new.inspect}")
+        errItem.push("#{timeOfErrorParam.inspect}")
         
         ds[SharedLib::ErrorMsg].push(errItem)
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
