@@ -34,6 +34,7 @@ class SharedLib
 	SlotIpAddress = "SlotIpAddress"
 	BbbMode = "BbbMode"
 	AllStepsCompletedAt = "AllStepsCompletedAt"
+	DashLines = "---"
 	TotalStepDuration = "TotalStepDuration"
 	# PcListener = "http://192.168.1.210"
 	PcListener = "http://192.168.7.1"
@@ -437,7 +438,7 @@ class SharedLib
 			if muxData.nil? == false && muxData[rawDataParam].nil? == false
 				current = make5point2Format((muxData[rawDataParam].to_f/1000.0).round(3))
 			else
-				current = "---"
+				current = DashLines
 			end
 			return current
     	# End of 'getCurrentDutDisplay()'
