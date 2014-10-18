@@ -552,8 +552,7 @@ class TCUSampler
                                         # PP.pp(getConfiguration()[Steps][key]["TempConfig"])
                                         # puts "Checking content of 'TempConfig' #{__LINE__}-#{__FILE__}"
                                         sleep(2.0)
-                                        @tempSetPoint = getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"]
-                                        ThermalSiteDevices.setTHCPID(uart1,"T",@tcusToSkip,@tempSetPoint)
+                                        ThermalSiteDevices.setTHCPID(uart1,"T",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"])
                                         ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["H"][0..-2].to_f/100.0*255)
                                         ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["C"][0..-2].to_f/100.0*255)
                                         ThermalSiteDevices.setTHCPID(uart1,"P",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["P"])
@@ -579,6 +578,7 @@ class TCUSampler
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
                                         
+<<<<<<< HEAD
                                         @logRptAvgCt = 0
                                         
                                         @dutTempTripMin = @stepToWorkOn["TempConfig"]["TDUT"]["TripMin"]
@@ -590,6 +590,8 @@ class TCUSampler
                                             @dutTempTripMax = hold
                                         end
                                         
+=======
+>>>>>>> 63c18e75ff4106bd23c40a13c2753331a84bd360
                                         # PP.pp(@stepToWorkOn)
                                         # SharedLib.pause "Checking content of @stepToWorkOn","#{__LINE__}-#{__FILE__}"
                                         # puts "TIMERRUFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRUFP"]}'"
@@ -754,6 +756,7 @@ class TCUSampler
             end
 
             if (tripMin <= actualValue && actualValue <= tripMax) == false
+<<<<<<< HEAD
                 stopMachine("#{__LINE__}-#{__FILE__}")
                 # Turn on red light and buzzer and make it blink due to shutdown
                 setToAlarmMode()
@@ -761,6 +764,10 @@ class TCUSampler
                 timeOfError = Time.new
                 @samplerData.ReportError(tbs,timeOfError)
                 logSystemStateSnapShot(tbs,timeOfError)
+=======
+                stopMachine()
+                @samplerData.ReportError("ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
+>>>>>>> 63c18e75ff4106bd23c40a13c2753331a84bd360
                 return true                
             end
         end
@@ -1256,6 +1263,7 @@ class TCUSampler
     end
     
     def fanCtrl(pwmParam, fanParam)
+<<<<<<< HEAD
         # puts "fanCtrl pwm='#{pwmParam}', fan='#{fanParam}' [#{__LINE__}-#{__FILE__}]"
         if @lastPwmParam != pwmParam
             @lastPwmParam = pwmParam # So it won't keep calling the function
@@ -1586,93 +1594,99 @@ class TCUSampler
         sendToLogger(tbs)
     end
 
-    # Set the values only one time
-    FanPwm1 = 0
-    FanPwm2 = 17
-    FanPwm3 = 2*17 # 34
-    FanPwm4 = 3*17 # 51
-    FanPwm5 = 4*17 # 68
-    FanPwm6 = 5*17 # 85
-    FanPwm7 = 6*17 # 102
-    FanPwm8 = 7*17 # 119
-    FanPwm9 = 8*17 # 136
-    FanPwm10 = 9*17 # 153
-    FanPwm11 = 10*17 # 170
-    FanPwm12 = 11*17 # 187
-    FanPwm13 = 12*17 # 204
-    FanPwm14 = 13*17 # 221
-    FanPwm15 = 14*17 # 238
-    FanPwm16 = 15*17 # 255
-=begin    
-    FanPwm17 = FanPwm16+16
-    FanPwm18 = FanPwm17+16
-    FanPwm19 = FanPwm18+16
-    FanPwm20 = FanPwm19+16
-    FanPwm21 = FanPwm20+16
-=end
-
-    # Set only once.
-    CirculateAirPwm = 25
-    FanValue = 3
-    
-    def backFansHandler
-        if @tempSetPoint.nil? == false && @samplerData.GetBbbMode() == SharedLib::InRunMode
-            adcData = @samplerData.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
-            temp1Param = (adcData[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(4)
-            deltaTemp = (temp1Param-@tempSetPoint).round(4)
-            print "AmbientTemp(#{temp1Param})-TempSetPoint(#{@tempSetPoint})='#{deltaTemp}' [#{__LINE__}-#{__FILE__}] "
-            if true
-                if deltaTemp < -25.0
-                    fanCtrl(FanPwm1, FanValue)
-                elsif -25.0 <= deltaTemp && deltaTemp < -20.0
-                    fanCtrl(FanPwm2, FanValue)
-                elsif -20.0 <= deltaTemp && deltaTemp < -15.0
-                    fanCtrl(FanPwm3, FanValue)
-                elsif -15.0 <= deltaTemp && deltaTemp < -10.0
-                    fanCtrl(FanPwm4, FanValue)
-                elsif -10.0 <= deltaTemp && deltaTemp < -5.0
-                    fanCtrl(FanPwm5, FanValue)
-                elsif -5.0 <= deltaTemp && deltaTemp < 0.0
-                    fanCtrl(FanPwm6, FanValue)
-                elsif 0.0 <= deltaTemp && deltaTemp < 5.0
-                    fanCtrl(FanPwm7, FanValue)
-                elsif 5.0 <= deltaTemp && deltaTemp < 10.0
-                    fanCtrl(FanPwm8, FanValue)
-                elsif 10.0 <= deltaTemp && deltaTemp < 15.0
-                    fanCtrl(FanPwm9, FanValue)
-                elsif 15.0 <= deltaTemp && deltaTemp < 20.0
-                    fanCtrl(FanPwm10, FanValue)
-                elsif 20.0 <= deltaTemp && deltaTemp < 25.0
-                    fanCtrl(FanPwm11, FanValue)
-                elsif 25.0 <= deltaTemp && deltaTemp < 30.0
-                    fanCtrl(FanPwm12, FanValue)
-                elsif 30.0 <= deltaTemp && deltaTemp < 35.0
-                    fanCtrl(FanPwm13, FanValue)
-                elsif 35.0 <= deltaTemp && deltaTemp < 40.0
-                    fanCtrl(FanPwm14, FanValue)
-                elsif 40.0 <= deltaTemp && deltaTemp < 45.0
-                    fanCtrl(FanPwm15, FanValue)
-                elsif 45.0 <= deltaTemp
-                    fanCtrl(255, FanValue)
-                end
-            else
-                if deltaTemp < -25
-                    # Ambient temperature is cooler than setpoint, let the DUTs heat up but do a bit of air circulation
-                    fanCtrl(0, 0)
-                else
-                    fanCtrl(((deltaTemp/85)*255.0).to_i, FanValue)
-                end
-            end
-
-        elsif @samplerData.GetConfigurationFileName().length>0
-            # There's a lot loaded
-            fanCtrl(CirculateAirPwm, FanValue)
+=======
+        @gPIO2.slotFanPulseWidthModulator(pwmParam)
+        case fanParam
+        when 0
+            @gPIO2.slotCntlExtSet(0)
+        when 1
+            @gPIO2.slotCntlExtSet(GPIO2::X4_FAN1)
+        when 2
+            @gPIO2.slotCntlExtSet(GPIO2::X4_FAN2)
+        when 3
+            @gPIO2.slotCntlExtSet(GPIO2::X4_FAN1+GPIO2::X4_FAN2)
         else
-            # There's nothing loaded
-            fanCtrl(0, 0)
+            @samplerData.ReportError("fanParam='#{fanParam}' is wrong.  Expect value 0-3. #{__LINE__}-#{__FILE__}")
         end
     end
     
+>>>>>>> 63c18e75ff4106bd23c40a13c2753331a84bd360
+    # Set the values only one time
+    FanPwm0 = 1
+    FanPwm1 = FanPwm0+1
+    FanPwm2 = FanPwm1+1
+    FanPwm3 = FanPwm2+1
+    FanPwm4 = FanPwm3+1
+    FanPwm5 = FanPwm4+1
+    FanPwm6 = FanPwm5+1
+    FanPwm7 = FanPwm6+1
+    FanPwm8 = FanPwm7+1
+    FanPwm9 = FanPwm8+1
+    FanPwm10 = FanPwm9+1
+    FanPwm11 = FanPwm10+1
+    FanPwm12 = FanPwm11+1
+    FanPwm13 = FanPwm12+1
+    FanPwm14 = FanPwm13+1
+    FanPwm15 = FanPwm14+1
+    FanPwm16 = FanPwm15+1
+    FanPwm17 = FanPwm16+1
+    FanPwm18 = FanPwm17+1
+    FanPwm19 = FanPwm18+1
+    FanPwm20 = FanPwm19+1
+    FanPwm21 = FanPwm20+1
+
+    def backFansHandler
+        adcData = @samplerData.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
+        temp1Param = (adcInput[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(4)
+        fanParam = 3
+        if 20.0 <= temp1Param && temp1Param < 25.0
+            fanCtrl(FanPwm0, fanParam)
+        elsif 25.0 <= temp1Param && temp1Param < 30.0
+            fanCtrl(FanPwm1, fanParam)
+        elsif 30.0 <= temp1Param && temp1Param < 35.0
+            fanCtrl(FanPwm2, fanParam)
+        elsif 35.0 <= temp1Param && temp1Param < 40.0
+            fanCtrl(FanPwm3, fanParam)
+        elsif 40.0 <= temp1Param && temp1Param < 45.0
+            fanCtrl(FanPwm4, fanParam)
+        elsif 45.0 <= temp1Param && temp1Param < 50.0
+            fanCtrl(FanPwm5, fanParam)
+        elsif 50.0 <= temp1Param && temp1Param < 55.0
+            fanCtrl(FanPwm6, fanParam)
+        elsif 55.0 <= temp1Param && temp1Param < 60.0
+            fanCtrl(FanPwm7, fanParam)
+        elsif 60.0 <= temp1Param && temp1Param < 65.0
+            fanCtrl(FanPwm8, fanParam)
+        elsif 65.0 <= temp1Param && temp1Param < 70.0
+            fanCtrl(FanPwm9, fanParam)
+        elsif 70.0 <= temp1Param && temp1Param < 75.0
+            fanCtrl(FanPwm10, fanParam)
+        elsif 75.0 <= temp1Param && temp1Param < 80.0
+            fanCtrl(FanPwm11, fanParam)
+        elsif 80.0 <= temp1Param && temp1Param < 85.0
+            fanCtrl(FanPwm12, fanParam)
+        elsif 85.0 <= temp1Param && temp1Param < 90.0
+            fanCtrl(FanPwm13, fanParam)
+        elsif 90.0 <= temp1Param && temp1Param < 95.0
+            fanCtrl(FanPwm14, fanParam)
+        elsif 95.0 <= temp1Param && temp1Param < 100.0
+            fanCtrl(FanPwm15, fanParam)
+        elsif 100.0 <= temp1Param && temp1Param < 105.0
+            fanCtrl(FanPwm16, fanParam)
+        elsif 105.0 <= temp1Param && temp1Param < 110.0
+            fanCtrl(FanPwm17, fanParam)
+        elsif 110.0 <= temp1Param && temp1Param < 115.0
+            fanCtrl(FanPwm18, fanParam)
+        elsif 115.0 <= temp1Param && temp1Param < 120.0
+            fanCtrl(FanPwm19, fanParam)
+        elsif 120.0 <= temp1Param && temp1Param < 125.0
+            fanCtrl(FanPwm20, fanParam)
+        elsif 125.0 <= temp1Param && temp1Param < 130.0
+            fanCtrl(FanPwm21, fanParam)
+        end
+    end
+    
+<<<<<<< HEAD
     Alarming = 5
     def setToAlarmMode()
         @lastSettings = Alarming
@@ -1680,11 +1694,9 @@ class TCUSampler
         @gPIO2.setBitOn(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_BUZR+GPIO2::X4_LEDRED+GPIO2::X4_BLINK)
     end
 
+=======
+>>>>>>> 63c18e75ff4106bd23c40a13c2753331a84bd360
     def runTCUSampler
-        @lastSettings = 0
-        # @baseFraction = 1
-        # @highestTempDiffBtwSetPointAndAmbient = 0 # initial value
-        
         @gPIO2 = GPIO2.new
         @gPIO2.getForInitGetImagesOf16Addrs
 
@@ -1855,7 +1867,7 @@ class TCUSampler
                 ctw = SharedLib::DashLines
                 twtimeleft = SharedLib::DashLines
             end
-            puts "Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} @lastSettings='#{@lastSettings}' #{Time.now.inspect}"
+            puts "Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} ctw='#{ctw}', tw='#{tw}', temp time wait left ='#{twtimeleft}' #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             @samplerData.SetSlotTime(Time.now.to_i)
             if skipLimboStateCheck
                 skipLimboStateCheck = false
@@ -1872,11 +1884,7 @@ class TCUSampler
     			        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     			        setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
     			    else
-    				    if @allDutTempTolReached == false 
-    				        setTimeOfRun() # So the countdown will never take place.
-    				    end
-    				    
-		                # puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
+		                puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
         			    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
         			        # We're still running.
         			        
@@ -2085,19 +2093,24 @@ class TCUSampler
                                             ct = 0
                                             while ct<24 do
                                                 if @tcusToSkip[ct].nil? == true
-                            						# puts "dutI#{ct} = '#{SharedLib.getCurrentDutDisplay(muxData,"#{ct}")}'"
+                            						puts "dutI#{ct} = '#{SharedLib.getCurrentDutDisplay(muxData,"#{ct}")}'"
                                                     actualValue = SharedLib.getCurrentDutDisplay(muxData,"#{ct}").to_f
                                                     if (flagTolP <= actualValue && actualValue <= flagTolN) == false
                                                         @samplerData.ReportError("NOTICE - IDUT#{ct} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.  .",Time.new)
                                                         ct = 24 # break out of the loop.
                                                     end
                                                     if (tripMin <= actualValue && actualValue <= tripMax) == false
+<<<<<<< HEAD
                                                         stopMachine("#{__LINE__}-#{__FILE__}")
                                                         setToAlarmMode()
                                                         tbs = "ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE."
                                                         timeOfError = Time.new
                                                         @samplerData.ReportError(tbs,timeOfError)
                                                         logSystemStateSnapShot(tbs,timeOfError)
+=======
+                                                        stopMachine()
+                                                        @samplerData.ReportError("ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
+>>>>>>> 63c18e75ff4106bd23c40a13c2753331a84bd360
                                                         ct = 24 # break out of the loop.
                                                     end
                                                 end
@@ -2146,7 +2159,7 @@ class TCUSampler
                             					if @tcuData.nil? == false && @tcuData["#{dutCt}"].nil? == false 
             						                splitted = @tcuData["#{dutCt}"].split(',')
                             						temperature = SharedLib::make5point2Format(splitted[2]).to_f
-                                                    # puts "dut##{dutCt} flagTolP='#{flagTolP}' <= temp='#{temperature}' <= #{flagTolN} : '#{flagTolP<=temperature && temperature<=flagTolN}'"
+                                                    puts "dut##{dutCt} flagTolP='#{flagTolP}' <= temp='#{temperature}' <= #{flagTolN} : '#{flagTolP<=temperature && temperature<=flagTolN}'"
                                 				    if flagTolP<=temperature && temperature<=flagTolN
                                 				        if @dutTempTolReached[dutCt].nil?
                                     				        @dutTempTolReached[dutCt] = true
@@ -2174,9 +2187,13 @@ class TCUSampler
                             				    end
                             				end
                             				
-                                            #puts "totDutTempReached='#{totDutTempReached}'/'#{totDutsAvailable}' @allDutTempTolReached = '#{@allDutTempTolReached}'"
+                        				    if @allDutTempTolReached == false 
+                        				        setTimeOfRun() # So the countdown will never take place.
+                        				    end
+                                            puts "totDutTempReached='#{totDutTempReached}'/'#{totDutsAvailable}' @allDutTempTolReached = '#{@allDutTempTolReached}'"
                             				
                                             if @allDutTempTolReached
+<<<<<<< HEAD
                                                 if @tcuData.nil? == false
                                                     dutCt = 0
                                                     unit = "C"
@@ -2204,8 +2221,26 @@ class TCUSampler
                                                                 logSystemStateSnapShot(tbs,timeOfError)
                                                             end
                                         			    end
+=======
+                                                if tcuData.nil?
+                                                    dutCt = 0
+                                                    unit = "C"
+                                    				while dutCt<24 
+                						                splitted = tcuData["#{dutCt}"].split(',')
+                                						actualValue = SharedLib::make5point2Format(splitted[2])
+                                                        if (flagTolN <= actualValue && actualValue <= flagTolP) == false
+                                                            @samplerData.ReportError("NOTICE - DUT##{dutCt} out of bound within flag points.  '#{flagTolN}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolP}'#{unit} failed.  .")
+                                                        end
+                                            
+                                                        if (tripMin <= actualValue && actualValue <= tripMax) == false
+                                                            puts "trip points failure. #{__LINE__}-#{__FILE__}"
+                                                            stopMachine()
+                                                            dutCt = 24 
+                                                            @samplerData.ReportError("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
+                                                        end
+>>>>>>> 63c18e75ff4106bd23c40a13c2753331a84bd360
                                                         dutCt += 1
-                                        			end
+                                    				end
                                                 end
                                             end
                                         else
@@ -2229,7 +2264,6 @@ class TCUSampler
                                     end
                                 end
                             end
-                            
                             # We're in run mode.
                             if pollIntervalInSeconds == pollingTime
                                 # The board started processing.
@@ -2327,13 +2361,12 @@ class TCUSampler
             memFromService = @sharedMemService.getSharedMem()
     		pcCmdObj = memFromService.GetPcCmd()
     		if pcCmdObj.nil? == false && pcCmdObj.length > 0
+	            @samplerData.SetSlotOwner(memFromService.dataFromPCGetSlotOwner())
     		    pcCmd = pcCmdObj[0]
     		    timeOfCmd = pcCmdObj[1]
     		    if @lastTimeOfCmd != timeOfCmd # @lastPcCmd != pcCmd && 
     		        puts "new pc command. #{pcCmdObj}"
-        		    @lastSettings = 0 # The user did something, determine what state after user action.
-    	            @samplerData.SetSlotOwner(memFromService.dataFromPCGetSlotOwner())
-                    # @lastPcCmd = pcCmd 
+                    @lastPcCmd = pcCmd 
                     @lastTimeOfCmd = timeOfCmd
                     
     		        # getTimeOfPcLastCmd() < @samplerData.GetTimeOfPcLastCmd()
@@ -2341,8 +2374,6 @@ class TCUSampler
                     @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    case pcCmd
         		    when SharedLib::RunFromPc
-        		        @lotStartedAlready = true
-        		        setToMode(SharedLib::InRunMode, "#{__LINE__}-#{__FILE__}")
         		        runMachine()
                         
         		    when SharedLib::StopFromPc
@@ -2360,7 +2391,10 @@ class TCUSampler
                         setTcuToStopMode() # turnOffDuts(@tcusToSkip)
                         
         		    when SharedLib::LoadConfigFromPc
+<<<<<<< HEAD
         		        @lotStartedAlready = false
+=======
+>>>>>>> 63c18e75ff4106bd23c40a13c2753331a84bd360
         		        @boardData[LastStepNumOfSentLog] = -1 # initial value
         		        
         		        # close the sockets of the Ethernet PS if they're on.
@@ -2416,6 +2450,7 @@ class TCUSampler
             getEthernetPsCurrent()
             backFansHandler()
             
+<<<<<<< HEAD
             # Handle run away temperatures
             if @samplerData.GetBbbMode() != SharedLib::InRunMode && @heatersTurnedOff == false
                 if @tcuData.nil? == false
@@ -2490,9 +2525,13 @@ class TCUSampler
                 end
             end
             
+=======
+>>>>>>> 63c18e75ff4106bd23c40a13c2753331a84bd360
         	# This line of code makes the 'Sender' process useless.  This gives the fastest time of data update to the display.
         	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
-
+            #
+            # What if there was a hiccup and waitTime-Time.now becomes negative
+            #
             sleep(0.1) # Get some sleep time so the Grape app will be a bit more responsive.
         end
 
@@ -2509,5 +2548,9 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
+<<<<<<< HEAD
 # Look for 'tbs += logSystemStateSnapShot()' for a place to log the average.
 # 1298
+=======
+# @ 1232
+>>>>>>> 63c18e75ff4106bd23c40a13c2753331a84bd360
