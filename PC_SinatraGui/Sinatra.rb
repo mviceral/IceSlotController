@@ -7,7 +7,7 @@ require 'sqlite3'
 require 'json'
 require 'rest_client'
 require_relative '../lib/SharedLib'
-require_relative '../lib/DRbSharedMemory/ServerLib'
+require_relative '../lib/DRbSharedMemory/LibServer'
 require_relative '../lib/SharedMemory'
 require 'pp' # Pretty print to see the hash values.
 

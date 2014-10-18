@@ -257,7 +257,7 @@ class SharedMemory
 				SetDataBoardToPc(hash)
 				SetDispSlotOwner(hash[SharedLib::SlotOwner])
 
-				printDataContent(hash[SharedLib::SlotOwner])
+				# printDataContent(hash[SharedLib::SlotOwner])
 				configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
 			end
 		end
