@@ -1350,13 +1350,17 @@ class TCUSampler
 				if splitted[3] == "1"
 				    if @logRptAvg["#{dutCt}"]["cool"].nil?
 				        @logRptAvg["#{dutCt}"]["cool"] = 0
+				        @logRptAvg["#{dutCt}"]["coolct"] = 0
 				    end
 				    @logRptAvg["#{dutCt}"]["cool"] += pWMoutput.to_f/255.0*100.0
+				    @logRptAvg["#{dutCt}"]["coolct"] += 1
 				else
 				    if @logRptAvg["#{dutCt}"]["heat"].nil?
 				        @logRptAvg["#{dutCt}"]["heat"] = 0
+				        @logRptAvg["#{dutCt}"]["heatct"] = 0
 				    end
 				    @logRptAvg["#{dutCt}"]["heat"] += pWMoutput.to_f/255.0*100.0
+				    @logRptAvg["#{dutCt}"]["heatct"] += 1
 				end
 				
 				if @logRptAvg["#{dutCt}"]["controllerTemp"].nil?
@@ -1389,9 +1393,9 @@ class TCUSampler
     	end
     	@logRptAvg["#{Temp2}"] += adcData[SharedLib::SlotTemp2.to_s].to_f/1000.0
 
-        puts "-------------------------------------------"
-        puts "@logRptAvgCt=#{@logRptAvgCt}"
-        PP.pp(@logRptAvg)
+        # puts "-------------------------------------------"
+        # puts "@logRptAvgCt=#{@logRptAvgCt}"
+        # PP.pp(@logRptAvg)
     end
 
     def getSystemStateAvgForLogging()
@@ -1414,17 +1418,17 @@ class TCUSampler
                             tbs += "#{makeItFit(dutIndex,DutNum)}|"
                             tbs += "#{makeItFit("#{key}[#{data/@logRptAvgCt*100}%]",DutStatus)}|"
                             tbs += "#{makeItFit(@logRptAvg["#{dutCt}"]["temperature"]/@logRptAvgCt,DutTemp)}|"
-                            tbs += "#{makeItFit(@logRptAvg["#{dutCt}"]["current"]/@logRptAvgCt,DutCurrent)}|"
+                            tbs += "#{makeItFitMeas(@logRptAvg["#{dutCt}"]["current"]/@logRptAvgCt,5,DutCurrent)}|"
                             if @logRptAvg["#{dutCt}"]["cool"].nil?
                 				coolDuty = 0
                             else
-                				coolDuty = SharedLib::make5point2Format(@logRptAvg["#{dutCt}"]["cool"]/@logRptAvgCt/255.0*100.0)
+                				coolDuty = SharedLib::make5point2Format(@logRptAvg["#{dutCt}"]["cool"]/@logRptAvg["#{dutCt}"]["coolct"]/255.0*100.0)
                             end
 
                             if @logRptAvg["#{dutCt}"]["heat"].nil?
                 				heatDuty = 0
                             else
-                				heatDuty = SharedLib::make5point2Format(@logRptAvg["#{dutCt}"]["heat"]/@logRptAvgCt/255.0*100.0)
+                				heatDuty = SharedLib::make5point2Format(@logRptAvg["#{dutCt}"]["heat"]/@logRptAvg["#{dutCt}"]["heatct"]/255.0*100.0)
                             end
                             tbs += "#{makeItFit(heatDuty,DutHeatDuty)}|"
                             tbs += "#{makeItFit(coolDuty,DutCoolDuty)}|"
@@ -2177,8 +2181,8 @@ class TCUSampler
 
                                                                 # Turn on red light and buzzer and make it blink due to shutdown
                                                                 setToAlarmMode()
-                                                                dutCt = 24 
                                                                 tbs = "ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE." # tbs - to be sent
+                                                                dutCt = 24 
                                                                 timeOfError = Time.new
                                                                 @samplerData.ReportError(tbs,timeOfError)
                                                                 logSystemStateSnapShot(tbs,timeOfError)
