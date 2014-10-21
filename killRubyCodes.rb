@@ -1,13 +1,12 @@
 def killProc(param)
 	rubyProc = `ps -A | grep #{param}`
-
 	# Determine how many lines
 	lines = rubyProc.split("\n")
 	puts "Total lines='#{lines.length}'"
-	ct = 1
+	ct = 0 
 	procNumToKill = ""
 	while ct<lines.length
-		isolated = lines[ct].strip
+		isolated = lines[ct].lstrip.chop
 		isolatedParts = isolated.split(" ")
 		puts "'#{param}' process# '#{isolatedParts[0]}'"
 		ct += 1
@@ -18,6 +17,7 @@ def killProc(param)
 	end
 
 	if procNumToKill.length>0
+		puts "kill -9 #{procNumToKill}"
 		`kill -9 #{procNumToKill}`
 	end
 end
