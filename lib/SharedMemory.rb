@@ -968,7 +968,7 @@ class SharedMemory
     end
 
     def SetBbbMode(modeParam,calledFrom)
-        # puts "param sent #{modeParam}"
+        puts "param sent #{modeParam} #{calledFrom}"
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
         oldModeParam = ds[Mode]
         print "Changing bbb mode from #{oldModeParam} to "
