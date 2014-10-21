@@ -158,6 +158,16 @@ class TCUSampler
                 # setPollIntervalInSeconds(IntervalSecInRunMode,"#{__LINE__}-#{__FILE__}")
             else
                 # setPollIntervalInSeconds(IntervalSecInStopMode,"#{__LINE__}-#{__FILE__}")
+
+                # Turn on the control for TCUs that are not disabled.
+                setTcuToStopMode() # turnOffDuts(@tcusToSkip)
+                
+                turnOffHeaters()
+
+                @samplerData.setWaitTempMsg("")
+                @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
+    
+
                 #
                 # Calculate the total time left before sequencing down.
                 #
@@ -753,7 +763,7 @@ class TCUSampler
             end
 
             if (tripMin <= actualValue && actualValue <= tripMax) == false
-                stopMachine("#{__LINE__}-#{__FILE__}")
+                setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                 # Turn on red light and buzzer and make it blink due to shutdown
                 setToAlarmMode()
                 tbs = "ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE."
@@ -766,17 +776,6 @@ class TCUSampler
         return false
     end
     
-    def stopMachine(fromParam)
-        puts "stopMachine called from #{fromParam} [@ #{__LINE__}-#{__FILE__}]"
-        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-                
-        # Turn on the control for TCUs that are not disabled.
-        setTcuToStopMode() # turnOffDuts(@tcusToSkip)
-        
-        @samplerData.setWaitTempMsg("")
-        @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
-    end
-
     def setBoardData(boardDataParam,uart1)
         # The configuration was just loaded from file.  We must setup the system to be in a given state.
         # For example, if the system is in runmode, when starting the system over, the PS must sequence up
@@ -1811,10 +1810,15 @@ class TCUSampler
             # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
             limboCheck(@stepToWorkOn[StepNum],uart1)
         end
+        
         loggingTime = 60 # 5 seconds for now
         pollingTime = 1 # check every second
         pollIntervalInSeconds = pollingTime
         skipLimboStateCheck = false
+        
+        turnBuzzerOnAt = Time.now
+        buzzerBackOn = true
+        
         # @samplerData.ReportError("Error test. #{__LINE__}-#{__FILE__}")
         timeOfLog = Time.now
         while true
@@ -1859,9 +1863,8 @@ class TCUSampler
     			    if @stepToWorkOn.nil?
     			        # There are no more steps to process.
     			        # All the steps are done processing.
-    			        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+    			        # setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     			        setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
-    			        turnOffHeaters()
     			    else
 		                puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
         			    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
@@ -2080,7 +2083,7 @@ class TCUSampler
                                                         ct = 24 # break out of the loop.
                                                     end
                                                     if (tripMin <= actualValue && actualValue <= tripMax) == false
-                                                        stopMachine("#{__LINE__}-#{__FILE__}")
+                                                        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                                                         setToAlarmMode()
                                                         tbs = "ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE."
                                                         timeOfError = Time.new
@@ -2183,8 +2186,7 @@ class TCUSampler
                                                 
                                                             if (tripMin <= actualValue && actualValue <= tripMax) == false
                                                                 # puts("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
-                                                                stopMachine("#{__LINE__}-#{__FILE__}")
-                                                                turnOffHeaters()
+                                                                setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
 
                                                                 # Turn on red light and buzzer and make it blink due to shutdown
                                                                 setToAlarmMode()
@@ -2304,7 +2306,6 @@ class TCUSampler
                                 # Done processing all steps listed in configuration.step file
                                 saveBoardStateToHoldingTank()
                                 
-                                setTcuToStopMode()
                                 # We're done processing all the steps.
                             end
                         end
@@ -2335,7 +2336,7 @@ class TCUSampler
                         
         		    when SharedLib::StopFromPc
             		    turnOffHeaters()
-        		        stopMachine("#{__LINE__}-#{__FILE__}")
+        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                         
         		    when SharedLib::ClearConfigFromPc
         		        @samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
@@ -2345,8 +2346,6 @@ class TCUSampler
         		        setBoardStateForCurrentStep(uart1)
             		    @samplerData.SetConfigurationFileName("")
             		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
-            		    turnOffHeaters()
-                        setTcuToStopMode() # turnOffDuts(@tcusToSkip)
                         
         		    when SharedLib::LoadConfigFromPc
         		        @lotStartedAlready = false
@@ -2376,7 +2375,6 @@ class TCUSampler
                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
         		        setBoardStateForCurrentStep(uart1)
-            		    saveBoardStateToHoldingTank()
 
             		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
             		    # by clearing it out.
@@ -2473,8 +2471,17 @@ class TCUSampler
                     # We're in an alarm state.
                     # Check if the button was pressed.
                     if SharedLib.getBits(@gPIO2.getGPIO2(GPIO2::EXT_INPUTS_x2))[-2] == "1"
-                        # The 
+                        # The button was pressed.  The idea is to silence the beeping noise for 5 mins.
                         @gPIO2.setGPIO2(GPIO2::EXT_INPUTS_x2,1) # Clear the pressed button.
+                        
+                        @gPIO2.setBitOff(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_BUZR)
+                        turnBuzzerOnAt = Time.now+5*60
+                        buzzerBackOn = false
+                    end
+                    
+                    if buzzerBackOn == false && turnBuzzerOnAt <= Time.now
+                        buzzerBackOn = true
+                        @gPIO2.setBitOn(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_BUZR)
                     end
                 end
             else
@@ -2507,5 +2514,5 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# Look for 'if SharedLib.getBits(@gPIO2.getGPIO2(GPIO2::EXT_INPUTS_x2))[-2] == "1"'
-# 1298
+# stopMachine
+# 
