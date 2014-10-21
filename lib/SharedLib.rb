@@ -380,6 +380,15 @@ class SharedLib
         gets
     end
 
+    def getBits(dataParam)
+        puts "dataParam=#{dataParam} dataParam.class=#{dataParam.class} #{__LINE__}-#{__FILE__}"
+        bits = dataParam.to_s(2)
+        while bits.length < 8
+            bits = "0"+bits
+        end
+        return bits
+    end
+
     def bbbLog(sentMessage)
         if @oldMessage != sentMessage
             @oldMessage = sentMessage

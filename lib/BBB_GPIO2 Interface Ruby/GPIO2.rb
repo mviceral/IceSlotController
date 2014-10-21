@@ -5,6 +5,7 @@
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 require_relative 'Port2Interface.so'
 require_relative "../SharedMemory"
+require_relative "../SharedLib"
 require 'json'
 require 'socket'      # Sockets are in standard library
 
@@ -217,15 +218,6 @@ class GPIO2
 	# End of 'def initialize'
   end 
   
-    def getBits(dataParam)
-        puts "dataParam=#{dataParam} dataParam.class=#{dataParam.class} #{__LINE__}-#{__FILE__}"
-        bits = dataParam.to_s(2)
-        while bits.length < 8
-            bits = "0"+bits
-        end
-        return bits
-    end
-
     def forTesting_getGpio2State
         getForInitGetImagesOf16Addrs
         fromSharedMem = @sharedBbbGpio2.GetDataGpio()
@@ -244,15 +236,15 @@ class GPIO2
         #
         # This value turns off the state of a bit listed in 'dataParam' on a given register address 'addrParam'
         #
-      # inBits = getBits(dataParam)
+      # inBits = SharedLib.getBits(dataParam)
       # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bit to turn off."
       hold = ~dataParam
 =begin      
-      inBits = getBits(hold)
+      inBits = SharedLib.getBits(hold)
       puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bits after the tilde."
-      inBits = getBits(@regValues[addrParam])
+      inBits = SharedLib.getBits(@regValues[addrParam])
       puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value before of what to turn off."
-      inBits = getBits(@regValues[addrParam])
+      inBits = SharedLib.getBits(@regValues[addrParam])
       puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value after turning off."
 =end      
       @regValues[addrParam] = @regValues[addrParam]&hold
@@ -264,12 +256,12 @@ class GPIO2
         # This value turns on the state of a bit listed in 'dataParam' on a given register address 'addrParam'
         #
         # puts "within setBitOn addrParam=#{addrParam}, dataParam=#{dataParam}"
-      # inBits = getBits(dataParam)
+      # inBits = SharedLib.getBits(dataParam)
         # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bit to turn on."
         # SharedLib::pause "@regValues=#{@regValues}","#{__LINE__}-#{__FILE__}"
-        # inBits = getBits((@regValues[addrParam]).to_i)
+        # inBits = SharedLib.getBits((@regValues[addrParam]).to_i)
         # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value of what to turn on."
-        # inBits = getBits((@regValues[addrParam]).to_i)
+        # inBits = SharedLib.getBits((@regValues[addrParam]).to_i)
         # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value after turning on."
         
         # SharedLib::pause "SetbitOne", "#{__LINE__}-#{__FILE__}"
@@ -294,12 +286,12 @@ class GPIO2
         @sharedBbbGpio2.WriteDataGpio("BbbShared"+parsed.to_json,"#{__LINE__}-#{__FILE__}")
         
         if @regValues[addrParam].nil? == false
-            # inBits = getBits(@regValues[addrParam])
+            # inBits = SharedLib.getBits(@regValues[addrParam])
             # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : Current value."
         end
 
         @regValues[addrParam] = dataParam
-        # inBits = getBits(@regValues[addrParam])
+        # inBits = SharedLib.getBits(@regValues[addrParam])
         # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : New value."
         
         #
@@ -451,7 +443,7 @@ class GPIO2
         setBitOff(SLOT_ADDR_x0,W0_Reset)
         gets # for pause so you could see the emulator value update.
         inBits = getGPIO2(EXT_INPUTS_x2)
-        inBits = getBits(inBits)
+        inBits = SharedLib.getBits(inBits)
         puts "addr=0x#{EXT_INPUTS_x2.to_s(16)} - #{inBits} : Get value of EXT_INPUTS_x2."
         checkBits
         
@@ -626,7 +618,7 @@ class GPIO2
             puts "failed on LedStatSet(0x#{ledState.to_s(16)}) #{__LINE__}-#{__FILE__}"
             puts "    - @regValues[LED_STAT_x1]&W1_LEDEN='#{@regValues[LED_STAT_x1]&W1_LEDEN}'"
             print "    - ~(X1_LED3|X1_LED2|X1_LED1|X1_LED0)&ledState="
-            # print "'#{getBits(~(X1_LED3|X1_LED2|X1_LED1|X1_LED0))}&#{getBits(ledState)}'="
+            # print "'#{SharedLib.getBits(~(X1_LED3|X1_LED2|X1_LED1|X1_LED0))}&#{SharedLib.getBits(ledState)}'="
             print "#{~(X1_LED3|X1_LED2|X1_LED1|X1_LED0)&ledState}"
             puts
             return false
@@ -706,7 +698,7 @@ class GPIO2
         else
             puts "failed on SlotCntlExtSet(#{bitsParam.to_s(16)}) #{__LINE__}-#{__FILE__}"
             print "    ~(X4_POWER+X4_FAN1+X4_FAN2++X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN)&bitsParam = "
-            # print "    #{getBits(~(X4_POWER+X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN))}&#{getBits(bitsParam)}"
+            # print "    #{SharedLib.getBits(~(X4_POWER+X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN))}&#{SharedLib.getBits(bitsParam)}"
             puts
             return false
         end

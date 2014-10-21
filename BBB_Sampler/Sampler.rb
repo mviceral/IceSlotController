@@ -1376,7 +1376,7 @@ class TCUSampler
         getVoltsCurrentPsAvg("VPS1",@samplerData.getPsVolts(muxData,adcData,"33"),@samplerData.getPsCurrent(muxData,eiPs,nil,"PS1"))
         getVoltsCurrentPsAvg("VPS2",@samplerData.getPsVolts(muxData,adcData,"34"),@samplerData.getPsCurrent(muxData,eiPs,nil,"PS2"))
         getVoltsCurrentPsAvg("VPS3",@samplerData.getPsVolts(muxData,adcData,"35"),@samplerData.getPsCurrent(muxData,eiPs,nil,"PS3"))
-        getVoltsCurrentPsAvg("VPS4",@samplerData.getPsVolts(muxData,adcData,"36"),@samplerData.getPsCurrent(muxData,eiPs,nil,"PS2"))
+        getVoltsCurrentPsAvg("VPS4",@samplerData.getPsVolts(muxData,adcData,"36"),@samplerData.getPsCurrent(muxData,eiPs,nil,"PS4"))
         getVoltsCurrentPsAvg("VPS5",0,0)
         getVoltsCurrentPsAvg("VPS6",@samplerData.getPsVolts(muxData,adcData,"38"),@samplerData.getPsCurrent(muxData,eiPs,"24",nil))
         getVoltsCurrentPsAvg("VPS7",@samplerData.getPsVolts(muxData,adcData,"39"),@samplerData.getPsCurrent(muxData,eiPs,nil,"PS7"))
@@ -1511,7 +1511,7 @@ class TCUSampler
         mins =  @samplerData.GetStepTimeLeft()/60.0.to_i
         secs =  (@samplerData.GetStepTimeLeft()-mins*60.0).to_i
         tbs += "Log Time Left: #{SharedLib::makeTime2colon2Format(mins,secs)} (mm:ss)\n"
-        tbs += "#{DutNum}|#{DutStatus}|#{DutTemp}|#{DutCurrent}|#{DutHeatDuty}||#{DutCoolDuty}#{DutControllerTemp}\n"
+        tbs += "#{DutNum}|#{DutStatus}|#{DutTemp}|#{DutCurrent}|#{DutHeatDuty}|#{DutCoolDuty}|#{DutControllerTemp}\n"
         dutCt = 0
         muxData = @samplerData.GetDataMuxData("#{__LINE__}-#{__FILE__}")
         adcData = @samplerData.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
@@ -1527,6 +1527,10 @@ class TCUSampler
                 tbs += "#{makeItFit(temperature,DutTemp)}|"
                 tbs += "#{makeItFit(SharedLib.getCurrentDutDisplay(muxData,"#{dutCt}"),DutCurrent)}|"
 				pWMoutput = splitted[4]
+				
+                coolDuty = 0
+				heatDuty = 0
+				
 				if splitted[3] == "1"
                     coolDuty = SharedLib::make5point2Format(pWMoutput.to_f/255.0*100.0)
 				else
@@ -1559,7 +1563,7 @@ class TCUSampler
 
         tbs += "#{makeItFit("VPS4",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"36"),5,VMeas)}|"
-        tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS2"),5,IMeas)}\n"
+        tbs += "#{makeItFitMeas(@samplerData.getPsCurrent(muxData,eiPs,nil,"PS4"),5,IMeas)}\n"
 
         tbs += "#{makeItFit("VPS5",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@samplerData.getPsVolts(muxData,adcData,"37"),5,VMeas)}|"
@@ -1907,7 +1911,7 @@ class TCUSampler
                                                 break
                                             end
                                        when "IPS0"
-                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
                                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1923,7 +1927,7 @@ class TCUSampler
                                             end
                                         when "IPS1"
 			                                # puts "PS1I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
-                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
                                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1939,7 +1943,7 @@ class TCUSampler
                                             end
                                         when "IPS2"
 			                                # puts "PS2I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
-                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
                                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1953,8 +1957,10 @@ class TCUSampler
                                                 break
                                             end
                                         when "IPS3"
-			                                # puts "PS3I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
-                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
+                                            puts "eiPs=#{eiPs} #{__LINE__}-#{__FILE__}"
+                                            puts "key2=#{key2}, key2[1..-1]=#{key2[1..-1]} #{__LINE__}-#{__FILE__}"
+                                            puts "actualValue=#{actualValue} #{__LINE__}-#{__FILE__}"
                                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1966,7 +1972,7 @@ class TCUSampler
                                             end
                                         when "IPS4"
 			                                # puts "PS4I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2")}"
-                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2").to_f
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
                                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -2010,7 +2016,7 @@ class TCUSampler
                                             end
                                         when "IPS7"
 			                                # puts "PS7I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,nil)}"
-                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2).to_f
+                                            actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
                                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -2067,7 +2073,7 @@ class TCUSampler
                                             ct = 0
                                             while ct<24 do
                                                 if @tcusToSkip[ct].nil? == true
-                            						puts "dutI#{ct} = '#{SharedLib.getCurrentDutDisplay(muxData,"#{ct}")}'"
+                            						# puts "dutI#{ct} = '#{SharedLib.getCurrentDutDisplay(muxData,"#{ct}")}'"
                                                     actualValue = SharedLib.getCurrentDutDisplay(muxData,"#{ct}").to_f
                                                     if (flagTolP <= actualValue && actualValue <= flagTolN) == false
                                                         @samplerData.ReportError("NOTICE - IDUT#{ct} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.  .",Time.new)
@@ -2128,7 +2134,7 @@ class TCUSampler
                             					if @tcuData.nil? == false && @tcuData["#{dutCt}"].nil? == false 
             						                splitted = @tcuData["#{dutCt}"].split(',')
                             						temperature = SharedLib::make5point2Format(splitted[2]).to_f
-                                                    puts "dut##{dutCt} flagTolP='#{flagTolP}' <= temp='#{temperature}' <= #{flagTolN} : '#{flagTolP<=temperature && temperature<=flagTolN}'"
+                                                    # puts "dut##{dutCt} flagTolP='#{flagTolP}' <= temp='#{temperature}' <= #{flagTolN} : '#{flagTolP<=temperature && temperature<=flagTolN}'"
                                 				    if flagTolP<=temperature && temperature<=flagTolN
                                 				        if @dutTempTolReached[dutCt].nil?
                                     				        @dutTempTolReached[dutCt] = true
@@ -2159,7 +2165,7 @@ class TCUSampler
                         				    if @allDutTempTolReached == false 
                         				        setTimeOfRun() # So the countdown will never take place.
                         				    end
-                                            puts "totDutTempReached='#{totDutTempReached}'/'#{totDutsAvailable}' @allDutTempTolReached = '#{@allDutTempTolReached}'"
+                                            # puts "totDutTempReached='#{totDutTempReached}'/'#{totDutsAvailable}' @allDutTempTolReached = '#{@allDutTempTolReached}'"
                             				
                                             if @allDutTempTolReached
                                                 if @tcuData.nil? == false
@@ -2425,6 +2431,8 @@ class TCUSampler
             
             # Handle the lights and buzzer
             if cfgName == "Yes"
+                # We have a step config file loaded.
+                puts "EXT_INPUTS_x2=#{@gPIO2.getGPIO2(GPIO2::EXT_INPUTS_x2)} #{__LINE__}-#{__FILE__}"
                 if @lastSettings != Alarming
                     # There's a lot loaded.
                     if @samplerData.GetBbbMode() == SharedLib::InRunMode
@@ -2461,6 +2469,13 @@ class TCUSampler
                             end
                         end
                     end
+                else
+                    # We're in an alarm state.
+                    # Check if the button was pressed.
+                    if SharedLib.getBits(@gPIO2.getGPIO2(GPIO2::EXT_INPUTS_x2))[-2] == "1"
+                        # The 
+                        @gPIO2.setGPIO2(GPIO2::EXT_INPUTS_x2,1) # Clear the pressed button.
+                    end
                 end
             else
                 # No lot loaded.
@@ -2492,5 +2507,5 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# Look for 'tbs += logSystemStateSnapShot()' for a place to log the average.
+# Look for 'if SharedLib.getBits(@gPIO2.getGPIO2(GPIO2::EXT_INPUTS_x2))[-2] == "1"'
 # 1298
