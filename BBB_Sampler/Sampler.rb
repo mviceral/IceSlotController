@@ -55,8 +55,8 @@ class TCUSampler
     SeqDownLogger = "SeqDown"
     VMeas = "VMeas"
     IMeas = "IMeas"
-    Temp1 = "Temp1"
-    Temp2 = "Temp2"
+    Temp1 = " Temp1"
+    Temp2 = " Temp2"
     
     DutNum= " DUT#"
     DutStatus = "        DUT status"
@@ -552,6 +552,7 @@ class TCUSampler
                                         # PP.pp(getConfiguration()[Steps][key]["TempConfig"])
                                         # puts "Checking content of 'TempConfig' #{__LINE__}-#{__FILE__}"
                                         sleep(2.0)
+                                        @tempSetPoint = getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"]
                                         ThermalSiteDevices.setTHCPID(uart1,"T",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"])
                                         ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["H"][0..-2].to_f/100.0*255)
                                         ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["C"][0..-2].to_f/100.0*255)
@@ -1256,7 +1257,7 @@ class TCUSampler
     end
     
     def fanCtrl(pwmParam, fanParam)
-        # puts "fanCtrl pwm='#{pwmParam}', fan='#{fanParam}' [#{__LINE__}-#{__FILE__}]"
+        puts "fanCtrl pwm='#{pwmParam}', fan='#{fanParam}' [#{__LINE__}-#{__FILE__}]"
         if @lastPwmParam != pwmParam
             @lastPwmParam = pwmParam # So it won't keep calling the function
             @gPIO2.slotFanPulseWidthModulator(pwmParam)
@@ -1591,8 +1592,8 @@ class TCUSampler
     end
 
     # Set the values only one time
-    FanPwm1 = 0
-    FanPwm2 = 17
+    FanPwm1 = 45
+    FanPwm2 = 45
     FanPwm3 = 2*17 # 34
     FanPwm4 = 3*17 # 51
     FanPwm5 = 4*17 # 68
@@ -1840,7 +1841,7 @@ class TCUSampler
                 ctw = SharedLib::DashLines
                 twtimeleft = SharedLib::DashLines
             end
-            puts "Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} ctw='#{ctw}', tw='#{tw}', temp time wait left ='#{twtimeleft}' #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+            puts "Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} temp time wait left ='#{twtimeleft}' #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             @samplerData.SetSlotTime(Time.now.to_i)
             if skipLimboStateCheck
                 skipLimboStateCheck = false
@@ -2317,7 +2318,7 @@ class TCUSampler
     		        puts "new pc command. #{pcCmdObj}"
                     @lastPcCmd = pcCmd 
                     @lastTimeOfCmd = timeOfCmd
-                    
+                    @lastSettings = -1
     		        # getTimeOfPcLastCmd() < @samplerData.GetTimeOfPcLastCmd()
         		    puts "\n\n\nNew command from PC - '#{pcCmd}' @samplerData.GetPcCmd().length='#{pcCmdObj.length}'  #{__LINE__}-#{__FILE__}"
                     @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
