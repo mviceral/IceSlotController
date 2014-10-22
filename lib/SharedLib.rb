@@ -413,7 +413,23 @@ class SharedLib
     	end
     	return forDbase
     end
-  
+
+    def makeTime2colon2Format(hours,min)
+        shours = hours.to_s
+        while shours.length<2
+            shours = "0"+shours
+        end
+        
+        smin = min.to_s
+        if smin.length>2
+        	smin = smin[0..1]
+        end
+        while smin.length<2
+            smin = "0"+smin
+        end
+        return shours+":"+smin
+    end
+
     class << self
         extend Forwardable
         def_delegators :instance, *SharedLib.instance_methods(false)
@@ -430,19 +446,6 @@ class SharedLib
 		return numParam
     end
     
-    def self.makeTime2colon2Format(hours,min)
-        shours = hours.to_s
-        while shours.length<2
-            shours = "0"+shours
-        end
-        
-        smin = min.to_s
-        while smin.length<2
-            smin = "0"+smin
-        end
-        return shours+":"+smin
-    end
-
     def self.getCurrentDutDisplay(muxData,rawDataParam)
 			if muxData.nil? == false && muxData[rawDataParam].nil? == false
 				current = make5point2Format((muxData[rawDataParam].to_f/1000.0).round(3))
