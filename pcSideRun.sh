@@ -6,5 +6,5 @@ pushd ./PC_GrapeForBoardListener/
 rackup & 
 popd
 pushd ./PC_SinatraGui/
-ruby Sinatra.rb
+ruby Sinatra.rb &
 popd
