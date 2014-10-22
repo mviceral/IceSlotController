@@ -1001,7 +1001,7 @@ class UserInterface
 			topTable += "								
 				<tr>
 					<td align=\"left\">
-							<font size=\"1\">Total Step Duration:</font>
+							<font size=\"1\">Total Steps Duration:</font>
 					</td>
 				</tr>
 				<tr>
