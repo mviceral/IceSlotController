@@ -153,11 +153,22 @@ class TCUSampler
         if modeParam == SharedLib::InRunMode || modeParam == SharedLib::InStopMode
             if modeParam == SharedLib::InRunMode
                 runMachine()
+                turnOnHeaters()
                 psSeqUp()
                 setTimeOfRun()
                 # setPollIntervalInSeconds(IntervalSecInRunMode,"#{__LINE__}-#{__FILE__}")
             else
                 # setPollIntervalInSeconds(IntervalSecInStopMode,"#{__LINE__}-#{__FILE__}")
+
+                # Turn on the control for TCUs that are not disabled.
+                setTcuToStopMode() # turnOffDuts(@tcusToSkip)
+                
+                turnOffHeaters()
+
+                @samplerData.setWaitTempMsg("")
+                @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
+    
+
                 #
                 # Calculate the total time left before sequencing down.
                 #
@@ -165,7 +176,6 @@ class TCUSampler
                     @stepToWorkOn[StepTimeLeft] = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun())
                 end
                 psSeqDown("#{__LINE__}-#{__FILE__}")
-                @samplerData.setWaitTempMsg("")
             end
             
             saveBoardStateToHoldingTank()
@@ -473,6 +483,7 @@ class TCUSampler
             while ct < sortedUp.length
                 if sortedUp[ct].seqOrder == 0
                     @disabledPS.push("V"+sortedUp[ct].keyName[1..-1])
+                    @disabledPS.push("I"+sortedUp[ct].keyName[1..-1]) # don't check for current also.
                 end
                 ct += 1
             end
@@ -518,6 +529,13 @@ class TCUSampler
     end                                                            
 
     def initStepToWorkOnVar(uart1)
+        if @logRptAvg.nil? == false
+            # Reports the last data gathered from the step.
+            getSystemStateAvgForLogging()
+            sendToLogger("End Step (step##{@boardData[LastStepNumOfSentLog]})\n")
+        end
+
+
         @disabledPS = nil # clears out the list when gathering data for the new step
         @samplerData.SetStepTimeLeft("")
         @samplerData.SetStepName("")
@@ -578,7 +596,6 @@ class TCUSampler
                                         
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
-                                        @logRptAvgCt = 0
                                         
                                         @dutTempTripMin = @stepToWorkOn["TempConfig"]["TDUT"]["TripMin"]
                                         @dutTempTripMax = @stepToWorkOn["TempConfig"]["TDUT"]["TripMax"]
@@ -687,6 +704,50 @@ class TCUSampler
             @stepToWorkOn["TIMERRUFP"] = timerRUFP
             @stepToWorkOn["TIMERRDFP"] = timerRDFP
             @stepToWorkOn[CalculatedTempWait] = @stepToWorkOn[SharedMemory::TempWait].to_f*60
+
+            if @boardData[LastStepNumOfSentLog] != @samplerData.GetStepNumber()
+                @boardData[LastStepNumOfSentLog] = @samplerData.GetStepNumber()
+                timeOfLog = Time.new.to_i
+                if @loggingTime.nil?
+                    @loggingTime = 1
+                end
+                timeOfLog += @loggingTime
+                @logRptAvgCt = 0
+                @logRptAvg = nil
+                
+                puts "Sending log data.  #{Time.now.inspect}. #{__LINE__}-#{__FILE__}"
+                # tbs  = "BIB#: #{@ethernetScheme[SlotBibNum]}\n"
+                tbs = ""
+                tbs += "Test Step: step##{@samplerData.GetStepNumber()}-#{@samplerData.GetStepName()}\n"
+                tbs += "Power Supply Setting:\n"
+                tbs += "#{PSNameLogger}|#{NomSetLogger}|#{TripMinLogger}|#{TripMaxLogger}|#{FlagTolPLogger}|#{FlagTolNLogger}|#{SeqUpLogger}|#{SeqDownLogger}\n"
+                @stepToWorkOn["PsConfig"].each do |key, array|
+                    if key[0] == "V"
+                        tbs += "#{makeItFit(key,PSNameLogger)}|"
+                        tbs += "#{makeItFitMeas(array["NomSet"],5,NomSetLogger)}|"
+                        tbs += "#{makeItFitMeas(array["TripMin"],5,TripMinLogger)}|"
+                        tbs += "#{makeItFitMeas(array["TripMax"],5,TripMaxLogger)}|"
+                        tbs += "#{makeItFitMeas(array["FlagTolP"],5,FlagTolPLogger)}|"
+                        tbs += "#{makeItFitMeas(array["FlagTolN"],5,FlagTolNLogger)}|"
+                        tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqUp"],SeqUpLogger)}|"
+                        tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqDown"],SeqUpLogger)}\n"
+                    end
+                end
+                tbs += "Temperature Setting:\n"
+                tbs += "#{PSNameLogger}|#{NomSetLogger}|#{TripMinLogger}|#{TripMaxLogger}|#{FlagTolPLogger}|#{FlagTolNLogger}\n"
+                @stepToWorkOn["TempConfig"].each do |key, array|
+                    if key == "TDUT"
+                        tbs += "#{makeItFit(key,PSNameLogger)}|"
+                        tbs += "#{makeItFitMeas(array["NomSet"],5,NomSetLogger)}|"
+                        tbs += "#{makeItFitMeas(array["TripMin"],5,TripMinLogger)}|"
+                        tbs += "#{makeItFitMeas(array["TripMax"],5,TripMaxLogger)}|"
+                        tbs += "#{makeItFitMeas(array["FlagTolP"],5,FlagTolPLogger)}|"
+                        tbs += "#{makeItFitMeas(array["FlagTolN"],5,FlagTolNLogger)}\n"
+                    end
+                end
+                sendToLogger(tbs)
+            end
+
         end
     end
 
@@ -749,34 +810,27 @@ class TCUSampler
             end
             
             if (flagTolP <= actualValue && actualValue <= flagTolN) == false
-                @samplerData.ReportError("NOTICE - #{key2} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.  .",Time.new)
+                @samplerData.ReportError("NOTICE - #{key2} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed..\n",Time.new)
             end
 
             if (tripMin <= actualValue && actualValue <= tripMax) == false
-                stopMachine("#{__LINE__}-#{__FILE__}")
-                # Turn on red light and buzzer and make it blink due to shutdown
-                setToAlarmMode()
-                tbs = "ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE."
-                timeOfError = Time.new
-                @samplerData.ReportError(tbs,timeOfError)
-                logSystemStateSnapShot(tbs,timeOfError)
-                return true                
+                if is2ndFault(key2,unit,tripMin,actualValue,tripMax)
+                    setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+                    # Turn on red light and buzzer and make it blink due to shutdown
+                    setToAlarmMode()
+                    tbs = "ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.\n"
+                    timeOfError = Time.new
+                    @samplerData.ReportError(tbs,timeOfError)
+                    logSystemStateSnapShot(tbs,timeOfError)
+                    return true                
+                end
+            else
+                clearFault(key2)
             end
         end
         return false
     end
     
-    def stopMachine(fromParam)
-        puts "stopMachine called from #{fromParam} [@ #{__LINE__}-#{__FILE__}]"
-        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-                
-        # Turn on the control for TCUs that are not disabled.
-        setTcuToStopMode() # turnOffDuts(@tcusToSkip)
-        
-        @samplerData.setWaitTempMsg("")
-        @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
-    end
-
     def setBoardData(boardDataParam,uart1)
         # The configuration was just loaded from file.  We must setup the system to be in a given state.
         # For example, if the system is in runmode, when starting the system over, the PS must sequence up
@@ -983,7 +1037,7 @@ class TCUSampler
             exit
         end
     end
-    	
+    MeasErr = 1.01    	
     def initMuxValueFunc()
     	@initMuxValueFunc = true
     	@multiplier[SharedLib::IDUT1] = 20.0*0.65334305
@@ -1010,40 +1064,40 @@ class TCUSampler
     	@multiplier[SharedLib::IDUT22] = 20.0*0.65334305
     	@multiplier[SharedLib::IDUT23] = 20.0*0.65334305
     	@multiplier[SharedLib::IDUT24] = 20.0*0.65334305
-    	@multiplier[SharedLib::IPS6] = 2.0
-    	@multiplier[SharedLib::IPS8] = 5.0
-    	@multiplier[SharedLib::IPS9] = 5.0
-    	@multiplier[SharedLib::IPS10] = 5.0
-    	@multiplier[SharedLib::SPARE] = 5.0
-    	@multiplier[SharedLib::IP5V] = 5.0
-    	@multiplier[SharedLib::IP12V] = 10.0
-    	@multiplier[SharedLib::IP24V] = 10.0
-    	@multiplier[SharedLib::VPS0] = 2.300
-    	@multiplier[SharedLib::VPS1] = 2.300
-    	@multiplier[SharedLib::VPS2] = 2.300
-    	@multiplier[SharedLib::VPS3] = 2.300
-    	@multiplier[SharedLib::VPS4] = 2.300
-    	@multiplier[SharedLib::VPS5] = 2.300
-    	@multiplier[SharedLib::VPS6] = 2.300
-    	@multiplier[SharedLib::VPS7] = 2.300
-    	@multiplier[SharedLib::VPS8] = 4.010
-    	@multiplier[SharedLib::VPS9] = 4.010
-    	@multiplier[SharedLib::VPS10] = 4.010
-    	@multiplier[SharedLib::BIBP5V] = 4.010
-    	@multiplier[SharedLib::BIBN5V] = 4.010
-    	@multiplier[SharedLib::BIBP12V] = 9.660
-    	@multiplier[SharedLib::P12V] = 9.660
-    	@multiplier[SharedLib::P24V] = 20.100
+    	@multiplier[SharedLib::IPS6] = 2.0*MeasErr
+    	@multiplier[SharedLib::IPS8] = 5.0*MeasErr
+    	@multiplier[SharedLib::IPS9] = 5.0*MeasErr
+    	@multiplier[SharedLib::IPS10] = 5.0*MeasErr
+    	@multiplier[SharedLib::SPARE] = 5.0*MeasErr
+    	@multiplier[SharedLib::IP5V] = 5.0*MeasErr
+    	@multiplier[SharedLib::IP12V] = 10.0*MeasErr
+    	@multiplier[SharedLib::IP24V] = 10.0*MeasErr*3
+    	@multiplier[SharedLib::VPS0] = 2.300*MeasErr
+    	@multiplier[SharedLib::VPS1] = 2.300*MeasErr
+    	@multiplier[SharedLib::VPS2] = 2.300*MeasErr
+    	@multiplier[SharedLib::VPS3] = 2.300*MeasErr
+    	@multiplier[SharedLib::VPS4] = 2.300*MeasErr
+    	@multiplier[SharedLib::VPS5] = 2.300*MeasErr
+    	@multiplier[SharedLib::VPS6] = 2.300*MeasErr
+    	@multiplier[SharedLib::VPS7] = 2.300*MeasErr
+    	@multiplier[SharedLib::VPS8] = 4.010*MeasErr
+    	@multiplier[SharedLib::VPS9] = 4.010*MeasErr
+    	@multiplier[SharedLib::VPS10] = 4.010*MeasErr
+    	@multiplier[SharedLib::BIBP5V] = 4.010*MeasErr
+    	@multiplier[SharedLib::BIBN5V] = 4.010*MeasErr
+    	@multiplier[SharedLib::BIBP12V] = 9.660*MeasErr
+    	@multiplier[SharedLib::P12V] = 9.660*MeasErr
+    	@multiplier[SharedLib::P24V] = 20.100*MeasErr
     end
     
     def initpollAdcInputFunc()
     	@initpollAdcInputFunc = true
-    	@multiplier[SharedLib::SLOTP5V] = 4.01
-    	@multiplier[SharedLib::SLOTP3V3] = 2.3
-    	@multiplier[SharedLib::SLOTP1V8] = 2.3
-    	@multiplier[SharedLib::SlotTemp1] = 100.0
-    	@multiplier[SharedLib::CALREF] = 2.3
-    	@multiplier[SharedLib::SlotTemp2] = 100.0
+    	@multiplier[SharedLib::SLOTP5V] = 4.01*MeasErr
+    	@multiplier[SharedLib::SLOTP3V3] = 2.3*MeasErr
+    	@multiplier[SharedLib::SLOTP1V8] = 2.3*MeasErr
+    	@multiplier[SharedLib::SlotTemp1] = 100.0*MeasErr
+    	@multiplier[SharedLib::CALREF] = 2.3*MeasErr
+    	@multiplier[SharedLib::SlotTemp2] = 100.0*MeasErr
     end
 
     def etsEnaBit(ct)
@@ -1400,10 +1454,11 @@ class TCUSampler
     end
 
     def getSystemStateAvgForLogging()
-        mins =  ((@samplerData.GetStepTimeLeft())/60.0).to_i
-        secs =  (@samplerData.GetStepTimeLeft()-mins*60.0).to_i
+        # mins =  ((@samplerData.GetStepTimeLeft())/60.0).to_i
+        # secs =  (@samplerData.GetStepTimeLeft()-mins*60.0).to_i
         tbs = ""
-        tbs += "Log Time Left: #{SharedLib::makeTime2colon2Format(mins,secs)} (mm:ss)\n"
+        # tbs += "Log Time Left: #{SharedLib::makeTime2colon2Format(mins,secs)} (mm:ss)\n"
+        tbs += "Log Time: #{Time.new.inspect}\n"
         tbs += "#{DutNum}|#{DutStatus}|#{DutTemp}|#{DutCurrent}|#{DutHeatDuty}|#{DutCoolDuty}|#{DutControllerTemp}\n"
         dutCt = 0
         # tbs += "eiPs=#{eiPs}\n"
@@ -1411,13 +1466,13 @@ class TCUSampler
 			dutIndex = "Dut#{dutCt}"
 			ct = 0
 			
-			if @logRptAvg["#{dutCt}"].nil? == false
+			if @logRptAvg.nil? == false && @logRptAvg["#{dutCt}"].nil? == false
 			    @logRptAvg["#{dutCt}"]["status"].each do |key, data|
     			    if ct == 0
             			if @tcuData.nil? == false && @tcuData["#{dutCt}"].nil? == false 
                             splitted = @tcuData["#{dutCt}"].split(',')
                             tbs += "#{makeItFit(dutIndex,DutNum)}|"
-                            tbs += "#{makeItFit("#{key}[#{data/@logRptAvgCt*100}%]",DutStatus)}|"
+                            tbs += "#{makeItFit("#{key}[#{data}/#{@logRptAvgCt}]",DutStatus)}|"
                             tbs += "#{makeItFit(@logRptAvg["#{dutCt}"]["temperature"]/@logRptAvgCt,DutTemp)}|"
                             tbs += "#{makeItFitMeas(@logRptAvg["#{dutCt}"]["current"]/@logRptAvgCt,5,DutCurrent)}|"
                             if @logRptAvg["#{dutCt}"]["cool"].nil?
@@ -1439,7 +1494,7 @@ class TCUSampler
             			if @tcuData.nil? == false && @tcuData["#{dutCt}"].nil? == false 
                             splitted = @tcuData["#{dutCt}"].split(',')
                             tbs += "#{makeItFit(" ",DutNum)}|"
-                            tbs += "#{makeItFit("#{key}[#{data/@logRptAvgCt*100}%]",DutStatus)}|"
+                            tbs += "#{makeItFit("#{key}[#{data}/#{@logRptAvgCt}]",DutStatus)}|"
                             tbs += "#{makeItFit(" ",DutTemp)}|"
                             tbs += "#{makeItFit(" ",DutCurrent)}|"
                             tbs += "#{makeItFit(" ",DutHeatDuty)}|"
@@ -1510,7 +1565,7 @@ class TCUSampler
         tbs = "#{timeParam.inspect} - #{strParam}"
         mins =  @samplerData.GetStepTimeLeft()/60.0.to_i
         secs =  (@samplerData.GetStepTimeLeft()-mins*60.0).to_i
-        tbs += "Log Time Left: #{SharedLib::makeTime2colon2Format(mins,secs)} (mm:ss)\n"
+        tbs += "Log Time Left: #{SharedLib.makeTime2colon2Format(mins,secs)} (mm:ss)\n"
         tbs += "#{DutNum}|#{DutStatus}|#{DutTemp}|#{DutCurrent}|#{DutHeatDuty}|#{DutCoolDuty}|#{DutControllerTemp}\n"
         dutCt = 0
         muxData = @samplerData.GetDataMuxData("#{__LINE__}-#{__FILE__}")
@@ -1672,12 +1727,68 @@ class TCUSampler
         @gPIO2.setBitOn(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_BUZR+GPIO2::X4_LEDRED+GPIO2::X4_BLINK)
     end
 
+    def is2ndFaultBase(key2,unit,tripMin,actualValue,tripMax,tbsParam)  
+        if @fault.nil?
+            @fault = Hash.new
+        end
+        
+        if @fault[key2].nil?
+            @fault[key2] = 1
+            tbs = tbsParam # tbs - to be sent
+            timeOfError = Time.new
+            @samplerData.ReportError(tbs,timeOfError)
+            logSystemStateSnapShot(tbs,timeOfError)
+            return false
+        end
+        
+        if @fault[key2] >= 1
+            return true
+        else
+            return false
+        end
+    end
+    
+    def is2ndFault(key2,unit,tripMin,actualValue,tripMax)        
+        tbsParam = "Possible error - #{key2} out of bound trip points.  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} failed." # tbs - to be sent
+        return is2ndFaultBase(key2,unit,tripMin,actualValue,tripMax,tbsParam)
+    end
+    
+    def is2ndFaultDut(key2,dutCt,unit,tripMin,actualValue,tripMax)        
+        tbsParam = "Possible error - DUT##{dutCt} out of bound trip points.  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} failed." # tbs - to be sent
+        return is2ndFaultBase(key2,unit,tripMin,actualValue,tripMax,tbsParam)
+    end
+
+    def clearFault(key2)
+        if @fault.nil?
+            @fault = Hash.new
+        end
+        if @fault[key2].nil? == false
+            @fault[key2] = nil
+        end
+    end
+
+    def testBadMeasForTripPts(key2,actualValue, fromParam)
+        puts "testBadMeasForTripPts for '#{key2}'. [called from #{fromParam}] #{__LINE__}-#{__FILE__}"
+
+        if @testBadMeasForTripPts.nil?
+            @testBadMeasForTripPts = Hash.new
+        end
+        
+        if @testBadMeasForTripPts[key2].nil?
+            @testBadMeasForTripPts[key2] = key2
+            puts "testBadMeasForTripPts for '#{key2}' returning fudged data. #{__LINE__}-#{__FILE__}"
+            return 1000*actualValue
+        else
+            return actualValue
+        end
+    end
+
     def runTCUSampler
         @gPIO2 = GPIO2.new
         @gPIO2.getForInitGetImagesOf16Addrs
 
-        turnOffHeaters()
 
+        @logRptAvgCt = 0
         @socketIp = nil
     	@setupAtHome = false # So we can do some work at home
     	@initMuxValueFunc = false
@@ -1688,6 +1799,8 @@ class TCUSampler
         @samplerData = SharedMemory.new
     	@samplerData.SetupData()
     	@samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
+    	
+        turnOffHeaters()
     	initMuxValueFunc()
     	initpollAdcInputFunc()
     	readInBbbDefaultsFile()
@@ -1811,10 +1924,18 @@ class TCUSampler
             # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
             limboCheck(@stepToWorkOn[StepNum],uart1)
         end
-        loggingTime = 60 # 5 seconds for now
+        
+        totDutTempReached = 0
+        totDutsAvailable = 0
+
+        @loggingTime = 60.to_i # 5 seconds for now
         pollingTime = 1 # check every second
         pollIntervalInSeconds = pollingTime
         skipLimboStateCheck = false
+        
+        turnBuzzerOnAt = Time.now
+        buzzerBackOn = true
+        
         # @samplerData.ReportError("Error test. #{__LINE__}-#{__FILE__}")
         timeOfLog = Time.now
         while true
@@ -1859,11 +1980,10 @@ class TCUSampler
     			    if @stepToWorkOn.nil?
     			        # There are no more steps to process.
     			        # All the steps are done processing.
-    			        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+    			        # setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     			        setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
-    			        turnOffHeaters()
     			    else
-		                puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
+		                # puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
         			    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
         			        # We're still running.
         			        
@@ -1906,12 +2026,16 @@ class TCUSampler
                                             if @setupAtHome
                                                 actualValue = 0.9
                                             end
+                                            
+                                            # actualValue = testBadMeasForTripPts(key2,actualValue,"#{__LINE__}-#{__FILE__}")
+                                            
                                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax,flagTolP,flagTolN)
                                                 break
                                             end
                                        when "IPS0"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
+                                            # actualValue = testBadMeasForTripPts(key2,actualValue,"#{__LINE__}-#{__FILE__}")
                                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1958,9 +2082,9 @@ class TCUSampler
                                             end
                                         when "IPS3"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
-                                            puts "eiPs=#{eiPs} #{__LINE__}-#{__FILE__}"
-                                            puts "key2=#{key2}, key2[1..-1]=#{key2[1..-1]} #{__LINE__}-#{__FILE__}"
-                                            puts "actualValue=#{actualValue} #{__LINE__}-#{__FILE__}"
+                                            # puts "eiPs=#{eiPs} #{__LINE__}-#{__FILE__}"
+                                            # puts "key2=#{key2}, key2[1..-1]=#{key2[1..-1]} #{__LINE__}-#{__FILE__}"
+                                            # puts "actualValue=#{actualValue} #{__LINE__}-#{__FILE__}"
                                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -1973,12 +2097,14 @@ class TCUSampler
                                         when "IPS4"
 			                                # puts "PS4I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2")}"
                                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
+                                            # actualValue = testBadMeasForTripPts(key2,actualValue,"#{__LINE__}-#{__FILE__}")
                                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
                                         when "VPS5"
 			                                # puts "PS5V = #{@samplerData.getPsVolts(muxData,adcData,"37")}"
                                             actualValue = @samplerData.getPsVolts(muxData,adcData,"37").to_f
+                                            # actualValue = testBadMeasForTripPts(key2,actualValue,"#{__LINE__}-#{__FILE__}")
                                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                                 break
                                             end
@@ -2079,14 +2205,19 @@ class TCUSampler
                                                         @samplerData.ReportError("NOTICE - IDUT#{ct} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.  .",Time.new)
                                                         ct = 24 # break out of the loop.
                                                     end
+                                                    # actualValue = testBadMeasForTripPts("#{key2}#{ct}",actualValue,"#{__LINE__}-#{__FILE__}")
                                                     if (tripMin <= actualValue && actualValue <= tripMax) == false
-                                                        stopMachine("#{__LINE__}-#{__FILE__}")
-                                                        setToAlarmMode()
-                                                        tbs = "ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE."
-                                                        timeOfError = Time.new
-                                                        @samplerData.ReportError(tbs,timeOfError)
-                                                        logSystemStateSnapShot(tbs,timeOfError)
-                                                        ct = 24 # break out of the loop.
+                                                        if is2ndFaultDut("#{key2}#{ct}",ct,unit,tripMin,actualValue,tripMax)
+                                                            setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+                                                            setToAlarmMode()
+                                                            tbs = "ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE."
+                                                            timeOfError = Time.new
+                                                            @samplerData.ReportError(tbs,timeOfError)
+                                                            logSystemStateSnapShot(tbs,timeOfError)
+                                                            ct = 24 # break out of the loop.
+                                                        end
+                                                    else
+                                                        clearFault("#{key2}#{ct}")
                                                     end
                                                 end
                                                 ct += 1
@@ -2178,21 +2309,26 @@ class TCUSampler
                                         					# puts "DUT##{dutCt} temp='#{actualValue}' flagTolN='#{flagTolN}' flagTolP='#{flagTolP}' tripMin='#{tripMin}' tripMax='#{tripMax}'"
                                                             if (flagTolP <= actualValue && actualValue <= flagTolN) == false
                                                                 puts "NOTICE - DUT##{dutCt} out of bound within flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.  ."
-                                                                @samplerData.ReportError("NOTICE - DUT##{dutCt} out of bound flag points.  '#{flagTolN}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolP}'#{unit} failed.  .",Time.new)
+                                                                @samplerData.ReportError("NOTICE - DUT##{dutCt} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.  .",Time.new)
                                                             end
-                                                
-                                                            if (tripMin <= actualValue && actualValue <= tripMax) == false
-                                                                # puts("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
-                                                                stopMachine("#{__LINE__}-#{__FILE__}")
-                                                                turnOffHeaters()
+                                                            
+                                                            # actualValue = testBadMeasForTripPts("#{key2}#{dutCt}",actualValue,"#{__LINE__}-#{__FILE__}")
 
-                                                                # Turn on red light and buzzer and make it blink due to shutdown
-                                                                setToAlarmMode()
-                                                                tbs = "ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE." # tbs - to be sent
-                                                                dutCt = 24 
-                                                                timeOfError = Time.new
-                                                                @samplerData.ReportError(tbs,timeOfError)
-                                                                logSystemStateSnapShot(tbs,timeOfError)
+                                                            if (tripMin <= actualValue && actualValue <= tripMax) == false
+                                                                if is2ndFaultDut("#{key2}#{dutCt}",dutCt,unit,tripMin,actualValue,tripMax)
+                                                                    # puts("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
+                                                                    setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+    
+                                                                    # Turn on red light and buzzer and make it blink due to shutdown
+                                                                    setToAlarmMode()
+                                                                    tbs = "ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE." # tbs - to be sent
+                                                                    dutCt = 24 
+                                                                    timeOfError = Time.new
+                                                                    @samplerData.ReportError(tbs,timeOfError)
+                                                                    logSystemStateSnapShot(tbs,timeOfError)
+                                                                end
+                                                            else
+                                                                clearFault("#{key2}#{dutCt}")
                                                             end
                                         			    end
                                                         dutCt += 1
@@ -2223,49 +2359,10 @@ class TCUSampler
                             # We're in run mode.
                             if pollIntervalInSeconds == pollingTime
                                 # The board started processing.
-                                pollIntervalInSeconds = loggingTime
+                                pollIntervalInSeconds = @loggingTime
                             end
                             
                             if @allDutTempTolReached                             
-                                if @boardData[LastStepNumOfSentLog] != @samplerData.GetStepNumber()
-                                    @boardData[LastStepNumOfSentLog] = @samplerData.GetStepNumber()
-                                    timeOfLog = Time.new.to_i
-                                    timeOfLog += loggingTime
-                                    @logRptAvgCt = 0
-                                    @logRptAvg = nil
-                                    
-                                    puts "Sending log data.  #{Time.now.inspect}. #{__LINE__}-#{__FILE__}"
-                                    tbs  = "BIB#: #{@ethernetScheme[SlotBibNum]}\n"
-                                    tbs += "Test Step: step##{@samplerData.GetStepNumber()}-#{@samplerData.GetStepName()}\n"
-                                    tbs += "Power Supply Setting:\n"
-                                    tbs += "#{PSNameLogger}|#{NomSetLogger}|#{TripMinLogger}|#{TripMaxLogger}|#{FlagTolPLogger}|#{FlagTolNLogger}|#{SeqUpLogger}|#{SeqDownLogger}\n"
-                                    @stepToWorkOn["PsConfig"].each do |key, array|
-                                        if key[0] == "V"
-                                            tbs += "#{makeItFit(key,PSNameLogger)}|"
-                                            tbs += "#{makeItFitMeas(array["NomSet"],5,NomSetLogger)}|"
-                                            tbs += "#{makeItFitMeas(array["TripMin"],5,TripMinLogger)}|"
-                                            tbs += "#{makeItFitMeas(array["TripMax"],5,TripMaxLogger)}|"
-                                            tbs += "#{makeItFitMeas(array["FlagTolP"],5,FlagTolPLogger)}|"
-                                            tbs += "#{makeItFitMeas(array["FlagTolN"],5,FlagTolNLogger)}|"
-                                            tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqUp"],SeqUpLogger)}|"
-                                            tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqDown"],SeqUpLogger)}\n"
-                                        end
-                                    end
-                                    tbs += "Temperature Setting:\n"
-                                    tbs += "#{PSNameLogger}|#{NomSetLogger}|#{TripMinLogger}|#{TripMaxLogger}|#{FlagTolPLogger}|#{FlagTolNLogger}\n"
-                                    @stepToWorkOn["TempConfig"].each do |key, array|
-                                        if key == "TDUT"
-                                            tbs += "#{makeItFit(key,PSNameLogger)}|"
-                                            tbs += "#{makeItFitMeas(array["NomSet"],5,NomSetLogger)}|"
-                                            tbs += "#{makeItFitMeas(array["TripMin"],5,TripMinLogger)}|"
-                                            tbs += "#{makeItFitMeas(array["TripMax"],5,TripMaxLogger)}|"
-                                            tbs += "#{makeItFitMeas(array["FlagTolP"],5,FlagTolPLogger)}|"
-                                            tbs += "#{makeItFitMeas(array["FlagTolN"],5,FlagTolNLogger)}\n"
-                                        end
-                                    end
-                                    sendToLogger(tbs)
-                                end
-                                
                                 doTheAveragingOfMesurements()
                                 if timeOfLog.to_i <= Time.now.to_i
                                     timeOfLog += pollIntervalInSeconds
@@ -2274,20 +2371,19 @@ class TCUSampler
                                     @logRptAvg = nil
                                 end
                                 
-                                
                                 @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
                             else
-                                @samplerData.setWaitTempMsg("#{tempTolP}C/#{tempTolN}C")
+                                @samplerData.setWaitTempMsg("#{tempTolP}C/#{tempTolN}C, +#{totDutTempReached}/#{totDutsAvailable} duts, -#{twtimeleft} sec")
+                                #totDutTempReached == totDutsAvailable
                             end
         			    else
         			        # We're done running.
                             @dutTempTolReached = Hash.new
                             @allDutTempTolReached = false
-                        
-                            sendToLogger("End Step (step##{@boardData[LastStepNumOfSentLog]})\n")
+                            
         			        # Step just finished.
                             # We're in polling mode.
-                            if pollIntervalInSeconds == loggingTime
+                            if pollIntervalInSeconds == @loggingTime
                                 pollIntervalInSeconds = pollingTime
                             end
                             
@@ -2304,7 +2400,6 @@ class TCUSampler
                                 # Done processing all steps listed in configuration.step file
                                 saveBoardStateToHoldingTank()
                                 
-                                setTcuToStopMode()
                                 # We're done processing all the steps.
                             end
                         end
@@ -2335,7 +2430,7 @@ class TCUSampler
                         
         		    when SharedLib::StopFromPc
             		    turnOffHeaters()
-        		        stopMachine("#{__LINE__}-#{__FILE__}")
+        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                         
         		    when SharedLib::ClearConfigFromPc
         		        @samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
@@ -2345,8 +2440,6 @@ class TCUSampler
         		        setBoardStateForCurrentStep(uart1)
             		    @samplerData.SetConfigurationFileName("")
             		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
-            		    turnOffHeaters()
-                        setTcuToStopMode() # turnOffDuts(@tcusToSkip)
                         
         		    when SharedLib::LoadConfigFromPc
         		        @lotStartedAlready = false
@@ -2376,7 +2469,6 @@ class TCUSampler
                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
         		        setBoardStateForCurrentStep(uart1)
-            		    saveBoardStateToHoldingTank()
 
             		    # Empty out the shared memory so we have more room in the memory.  Save at least 19k bytes of space
             		    # by clearing it out.
@@ -2413,26 +2505,30 @@ class TCUSampler
         			    if @tcuData["#{dutCt}"].nil? == false 
         	                splitted = @tcuData["#{dutCt}"].split(',')
         					actualValue = SharedLib::make5point2Format(splitted[2]).to_f
-                            if (@dutTempTripMin <= actualValue && actualValue <= @dutTempTripMax) == false
-                                puts("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{@dutTempTripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{@dutTempTripMax}'#{unit} FAILED.  ALREADY IN STOP MODE, SHUTTING DOWN HEATERS.")
-                                turnOffHeaters()
-
-                                # Turn on red light and buzzer and make it blink due to shutdown
-                                setToAlarmMode()
-
-                                dutCt = 24 # terminate loop
-                                @samplerData.ReportError("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{@dutTempTripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{@dutTempTripMax}'#{unit} FAILED.  ALREADY IN STOP MODE, SHUTTING DOWN HEATERS.",Time.new)
+                            if (actualValue <= @dutTempTripMax) == false
+                                if is2ndFaultDut("OverTemp#{dutCt}",dutCt,unit,tripMin,actualValue,tripMax)
+                                    # puts("ERROR - DUT##{dutCt} OVER TEMP ERROR!  '#{actualValue}'#{unit} <= '#{@dutTempTripMax}'#{unit} FAILED.  ALREADY IN STOP MODE, SHUTTING DOWN HEATERS.")
+                                    turnOffHeaters()
+    
+                                    # Turn on red light and buzzer and make it blink due to shutdown
+                                    setToAlarmMode()
+    
+                                    dutCt = 24 # terminate loop
+                                    @samplerData.ReportError("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{@dutTempTripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{@dutTempTripMax}'#{unit} FAILED.  ALREADY IN STOP MODE, SHUTTING DOWN HEATERS.",Time.new)
+                                end
+                            else
+                                clearFault("OverTemp#{dutCt}")
                             end
         			    end
                         dutCt += 1
         			end
                 end
             end
-            
+
             # Handle the lights and buzzer
             if cfgName == "Yes"
                 # We have a step config file loaded.
-                puts "EXT_INPUTS_x2=#{@gPIO2.getGPIO2(GPIO2::EXT_INPUTS_x2)} #{__LINE__}-#{__FILE__}"
+                # puts "EXT_INPUTS_x2=#{@gPIO2.getGPIO2(GPIO2::EXT_INPUTS_x2)} #{__LINE__}-#{__FILE__}"
                 if @lastSettings != Alarming
                     # There's a lot loaded.
                     if @samplerData.GetBbbMode() == SharedLib::InRunMode
@@ -2473,8 +2569,17 @@ class TCUSampler
                     # We're in an alarm state.
                     # Check if the button was pressed.
                     if SharedLib.getBits(@gPIO2.getGPIO2(GPIO2::EXT_INPUTS_x2))[-2] == "1"
-                        # The 
+                        # The button was pressed.  The idea is to silence the beeping noise for 5 mins.
                         @gPIO2.setGPIO2(GPIO2::EXT_INPUTS_x2,1) # Clear the pressed button.
+                        
+                        @gPIO2.setBitOff(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_BUZR)
+                        turnBuzzerOnAt = Time.now+5*60
+                        buzzerBackOn = false
+                    end
+                    
+                    if buzzerBackOn == false && turnBuzzerOnAt <= Time.now
+                        buzzerBackOn = true
+                        @gPIO2.setBitOn(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_BUZR)
                     end
                 end
             else
@@ -2507,5 +2612,5 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# Look for 'if SharedLib.getBits(@gPIO2.getGPIO2(GPIO2::EXT_INPUTS_x2))[-2] == "1"'
-# 1298
+# 2282
+# 
