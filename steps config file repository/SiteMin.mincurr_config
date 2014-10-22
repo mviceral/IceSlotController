@@ -1,0 +1,4 @@
+Pre-Test Config File,,,
+,,,Nom
+Name,Type,Unit,SET
+IDUT,DUT MINIMUM CURRENT [1:24],A,0

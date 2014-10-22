@@ -1,0 +1,10 @@
+Temperature,Comment,,Nom,Trip,Trip,FLAG,FLAG,Enable,IDLE,LOAD,START,RUN,STOP,CLEAR
+Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,control,,,,,,
+TDUT,DUT TEMPERATURE [1:24],C,15,10.0,77.0,11.5,73.5,YES,OFF,OFF,ON,ON,OFF,OFF
+TimerRUFP,Delay Ramp Up to full power,seconds,500,,,,,,,,,,,
+TimerRDFP,Delay Ramp Dn to FP,seconds,60,,,,,,,,,,,
+H,Delay UP Max PWM Heat ,Percent,100%,,,,,0-255,,,,,,
+C,Ramp down PWM COOL,Percent,100%,,,,,0-255,,,,,,
+P,Propotional,Value,009.000,,,,,,,,,,,
+I,Integral,Value,000.820,,,,,,,,,,,
+D,Derivitive,Value,000.180,,,,,,,,,,,
