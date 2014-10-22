@@ -475,10 +475,15 @@ class UserInterface
 			if colContent[0] == "Oven ID"
 				oven = colContent[1].chomp
 				oven = oven.strip
+			elsif colContent[0] == "#{slotOwnerParam} BIB#"
+				bibID = colContent[1].chomp
+				bibID = bibID.strip
 			end
 			ct += 1
 		end
 		writeToSettingsLog("System: #{oven}, Slot: #{slotOwnerParam}",settingsFileName)
+		writeToSettingsLog("BIB#: #{bibID}",settingsFileName)
+
 =begin
 		psItems = ["VPS0","IPS0","VPS1","IPS1","VPS2","IPS2","VPS3","IPS3","VPS4","IPS4","VPS5","IPS5","VPS6","IPS6","VPS7","IPS7","VPS8","IPS8","VPS9","IPS9","VPS10","IPS10","IDUT"]
 		ct = 0
