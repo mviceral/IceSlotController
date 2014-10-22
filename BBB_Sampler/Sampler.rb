@@ -709,7 +709,7 @@ class TCUSampler
                 @boardData[LastStepNumOfSentLog] = @samplerData.GetStepNumber()
                 timeOfLog = Time.new.to_i
                 if @loggingTime.nil?
-                    @loggingTime = 1
+                    @loggingTime = 60
                 end
                 timeOfLog += @loggingTime
                 @logRptAvgCt = 0
@@ -1724,7 +1724,11 @@ class TCUSampler
     def setToAlarmMode()
         @lastSettings = Alarming
         @gPIO2.setBitOff(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_BLINK+GPIO2::X4_BUZR+GPIO2::X4_LEDRED+GPIO2::X4_LEDYEL+GPIO2::X4_LEDGRN)
-        @gPIO2.setBitOn(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_BUZR+GPIO2::X4_LEDRED+GPIO2::X4_BLINK)
+        if @setupAtHome
+            @gPIO2.setBitOn(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_LEDRED+GPIO2::X4_BLINK)
+        else
+            @gPIO2.setBitOn(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_BUZR+GPIO2::X4_LEDRED+GPIO2::X4_BLINK)
+        end
     end
 
     def is2ndFaultBase(key2,unit,tripMin,actualValue,tripMax,tbsParam)  
@@ -1790,7 +1794,7 @@ class TCUSampler
 
         @logRptAvgCt = 0
         @socketIp = nil
-    	@setupAtHome = false # So we can do some work at home
+    	@setupAtHome = true # So we can do some work at home
     	@initMuxValueFunc = false
     	@initpollAdcInputFunc = false
         @allDutTempTolReached = false
@@ -2425,11 +2429,9 @@ class TCUSampler
                     @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    case pcCmd
         		    when SharedLib::RunFromPc
-            		    turnOnHeaters()
     		            setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
                         
         		    when SharedLib::StopFromPc
-            		    turnOffHeaters()
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                         
         		    when SharedLib::ClearConfigFromPc
