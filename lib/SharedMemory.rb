@@ -37,6 +37,9 @@ class SharedMemory
 	ErrorColor = "ErrorColor"
 	Latch = "Latch"
 	StopMessage = "StopMessage"
+
+	OrangeColor = "#ff9900"
+	RedColor = "#ff0000"
 	
     GreenFlag = 0
     OrangeFlag = 1
@@ -644,22 +647,6 @@ class SharedMemory
         ds[SharedLib::ConfigDateUpload] = configDateUploadParam
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
-    
-	def GetDispErrorColor(slotOwnerParam)
-		slotOwner = getPCShared()[slotOwnerParam]
-		if slotOwner.nil?
-			return nil
-		end
-		return slotOwner[SharedMemory::ErrorColor]
-	end
-	
-	def GetDispStopMessage(slotOwnerParam)
-		slotOwner = getPCShared()[slotOwnerParam]
-		if slotOwner.nil?
-			return nil
-		end
-		return slotOwner[SharedMemory::StopMessage]
-	end
 
 	def SetDataBoardToPc(hash)
 		ds = lockMemory("#{__LINE__}-#{__FILE__}")
@@ -686,9 +673,6 @@ class SharedMemory
 				ds[SharedLib::PC][slotOwnerParam] = Hash.new
 			end
 		end
-		
-		ds[SharedLib::PC][slotOwnerParam][SharedMemory::StopMessage] = hash[SharedMemory::StopMessage]
-		ds[SharedLib::PC][slotOwnerParam][SharedMemory::ErrorColor] = hash[SharedMemory::ErrorColor]
 
 		if hash[SharedMemory::WaitTempMsg].nil? == false
 			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = hash[SharedMemory::WaitTempMsg]
