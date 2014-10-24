@@ -164,3 +164,8 @@ blacklist ftdi_sio
 blacklist usbserial
 
 # This will require another reboot.
+
+########################################### 
+# To setup the BBB to local time.
+$sudo rm /etc/localtime
+$sudo ln -s /usr/share/zoneinfo/US/Pacific /etc/localtime

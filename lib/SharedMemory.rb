@@ -636,11 +636,6 @@ class SharedMemory
 			end
 			
 			ds[SharedLib::PC][hash[SharedLib::SlotOwner]][SharedLib::ButtonDisplay] = hash[SharedLib::ButtonDisplay]
-			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-		end
-
-		if ds[SharedLib::PC].nil?
-			ds[SharedLib::PC] = Hash.new
 		end
 
 		slotOwnerParam = hash[SharedLib::SlotOwner]
@@ -656,6 +651,7 @@ class SharedMemory
 			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = nil
 		end
 
+		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 		SetDispBoardData(
 			hash[SharedLib::ConfigurationFileName],
 			hash[SharedLib::ConfigDateUpload],

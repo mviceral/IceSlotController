@@ -667,15 +667,17 @@ class UserInterface
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
 		toBeReturned += "<tr>"
 		if labelParam == "S8"
-			bgcolor = "bgcolor=\"#ff0000\""
+			bgcolor1 = "bgcolor=\"#ff0000\""
+			bgcolor2 = "bgcolor=\"#00ff00\""
 		else
-			bgcolor = ""
+			bgcolor1 = ""
+			bgcolor2 = ""
 		end
 		toBeReturned += "	
-			<td #{bgcolor} >
+			<td #{bgcolor1} >
 				<font size=\"1\">Temp</font>
 			</td>
-			<td #{bgcolor} >
+			<td #{bgcolor2} >
 				<font size=\"1\">#{temperature} C</font>
 			</td>"
 		toBeReturned += "</tr>"
@@ -875,8 +877,21 @@ class UserInterface
 					</td>
 					<td valign=\"top\" rowspan=\"2\">
 				 		<table>"
-		if @sharedMem.GetDispWaitTempMsg(slotLabel2Param).nil? == false
-			stepNum = @sharedMem.GetDispStepNumber(slotLabel2Param)
+		stepNum = @sharedMem.GetDispStepNumber(slotLabel2Param)
+		if 	@sharedMem.GetDispBbbMode(slotLabel2Param) == SharedLib::InStopMode && @sharedMem.GetDispStepName(slotLabel2Param).length > 0
+			topTable += "								
+				 			<tr><td align=\"center\"><font size=\"1.75\"/>Step '#{stepNum}'</td></tr>
+				 			<tr>
+				 				<td align=\"center\">
+				 					<font 				 						
+				 						size=\"2\" 
+				 						style=\"font-style: italic;\">"
+			disp = "Stopped"
+			topTable += "		#{disp}				 							
+				 					</font>
+				 				</td>
+				 			</tr>"
+		elsif @sharedMem.GetDispWaitTempMsg(slotLabel2Param).nil? == false
 			topTable += "								
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>Step '#{stepNum}' Waiting Temp Tolerance</td></tr>
 				 			<tr>
@@ -917,7 +932,7 @@ class UserInterface
 				stepNum = @sharedMem.GetDispStepNumber(slotLabel2Param)
 			end
 			topTable += "
-				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{stepNum}' COMPLETION AT</td></tr>
+				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP FILE NOT LOADED</td></tr>
 				 			<tr>
 				 				<td align=\"center\">
 				 					<font 				 						
@@ -2621,4 +2636,4 @@ get '/AckError' do
 	redirect "../"
 end
 
-# at 1013
+# at 880
