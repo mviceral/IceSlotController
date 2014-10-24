@@ -616,7 +616,35 @@ class UserInterface
 		end
 	end
 
-	def PsCell(slotLabel2Param,labelParam,rawDataParam, iIndexParam)
+	def getStyle(vOrI,lorC,labelParam,errorColor)
+		bgcolor = ""
+		if errorColor.nil? == false
+			sValue = labelParam[1..-1]
+			if errorColor[vOrI+labelParam].nil? == false
+				key = vOrI+labelParam
+				case errorColor[key][lorC]
+				when 1
+				bgcolor = "#{SharedMemory::OrangeColor}"
+				when 2
+				bgcolor = "#{SharedMemory::RedColor}"
+				end
+			end
+		end
+
+		if bgcolor.nil? == false && bgcolor.length > 0
+			return "style=\"border:1px solid black;background-color:#{bgcolor}\""
+		else
+			return ""
+		end		
+	end
+	
+	def PsCell(slotLabel2Param,labelParam,rawDataParam, iIndexParam)	
+		errorColor = @sharedMem.GetDispErrorColor(slotLabel2Param)
+		vStyleL = getStyle("V","Latch",labelParam,errorColor)
+		vStyleC = getStyle("V","CurrentState",labelParam,errorColor)
+		iStyleL = getStyle("I","Latch",labelParam,errorColor)
+		iStyleC = getStyle("I","CurrentState",labelParam,errorColor)
+		
 		muxData = @sharedMem.GetDispMuxData(slotLabel2Param)
 		adcData = @sharedMem.GetDispAdcInput(slotLabel2Param)
 		rawDataParam = @sharedMem.getPsVolts(muxData,adcData,rawDataParam)
@@ -628,22 +656,35 @@ class UserInterface
 		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
 		toBeReturned += "<tr>"
-		if labelParam == "S8"
-			style = "style=\"border:1px solid black;background-color:#ff0000\""
-		else
-			style = ""
-		end
-		toBeReturned += "	<td #{style} >
+		toBeReturned += "	<td #{vStyleL} >
 												<font size=\"1\">Voltage</font>
 											</td>
-											<td #{style} >
+											<td #{vStyleC} >
 												<font size=\"1\">#{rawDataParam}V</font>
 											</td>"
 		toBeReturned += "</tr>"
-		toBeReturned += "<tr><td><font size=\"1\">Current</font></td><td><font size=\"1\">#{current}A</font></td></tr>"
+		toBeReturned += "<tr><td #{iStyleL}><font size=\"1\">Current</font></td><td #{iStyleC}><font size=\"1\">#{current}A</font></td></tr>"
 		toBeReturned += "</table>"
 		return toBeReturned
 		# End of 'DutCell("S20",dut20[2])'
+	end
+	
+	def getDutStyle(tOrI,lOrC,sValue,errorColor)
+		if errorColor.nil?
+				bgcolor1 = ""
+				bgcolor2 = ""
+		else
+			if errorColor[tOrI].nil? == false && errorColor[tOrI][sValue].nil? == false
+				case errorColor[tOrI][sValue][lOrC]
+				when 0
+					bgcolor1 = ""
+				when 1
+					bgcolor1 = "style=\"border:1px solid black;background-color:#{SharedMemory::OrangeColor}\""
+				when 2
+					bgcolor1 = "style=\"border:1px solid black;background-color:#{SharedMemory::RedColor}\""
+				end
+			end
+		end
 	end
 
 	def DutCell(slotLabel2Param, labelParam,rawDataParam)
@@ -666,22 +707,23 @@ class UserInterface
 		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
 		toBeReturned += "<tr>"
-		if labelParam == "S8"
-			bgcolor1 = "bgcolor=\"#ff0000\""
-			bgcolor2 = "bgcolor=\"#00ff00\""
-		else
-			bgcolor1 = ""
-			bgcolor2 = ""
-		end
+		
+		errorColor = @sharedMem.GetDispErrorColor(slotLabel2Param)
+		sValue = labelParam[1..-1]		
+		tStyleL = getDutStyle("TDUT","Latch",sValue,errorColor)
+		tStyleC = getDutStyle("TDUT","CurrentState",sValue,errorColor)
+		iStyleL = getDutStyle("IDUT","Latch",sValue,errorColor)
+		iStyleC = getDutStyle("IDUT","CurrentState",sValue,errorColor)		
+		
 		toBeReturned += "	
-			<td #{bgcolor1} >
+			<td #{tStyleL} >
 				<font size=\"1\">Temp</font>
 			</td>
-			<td #{bgcolor2} >
+			<td #{tStyleC} >
 				<font size=\"1\">#{temperature} C</font>
 			</td>"
 		toBeReturned += "</tr>"
-		toBeReturned += "<tr><td><font size=\"1\">Current</font></td><td><font size=\"1\">#{current} A</font></td></tr>"
+		toBeReturned += "<tr><td #{iStyleL}><font size=\"1\">Current</font></td><td #{iStyleC}><font size=\"1\">#{current} A</font></td></tr>"
 		toBeReturned += "</table>"
 		return toBeReturned
 		# End of 'DutCell("S20",dut20[2])'
