@@ -23,7 +23,6 @@ class SharedMemory
     CmdProcessed = "CmdProcessed"
     
     TimeOfPcUpload = "TimeOfPcUpload"
-    TimeOfPcLastCmd = "TimeOfPcLastCmd"
     SlotOwner = "SlotOwner"
     StepsLogRecordsPath = "../steps\\ log\\ records"
 
@@ -32,7 +31,16 @@ class SharedMemory
 	AlarmWait = "Alarm Wait"
 	AutoRestart = "Auto Restart"
 	StopOnTolerance = "Stop on Tolerance"
+
+	# For the color flags for the GUI.
+	CurrentState = "CurrentState"
+	ErrorColor = "ErrorColor"
+	Latch = "Latch"
+	
+    OrangeFlag = 1
+    RedFlag = 2
     
+    SystemInfo = "SystemInfo"
     
     def writeAndFreeLocked(strParam, fromParam)
 =begin
@@ -59,6 +67,16 @@ class SharedMemory
 	    @lockedAt = ""
     end
 =end
+
+	def getErrorColor()
+		return getMemory()[ErrorColor]
+	end
+
+	def setErrorColor(errorColorParam)
+		ds = lockMemory("#{__LINE__}-#{__FILE__}")
+		ds[SharedMemory::ErrorColor] = errorColorParam
+		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");
+	end
 
     def getMemory()
         while @lockedAt.nil? == false && @lockedAt != ""
@@ -694,7 +712,6 @@ class SharedMemory
     	ds["Configuration"] = "" # Clears the configuration.
     	ds[TimeOfPcUpload] = Time.new.to_i
         tbr = writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}") # tbr - to be returned
-        SetTimeOfPcLastCmd(Time.new.to_i,"#{__LINE__}-#{__FILE__}")
         puts "Done 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
     end
     
@@ -947,20 +964,6 @@ class SharedMemory
 
 	def GetBbbMode()
         return getMemory()[Mode]
-    end
-
-    def SetTimeOfPcLastCmd(timeOfPcLastCmdParam,fromParam)
-        ds = lockMemory("#{__LINE__}-#{__FILE__}")
-        ds[TimeOfPcLastCmd] = timeOfPcLastCmdParam
-        tbr = writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-        return tbr
-    end
-    
-    def GetTimeOfPcLastCmd()
-        if getMemory()[TimeOfPcLastCmd].nil?
-            SetTimeOfPcLastCmd(0,"#{__LINE__}-#{__FILE__}")
-        end
-        return getMemory()[TimeOfPcLastCmd]
     end
 
     def SetBbbMode(modeParam,calledFrom)

@@ -10,6 +10,7 @@ SERVER_URI="druby://localhost:8787"
 
 class SendSampledTcuToPCLib
     include Singleton
+    SystemInfo = "SystemInfo"
     NO_GOOD_DBASE_FOLDER = "No good database folder"
     MOUNT_CARD_DIR = "/mnt/card"
     TOTAL_DUTS_TO_LOOK_AT = 24
@@ -99,9 +100,18 @@ Temperature Setting: <temp>
     end
 
 	def GetDataToSendPc(sharedMemParam)
+	    if @packageInfo.nil?
+	        @packageInfo = Hash.new
+	    end
         slotInfo = Hash.new()
-        if sharedMemParam.getWaitTempMsg().length > 0
-            slotInfo[SharedMemory::WaitTempMsg] = sharedMemParam.getWaitTempMsg()
+        waitTempMsg = sharedMemParam.getWaitTempMsg()
+        if waitTempMsg.length > 0
+            slotInfo[SharedMemory::WaitTempMsg] = waitTempMsg
+        end
+        
+        errorColor = sharedMemParam.getErrorColor() 
+        if errorColor.nil? == false
+            slotInfo[SharedMemory::ErrorColor] = errorColor
         end
         
         slotInfo[SharedLib::ConfigurationFileName] = sharedMemParam.GetConfigurationFileName()
@@ -123,20 +133,37 @@ Temperature Setting: <temp>
         slotInfo[SharedLib::TotalTimeOfStepsInQueue] = sharedMemParam.GetTotalTimeOfStepsInQueue()
         
         if sharedMemParam.GetButtonDisplayToNormal() != nil
-            slotInfo[SharedLib::ButtonDisplay] = sharedMemParam.GetButtonDisplayToNormal()
-            sharedMemParam.SetButtonDisplayToNormal(nil)
+            if @timesSent.nil? 
+                @timesSent = 0
+            end
+            
+            if @timesSent < 3
+                @timesSent += 1
+                slotInfo[SharedLib::ButtonDisplay] = sharedMemParam.GetButtonDisplayToNormal()
+            else
+                @timesSent = 0
+                sharedMemParam.SetButtonDisplayToNormal(nil)
+            end
         end
         
-        slotInfoJson = slotInfo.to_json
-		return slotInfoJson
+        @packageInfo[SystemInfo] = slotInfo.to_json
+		return @packageInfo
 	end
-		
+	
+	def sendLoggerPart(loggerData)
+	    if @packageInfo.nil?
+	        @packageInfo = Hash.new
+	    end
+        @packageInfo[LogInfo] = loggerData
+	end
+	
     def SendDataToPC(sharedMemParam,fromParam)
     	# puts "called from #{fromParam}"
     	slotInfoJson = GetDataToSendPc(sharedMemParam)
     	
     	# Clear any error listed in the memomry
         sharedMemParam.ClearErrors() # This frees up some bytes in the shared memory.
+        
 =begin
     	# Save data into dbase if sharedMemParam.GetAllStepsDone_YesNo() == SharedLib::No && 
     	# sharedMemParam.GetBbbMode() == SharedLib::InRunMode
@@ -175,18 +202,38 @@ Temperature Setting: <temp>
     	
 
         # puts "#{__LINE__}-#{__FILE__} slotInfoJson=#{slotInfoJson}"
-        sendSlotInfoToPc(slotInfoJson)
+        sendSlotInfoToPc(slotInfoJson.to_json)
     end    
     
-    def sendSlotInfoToPc(slotInfoJson)
-        begin
-		# puts "SendToPc = #{SendToPc} #{__LINE__}-#{__FILE__}"
-            resp = 
-                RestClient.post "#{SendToPc}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
-            rescue Exception => e  
-                puts e.message  
-                puts e.backtrace.inspect
+    def sendSlotInfoToPc(newSlotInfoJson)
+        if @arrOfDataToSend.nil?
+            @arrOfDataToSend = Array.new
+        end
+        
+        @arrOfDataToSend.push(newSlotInfoJson)
+
+        while @arrOfDataToSend.length > 0
+            slotInfoJson = @arrOfDataToSend.shift
+            ct = 0
+            sentData = false
+            while sentData == false && ct < 5
+                begin
+                    resp = 
+                        RestClient.post "#{SendToPc}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
+                    sentData = true
+                    rescue Exception => e  
+                        puts "Failed to send.  Attempting again."
+                        # puts e.message  
+                        # puts e.backtrace.inspect
+                        # `echo "#{slotInfoJson}" >> PcDown.BackLog`
+                end
+                ct += 1
+            end
+            
+            slotInfoJson = SharedLib.ChangeDQuoteToSQuoteForDbFormat(slotInfoJson)
+            if sentData == false
                 `echo "#{slotInfoJson}" >> PcDown.BackLog`
+            end
         end
     end
 
