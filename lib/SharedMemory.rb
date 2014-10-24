@@ -41,7 +41,8 @@ class SharedMemory
     RedFlag = 2
     
     SystemInfo = "SystemInfo"
-    
+	LogInfo = "LogInfo"
+	
     def writeAndFreeLocked(strParam, fromParam)
 =begin
         if @lockedAt == ""

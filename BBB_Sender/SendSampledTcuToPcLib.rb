@@ -10,7 +10,6 @@ SERVER_URI="druby://localhost:8787"
 
 class SendSampledTcuToPCLib
     include Singleton
-    SystemInfo = "SystemInfo"
     NO_GOOD_DBASE_FOLDER = "No good database folder"
     MOUNT_CARD_DIR = "/mnt/card"
     TOTAL_DUTS_TO_LOOK_AT = 24
@@ -146,7 +145,7 @@ Temperature Setting: <temp>
             end
         end
         
-        @packageInfo[SystemInfo] = slotInfo.to_json
+        @packageInfo[SharedMemory::SystemInfo] = slotInfo.to_json
 		return @packageInfo
 	end
 	
@@ -154,7 +153,7 @@ Temperature Setting: <temp>
 	    if @packageInfo.nil?
 	        @packageInfo = Hash.new
 	    end
-        @packageInfo[LogInfo] = loggerData
+        @packageInfo[SharedMemory::LogInfo] = loggerData
 	end
 	
     def SendDataToPC(sharedMemParam,fromParam)
