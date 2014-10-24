@@ -76,7 +76,8 @@ module MigrationCount
 
 						receivedData = params['Duts']
 						hash = JSON.parse(receivedData)
-						
+						PP.pp(hash)
+						SharedLib.pause "Checking hash data","#{__LINE__}-#{__FILE__}"
 						if hash[SharedLib::DataLog].nil? == false
 							# The sent data is a log data.  Write it to file							
 								puts "Rec'd data for display. #{__LINE__}-#{__FILE__}"
