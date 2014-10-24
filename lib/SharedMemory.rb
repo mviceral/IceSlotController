@@ -242,8 +242,12 @@ class SharedMemory
 		end
 	end
 	
+	def GetDispStopMessage(slotLabel2Param)
+		return getMemory()[SharedLib::PC][slotLabel2Param][StopMessage]
+	end
+
 	def GetDispErrorColor(slotLabel2Param)
-		return getMemory()[SharedLib::PC][slotLabel2Param][SharedMemory::ErrorColor]
+		return getMemory()[SharedLib::PC][slotLabel2Param][ErrorColor]
 	end
 
 	def GetDispTotalTimeOfStepsInQueue(slotOwnerParam)
@@ -251,7 +255,7 @@ class SharedMemory
 	end
 	
 	def GetDispWaitTempMsg(slotOwnerParam)
-		return getMemory()[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg]
+		return getMemory()[SharedLib::PC][slotOwnerParam][WaitTempMsg]
 	end
 
 	def GetDispButton(slotOwnerParam)
