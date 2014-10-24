@@ -727,11 +727,11 @@ class TCUSampler
 =end
 
                 if @boardData[HighestStepNumber].nil? == false && 1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]
-                    timeOfLog = Time.new.to_i
+                    @timeOfLog = Time.new.to_i
                     if @loggingTime.nil?
                         @loggingTime = 60
                     end
-                    timeOfLog += @loggingTime
+                    @timeOfLog += @loggingTime
                     @logRptAvgCt = 0
                     @logRptAvg = nil
                     
@@ -758,9 +758,9 @@ class TCUSampler
                             tbs += "#{makeItFitMeas(maxTripI,6,MaxTripI)}|"
     
                             tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqUp"],SeqUpLogger)}|"
-                            tbs += "#{makeItFit(@stepToWorkOn["PsConfig"][key]["PsSeqItem::SUDlyms"],SUDlyms)}|"
-                            tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqDown"],SeqUpLogger)}|"
-                            tbs += "#{makeItFit(@stepToWorkOn["PsConfig"][key]["PsSeqItem::SDDlyms"],SDDlyms)}\n"
+                            tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]][PsSeqItem::SUDlyms],SUDlyms)}|"
+                            tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqDown"],SeqDownLogger)}|"
+                            tbs += "#{makeItFit(@stepToWorkOn["PsConfig"]["S"+key[1..-1]][PsSeqItem::SDDlyms],SDDlyms)}\n"
                         end
                     end
                     tbs += "Temperature Setting:\n"
@@ -847,10 +847,8 @@ class TCUSampler
             @boardData[SharedMemory::ErrorColor][key2][SharedMemory::Latch] = flag
         end
 
-        if @boardData[SharedMemory::ErrorColor][key2][SharedMemory::CurrentState].nil?
-            @boardData[SharedMemory::ErrorColor][key2][SharedMemory::CurrentState] = flag
-        end
-        
+        @boardData[SharedMemory::ErrorColor][key2][SharedMemory::CurrentState] = flag
+
         @samplerData.setErrorColor(@boardData[SharedMemory::ErrorColor])
     end
 
@@ -870,21 +868,22 @@ class TCUSampler
             if (flagTolP <= actualValue && actualValue <= flagTolN) == false
                 @samplerData.ReportError("NOTICE - #{key2} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed..\n",Time.new)
                 setErrorColorFlag(key2,SharedMemory::OrangeFlag)
-            end
-
-            if (tripMin <= actualValue && actualValue <= tripMax) == false
-                if is2ndFault(key2,unit,tripMin,actualValue,tripMax)
-                    setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-                    # Turn on red light and buzzer and make it blink due to shutdown
-                    setToAlarmMode()
-                    tbs = "ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.\n"
-                    timeOfError = Time.new
-                    @samplerData.ReportError(tbs,timeOfError)
-                    setErrorColorFlag(key2,SharedMemory::RedFlag)
-                    logSystemStateSnapShot(tbs,timeOfError)
-                    return true                
+                
+                if (tripMin <= actualValue && actualValue <= tripMax) == false
+                    if is2ndFault(key2,unit,tripMin,actualValue,tripMax)
+                        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+                        # Turn on red light and buzzer and make it blink due to shutdown
+                        setToAlarmMode()
+                        tbs = "ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.\n"
+                        timeOfError = Time.new
+                        @samplerData.ReportError(tbs,timeOfError)
+                        setErrorColorFlag(key2,SharedMemory::RedFlag)
+                        logSystemStateSnapShot(tbs,timeOfError)
+                        return true                
+                    end
                 end
             else
+                setErrorColorFlag(key2,SharedMemory::GreenFlag)
                 clearFault(key2)
             end
         end
@@ -1868,8 +1867,8 @@ class TCUSampler
         
         @samplerData.setErrorColor(@boardData[SharedMemory::ErrorColor])
     end
-    
-    def evaluatedDevices()
+
+    def evaluatedDevices(pollIntervalInSeconds, pollingTime, uart1, twtimeleft)
         # puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
 	    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
 	        # We're still running.
@@ -2092,21 +2091,25 @@ class TCUSampler
                                         @samplerData.ReportError("NOTICE - IDUT#{ct} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.  .",Time.new)
                                         ct = 24 # break out of the loop.
                                         setDutErrorColorFlag(key2,ct,SharedMemory::OrangeFlag)
-                                    end
-                                    # actualValue = testBadMeasForTripPts("#{key2}#{ct}",actualValue,"#{__LINE__}-#{__FILE__}")
-                                    if (tripMin <= actualValue && actualValue <= tripMax) == false
-                                        if is2ndFaultDut("#{key2}#{ct}",ct,unit,tripMin,actualValue,tripMax)
-                                            setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-                                            setToAlarmMode()
-                                            tbs = "ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE."
-                                            timeOfError = Time.new
-                                            setDutErrorColorFlag(key2,ct,SharedMemory::RedFlag)
-                                            @samplerData.ReportError(tbs,timeOfError)
-                                            logSystemStateSnapShot(tbs,timeOfError)
-                                            # ct = 24 # break out of the loop.
-                                            return
+
+                                        # actualValue = testBadMeasForTripPts("#{key2}#{ct}",actualValue,"#{__LINE__}-#{__FILE__}")
+                                        if (tripMin <= actualValue && actualValue <= tripMax) == false
+                                            if is2ndFaultDut("#{key2}#{ct}",ct,unit,tripMin,actualValue,tripMax)
+                                                setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+                                                setToAlarmMode()
+                                                tbs = "ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE."
+                                                timeOfError = Time.new
+                                                setDutErrorColorFlag(key2,ct,SharedMemory::RedFlag)
+                                                @samplerData.StopMessage("Trip Point Error, Stopped.")
+                                                @samplerData.ReportError(tbs,timeOfError)
+                                                logSystemStateSnapShot(tbs,timeOfError)
+                                                # ct = 24 # break out of the loop.
+                                                return
+                                            end
                                         end
+
                                     else
+                                        setDutErrorColorFlag(key2,ct,SharedMemory::GreenFlag)
                                         clearFault("#{key2}#{ct}")
                                     end
                                 end
@@ -2147,8 +2150,8 @@ class TCUSampler
     			            end
                         
                             dutCt = 0
-                            totDutTempReached = 0
-                            totDutsAvailable = 0
+                            @totDutTempReached = 0
+                            @totDutsAvailable = 0
                             tempTolP = flagTolP
                             tempTolN = flagTolN
             				while dutCt<24 
@@ -2163,18 +2166,18 @@ class TCUSampler
                 				    end
                 				    
                 				    if @dutTempTolReached[dutCt] == true
-                				        totDutTempReached += 1
+                				        @totDutTempReached += 1
                 				    end
-                				    totDutsAvailable += 1
+                				    @totDutsAvailable += 1
                                 end
             				    dutCt += 1
             				end
             				
             				if @allDutTempTolReached == false && @stepToWorkOn[CalculatedTempWait]-(Time.now.to_f-@waitTempStartTime)<0
-            				    totDutTempReached = totDutsAvailable
+            				    @totDutTempReached = @totDutsAvailable
             				end
 
-            				if totDutTempReached == totDutsAvailable
+            				if @totDutTempReached == @totDutsAvailable
             				    if @allDutTempTolReached == false 
             				        @allDutTempTolReached = true
             				        @samplerData.setWaitTempMsg("")
@@ -2186,7 +2189,7 @@ class TCUSampler
         				    if @allDutTempTolReached == false 
         				        setTimeOfRun() # So the countdown will never take place.
         				    end
-                            # puts "totDutTempReached='#{totDutTempReached}'/'#{totDutsAvailable}' @allDutTempTolReached = '#{@allDutTempTolReached}'"
+                            # puts "@totDutTempReached='#{@totDutTempReached}'/'#{@totDutsAvailable}' @allDutTempTolReached = '#{@allDutTempTolReached}'"
             				
                             if @allDutTempTolReached
                                 if @tcuData.nil? == false
@@ -2201,26 +2204,27 @@ class TCUSampler
                                                 puts "NOTICE - DUT##{dutCt} out of bound within flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.  ."
                                                 @samplerData.ReportError("NOTICE - DUT##{dutCt} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.  .",Time.new)
                                                 setDutErrorColorFlag(key2,dutCt,SharedMemory::OrangeFlag)
-                                            end
-                                            
-                                            # actualValue = testBadMeasForTripPts("#{key2}#{dutCt}",actualValue,"#{__LINE__}-#{__FILE__}")
 
-                                            if (tripMin <= actualValue && actualValue <= tripMax) == false
-                                                if is2ndFaultDut("#{key2}#{dutCt}",dutCt,unit,tripMin,actualValue,tripMax)
-                                                    # puts("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
-                                                    setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-
-                                                    # Turn on red light and buzzer and make it blink due to shutdown
-                                                    setToAlarmMode()
-                                                    tbs = "ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE." # tbs - to be sent
-                                                    # dutCt = 24 
-                                                    timeOfError = Time.new
-                                                    @samplerData.ReportError(tbs,timeOfError)
-                                                    setDutErrorColorFlag(key2,dutCt,SharedMemory::RedFlag)
-                                                    logSystemStateSnapShot(tbs,timeOfError)
-                                                    return
+                                                # actualValue = testBadMeasForTripPts("#{key2}#{dutCt}",actualValue,"#{__LINE__}-#{__FILE__}")
+    
+                                                if (tripMin <= actualValue && actualValue <= tripMax) == false
+                                                    if is2ndFaultDut("#{key2}#{dutCt}",dutCt,unit,tripMin,actualValue,tripMax)
+                                                        # puts("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
+                                                        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+    
+                                                        # Turn on red light and buzzer and make it blink due to shutdown
+                                                        setToAlarmMode()
+                                                        tbs = "ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE." # tbs - to be sent
+                                                        # dutCt = 24 
+                                                        timeOfError = Time.new
+                                                        @samplerData.ReportError(tbs,timeOfError)
+                                                        setDutErrorColorFlag(key2,dutCt,SharedMemory::RedFlag)
+                                                        logSystemStateSnapShot(tbs,timeOfError)
+                                                        return
+                                                    end
                                                 end
                                             else
+                                                setDutErrorColorFlag(key2,dutCt,SharedMemory::GreenFlag)
                                                 clearFault("#{key2}#{dutCt}")
                                             end
                         			    end
@@ -2259,8 +2263,8 @@ class TCUSampler
             
             if @isOkToLog && @allDutTempTolReached
                 doTheAveragingOfMesurements()
-                if timeOfLog.to_i <= Time.now.to_i
-                    timeOfLog += pollIntervalInSeconds
+                if @timeOfLog.to_i <= Time.now.to_i
+                    @timeOfLog += pollIntervalInSeconds
                     getSystemStateAvgForLogging()
                     @logRptAvgCt = 0
                     @logRptAvg = nil
@@ -2268,8 +2272,8 @@ class TCUSampler
                 
                 @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
             else
-                @samplerData.setWaitTempMsg("#{tempTolP}C/#{tempTolN}C, +#{totDutTempReached}/#{totDutsAvailable} duts, -#{twtimeleft} sec")
-                #totDutTempReached == totDutsAvailable
+                @samplerData.setWaitTempMsg("#{tempTolP}C/#{tempTolN}C, +#{@totDutTempReached}/#{@totDutsAvailable} duts, -#{twtimeleft} sec")
+                #@totDutTempReached == @totDutsAvailable
             end
 	    else
 	        # We're done running.
@@ -2317,9 +2321,9 @@ class TCUSampler
 
                                 # Turn on red light and buzzer and make it blink due to shutdown
                                 setToAlarmMode()
-
-                                dutCt = 24 # terminate loop
+                                setDutErrorColorFlag("TDUT",dutCt,SharedMemory::RedFlag)
                                 @samplerData.ReportError("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{@dutTempTripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{@dutTempTripMax}'#{unit} FAILED.  ALREADY IN STOP MODE, SHUTTING DOWN HEATERS.",Time.new)
+                                return
                             end
                         else
                             clearFault("OverTemp#{dutCt}")
@@ -2543,8 +2547,8 @@ class TCUSampler
             limboCheck(@stepToWorkOn[StepNum],uart1)
         end
         
-        totDutTempReached = 0
-        totDutsAvailable = 0
+        @totDutTempReached = 0
+        @totDutsAvailable = 0
 
         @loggingTime = 60.to_i # 5 seconds for now
         pollingTime = 1 # check every second
@@ -2555,7 +2559,7 @@ class TCUSampler
         buzzerBackOn = true
         
         # @samplerData.ReportError("Error test. #{__LINE__}-#{__FILE__}")
-        timeOfLog = Time.now
+        @timeOfLog = Time.now
         while true
             stepNum = ""
             if @stepToWorkOn.nil? == false
@@ -2601,7 +2605,7 @@ class TCUSampler
     			        # setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
     			        setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
     			    else
-    			        evaluatedDevices()
+    			        evaluatedDevices(pollIntervalInSeconds, pollingTime, uart1, twtimeleft)
     			    end
     			elsif @boardMode == SharedLib::InRunMode
     			    # Setting to stop mode because all steps are done already and the boardMode is still in run mode.
@@ -2631,7 +2635,7 @@ class TCUSampler
                         
         		    when SharedLib::ClearConfigFromPc
         		        @samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
-
+                        @samplerData.setErrorColor(nil)
             		    setBoardData(Hash.new,uart1)
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
         		        setBoardStateForCurrentStep(uart1)
@@ -2658,6 +2662,7 @@ class TCUSampler
             		    setBoardData(Hash.new,uart1)
             		    
             		    @boardData[Configuration] = @samplerData.GetConfiguration()
+                        @samplerData.setErrorColor(nil)
             		    @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
             		    @samplerData.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
             		    
@@ -2727,7 +2732,7 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 758
+# 763
 # 717
 # [ ] Get the logger polished out
 # [ ] Get the GUI Finish
