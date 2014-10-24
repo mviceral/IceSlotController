@@ -632,7 +632,7 @@ class UserInterface
 		end
 
 		if bgcolor.nil? == false && bgcolor.length > 0
-			return "style=\"border:1px solid black;background-color:#{bgcolor}\""
+			return "style=\"background-color:#{bgcolor}\""
 		else
 			return ""
 		end		
@@ -679,9 +679,9 @@ class UserInterface
 				when 0
 					bgcolor1 = ""
 				when 1
-					bgcolor1 = "style=\"border:1px solid black;background-color:#{SharedMemory::OrangeColor}\""
+					bgcolor1 = "style=\"background-color:#{SharedMemory::OrangeColor}\""
 				when 2
-					bgcolor1 = "style=\"border:1px solid black;background-color:#{SharedMemory::RedColor}\""
+					bgcolor1 = "style=\"background-color:#{SharedMemory::RedColor}\""
 				end
 			end
 		end
@@ -920,7 +920,7 @@ class UserInterface
 					<td valign=\"top\" rowspan=\"2\">
 				 		<table>"
 		stepNum = @sharedMem.GetDispStepNumber(slotLabel2Param)
-		if @sharedMem.GetDispStopMessage(slotOwnerParam).nil? == false
+		if @sharedMem.GetDispStopMessage(slotLabel2Param).nil? == false && @sharedMem.GetDispStopMessage(slotLabel2Param).length > 0
 			topTable += "								
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>Step '#{stepNum}'</td></tr>
 				 			<tr>
@@ -928,7 +928,7 @@ class UserInterface
 				 					<font 				 						
 				 						size=\"2\" 
 				 						style=\"font-style: italic;\">"
-			disp = @sharedMem.GetDispStopMessage(slotOwnerParam)
+			disp = @sharedMem.GetDispStopMessage(slotLabel2Param)
 			topTable += "		#{disp}				 							
 				 					</font>
 				 				</td>
