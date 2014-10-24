@@ -2629,11 +2629,13 @@ class TCUSampler
         		    case pcCmd
         		    when SharedLib::RunFromPc
     		            setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
+                        @samplerData.clearStopMessage()
                         
         		    when SharedLib::StopFromPc
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                         
         		    when SharedLib::ClearConfigFromPc
+                        @samplerData.clearStopMessage()
         		        @samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
                         @samplerData.setErrorColor(nil)
             		    setBoardData(Hash.new,uart1)
@@ -2643,6 +2645,7 @@ class TCUSampler
             		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
                         
         		    when SharedLib::LoadConfigFromPc
+                        @samplerData.clearStopMessage()
         		        @lotStartedAlready = false
         		        @boardData[LastStepNumOfSentLog] = -1 # initial value
         		        

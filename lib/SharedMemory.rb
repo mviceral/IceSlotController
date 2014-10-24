@@ -36,6 +36,7 @@ class SharedMemory
 	CurrentState = "CurrentState"
 	ErrorColor = "ErrorColor"
 	Latch = "Latch"
+	StopMessage = "StopMessage"
 	
     GreenFlag = 0
     OrangeFlag = 1
@@ -826,7 +827,15 @@ class SharedMemory
     
     def initialize()
     end 
-    
+
+	def clearStopMessage()
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        if ds[StopMessage].nil? == false
+            ds[StopMessage] = nil
+        end
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+	end
+	
     def ClearErrors()
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
         if ds[SharedLib::ErrorMsg].nil? == false
@@ -846,24 +855,24 @@ class SharedMemory
 
 	def getStopMessage()
         ds = getMemory()
-        if ds[SharedMemory::StopMessage].nil?
+        if ds[StopMessage].nil?
             return ""
         else
-            return ds[SharedMemory::StopMessage]
+            return ds[StopMessage]
         end
 	end
 	
 	def StopMessage(errMsgParam, timeOfErrorParam)
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
-        if ds[SharedMemory::StopMessage].nil?
-            ds[SharedMemory::StopMessage] = Array.new
+        if ds[StopMessage].nil?
+            ds[StopMessage] = Array.new
         end
         
         errItem = Array.new
         errItem.push(errMsgParam)
         errItem.push("#{timeOfErrorParam.inspect}")
         
-        ds[SharedMemory::StopMessage].push(errItem)
+        ds[StopMessage].push(errItem)
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
 
