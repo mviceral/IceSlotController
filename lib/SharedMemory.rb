@@ -37,6 +37,7 @@ class SharedMemory
 	ErrorColor = "ErrorColor"
 	Latch = "Latch"
 	
+    GreenFlag = 0
     OrangeFlag = 1
     RedFlag = 2
     
@@ -75,7 +76,7 @@ class SharedMemory
 
 	def setErrorColor(errorColorParam)
 		ds = lockMemory("#{__LINE__}-#{__FILE__}")
-		ds[SharedMemory::ErrorColor] = errorColorParam
+		ds[ErrorColor] = errorColorParam
 		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");
 	end
 
@@ -655,6 +656,11 @@ class SharedMemory
 			end
 			
 			ds[SharedLib::PC][hash[SharedLib::SlotOwner]][SharedLib::ButtonDisplay] = hash[SharedLib::ButtonDisplay]
+			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+		end
+
+		if ds[SharedLib::PC].nil?
+			ds[SharedLib::PC] = Hash.new
 		end
 
 		slotOwnerParam = hash[SharedLib::SlotOwner]
@@ -670,7 +676,6 @@ class SharedMemory
 			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = nil
 		end
 
-		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 		SetDispBoardData(
 			hash[SharedLib::ConfigurationFileName],
 			hash[SharedLib::ConfigDateUpload],
@@ -837,6 +842,29 @@ class SharedMemory
         else
             return ds[SharedLib::ErrorMsg]
         end
+    end
+
+	def getStopMessage()
+        ds = getMemory()
+        if ds[SharedMemory::StopMessage].nil?
+            return ""
+        else
+            return ds[SharedMemory::StopMessage]
+        end
+	end
+	
+	def StopMessage(errMsgParam, timeOfErrorParam)
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        if ds[SharedMemory::StopMessage].nil?
+            ds[SharedMemory::StopMessage] = Array.new
+        end
+        
+        errItem = Array.new
+        errItem.push(errMsgParam)
+        errItem.push("#{timeOfErrorParam.inspect}")
+        
+        ds[SharedMemory::StopMessage].push(errItem)
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
 
     def ReportError(errMsgParam, timeOfErrorParam)

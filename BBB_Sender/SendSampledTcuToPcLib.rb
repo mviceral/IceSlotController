@@ -108,11 +108,7 @@ Temperature Setting: <temp>
             slotInfo[SharedMemory::WaitTempMsg] = waitTempMsg
         end
         
-        errorColor = sharedMemParam.getErrorColor() 
-        if errorColor.nil? == false
-            slotInfo[SharedMemory::ErrorColor] = errorColor
-        end
-        
+        slotInfo[SharedMemory::ErrorColor] = sharedMemParam.getErrorColor() 
         slotInfo[SharedLib::ConfigurationFileName] = sharedMemParam.GetConfigurationFileName()
         slotInfo[SharedLib::ConfigDateUpload] = sharedMemParam.GetConfigDateUpload()
         slotInfo[SharedLib::AllStepsDone_YesNo] = sharedMemParam.GetAllStepsDone_YesNo()
@@ -128,7 +124,8 @@ Temperature Setting: <temp>
         slotInfo[SharedLib::SlotOwner] = sharedMemParam.GetSlotOwner# GetSlotIpAddress()
         slotInfo[SharedLib::AllStepsCompletedAt] = sharedMemParam.GetAllStepsCompletedAt()
         slotInfo[SharedLib::TotalStepDuration] = sharedMemParam.GetTotalStepDuration();
-        slotInfo[SharedLib::ErrorMsg] = sharedMemParam.GetErrors();
+        slotInfo[SharedLib::ErrorMsg] = sharedMemParam.GetErrors()
+        slotInfo[SharedMemory::StopMessage] = sharedMemParam.getStopMessage()
         slotInfo[SharedLib::TotalTimeOfStepsInQueue] = sharedMemParam.GetTotalTimeOfStepsInQueue()
         
         if sharedMemParam.GetButtonDisplayToNormal() != nil
@@ -220,6 +217,7 @@ Temperature Setting: <temp>
                     resp = 
                         RestClient.post "#{SendToPc}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
                     sentData = true
+                    @packageInfo = nil
                     rescue Exception => e  
                         puts "Failed to send.  Attempting again."
                         # puts e.message  
@@ -229,8 +227,8 @@ Temperature Setting: <temp>
                 ct += 1
             end
             
-            slotInfoJson = SharedLib.ChangeDQuoteToSQuoteForDbFormat(slotInfoJson)
             if sentData == false
+                slotInfoJson = SharedLib.ChangeDQuoteToSQuoteForDbFormat(slotInfoJson)
                 `echo "#{slotInfoJson}" >> PcDown.BackLog`
             end
         end
