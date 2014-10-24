@@ -877,6 +877,7 @@ class TCUSampler
                         tbs = "ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.\n"
                         timeOfError = Time.new
                         @samplerData.ReportError(tbs,timeOfError)
+                        @samplerData.setStopMessage("Trip Point Error, Stopped.")
                         setErrorColorFlag(key2,SharedMemory::RedFlag)
                         logSystemStateSnapShot(tbs,timeOfError)
                         return true                
@@ -2099,8 +2100,8 @@ class TCUSampler
                                                 setToAlarmMode()
                                                 tbs = "ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE."
                                                 timeOfError = Time.new
+                                                @samplerData.setStopMessage("Trip Point Error, Stopped.")
                                                 setDutErrorColorFlag(key2,ct,SharedMemory::RedFlag)
-                                                @samplerData.StopMessage("Trip Point Error, Stopped.")
                                                 @samplerData.ReportError(tbs,timeOfError)
                                                 logSystemStateSnapShot(tbs,timeOfError)
                                                 # ct = 24 # break out of the loop.
@@ -2218,6 +2219,7 @@ class TCUSampler
                                                         # dutCt = 24 
                                                         timeOfError = Time.new
                                                         @samplerData.ReportError(tbs,timeOfError)
+                                                        @samplerData.setStopMessage("Trip Point Error, Stopped.")
                                                         setDutErrorColorFlag(key2,dutCt,SharedMemory::RedFlag)
                                                         logSystemStateSnapShot(tbs,timeOfError)
                                                         return
@@ -2321,6 +2323,7 @@ class TCUSampler
 
                                 # Turn on red light and buzzer and make it blink due to shutdown
                                 setToAlarmMode()
+                                @samplerData.setStopMessage("Trip Point Error, Stopped.")
                                 setDutErrorColorFlag("TDUT",dutCt,SharedMemory::RedFlag)
                                 @samplerData.ReportError("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{@dutTempTripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{@dutTempTripMax}'#{unit} FAILED.  ALREADY IN STOP MODE, SHUTTING DOWN HEATERS.",Time.new)
                                 return

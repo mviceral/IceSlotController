@@ -869,24 +869,12 @@ class SharedMemory
 
 	def getStopMessage()
         ds = getMemory()
-        if ds[StopMessage].nil?
-            return ""
-        else
-            return ds[StopMessage]
-        end
+        return ds[StopMessage]
 	end
 	
-	def StopMessage(errMsgParam, timeOfErrorParam)
+	def setStopMessage(errMsgParam)
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
-        if ds[StopMessage].nil?
-            ds[StopMessage] = Array.new
-        end
-        
-        errItem = Array.new
-        errItem.push(errMsgParam)
-        errItem.push("#{timeOfErrorParam.inspect}")
-        
-        ds[StopMessage].push(errItem)
+        ds[StopMessage] = errMsgParam
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
 
