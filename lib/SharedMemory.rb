@@ -654,6 +654,14 @@ class SharedMemory
 		end
 		return slotOwner[SharedMemory::ErrorColor]
 	end
+	
+	def GetDispStopMessage(slotOwnerParam)
+		slotOwner = getPCShared()[slotOwnerParam]
+		if slotOwner.nil?
+			return nil
+		end
+		return slotOwner[SharedMemory::StopMessage]
+	end
 
 	def SetDataBoardToPc(hash)
 		ds = lockMemory("#{__LINE__}-#{__FILE__}")
@@ -681,6 +689,7 @@ class SharedMemory
 			end
 		end
 		
+		ds[SharedLib::PC][slotOwnerParam][SharedMemory::StopMessage] = hash[SharedMemory::StopMessage]
 		ds[SharedLib::PC][slotOwnerParam][SharedMemory::ErrorColor] = hash[SharedMemory::ErrorColor]
 
 		if hash[SharedMemory::WaitTempMsg].nil? == false

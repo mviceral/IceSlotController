@@ -920,7 +920,20 @@ class UserInterface
 					<td valign=\"top\" rowspan=\"2\">
 				 		<table>"
 		stepNum = @sharedMem.GetDispStepNumber(slotLabel2Param)
-		if 	@sharedMem.GetDispBbbMode(slotLabel2Param) == SharedLib::InStopMode && @sharedMem.GetDispStepName(slotLabel2Param).length > 0
+		if @sharedMem.GetDispStopMessage(slotOwnerParam).nil? == false
+			topTable += "								
+				 			<tr><td align=\"center\"><font size=\"1.75\"/>Step '#{stepNum}'</td></tr>
+				 			<tr>
+				 				<td style=\"background-color:#{SharedMemory::RedColor}\" align=\"center\">
+				 					<font 				 						
+				 						size=\"2\" 
+				 						style=\"font-style: italic;\">"
+			disp = @sharedMem.GetDispStopMessage(slotOwnerParam)
+			topTable += "		#{disp}				 							
+				 					</font>
+				 				</td>
+				 			</tr>"
+		elsif @sharedMem.GetDispBbbMode(slotLabel2Param) == SharedLib::InStopMode && @sharedMem.GetDispStepName(slotLabel2Param).length > 0
 			topTable += "								
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>Step '#{stepNum}'</td></tr>
 				 			<tr>
@@ -2678,4 +2691,4 @@ get '/AckError' do
 	redirect "../"
 end
 
-# at 880
+# at 927
