@@ -34,8 +34,8 @@ class SharedMemory
 
 	# For the color flags for the GUI.
 	CurrentState = "CurrentState"
-	ErrorColor = "ErrorColor"
 	Latch = "Latch"
+	ErrorColor = "ErrorColor"
 	StopMessage = "StopMessage"
 
 	OrangeColor = "#ff9900"
@@ -240,6 +240,10 @@ class SharedMemory
 
 			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 		end
+	end
+	
+	def GetDispErrorColor(slotLabel2Param)
+		return getMemory()[SharedLib::PC][slotOwnerParam][SharedMemory::ErrorColor]
 	end
 
 	def GetDispTotalTimeOfStepsInQueue(slotOwnerParam)
@@ -679,6 +683,9 @@ class SharedMemory
 		else
 			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = nil
 		end
+		
+		ds[SharedLib::PC][slotOwnerParam][ErrorColor] = hash[ErrorColor]
+		ds[SharedLib::PC][slotOwnerParam][StopMessage] = hash[StopMessage]
 
 		SetDispBoardData(
 			hash[SharedLib::ConfigurationFileName],
