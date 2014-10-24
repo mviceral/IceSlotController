@@ -243,7 +243,7 @@ class SharedMemory
 	end
 	
 	def GetDispErrorColor(slotLabel2Param)
-		return getMemory()[SharedLib::PC][slotOwnerParam][SharedMemory::ErrorColor]
+		return getMemory()[SharedLib::PC][slotLabel2Param][SharedMemory::ErrorColor]
 	end
 
 	def GetDispTotalTimeOfStepsInQueue(slotOwnerParam)
