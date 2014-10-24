@@ -75,10 +75,11 @@ module MigrationCount
 						$SAFE = 0
 
 						receivedData = params['Duts']
-						hash = JSON.parse(receivedData)
-						PP.pp(hash)
-						SharedLib.pause "Checking hash data","#{__LINE__}-#{__FILE__}"
-						if hash[SharedLib::DataLog].nil? == false
+						data = JSON.parse(receivedData)
+						
+						if data[SharedMemory::LogInfo].nil? == false
+							# Handle the logging information first.
+							hash = JSON.parse(data[SharedMemory::LogInfo])
 							# The sent data is a log data.  Write it to file							
 								puts "Rec'd data for display. #{__LINE__}-#{__FILE__}"
 							configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
@@ -88,69 +89,70 @@ module MigrationCount
 							puts "dBaseFileName = #{dBaseFileName} #{__LINE__}-#{__FILE__}"
 							puts "hash[SharedLib::DataLog]: #{__LINE__}-#{__FILE__}/n#{hash[SharedLib::DataLog]}"
 							`cd #{directory}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
-						else
-							# The sent data is for display
-							# puts "hash[SharedLib::SlotOwner]=#{hash[SharedLib::SlotOwner]} #{__LINE__}-#{__FILE__}"
-							# puts "hash:#{__LINE__}-#{__FILE__}\n#{hash}"
-							sharedMem = @@sharedMemService.getSharedMem()		 
-							sharedMem.setDataFromBoardToPc(hash)
+						end
+						
+						hash = JSON.parse(data[SharedMemory::SystemInfo])
+						sharedMem = @@sharedMemService.getSharedMem()		 
+						sharedMem.setDataFromBoardToPc(hash)
 =begin						
-							# puts "dBaseFileName='#{dBaseFileName}'"
-							# logging code.
-							runningOnCentos = true
-							if runningOnCentos == false
-								if File.file?("#{dBaseFileName}") == false
-									# The file does not exists.
-									dbRecord = SQLite3::Database.new( "#{dBaseFileName}" )
-									if dbRecord.nil?
-										SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
-									else
-											dbRecord.execute("create table log ("+
-											"idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
-											");")
-									end
+						# puts "dBaseFileName='#{dBaseFileName}'"
+						# logging code.
+						runningOnCentos = true
+						if runningOnCentos == false
+							if File.file?("#{dBaseFileName}") == false
+								# The file does not exists.
+								dbRecord = SQLite3::Database.new( "#{dBaseFileName}" )
+								if dbRecord.nil?
+									SharedLib.bbbLog "db is nil. #{__LINE__}-#{__FILE__}"
 								else
-									# The file already exists.
-									dbRecord = SQLite3::Database.open dBaseFileName
-								end
-
-								forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(receivedData)
-
-								str = "Insert into log(idLogTime, data) "+
-								"values(#{GetDispSlotTime()},\"#{forDbase}\")"
-
-								puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
-								begin
-									dbRecord.execute "#{str}"
-									rescue SQLite3::Exception => e 
-									puts "\n\n"
-									SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
-									SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
-									# End of 'rescue SQLite3::Exception => e'
-									ensure
-
-									# End of 'begin' code block that will handle exceptions...
+										dbRecord.execute("create table log ("+
+										"idLogTime int, data TEXT"+     # 'dutNum' the dut number reference of the data
+										");")
 								end
 							else
-								if sharedMem.logData(hash[SharedLib::SlotOwner]).nil? == false &&
-									sharedMem.logData(hash[SharedLib::SlotOwner]).length > 0							
-									str = "#{sharedMem.logData(hash[SharedLib::SlotOwner])}"
-									ct = 0
-									newStr = ""
-									while ct < str.length
-										if str[ct] == "\""
-											newStr += "\\\""
-										else
-											newStr += str[ct]
-										end
-										ct += 1
-									end
-									# puts "dBaseFileName='#{dBaseFileName}', newStr=#{newStr}"
-									`cd #{directory}; echo "#{newStr}" >> \"#{dBaseFileName}\"`
-								end
+								# The file already exists.
+								dbRecord = SQLite3::Database.open dBaseFileName
 							end
-=end							
+
+							forDbase = SharedLib.ChangeDQuoteToSQuoteForDbFormat(receivedData)
+
+							str = "Insert into log(idLogTime, data) "+
+							"values(#{GetDispSlotTime()},\"#{forDbase}\")"
+
+							puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
+							begin
+								dbRecord.execute "#{str}"
+								rescue SQLite3::Exception => e 
+								puts "\n\n"
+								SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
+								SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
+								# End of 'rescue SQLite3::Exception => e'
+								ensure
+
+								# End of 'begin' code block that will handle exceptions...
+							end
+						else
+							if sharedMem.logData(hash[SharedLib::SlotOwner]).nil? == false &&
+								sharedMem.logData(hash[SharedLib::SlotOwner]).length > 0							
+								str = "#{sharedMem.logData(hash[SharedLib::SlotOwner])}"
+								ct = 0
+								newStr = ""
+								while ct < str.length
+									if str[ct] == "\""
+										newStr += "\\\""
+									else
+										newStr += str[ct]
+									end
+									ct += 1
+								end
+								# puts "dBaseFileName='#{dBaseFileName}', newStr=#{newStr}"
+								`cd #{directory}; echo "#{newStr}" >> \"#{dBaseFileName}\"`
+							end
 						end
+=end							
+						
+						# PP.pp(data)
+						# SharedLib.pause "Checking hash data","#{__LINE__}-#{__FILE__}"
 						rescue Exception => e
 							# The data didn't parse properly.  Do nothing.
 							puts e.message  
