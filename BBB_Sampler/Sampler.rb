@@ -524,11 +524,17 @@ class TCUSampler
     end
     
     def checkOkToLog
+# puts "@boardData[LastStepNumOfSentLog].nil? == false '#{@boardData[LastStepNumOfSentLog]}' &&  @boardData[HighestStepNumber].nil? == false '#{@boardData[HighestStepNumber]}' #{__LINE__}-#{__FILE__}"
         if @boardData[LastStepNumOfSentLog].nil? == false &&  @boardData[HighestStepNumber].nil? == false
             lastStepNumOfSentLog = @boardData[LastStepNumOfSentLog].to_i
+            # SharedLib.pause "lastStepNumOfSentLog='#{lastStepNumOfSentLog}' Checking step number","#{__LINE__}-#{__FILE__}"
             if  (1 <= lastStepNumOfSentLog && lastStepNumOfSentLog <= @boardData[HighestStepNumber])
                 return true
             end
+        else
+            puts "Programming error!!! #{__LINE__}-#{__FILE__}"
+            puts "@boardData[HighestStepNumber] must have set value!!!!  See comment above line '@boardData[HighestStepNumber] = -1'"
+            exit
         end
         return false
     end
@@ -714,6 +720,8 @@ class TCUSampler
 
             if @boardData[LastStepNumOfSentLog] != @samplerData.GetStepNumber()
                 @boardData[LastStepNumOfSentLog] = @samplerData.GetStepNumber()
+                # puts "@samplerData.GetStepNumber()=#{@samplerData.GetStepNumber()} #{__LINE__}-#{__FILE__}"
+                # SharedLib.pause "Checking step number","#{__LINE__}-#{__FILE__}"
                 @isOkToLog = checkOkToLog()
                 
                 # If step number is not numeric, don't process code below.
@@ -2673,14 +2681,10 @@ class TCUSampler
             		    
                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-        		        setBoardStateForCurrentStep(uart1)
-
-            		    # Enable these bits.
-            		    @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
-            		    
-            		    # Get the highest number of step.
-            		    
+            		    # Get the highest number of step.  This function must get called first before the function 
+            		    # setBoardStateForCurrentStep
             		    @boardData[HighestStepNumber] = -1
+puts "@boardData[HighestStepNumber] = '#{@boardData[HighestStepNumber]}' #{__LINE__}-#{__FILE__}"
                         getConfiguration()[Steps].each do |key, array|
                             getConfiguration()[Steps][key].each do |key2, array2|
                                 # Get which step to work on and setup the power supply settings.
@@ -2691,7 +2695,13 @@ class TCUSampler
                                 end
                             end
                         end
+puts "@boardData[HighestStepNumber] = '#{@boardData[HighestStepNumber]}' #{__LINE__}-#{__FILE__}"
 
+        		        setBoardStateForCurrentStep(uart1)
+
+            		    # Enable these bits.
+            		    @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+            		    
             		    
             		    skipLimboStateCheck = true
             		else
@@ -2737,7 +2747,7 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 763
+# 536
 # 717
 # [ ] Get the logger polished out
 # [ ] Get the GUI Finish
