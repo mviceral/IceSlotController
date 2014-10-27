@@ -147,10 +147,13 @@ Temperature Setting: <temp>
 	end
 	
 	def sendLoggerPart(loggerData)
-	    if @packageInfo.nil?
-	        @packageInfo = Hash.new
-	    end
-        @packageInfo[SharedMemory::LogInfo] = loggerData
+        if @packageInfo.nil?
+            @packageInfo = Hash.new
+        else
+            @stackOfErrorLog = Array.new
+            @stackOfErrorLog.push(loggerData)
+        end
+        @packageInfo[SharedMemory::LogInfo] = @stackOfErrorLog
 	end
 	
     def SendDataToPC(sharedMemParam,fromParam)

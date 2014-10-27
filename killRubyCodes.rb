@@ -2,7 +2,6 @@ def killProc(param)
 	rubyProc = `ps -A | grep #{param}`
 	# Determine how many lines
 	lines = rubyProc.split("\n")
-	puts "Total lines='#{lines.length}'"
 	ct = 0 
 	procNumToKill = ""
 	while ct<lines.length

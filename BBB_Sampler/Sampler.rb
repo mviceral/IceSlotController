@@ -1346,16 +1346,13 @@ class TCUSampler
     end
 
     def sendToLogger(tbs)
-        if tbs.nil? == false && tbs.length>0
-            # There's some data to log.
-            slotInfo = Hash.new()
-            slotInfo[SharedLib::DataLog] = tbs
-            slotInfo[SharedLib::SlotOwner] = @samplerData.GetSlotOwner# GetSlotIpAddress()
-            slotInfo[SharedLib::ConfigurationFileName] = @samplerData.GetConfigurationFileName()
-            slotInfo[SharedLib::ConfigDateUpload] = @samplerData.GetConfigDateUpload()
-            slotInfoJson = slotInfo.to_json
-            SendSampledTcuToPCLib::sendLoggerPart(slotInfoJson)
-        end
+        slotInfo = Hash.new()
+        slotInfo[SharedLib::DataLog] = tbs
+        slotInfo[SharedLib::SlotOwner] = @samplerData.GetSlotOwner# GetSlotIpAddress()
+        slotInfo[SharedLib::ConfigurationFileName] = @samplerData.GetConfigurationFileName()
+        slotInfo[SharedLib::ConfigDateUpload] = @samplerData.GetConfigDateUpload()
+        slotInfoJson = slotInfo.to_json
+        SendSampledTcuToPCLib::sendLoggerPart(slotInfoJson)
     end
     
     def turnOnHeaters
@@ -1911,7 +1908,7 @@ class TCUSampler
                         when "VPS0"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"32").to_f
                             if @setupAtHome
-                                actualValue = 0.9
+                                actualValue = 1.095
                             end
                             
                             # actualValue = testBadMeasForTripPts(key2,actualValue,"#{__LINE__}-#{__FILE__}")

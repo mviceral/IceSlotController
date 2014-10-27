@@ -1,10 +1,13 @@
 ruby killRubyCodes.rb
 pushd ./lib/DRbSharedMemory/
-ruby Server.rb & 
+ls -l
+nohup nice ruby Server.rb & 
 popd
 pushd ./BBB_GrapeForPcListener/
-rackup config.ru & 
+ls -l
+nohup nice rackup config.ru & 
 popd
 pushd ./BBB_Sampler/
-bash runTcuSampler.sh & 
+ls -l
+nohup nice bash runTcuSampler.sh & 
 popd
