@@ -16,7 +16,7 @@ SERVER_URI="druby://localhost:8787"
 
 class UserInterface
 	SERVER_URI="druby://localhost:8787"
-	BbbPcListener = 'http://192.168.7.2'
+	BbbPcListener = 'http://192.168.1.212'
 	# BbbPcListener = 'http://192.168.1.211'
 	LinuxBoxPcListener = "localhost"
 	PcListener = BbbPcListener # Chose which ethernet address the PcListener is sitting on.
@@ -94,8 +94,8 @@ class UserInterface
 	def getBoardIp(slotParam, fromParam)
 		if @slotToIp.nil? # || @slotToIp[slotParam].nil? ||@slotToIp[slotParam].length == 0
 			@slotToIp = Hash.new
-			@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
-			#@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
+			@slotToIp[SharedLib::SLOT1] = "192.168.1.212"
+			#@slotToIp[SharedLib::SLOT2] = "192.168.1.212"
 			#@slotToIp[SLOT3] = ""
 		end
 		# puts "slotParam='#{slotParam}' @slotToIp='#{@slotToIp}' fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"

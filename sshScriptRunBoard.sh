@@ -3,9 +3,9 @@ ruby killRubyCodes.rb
 pushd ./lib/DRbSharedMemory/
 nohup ruby Server.rb & 
 popd
-pushd ./BBB_GrapeForPcListener/
-nohup rackup config.ru & 
-popd
 pushd ./BBB_Sampler/
 nohup bash runTcuSampler.sh & 
 popd
+# pushd ./BBB_GrapeForPcListener/
+# nohup nice rackup config.ru & 
+# popd
