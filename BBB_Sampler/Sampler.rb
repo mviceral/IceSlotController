@@ -877,7 +877,7 @@ class TCUSampler
                         tbs = "ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.\n"
                         timeOfError = Time.new
                         @samplerData.ReportError(tbs,timeOfError)
-                        @samplerData.setStopMessage("Trip Point Error, Stopped.")
+                        @samplerData.setStopMessage("Trip Point Error. Stopped.")
                         setErrorColorFlag(key2,SharedMemory::RedFlag)
                         logSystemStateSnapShot(tbs,timeOfError)
                         return true                
@@ -1927,7 +1927,7 @@ class TCUSampler
                             # puts "PS1V = #{@samplerData.getPsVolts(muxData,adcData,"33")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"33").to_f
                             if @setupAtHome
-                                actualValue = 0.9
+                                actualValue = 1.08
                             end
                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
@@ -1943,7 +1943,7 @@ class TCUSampler
                             # puts "PS2V = #{@samplerData.getPsVolts(muxData,adcData,"34")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"34").to_f
                             if @setupAtHome
-                                actualValue = 1.5
+                                actualValue = 2.1
                             end
                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
@@ -1959,7 +1959,8 @@ class TCUSampler
 			                # puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"35").to_f
                             if @setupAtHome
-                                actualValue = 0.9
+                                # actualValue = 1.0
+                                actualValue = 1.1155
                             end
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
@@ -2019,7 +2020,7 @@ class TCUSampler
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"39").to_f
                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                             if @setupAtHome
-                                actualValue = 0.9
+                                actualValue = 1.12
                             end
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
@@ -2097,7 +2098,7 @@ class TCUSampler
                                                 setToAlarmMode()
                                                 tbs = "ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE."
                                                 timeOfError = Time.new
-                                                @samplerData.setStopMessage("Trip Point Error, Stopped.")
+                                                @samplerData.setStopMessage("Trip Point Error. Stopped.")
                                                 setDutErrorColorFlag(key2,ct,SharedMemory::RedFlag)
                                                 @samplerData.ReportError(tbs,timeOfError)
                                                 logSystemStateSnapShot(tbs,timeOfError)
@@ -2216,7 +2217,7 @@ class TCUSampler
                                                         # dutCt = 24 
                                                         timeOfError = Time.new
                                                         @samplerData.ReportError(tbs,timeOfError)
-                                                        @samplerData.setStopMessage("Trip Point Error, Stopped.")
+                                                        @samplerData.setStopMessage("Trip Point Error. Stopped.")
                                                         setDutErrorColorFlag(key2,dutCt,SharedMemory::RedFlag)
                                                         logSystemStateSnapShot(tbs,timeOfError)
                                                         return
@@ -2320,7 +2321,7 @@ class TCUSampler
 
                                 # Turn on red light and buzzer and make it blink due to shutdown
                                 setToAlarmMode()
-                                @samplerData.setStopMessage("Trip Point Error, Stopped.")
+                                @samplerData.setStopMessage("Trip Point Error. Stopped.")
                                 setDutErrorColorFlag("TDUT",dutCt,SharedMemory::RedFlag)
                                 @samplerData.ReportError("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{@dutTempTripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{@dutTempTripMax}'#{unit} FAILED.  ALREADY IN STOP MODE, SHUTTING DOWN HEATERS.",Time.new)
                                 return
@@ -2645,6 +2646,7 @@ class TCUSampler
             		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
                         
         		    when SharedLib::LoadConfigFromPc
+        		        @fault = nil
                         @samplerData.clearStopMessage()
         		        @lotStartedAlready = false
         		        @boardData[LastStepNumOfSentLog] = -1 # initial value
