@@ -886,9 +886,11 @@ class SharedMemory
         
         errItem = Array.new
         errItem.push(errMsgParam)
-        errItem.push("#{timeOfErrorParam.inspect}")
+        errItem.push("#{timeOfErrorParam.inspect} (timeOfErrorParam.to_f)")
         
         ds[SharedLib::ErrorMsg].push(errItem)
+        # PP.pp(ds[SharedLib::ErrorMsg])
+        # SharedLib.pause "Checking 'SharedLib::ErrorMsg'","#{__LINE__}-#{__FILE__}"
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     

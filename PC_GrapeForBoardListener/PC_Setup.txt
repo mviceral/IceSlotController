@@ -169,3 +169,17 @@ blacklist usbserial
 # To setup the BBB to local time.
 $sudo rm /etc/localtime
 $sudo ln -s /usr/share/zoneinfo/US/Pacific /etc/localtime
+
+
+########################################### 
+# To list the crontab items
+crontab -l
+
+# To remove the crontab items
+crontab -r
+
+# To edit the crontab items
+crontab -e
+
+# To run board side rack up every minute, add the following when editing the crontab
+*/1 * * * * sudo /var/lib/cloud9/slot-controller/BBB_GrapeForPcListener/runBoardGrape.sh

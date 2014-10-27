@@ -37,7 +37,7 @@ class SharedLib
 	DashLines = "---"
 	TotalStepDuration = "TotalStepDuration"
 	# PcListener = "http://192.168.1.210"
-	PcListener = "http://192.168.7.1"
+	PcListener = "http://192.168.1.59"
 	SLOT1 = "SLOT1"
 	SLOT2 = "SLOT2"
 	SLOT3 = "SLOT3"

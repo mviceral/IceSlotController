@@ -524,11 +524,17 @@ class TCUSampler
     end
     
     def checkOkToLog
+# puts "@boardData[LastStepNumOfSentLog].nil? == false '#{@boardData[LastStepNumOfSentLog]}' &&  @boardData[HighestStepNumber].nil? == false '#{@boardData[HighestStepNumber]}' #{__LINE__}-#{__FILE__}"
         if @boardData[LastStepNumOfSentLog].nil? == false &&  @boardData[HighestStepNumber].nil? == false
             lastStepNumOfSentLog = @boardData[LastStepNumOfSentLog].to_i
+            # SharedLib.pause "lastStepNumOfSentLog='#{lastStepNumOfSentLog}' Checking step number","#{__LINE__}-#{__FILE__}"
             if  (1 <= lastStepNumOfSentLog && lastStepNumOfSentLog <= @boardData[HighestStepNumber])
                 return true
             end
+        else
+            puts "Programming error!!! #{__LINE__}-#{__FILE__}"
+            puts "@boardData[HighestStepNumber] must have set value!!!!  See comment above line '@boardData[HighestStepNumber] = -1'"
+            exit
         end
         return false
     end
@@ -714,6 +720,8 @@ class TCUSampler
 
             if @boardData[LastStepNumOfSentLog] != @samplerData.GetStepNumber()
                 @boardData[LastStepNumOfSentLog] = @samplerData.GetStepNumber()
+                # puts "@samplerData.GetStepNumber()=#{@samplerData.GetStepNumber()} #{__LINE__}-#{__FILE__}"
+                # SharedLib.pause "Checking step number","#{__LINE__}-#{__FILE__}"
                 @isOkToLog = checkOkToLog()
                 
                 # If step number is not numeric, don't process code below.
@@ -877,7 +885,7 @@ class TCUSampler
                         tbs = "ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.\n"
                         timeOfError = Time.new
                         @samplerData.ReportError(tbs,timeOfError)
-                        @samplerData.setStopMessage("Trip Point Error, Stopped.")
+                        @samplerData.setStopMessage("Trip Point Error. Stopped.")
                         setErrorColorFlag(key2,SharedMemory::RedFlag)
                         logSystemStateSnapShot(tbs,timeOfError)
                         return true                
@@ -1346,16 +1354,13 @@ class TCUSampler
     end
 
     def sendToLogger(tbs)
-        if tbs.nil? == false && tbs.length>0
-            # There's some data to log.
-            slotInfo = Hash.new()
-            slotInfo[SharedLib::DataLog] = tbs
-            slotInfo[SharedLib::SlotOwner] = @samplerData.GetSlotOwner# GetSlotIpAddress()
-            slotInfo[SharedLib::ConfigurationFileName] = @samplerData.GetConfigurationFileName()
-            slotInfo[SharedLib::ConfigDateUpload] = @samplerData.GetConfigDateUpload()
-            slotInfoJson = slotInfo.to_json
-            SendSampledTcuToPCLib::sendLoggerPart(slotInfoJson)
-        end
+        slotInfo = Hash.new()
+        slotInfo[SharedLib::DataLog] = tbs
+        slotInfo[SharedLib::SlotOwner] = @samplerData.GetSlotOwner# GetSlotIpAddress()
+        slotInfo[SharedLib::ConfigurationFileName] = @samplerData.GetConfigurationFileName()
+        slotInfo[SharedLib::ConfigDateUpload] = @samplerData.GetConfigDateUpload()
+        slotInfoJson = slotInfo.to_json
+        SendSampledTcuToPCLib::sendLoggerPart(slotInfoJson)
     end
     
     def turnOnHeaters
@@ -1911,7 +1916,7 @@ class TCUSampler
                         when "VPS0"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"32").to_f
                             if @setupAtHome
-                                actualValue = 0.9
+                                actualValue = 1.095
                             end
                             
                             # actualValue = testBadMeasForTripPts(key2,actualValue,"#{__LINE__}-#{__FILE__}")
@@ -1930,7 +1935,7 @@ class TCUSampler
                             # puts "PS1V = #{@samplerData.getPsVolts(muxData,adcData,"33")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"33").to_f
                             if @setupAtHome
-                                actualValue = 0.9
+                                actualValue = 1.08
                             end
                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
@@ -1946,7 +1951,7 @@ class TCUSampler
                             # puts "PS2V = #{@samplerData.getPsVolts(muxData,adcData,"34")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"34").to_f
                             if @setupAtHome
-                                actualValue = 1.5
+                                actualValue = 2.1
                             end
                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
@@ -1962,7 +1967,8 @@ class TCUSampler
 			                # puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"35").to_f
                             if @setupAtHome
-                                actualValue = 0.9
+                                # actualValue = 1.0
+                                actualValue = 1.1155
                             end
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
@@ -2022,7 +2028,7 @@ class TCUSampler
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"39").to_f
                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                             if @setupAtHome
-                                actualValue = 0.9
+                                actualValue = 1.12
                             end
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
@@ -2100,7 +2106,7 @@ class TCUSampler
                                                 setToAlarmMode()
                                                 tbs = "ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE."
                                                 timeOfError = Time.new
-                                                @samplerData.setStopMessage("Trip Point Error, Stopped.")
+                                                @samplerData.setStopMessage("Trip Point Error. Stopped.")
                                                 setDutErrorColorFlag(key2,ct,SharedMemory::RedFlag)
                                                 @samplerData.ReportError(tbs,timeOfError)
                                                 logSystemStateSnapShot(tbs,timeOfError)
@@ -2219,7 +2225,7 @@ class TCUSampler
                                                         # dutCt = 24 
                                                         timeOfError = Time.new
                                                         @samplerData.ReportError(tbs,timeOfError)
-                                                        @samplerData.setStopMessage("Trip Point Error, Stopped.")
+                                                        @samplerData.setStopMessage("Trip Point Error. Stopped.")
                                                         setDutErrorColorFlag(key2,dutCt,SharedMemory::RedFlag)
                                                         logSystemStateSnapShot(tbs,timeOfError)
                                                         return
@@ -2323,7 +2329,7 @@ class TCUSampler
 
                                 # Turn on red light and buzzer and make it blink due to shutdown
                                 setToAlarmMode()
-                                @samplerData.setStopMessage("Trip Point Error, Stopped.")
+                                @samplerData.setStopMessage("Trip Point Error. Stopped.")
                                 setDutErrorColorFlag("TDUT",dutCt,SharedMemory::RedFlag)
                                 @samplerData.ReportError("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{@dutTempTripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{@dutTempTripMax}'#{unit} FAILED.  ALREADY IN STOP MODE, SHUTTING DOWN HEATERS.",Time.new)
                                 return
@@ -2648,6 +2654,7 @@ class TCUSampler
             		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
                         
         		    when SharedLib::LoadConfigFromPc
+        		        @fault = nil
                         @samplerData.clearStopMessage()
         		        @lotStartedAlready = false
         		        @boardData[LastStepNumOfSentLog] = -1 # initial value
@@ -2674,14 +2681,10 @@ class TCUSampler
             		    
                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-        		        setBoardStateForCurrentStep(uart1)
-
-            		    # Enable these bits.
-            		    @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
-            		    
-            		    # Get the highest number of step.
-            		    
+            		    # Get the highest number of step.  This function must get called first before the function 
+            		    # setBoardStateForCurrentStep
             		    @boardData[HighestStepNumber] = -1
+puts "@boardData[HighestStepNumber] = '#{@boardData[HighestStepNumber]}' #{__LINE__}-#{__FILE__}"
                         getConfiguration()[Steps].each do |key, array|
                             getConfiguration()[Steps][key].each do |key2, array2|
                                 # Get which step to work on and setup the power supply settings.
@@ -2692,7 +2695,13 @@ class TCUSampler
                                 end
                             end
                         end
+puts "@boardData[HighestStepNumber] = '#{@boardData[HighestStepNumber]}' #{__LINE__}-#{__FILE__}"
 
+        		        setBoardStateForCurrentStep(uart1)
+
+            		    # Enable these bits.
+            		    @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+            		    
             		    
             		    skipLimboStateCheck = true
             		else
@@ -2738,7 +2747,7 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 763
+# 536
 # 717
 # [ ] Get the logger polished out
 # [ ] Get the GUI Finish
