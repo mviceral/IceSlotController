@@ -154,8 +154,8 @@ auto eth0
  iface eth0 inet static
     address 192.168.1.211
     netmask 255.255.255.0
-    network 192.168.7.0
-    gateway 192.168.7.1
+    network 192.168.1.0
+    gateway 192.168.1.2
 
 ###########################################
 # For the Racetrack setup, add the following entries to the /etc/modprobe.d/blacklist.conf file:

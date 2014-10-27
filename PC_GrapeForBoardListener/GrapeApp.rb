@@ -79,16 +79,24 @@ module MigrationCount
 						
 						if data[SharedMemory::LogInfo].nil? == false
 							# Handle the logging information first.
-							hash = JSON.parse(data[SharedMemory::LogInfo])
-							# The sent data is a log data.  Write it to file							
-								puts "Rec'd data for display. #{__LINE__}-#{__FILE__}"
-							configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
-							fileName = hash[SharedLib::ConfigurationFileName]
-							slotOwnerParam = hash[SharedLib::SlotOwner]
-							dBaseFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,slotOwnerParam)+".log"		
-							puts "dBaseFileName = #{dBaseFileName} #{__LINE__}-#{__FILE__}"
-							puts "hash[SharedLib::DataLog]: #{__LINE__}-#{__FILE__}/n#{hash[SharedLib::DataLog]}"
-							`cd #{directory}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
+							arrData = data[SharedMemory::LogInfo]							
+							puts "arrData.class = #{arrData.class}, arrData.length='#{arrData.length}' #{__LINE__}-#{__FILE__}"
+							arrData.each {
+								|hash|
+							puts "x hash=#{hash} #{__LINE__}-#{__FILE__}"
+								# The sent data is a log data.  Write it to file							
+								configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
+puts "Rec'd data for display. #{__LINE__}-#{__FILE__}"
+								fileName = hash[SharedLib::ConfigurationFileName]
+puts "Rec'd data for display. #{__LINE__}-#{__FILE__}"
+								slotOwnerParam = hash[SharedLib::SlotOwner]
+puts "Rec'd data for display. #{__LINE__}-#{__FILE__}"
+								dBaseFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,slotOwnerParam)+".log"		
+puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
+								# puts "dBaseFileName = #{dBaseFileName} #{__LINE__}-#{__FILE__}"
+								# puts "hash[SharedLib::DataLog]: #{__LINE__}-#{__FILE__}/n#{hash[SharedLib::DataLog]}"
+								`cd #{directory}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
+							}							
 						end
 						
 						hash = JSON.parse(data[SharedMemory::SystemInfo])
