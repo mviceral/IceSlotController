@@ -983,10 +983,7 @@ class UserInterface
 			if @sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? ||
 				@sharedMem.GetDispConfigurationFileName(slotLabel2Param).length == 0
 				stepNum = ""
-			else
-				stepNum = @sharedMem.GetDispStepNumber(slotLabel2Param)
-			end
-			topTable += "
+				topTable += "
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP FILE NOT LOADED</td></tr>
 				 			<tr>
 				 				<td align=\"center\">
@@ -1000,6 +997,23 @@ class UserInterface
 				 					</font>
 				 				</td>
 				 			</tr>"
+			else
+				stepNum = @sharedMem.GetDispStepNumber(slotLabel2Param)
+				topTable += "
+				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{stepNum}' COMPLETION AT</td></tr>
+				 			<tr>
+				 				<td align=\"center\">
+				 					<font 				 						
+				 						size=\"2\" 
+				 						style=\"font-style: italic;\">
+				 							<label 
+				 								id=\"stepCompletion_#{slotLabel2Param}\">
+				 									#{getStepCompletion(slotLabel2Param)}
+				 							</label>
+				 					</font>
+				 				</td>
+				 			</tr>"
+			end
 		end
 		btnState = getButtonDisplay(slotLabel2Param,"#{__LINE__}-#{__FILE__}")
 		topTable += "
