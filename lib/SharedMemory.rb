@@ -312,8 +312,8 @@ class SharedMemory
 				SetDispSlotOwner(hash[SharedLib::SlotOwner])
 
 				# printDataContent(hash[SharedLib::SlotOwner])
-				puts "Error color check #{__LINE__}-#{__FILE__}"
-				PP.pp(GetDispErrorColor(hash[SharedLib::SlotOwner]))
+				# puts "Error color check #{__LINE__}-#{__FILE__}"
+				# PP.pp(GetDispErrorColor(hash[SharedLib::SlotOwner]))
 				configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
 			end
 		end
