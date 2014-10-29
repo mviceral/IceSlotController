@@ -95,7 +95,7 @@ class UserInterface
 		if @slotToIp.nil? # || @slotToIp[slotParam].nil? ||@slotToIp[slotParam].length == 0
 			@slotToIp = Hash.new
 			@slotToIp[SharedLib::SLOT1] = "192.168.1.211"
-			#@slotToIp[SharedLib::SLOT2] = "192.168.1.212"
+			@slotToIp[SharedLib::SLOT2] = "192.168.1.212"
 			#@slotToIp[SLOT3] = ""
 		end
 		# puts "slotParam='#{slotParam}' @slotToIp='#{@slotToIp}' fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
