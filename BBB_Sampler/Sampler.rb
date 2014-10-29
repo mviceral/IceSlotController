@@ -880,7 +880,7 @@ class TCUSampler
             
             if (flagTolP <= actualValue && actualValue <= flagTolN) == false
                 reportToLogFile("NOTICE - #{key2} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed..\n");
-                setErrorColorFlag(key,SharedMemory::OrangeFlag,"#{__LINE__}-#{__FILE__}")
+                setErrorColorFlag(key2,SharedMemory::OrangeFlag,"#{__LINE__}-#{__FILE__}")
 
                 if (tripMin <= actualValue && actualValue <= tripMax) == false
                     if is2ndFault(key2,unit,tripMin,actualValue,tripMax)
@@ -1870,9 +1870,7 @@ class TCUSampler
             @boardData[SharedMemory::ErrorColor][key2][ct][SharedMemory::Latch] = flag
         end
 
-        if @boardData[SharedMemory::ErrorColor][key2][ct][SharedMemory::CurrentState].nil?
-            @boardData[SharedMemory::ErrorColor][key2][ct][SharedMemory::CurrentState] = flag
-        end
+        @boardData[SharedMemory::ErrorColor][key2][ct][SharedMemory::CurrentState] = flag
         
         @samplerData.setErrorColor(@boardData[SharedMemory::ErrorColor],"#{__LINE__}-#{__FILE__}")
     end
@@ -2095,7 +2093,7 @@ class TCUSampler
                             ct = 0
                             while ct<24 do
                                 if @tcusToSkip[ct].nil? == true
-            						puts "dutI#{ct} :tripMin='#{tripMin}' flagTolP='#{flagTolP}' actualValue='#{actualValue}' flagTolN='#{flagTolN}' tripMax='#{tripMax}'"
+            						# puts "dutI#{ct} :tripMin='#{tripMin}' flagTolP='#{flagTolP}' actualValue='#{actualValue}' flagTolN='#{flagTolN}' tripMax='#{tripMax}' #{__LINE__}-#{__FILE__}"
                                     actualValue = SharedLib.getCurrentDutDisplay(muxData,"#{ct}").to_f
                                     if (flagTolP <= actualValue && actualValue <= flagTolN) == false
                                         reportToLogFile("NOTICE - IDUT#{ct} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.\n")
@@ -2404,6 +2402,28 @@ class TCUSampler
             end
         end
     end
+    
+    def checkDeadTcus(uart1)
+        @tcusToSkip = Hash.new
+        SharedLib.bbbLog "Searching for disabled TCUs aside the listed ones in '#{FaultyTcuList_SkipPolling}' file. #{__LINE__}-#{__FILE__}"
+        ct = 0
+        newDeadTcu = false
+        dutObj = DutObj.new()
+        while ct<24 && @tcusToSkip[ct].nil? do 
+            uartResponse = DutObj::getTcuStatusS(ct,uart1,@gPIO2)
+            if uartResponse == DutObj::FaultyTcu
+                @tcusToSkip[ct] = ct
+                newDeadTcu = true
+                SharedLib.bbbLog("UART not responding to TCU#{ct} (zero based index), adding item to be skipped when polling. #{__LINE__}-#{__FILE__}")
+            else
+                # puts "Sent 'S?' - responded :'#{uartResponse}' #{__LINE__}-#{__FILE__}"
+                uart1.write("V?\n");
+                x = uart1.readline
+                # puts "Sent 'V?' - responded :'#{x}' #{__LINE__}-#{__FILE__}"
+            end
+            ct += 1
+        end
+    end
 
     def runTCUSampler
         @gPIO2 = GPIO2.new
@@ -2411,7 +2431,7 @@ class TCUSampler
 
         @logRptAvgCt = 0
         @socketIp = nil
-    	@setupAtHome = true # So we can do some work at home
+    	@setupAtHome = false # So we can do some work at home
     	@initMuxValueFunc = false
     	@initpollAdcInputFunc = false
         @allDutTempTolReached = false
@@ -2447,7 +2467,6 @@ class TCUSampler
 
         SharedLib.bbbLog("Initializing machine using system's time. #{__LINE__}-#{__FILE__}")
         
-        @tcusToSkip = Hash.new
 =begin        
         # Read the file that lists the dead TCUs.
         lineNum = 0
@@ -2474,26 +2493,7 @@ class TCUSampler
 		        SharedLib.bbbLog("Error: #{e.message}  #{__LINE__}-#{__FILE__}")
 	    end
 =end        
-
-        SharedLib.bbbLog "Searching for disabled TCUs aside the listed ones in '#{FaultyTcuList_SkipPolling}' file. #{__LINE__}-#{__FILE__}"
-        ct = 0
-        newDeadTcu = false
-        dutObj = DutObj.new()
-        while ct<24 && @tcusToSkip[ct].nil? do 
-            uartResponse = DutObj::getTcuStatusS(ct,uart1,@gPIO2)
-            if uartResponse == DutObj::FaultyTcu
-                @tcusToSkip[ct] = ct
-                newDeadTcu = true
-                SharedLib.bbbLog("UART not responding to TCU#{ct} (zero based index), adding item to be skipped when polling. #{__LINE__}-#{__FILE__}")
-            else
-                # puts "Sent 'S?' - responded :'#{uartResponse}' #{__LINE__}-#{__FILE__}"
-                uart1.write("V?\n");
-                x = uart1.readline
-                # puts "Sent 'V?' - responded :'#{x}' #{__LINE__}-#{__FILE__}"
-            end
-            ct += 1
-        end
-
+        checkDeadTcus(uart1)
 =begin        
         if newDeadTcu
             # Write the new FaultyTcuList file
@@ -2651,6 +2651,8 @@ class TCUSampler
             		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
                         
         		    when SharedLib::LoadConfigFromPc
+        		        checkDeadTcus(uart1)
+
         		        @fault = nil
                         @samplerData.clearStopMessage()
         		        @lotStartedAlready = false
