@@ -12,6 +12,7 @@ trap "rm -f ${LockFile}; exit" INT TERM EXIT
 echo $$ > ${LockFile}
 
 # do stuff
+sleep 3
 cd /var/lib/cloud9/slot-controller/BBB_GrapeForPcListener/
 sudo rackup
 

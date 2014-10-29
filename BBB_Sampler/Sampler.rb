@@ -783,6 +783,17 @@ class TCUSampler
                             tbs += "#{makeItFitMeas(array["FlagTolN"],6,FlagTolNLogger)}\n"
                         end
                     end
+
+                    tbs += "IDUT Setting:\n"
+                    tbs += "#{PSNameLogger}|#{FlagTolPLogger}|#{TripMaxLogger}|\n"
+                    @stepToWorkOn["PsConfig"].each do |key, array|
+                        if key == "IDUT"
+                            tbs += "#{makeItFit(key,PSNameLogger)}|"
+                            tbs += "#{makeItFitMeas(array["FlagTolP"],6,FlagTolPLogger)}|"
+                            tbs += "#{makeItFitMeas(array["TripMax"],6,TripMaxLogger)}|\n"
+                        end
+                    end
+
                     sendToLogger(tbs)
                 end
             end
@@ -2747,11 +2758,9 @@ end
 TCUSampler.runTCUSampler
 # 536
 # 717
-# [ ] Show the clear button latch color flag.
 # [ ] Restore the error messages.
 # [ ] Rename reports based on BIB number.
 # [ ] Get the logger polished out
 # [ ] Get the GUI Finish
 # [ ] Test the run-away temps
-# [X] Log the tolerance trip points
 # 

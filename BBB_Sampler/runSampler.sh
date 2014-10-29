@@ -12,6 +12,7 @@ trap "rm -f ${LockFile}; exit" INT TERM EXIT
 echo $$ > ${LockFile}
 
 # do stuff
+sleep 3 # So the shared memory process will run before this code does.
 cd /var/lib/cloud9/slot-controller/BBB_Sampler/
 ruby Sampler.rb
 
