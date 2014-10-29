@@ -9,6 +9,7 @@ class SharedLib
 	PcToBbbCmd = "PcToBbbCmd"
 	RunFromPc = "RunFromPc" # Command
 	StopFromPc = "StopFromPc" # Command
+	ClearErrFromPc = "ClearErrFromPc"
 	LoadConfigFromPc = "LoadConfigFromPc" # Command
 	ClearConfigFromPc = "ClearConfigFromPc"
 	PcToBbbData = "PcToBbbData" # Data flag
