@@ -14,10 +14,6 @@ class SendSampledTcuToPCLib
     MOUNT_CARD_DIR = "/mnt/card"
     TOTAL_DUTS_TO_LOOK_AT = 24
     ITS_MOUNTED = "It's mounted."
-    PcToSamePc = "localhost"
-    BbbToPc = 'http://192.168.7.1'
-    # BbbToPc = 'http://192.168.1.210'
-    SendToPc = BbbToPc
 
     def runSampler
         # puts "Running the sampler."
@@ -211,6 +207,24 @@ Temperature Setting: <temp>
     end    
     
     def sendSlotInfoToPc(newSlotInfoJson)
+        if @pcIpAddr.nil?
+    		File.open("../BBB_configuration files/ethernet scheme setup.csv", "r") do |f|
+    			f.each_line do |line|
+    			    if line[0..1] == "PC"
+    			        @pcIpAddr = line[3..-1].chomp
+    			        
+    			    end
+    				if @pcIpAddr.nil? == false
+    				    # We got an IP address
+    				    break
+    				end
+    			end
+    		end
+            if @pcIpAddr.nil?
+                @samplerData.ReportError("File 'BBB_configuration files/ethernet scheme setup.csv' does not have an entry for PC IP address.")
+            end
+        end
+        
         if @arrOfDataToSend.nil?
             @arrOfDataToSend = Array.new
         end
@@ -224,7 +238,7 @@ Temperature Setting: <temp>
             while sentData == false && ct < 5
                 begin
                     resp = 
-                        RestClient.post "#{SendToPc}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
+                        RestClient.post "#{@pcIpAddr}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
                     sentData = true
                     @packageInfo = nil
                     rescue Exception => e  
@@ -276,4 +290,4 @@ Temperature Setting: <temp>
     # End of 'class SendSampledTcuToPC'
 end 
 
-# working on def runThreadForSavingSlotStateEvery10Mins()
+# working 224
