@@ -94,7 +94,7 @@ class UserInterface
 	def getBoardIp(slotParam, fromParam)
 		if @slotToIp.nil? # || @slotToIp[slotParam].nil? ||@slotToIp[slotParam].length == 0
 			@slotToIp = Hash.new
-			@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
+			@slotToIp[SharedLib::SLOT1] = "192.168.1.211"
 			#@slotToIp[SharedLib::SLOT2] = "192.168.1.212"
 			#@slotToIp[SLOT3] = ""
 		end
@@ -1175,14 +1175,11 @@ showButton = 1
 buttonState = 0
 if @sharedMem.GetDispErrorColor(slotLabel2Param).nil? == false
 	@sharedMem.GetDispErrorColor(slotLabel2Param).each do |key, array|	
-		# puts "key='#{key}' #{__LINE__}-#{__FILE__}"
 		if key == "TDUT" || key == "IDUT"
 			array.each do |key2, array2|
 				# puts "key2='#{key2}' #{__LINE__}-#{__FILE__}"
 				array2.each do |key3, array3|
-	# puts "key3='#{key3}' array3='#{array3}'#{__LINE__}-#{__FILE__}"
 					if key3 == "Latch" && array3 != 0
-	# puts "BINGO!!! key3='#{key3}' array3='#{array3}'#{__LINE__}-#{__FILE__}"
 						buttonState = showButton
 					end
 					
@@ -1197,9 +1194,7 @@ if @sharedMem.GetDispErrorColor(slotLabel2Param).nil? == false
 			end
 		else
 			array.each do |key2, array2|
-	# puts "key2='#{key2}' array2='#{array2}'#{__LINE__}-#{__FILE__}"
 				if key2 == "Latch" && array2 != 0
-	# puts "BINGO!!! key2='#{key2}' array2='#{array2}'#{__LINE__}-#{__FILE__}"
 					buttonState = showButton
 				end
 				
@@ -1213,9 +1208,7 @@ if @sharedMem.GetDispErrorColor(slotLabel2Param).nil? == false
 			break
 		end
 	end
-	# puts "Out of the loop. #{__LINE__}-#{__FILE__}"
 	if buttonState == showButton
-	# puts "Enable button to clear latch. #{__LINE__}-#{__FILE__}"
 		topTable += "<a href=\"/TopBtnPressed?slot=#{slotLabel2Param}&BtnState=ClearError\" class=\"myButton\">Clear Error</a>"
 	end
 end
