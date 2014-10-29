@@ -962,6 +962,7 @@ class SharedMemory
 			# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
 		when SharedLib::RunFromPc
 		when SharedLib::StopFromPc
+		when SharedLib::ClearErrFromPc
 		when SharedLib::LoadConfigFromPc
 			puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
 			# puts "hash=#{hash}"
