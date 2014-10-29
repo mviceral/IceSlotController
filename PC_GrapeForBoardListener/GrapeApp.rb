@@ -82,15 +82,16 @@ module MigrationCount
 							arrData = data[SharedMemory::LogInfo]							
 							puts "arrData.class = #{arrData.class}, arrData.length='#{arrData.length}' #{__LINE__}-#{__FILE__}"
 							arrData.each {
-								|hash|
+								|hashX|
 							puts "x hash=#{hash} #{__LINE__}-#{__FILE__}"
+								hash = JSON.parse(hashX)
 								# The sent data is a log data.  Write it to file							
 								configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
-puts "Rec'd data for display. #{__LINE__}-#{__FILE__}"
+puts "hash[SharedLib::ConfigDateUpload]='#{hash[SharedLib::ConfigDateUpload]}'. #{__LINE__}-#{__FILE__}"
 								fileName = hash[SharedLib::ConfigurationFileName]
-puts "Rec'd data for display. #{__LINE__}-#{__FILE__}"
+puts "hash[SharedLib::ConfigurationFileName]='#{hash[SharedLib::ConfigurationFileName]}' #{__LINE__}-#{__FILE__}"
 								slotOwnerParam = hash[SharedLib::SlotOwner]
-puts "Rec'd data for display. #{__LINE__}-#{__FILE__}"
+puts "hash[SharedLib::SlotOwner]='#{hash[SharedLib::SlotOwner]}' #{__LINE__}-#{__FILE__}"
 								dBaseFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,slotOwnerParam)+".log"		
 puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
 								# puts "dBaseFileName = #{dBaseFileName} #{__LINE__}-#{__FILE__}"

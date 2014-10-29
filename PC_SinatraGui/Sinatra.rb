@@ -3,7 +3,7 @@
 # 
 require 'rubygems'
 require 'sinatra'
-require 'sqlite3'
+#require 'sqlite3'
 require 'json'
 require 'rest_client'
 require_relative '../lib/SharedLib'
@@ -12,14 +12,14 @@ require_relative '../lib/SharedMemory'
 require 'pp' # Pretty print to see the hash values.
 
 require 'drb/drb'
-SERVER_URI="druby://localhost:8787"
 
 class UserInterface
 	SERVER_URI="druby://localhost:8787"
-	BbbPcListener = 'http://192.168.7.2'
+	# BbbPcListener = 'http://192.168.1.212'
+	# Slot1IpAddress  = 'http://192.168.7.2'
 	# BbbPcListener = 'http://192.168.1.211'
-	LinuxBoxPcListener = "localhost"
-	PcListener = BbbPcListener # Chose which ethernet address the PcListener is sitting on.
+	# LinuxBoxPcListener = "localhost"
+	# PcListener = Slot1IpAddress  # Chose which ethernet address the PcListener is sitting on.
 	#
 	# Template flags
 	#
@@ -95,7 +95,7 @@ class UserInterface
 		if @slotToIp.nil? # || @slotToIp[slotParam].nil? ||@slotToIp[slotParam].length == 0
 			@slotToIp = Hash.new
 			@slotToIp[SharedLib::SLOT1] = "192.168.7.2"
-			#@slotToIp[SharedLib::SLOT2] = "192.168.7.2"
+			#@slotToIp[SharedLib::SLOT2] = "192.168.1.212"
 			#@slotToIp[SLOT3] = ""
 		end
 		# puts "slotParam='#{slotParam}' @slotToIp='#{@slotToIp}' fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
@@ -983,10 +983,7 @@ class UserInterface
 			if @sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? ||
 				@sharedMem.GetDispConfigurationFileName(slotLabel2Param).length == 0
 				stepNum = ""
-			else
-				stepNum = @sharedMem.GetDispStepNumber(slotLabel2Param)
-			end
-			topTable += "
+				topTable += "
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP FILE NOT LOADED</td></tr>
 				 			<tr>
 				 				<td align=\"center\">
@@ -1000,6 +997,23 @@ class UserInterface
 				 					</font>
 				 				</td>
 				 			</tr>"
+			else
+				stepNum = @sharedMem.GetDispStepNumber(slotLabel2Param)
+				topTable += "
+				 			<tr><td align=\"center\"><font size=\"1.75\"/>STEP '#{stepNum}' COMPLETION AT</td></tr>
+				 			<tr>
+				 				<td align=\"center\">
+				 					<font 				 						
+				 						size=\"2\" 
+				 						style=\"font-style: italic;\">
+				 							<label 
+				 								id=\"stepCompletion_#{slotLabel2Param}\">
+				 									#{getStepCompletion(slotLabel2Param)}
+				 							</label>
+				 					</font>
+				 				</td>
+				 			</tr>"
+			end
 		end
 		btnState = getButtonDisplay(slotLabel2Param,"#{__LINE__}-#{__FILE__}")
 		topTable += "
@@ -1156,6 +1170,57 @@ end
 				 					"
 				 				</td>
 				 			</tr>
+				 			<tr><td align=\"center\">"
+showButton = 1
+buttonState = 0
+if @sharedMem.GetDispErrorColor(slotLabel2Param).nil? == false
+	@sharedMem.GetDispErrorColor(slotLabel2Param).each do |key, array|	
+		# puts "key='#{key}' #{__LINE__}-#{__FILE__}"
+		if key == "TDUT" || key == "IDUT"
+			array.each do |key2, array2|
+				# puts "key2='#{key2}' #{__LINE__}-#{__FILE__}"
+				array2.each do |key3, array3|
+	# puts "key3='#{key3}' array3='#{array3}'#{__LINE__}-#{__FILE__}"
+					if key3 == "Latch" && array3 != 0
+	# puts "BINGO!!! key3='#{key3}' array3='#{array3}'#{__LINE__}-#{__FILE__}"
+						buttonState = showButton
+					end
+					
+					if buttonState == showButton
+						break
+					end
+				end
+				
+				if buttonState == showButton
+					break
+				end
+			end
+		else
+			array.each do |key2, array2|
+	# puts "key2='#{key2}' array2='#{array2}'#{__LINE__}-#{__FILE__}"
+				if key2 == "Latch" && array2 != 0
+	# puts "BINGO!!! key2='#{key2}' array2='#{array2}'#{__LINE__}-#{__FILE__}"
+					buttonState = showButton
+				end
+				
+				if buttonState == showButton
+					break
+				end
+			end
+		end
+		
+		if buttonState == showButton
+			break
+		end
+	end
+	# puts "Out of the loop. #{__LINE__}-#{__FILE__}"
+	if buttonState == showButton
+	# puts "Enable button to clear latch. #{__LINE__}-#{__FILE__}"
+		topTable += "<a href=\"/TopBtnPressed?slot=#{slotLabel2Param}&BtnState=ClearError\" class=\"myButton\">Clear Error</a>"
+	end
+end
+					topTable+=				 					
+				 			"</td></tr>
 				 		</table>
 					</td>
 				</tr>
@@ -1172,7 +1237,48 @@ end
 		# Get a fresh data...
 		@sharedMem.processRecDataFromPC(@sharedMemService.getSharedMem().getDataFromBoardToPc())
 		displayForm =  "	
-	<style>
+	<style>	 
+	.myButton {
+		-moz-box-shadow:inset 1px 2px 3px 0px #91b8b3;
+		-webkit-box-shadow:inset 1px 2px 3px 0px #91b8b3;
+		box-shadow:inset 1px 2px 3px 0px #91b8b3;
+		background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #768d87), color-stop(1, #6c7c7c));
+		background:-moz-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
+		background:-webkit-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
+		background:-o-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
+		background:-ms-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
+		background:linear-gradient(to bottom, #768d87 5%, #6c7c7c 100%);
+		filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#768d87', endColorstr='#6c7c7c',GradientType=0);
+		background-color:#768d87;
+		-moz-border-radius:2px;
+		-webkit-border-radius:2px;
+		border-radius:2px;
+		border:1px solid #566963;
+		display:inline-block;
+		cursor:pointer;
+		color:#ffffff;
+		font-family:arial;
+		font-size:10px;
+		font-weight:bold;
+		padding:0px 3px;
+		text-decoration:none;
+		text-shadow:0px -1px 0px #2b665e;
+	}
+	.myButton:hover {
+		background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #6c7c7c), color-stop(1, #768d87));
+		background:-moz-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+		background:-webkit-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+		background:-o-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+		background:-ms-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+		background:linear-gradient(to bottom, #6c7c7c 5%, #768d87 100%);
+		filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#6c7c7c', endColorstr='#768d87',GradientType=0);
+		background-color:#6c7c7c;
+	}
+	.myButton:active {
+		position:relative;
+		top:1px;
+	}
+
 	#slotA
 	{
 	border:1px solid black;
@@ -1570,6 +1676,14 @@ end
 		setItemParameter(nameParam,ClearState,clearStateParam)
 		# End of 
 	end 
+	def setBbbClearError(slotOwnerParam)
+		hash = Hash.new
+		hash[SharedLib::SlotOwner] = slotOwnerParam
+		slotData = hash.to_json
+		@response = 
+      RestClient.post "#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}:8000/v1/pclistener/", {PcToBbbCmd:"#{SharedLib::ClearErrFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
+		@sharedMem.SetDispButton(slotOwnerParam,"Seq Down")
+	end
 	
 	def setBbbToStopMode(slotOwnerParam)
 		hash = Hash.new
@@ -2580,6 +2694,12 @@ get '/TopBtnPressed' do
 			#
 			settings.ui.setToLoadMode(params[:slot])
 			redirect "../"
+		elsif SharedLib.uriToStr(params[:BtnState]) == "ClearError"
+			#
+			# The clear error button got pressed.
+			#
+			settings.ui.setBbbClearError(params[:slot])
+			redirect "../"			
 		end
 	end
 end
@@ -2691,4 +2811,4 @@ get '/AckError' do
 	redirect "../"
 end
 
-# at 927
+# at 1177
