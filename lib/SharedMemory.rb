@@ -33,6 +33,7 @@ class SharedMemory
 	StopOnTolerance = "Stop on Tolerance"
 
 	# For the color flags for the GUI.
+	DontSendErrorColor = true
 	CurrentState = "CurrentState"
 	Latch = "Latch"
 	ErrorColor = "ErrorColor"
@@ -77,8 +78,29 @@ class SharedMemory
 	def getErrorColor()
 		return getMemory()[ErrorColor]
 	end
-
-	def setErrorColor(errorColorParam)
+	
+	def getDontSendErrorColor()
+		return getMemory()[DontSendErrorColor]
+	end
+	
+    def setDontSendErrorColor(paramValue)
+		ds = lockMemory("#{__LINE__}-#{__FILE__}")
+		ds[DontSendErrorColor] = paramValue
+		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");
+    end
+    
+	def setErrorColor(errorColorParam, fromParam)
+#puts "fromParam=#{fromParam}, #{__LINE__}-#{__FILE__}"
+        if errorColorParam.nil? == false
+    	    errorColorParam.each do |key, array|
+    	        filtered = key[1.."IDUT".length]
+    	        if filtered == "IDUT" || filtered == "TDUT" 
+#puts "fromParam=#{fromParam}, #{__LINE__}-#{__FILE__}"
+                end
+#                puts "#{key}-----"
+#                puts array
+            end
+        end
 		ds = lockMemory("#{__LINE__}-#{__FILE__}")
 		ds[ErrorColor] = errorColorParam
 		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");

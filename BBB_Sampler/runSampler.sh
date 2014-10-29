@@ -1,9 +1,9 @@
 #
-# Make sure only one process is running for the the rackup board.
+# Make sure only one process is running for the TCU Sampler.
 #
-LockFile=/tmp/bbbBoardGrapeFileLock.txt
+LockFile=/tmp/bbbSamplerFileLock.txt
 if [ -e ${LockFile} ] && kill -0 `cat ${LockFile}`; then
-    echo "rackup board is already running"
+    echo "runTcuSampler.sh is already running"
     exit
 fi
 
@@ -12,7 +12,7 @@ trap "rm -f ${LockFile}; exit" INT TERM EXIT
 echo $$ > ${LockFile}
 
 # do stuff
-cd /var/lib/cloud9/slot-controller/BBB_GrapeForPcListener/
-sudo rackup
+cd /var/lib/cloud9/slot-controller/BBB_Sampler/
+ruby Sampler.rb
 
 rm -f ${LockFile}

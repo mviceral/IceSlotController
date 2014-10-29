@@ -182,4 +182,6 @@ crontab -r
 crontab -e
 
 # To run board side rack up every minute, add the following when editing the crontab
-*/1 * * * * sudo /var/lib/cloud9/slot-controller/BBB_GrapeForPcListener/runBoardGrape.sh
+*/1 * * * * bash /var/lib/cloud9/slot-controller/lib/DRbSharedMemory/runSharedMemory.sh
+*/1 * * * * bash /var/lib/cloud9/slot-controller/BBB_GrapeForPcListener/runBoardGrape.sh
+*/1 * * * * bash /var/lib/cloud9/slot-controller/BBB_Sampler/runSampler.sh

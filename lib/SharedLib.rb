@@ -9,6 +9,7 @@ class SharedLib
 	PcToBbbCmd = "PcToBbbCmd"
 	RunFromPc = "RunFromPc" # Command
 	StopFromPc = "StopFromPc" # Command
+	ClearErrFromPc = "ClearErrFromPc"
 	LoadConfigFromPc = "LoadConfigFromPc" # Command
 	ClearConfigFromPc = "ClearConfigFromPc"
 	PcToBbbData = "PcToBbbData" # Data flag
@@ -37,7 +38,8 @@ class SharedLib
 	DashLines = "---"
 	TotalStepDuration = "TotalStepDuration"
 	# PcListener = "http://192.168.1.210"
-	PcListener = "http://192.168.1.59"
+	# PcListener = "http://192.168.1.74"
+	PcListener = "http://192.168.7.1"
 	SLOT1 = "SLOT1"
 	SLOT2 = "SLOT2"
 	SLOT3 = "SLOT3"

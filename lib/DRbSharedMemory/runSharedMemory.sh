@@ -1,10 +1,7 @@
-# Delete the given file when ever this script gets executed.
-rm -rf ../TcuDisabledSites.txt
-
 #
 # Make sure only one process is running for the TCU Sampler.
 #
-LockFile=/tmp/bbbTcuSamplerLock.txt
+LockFile=/tmp/bbbSharedMemoryFileLock.txt
 if [ -e ${LockFile} ] && kill -0 `cat ${LockFile}`; then
     echo "runTcuSampler.sh is already running"
     exit
@@ -15,6 +12,7 @@ trap "rm -f ${LockFile}; exit" INT TERM EXIT
 echo $$ > ${LockFile}
 
 # do stuff
-ruby Sampler.rb
+cd /var/lib/cloud9/slot-controller/lib/DRbSharedMemory/
+ruby Server.rb
 
 rm -f ${LockFile}
