@@ -7,7 +7,7 @@ def killProc(param)
 	while ct<lines.length
 		isolated = lines[ct].lstrip.chop
 		isolatedParts = isolated.split(" ")
-		puts "'#{param}' process# '#{isolatedParts[0]}'"
+		# puts "'#{param}' process# '#{isolatedParts[0]}'"
 		ct += 1
 		if procNumToKill.length > 0
 			procNumToKill += " "
@@ -16,7 +16,7 @@ def killProc(param)
 	end
 
 	if procNumToKill.length>0
-		puts "kill -9 #{procNumToKill}"
+		# puts "kill -9 #{procNumToKill}"
 		`kill -9 #{procNumToKill}`
 	end
 end
