@@ -1,4 +1,4 @@
-require 'sqlite3'
+# require 'sqlite3'
 require 'rest_client'
 require 'singleton'
 require 'forwardable'

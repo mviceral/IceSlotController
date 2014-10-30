@@ -300,12 +300,15 @@ class TCUSampler
                     end
                 elsif @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_SlotPcb
                     if @setupAtHome == false
+                        # puts "PS='#{psItem.keyName}' data='#{}'"
+                        # SharedLib.pause "Checking PS attributes.","#{__LINE__}-#{__FILE__}"
                         case psItem.keyName
                         when PsSeqItem::SPS6
                         # SharedLib::pause "Called #{PsSeqItem::SPS6}", "#{__LINE__}-#{__FILE__}"
                         if powerUpParam
                             # SharedLib::pause "Powering UP", "#{__LINE__}-#{__FILE__}"
                             @gPIO2.setBitOn((GPIO2::PS_ENABLE_x3).to_i,(GPIO2::W3_PS6).to_i)
+                            setBoardPsVolts("V"+psItem.keyName[1..-1],@stepToWorkOn["PsConfig"]["V"+psItem.keyName[1..-1]][NomSet])
                         else
                             # SharedLib::pause "Powering DOWN", "#{__LINE__}-#{__FILE__}"
                             @gPIO2.setBitOff((GPIO2::PS_ENABLE_x3).to_i,(GPIO2::W3_PS6).to_i)
@@ -314,18 +317,21 @@ class TCUSampler
                         when PsSeqItem::SPS8
                             if powerUpParam
                                 @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS8)
+                                setBoardPsVolts("V"+psItem.keyName[1..-1],@stepToWorkOn["PsConfig"]["V"+psItem.keyName[1..-1]][NomSet])
                             else
                                 @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS8)
                             end
                         when PsSeqItem::SPS9
                             if powerUpParam
                                 @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS9)
+                                setBoardPsVolts("V"+psItem.keyName[1..-1],@stepToWorkOn["PsConfig"]["V"+psItem.keyName[1..-1]][NomSet])
                             else
                                 @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS9)
                             end
                         when PsSeqItem::SPS10
                             if powerUpParam
                                 @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS10)
+                                setBoardPsVolts("V"+psItem.keyName[1..-1],@stepToWorkOn["PsConfig"]["V"+psItem.keyName[1..-1]][NomSet])
                             else
                                 @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_PS10)
                             end
@@ -2436,7 +2442,84 @@ class TCUSampler
         end
     end
 
+    def setBoardPsVolts(psParam,voltsParam)
+        # print "psParam='#{psParam}', voltsParam='#{voltsParam}'"
+        stdData  =  0b01000000000000 # 0b01 on DAC OP ( 2 bits  hard coded as b01) shift left by 12
+        voltsParam = voltsParam.to_f # Make the param to float.
+=begin        
+        case psParam
+        when "VPS6"
+        stdData += 0b0000000000000000 # 0b00 on DAC# shift let by 14
+        setData = 0xfff-(voltsParam-2.95)/(3.7-2.95)*0xfff.to_f
+        when "VPS8"
+        stdData += 0b0100000000000000 # 0b01 on DAC# shift let by 14
+        setData = 0xfff-(voltsParam-4.6)/(5.3-4.6)*0xfff.to_f
+        when "VPS9"
+        stdData += 0b1000000000000000 # 0b01 on DAC# shift let by 14
+        setData = 0xfff-(voltsParam-1.7)/(2.4-1.7)*0xfff.to_f
+        when "VPS10"
+        stdData += 0b1100000000000000 # 0b01 on DAC# shift let by 14
+        setData = 0xfff-(voltsParam-2.1)/(2.8-2.1)*0xfff.to_f
+        end
+=end        
+        case psParam
+        when "VPS6"
+        stdData += 0b0000000000000000 # 0b00 on DAC# shift let by 14
+        setData = 0x800+((3.316-voltsParam)/0.000202)
+        when "VPS8"
+        stdData += 0b0100000000000000 # 0b01 on DAC# shift let by 14
+        setData = 0x800+((4.998-voltsParam)/0.000202)
+        when "VPS9"
+        stdData += 0b1000000000000000 # 0b01 on DAC# shift let by 14
+        setData = 0x800+((2.08-voltsParam)/0.000202)
+        when "VPS10"
+        stdData += 0b1100000000000000 # 0b01 on DAC# shift let by 14
+        setData = 0x800+((2.479-voltsParam)/0.000202)
+        end
+
+        # Initialize SPI device SPI0
+        # spi = SPIDevice.new(:SPI1, 2, 2000000, 16)
+        
+        # puts " setData='#{setData}'"
+        # SharedLib.pause "Checking data.","#{__LINE__}-#{__FILE__}"
+        # Transfer the data 
+        @spi.xfer([stdData+setData.to_i].pack("S")) # 0x800 3.3V
+        
+        # Disable SPI device
+        # spi.disable
+    end
+
+    def setBoardPsDefaultSettings
+        # Set the default PS values on start up.
+        # Initialize SPI device SPI0
+        @spi = SPIDevice.new(:SPI1, 2, 2000000, 16)
+        
+        stdData  =  0b01000000000000 # 0b01 on DAC OP ( 2 bits  hard coded as b01) shift left by 12
+        stdData +=  0x800 # Default value for 3.3v
+                      # For now try 0x800, and 0xFFF
+        
+        chPs6 = 0b0000000000000000 + stdData # 0b00 on DAC# shift let by 14
+        @spi.xfer([chPs6].pack("S")) # 0x800 3.3V
+        
+        
+        chPs8 = 0b0100000000000000 + stdData # 0b01 on DAC# shift let by 14
+        @spi.xfer([chPs8].pack("S")) # 0x800 default (5.0v)
+        
+        
+        chPs9 = 0b1000000000000000 + stdData # 0b01 on DAC# shift let by 14
+        @spi.xfer([chPs9].pack("S")) # 0x800 default (2.1v)
+        
+        
+        chPs10 = 0b1100000000000000 + stdData # 0b01 on DAC# shift let by 14
+        @spi.xfer([chPs10].pack("S")) # 0x800 default (2.1v)
+        
+        # Disable SPI device
+        # spi.disable
+    end
+
     def runTCUSampler
+        setBoardPsDefaultSettings()
+
         @gPIO2 = GPIO2.new
         @gPIO2.getForInitGetImagesOf16Addrs
 
@@ -2756,7 +2839,7 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 536
+# 303
 # 717
 # [ ] Restore the error messages.
 # [ ] Rename reports based on BIB number.
