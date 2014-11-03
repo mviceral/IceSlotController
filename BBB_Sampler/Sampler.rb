@@ -1415,14 +1415,14 @@ class TCUSampler
     
     def turnOnHeaters
         @heatersTurnedOff = false
-        # @gPIO2.setBitOn(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_POWER)
-        @gPIO2.setBitOff(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_POWER)
+        @gPIO2.setBitOn(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_POWER)
+        # @gPIO2.setBitOff(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_POWER)
     end
     
     def turnOffHeaters
         @heatersTurnedOff = true
-        # @gPIO2.setBitOff(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_POWER)
-        @gPIO2.setBitOn(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_POWER)
+        @gPIO2.setBitOff(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_POWER)
+        # @gPIO2.setBitOn(GPIO2::EXT_SLOT_CTRL_x4,GPIO2::X4_POWER)
     end
     
     def fanCtrl(pwmParam, fanParam)
