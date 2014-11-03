@@ -2558,7 +2558,7 @@ class TCUSampler
 
         @logRptAvgCt = 0
         @socketIp = nil
-    	@setupAtHome = true # So we can do some work at home
+    	@setupAtHome = false # So we can do some work at home
     	@initMuxValueFunc = false
     	@initpollAdcInputFunc = false
         @allDutTempTolReached = false

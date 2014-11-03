@@ -87,11 +87,30 @@ class UserInterface
 	end
 
 	def getBoardIp(slotParam, fromParam)
-		if @slotToIp.nil? # || @slotToIp[slotParam].nil? ||@slotToIp[slotParam].length == 0
+		if @slotToIp.nil?
 			@slotToIp = Hash.new
-			#@slotToIp[SharedLib::SLOT1] = "192.168.1.211"
-			@slotToIp[SharedLib::SLOT2] = "192.168.1.212"
-			#@slotToIp[SLOT3] = ""
+
+			# Read the IP addresses from the file.
+			lenOfStrToLookInto = "SLOT1 IP".length
+  		File.open("../Mosys ICEngInc.config", "r") do |f|
+  			f.each_line do |line|
+#  				puts "line='#{line}' #{__LINE__}-#{__FILE__}"
+					if line[0..(lenOfStrToLookInto-1)] == "SLOT1 IP"
+						@slotToIp[SharedLib::SLOT1] = line[(lenOfStrToLookInto+1)..-1].strip
+					elsif line[0..(lenOfStrToLookInto-1)] == "SLOT2 IP"
+						@slotToIp[SharedLib::SLOT2] = line[(lenOfStrToLookInto+1)..-1].strip
+					elsif line[0..(lenOfStrToLookInto-1)] == "SLOT3 IP"
+						@slotToIp[SharedLib::SLOT3] = line[(lenOfStrToLookInto+1)..-1].strip
+			    end
+  			end
+  		end
+=begin  		
+  		@slotToIp.each do |key, array|
+				puts "#{key}-----"
+				puts array
+			end
+			SharedLib.pause "Checking values of @slotToIp","#{__LINE__}-#{__FILE__}"
+=end			
 		end
 		# puts "slotParam='#{slotParam}' @slotToIp='#{@slotToIp}' fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
 		return @slotToIp[slotParam]
@@ -514,6 +533,8 @@ class UserInterface
 		# puts "About to send to the Board. #{__LINE__}-#{__FILE__}"
 		# exit
 		begin
+			puts "LoadConfig on IP='#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}'"
+			
 			@response = 
 		    RestClient.post "#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 			puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
@@ -648,7 +669,37 @@ class UserInterface
 		current = @sharedMem.getPsCurrent(muxData,eiPs,iIndexParam,labelParam)
 
 		cellColor = setBkColor(slotLabel2Param,"#6699aa")
-		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+		if cellColor == "#cccccc"
+if slotLabel2Param == "SLOT1"		
+	# puts "asfd #{__LINE__}-#{__FILE__}"
+end
+			toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+		else
+if slotLabel2Param == "SLOT1"		
+	# puts "asfd #{__LINE__}-#{__FILE__}"
+end
+			if @sharedMem.GetDispPsToolTip(slotLabel2Param).nil?
+if slotLabel2Param == "SLOT1"		
+	# puts "asfd #{__LINE__}-#{__FILE__}"
+end
+				toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+			else
+if slotLabel2Param == "SLOT1"		
+	# puts "asfd #{__LINE__}-#{__FILE__}"
+end
+				if @sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam].nil?
+if slotLabel2Param == "SLOT1"		
+	# puts "asfd #{__LINE__}-#{__FILE__}"
+end
+					toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+				else				
+if slotLabel2Param == "SLOT1"		
+	# puts "asfd #{__LINE__}-#{__FILE__} '#{@sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]}'"
+end
+					toBeReturned = "<table title=\"#{@sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+				end
+			end
+		end
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
 		toBeReturned += "<tr>"
 		toBeReturned += "	<td #{vStyleL} >
@@ -663,6 +714,7 @@ class UserInterface
 		return toBeReturned
 		# End of 'DutCell("S20",dut20[2])'
 	end
+	
 	
 	def getDutStyle(tOrI,lOrC,sValue,errorColor)
 		if errorColor.nil?
@@ -682,6 +734,7 @@ class UserInterface
 		end
 	end
 
+
 	def DutCell(slotLabel2Param, labelParam,rawDataParam)
 		muxData = @sharedMem.GetDispMuxData(slotLabel2Param)
 		current = SharedLib::getCurrentDutDisplay(muxData,rawDataParam)
@@ -694,12 +747,18 @@ class UserInterface
 		cellColor = setBkColor(slotLabel2Param,"#99bb11")
 		if tcuData == "---"
 			cellColor = "#B6B6B4"
+			enableToolTip = false
 		else
 			temperature = SharedLib.make5point2Format(tcuData.split(',')[2])
+			enableToolTip = true
 		end
 		# puts "rawDataParam=#{rawDataParam}, tcuData=#{tcuData} #{__LINE__}-#{__FILE__}"
 		
-		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+		if enableToolTip
+			toBeReturned = "<table title=\"#{@sharedMem.GetDispDutToolTip(slotLabel2Param)}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+		else
+			toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+		end
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
 		toBeReturned += "<tr>"
 		
@@ -720,9 +779,11 @@ class UserInterface
 		toBeReturned += "</tr>"
 		toBeReturned += "<tr><td #{iStyleL}><font size=\"1\">Current</font></td><td #{iStyleC}><font size=\"1\">#{current} A</font></td></tr>"
 		toBeReturned += "</table>"
+		
 		return toBeReturned
 		# End of 'DutCell("S20",dut20[2])'
 	end
+
 
 	def getRows(dirParam)
 		repoDir = StepConfigFileFolder
@@ -2353,10 +2414,10 @@ end
 		# Make sure that the sequence order are unique such that there are no same sequence number in the sequence
 		# vice it's a zero.
 		#
-		seqUpCol = 5 #6
-		seqUpDlyMsCol = 6 #7
-		seqDownCol = 7 #8
-		seqDownDlyMsCol = 8 #9
+		seqUpCol = 5
+		seqUpDlyMsCol = 6
+		seqDownCol = 7
+		seqDownDlyMsCol = 8
 		sequenceUpHash = Hash.new
 		sequenceDownHash = Hash.new
 		@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"

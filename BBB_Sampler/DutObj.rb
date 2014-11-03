@@ -34,11 +34,12 @@ class DutObj
     
     def self.getTcuStatus(dutNumParam,uart1Param,gPIO2,singleCharParam)
         # puts "@setupAtHome='#{@setupAtHome}' #{__LINE__}-#{__FILE__}"
-        if @setupAtHome.nil? || @setupAtHome
+=begin        
+        if @setupAtHome.nil? || @setupAtHome == false
             @setupAtHome = true
             return "@1,33.156,82.619,0,76,Ok"
         end
-        
+=end        
         gPIO2.etsRxSel(dutNumParam)
         tbr = "" # tbr - to be returned
         uartStatusCmd = "#{singleCharParam}?\n"
