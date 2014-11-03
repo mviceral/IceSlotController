@@ -99,6 +99,8 @@ Temperature Setting: <temp>
 	        @packageInfo = Hash.new
 	    end
         slotInfo = Hash.new()
+        slotInfo[SharedMemory::PsToolTip] = sharedMemParam.getPsToolTip()
+        slotInfo[SharedMemory::DutToolTip] = sharedMemParam.getDutToolTip()
         waitTempMsg = sharedMemParam.getWaitTempMsg()
         if waitTempMsg.length > 0
             slotInfo[SharedMemory::WaitTempMsg] = waitTempMsg
@@ -243,7 +245,7 @@ Temperature Setting: <temp>
                     @packageInfo = nil
                     rescue Exception => e  
                         puts "Failed to send.  Attempting again."
-                        # puts e.message  
+                        puts e.message  
                         # puts e.backtrace.inspect
                         # `echo "#{slotInfoJson}" >> PcDown.BackLog`
                 end
@@ -251,6 +253,7 @@ Temperature Setting: <temp>
             end
             
             if sentData == false
+                puts "Completely failed to send.  Saving data to PcDown.BackLog file."
                 slotInfoJson = SharedLib.ChangeDQuoteToSQuoteForDbFormat(slotInfoJson)
                 `echo "#{slotInfoJson}" >> PcDown.BackLog`
             end

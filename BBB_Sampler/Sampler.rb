@@ -590,6 +590,9 @@ class TCUSampler
                                         # puts "Checking content of 'TempConfig' #{__LINE__}-#{__FILE__}"
                                         sleep(2.0)
                                         @tempSetPoint = getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"]
+                                        dutToolTip = "Tnom:#{@tempSetPoint}C&#10;"
+                                        dutToolTipB = "H:#{getConfiguration()[Steps][key]["TempConfig"]["H"][0..-2]}%,&nbsp;C:#{getConfiguration()[Steps][key]["TempConfig"]["C"][0..-2]}\%&#10;"
+                                        dutToolTipB += "P:#{getConfiguration()[Steps][key]["TempConfig"]["P"]},&nbsp;I:#{getConfiguration()[Steps][key]["TempConfig"]["I"]},&#10;D:#{getConfiguration()[Steps][key]["TempConfig"]["D"]}&#10;"
                                         ThermalSiteDevices.setTHCPID(uart1,"T",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"])
                                         ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["H"][0..-2].to_f/100.0*255)
                                         ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["C"][0..-2].to_f/100.0*255)
@@ -618,6 +621,33 @@ class TCUSampler
                                         
                                         @dutTempTripMin = @stepToWorkOn["TempConfig"]["TDUT"]["TripMin"]
                                         @dutTempTripMax = @stepToWorkOn["TempConfig"]["TDUT"]["TripMax"]
+                                        dutToolTip += "Tmin:#{@dutTempTripMin}C,&nbsp;Tmax:#{@dutTempTripMax}C&#10;"
+                                        dutToolTip += "Ttol+:#{@stepToWorkOn["TempConfig"]["TDUT"]["FlagTolP"]}C,&nbsp;Ttol-:#{@stepToWorkOn["TempConfig"]["TDUT"]["FlagTolN"]}C&#10;"
+
+                                        @stepToWorkOn["PsConfig"].each do |key, array|
+                                            if key == "IDUT"
+                                                dutToolTip += "Itol+:#{array["FlagTolP"]}A,&nbsp;Imax:#{array["TripMax"]}A&#10;"
+                                            end
+                                        end
+                                        
+                                        
+                                        dutToolTip += dutToolTipB
+                                        @samplerData.setDutToolTip(dutToolTip)
+
+                                        @stepToWorkOn["PsConfig"].each do |key, array|
+                                            if key[0] == "V"
+                                                toolTip = "Vnom:#{array["NomSet"]}V&#10;"
+                                                toolTip += "Vmin:#{array["TripMin"]}V,&nbsp;Vmax:#{array["TripMax"]}V&#10;"
+                                                toolTip += "Vtol-:#{array["FlagTolN"]}V,&nbsp;Vtol+:#{array["FlagTolP"]}V&#10;"
+                                                keyName = "I#{key[1..-1]}"
+                                                toolTip += "Itol+:#{@stepToWorkOn["PsConfig"][keyName]["FlagTolN"]}A,&nbsp;Imax:#{@stepToWorkOn["PsConfig"][keyName]["TripMax"]}A&#10;"
+                                                toolTip += "SeqU#:#{@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqUp"]},&nbsp;#{@stepToWorkOn["PsConfig"]["S"+key[1..-1]][PsSeqItem::SUDlyms]}ms&#10;"
+                                                toolTip += "SeqD#:#{@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqDown"]},&nbsp;#{@stepToWorkOn["PsConfig"]["S"+key[1..-1]][PsSeqItem::SDDlyms]}ms"
+                                                @samplerData.setPsToolTip(key[1..-1],toolTip)
+                                            end
+                                        end
+
+
                                         if (@dutTempTripMin<@dutTempTripMax) == false
                                             # Just make sure that these numbers are as stated @dutTempTripMin<@dutTempTripMax
                                             hold = @dutTempTripMin
@@ -2422,6 +2452,9 @@ class TCUSampler
     
     def checkDeadTcus(uart1)
         @tcusToSkip = Hash.new
+        if @setupAtHome
+            return # Don't check for Tcu status if we're running code at home.
+        end
         SharedLib.bbbLog "Searching for disabled TCUs aside the listed ones in '#{FaultyTcuList_SkipPolling}' file. #{__LINE__}-#{__FILE__}"
         ct = 0
         newDeadTcu = false
@@ -2525,7 +2558,7 @@ class TCUSampler
 
         @logRptAvgCt = 0
         @socketIp = nil
-    	@setupAtHome = false # So we can do some work at home
+    	@setupAtHome = true # So we can do some work at home
     	@initMuxValueFunc = false
     	@initpollAdcInputFunc = false
         @allDutTempTolReached = false

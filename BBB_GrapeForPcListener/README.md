@@ -18,7 +18,7 @@ vi /mnt/card/uEnv.txt
 - Set the time zone
 ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime
 
--Then insert the following line.
+-Then insert the following line.  No carriage return at the end of line?
 optargs=quiet capemgr.disable_partno=BB-BONELT-HDMI,BB-BONELT-HDMIN
 
 -Reboot the board:
