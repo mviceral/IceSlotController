@@ -669,7 +669,37 @@ class UserInterface
 		current = @sharedMem.getPsCurrent(muxData,eiPs,iIndexParam,labelParam)
 
 		cellColor = setBkColor(slotLabel2Param,"#6699aa")
-		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+		if cellColor == "#cccccc"
+if slotLabel2Param == "SLOT1"		
+	# puts "asfd #{__LINE__}-#{__FILE__}"
+end
+			toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+		else
+if slotLabel2Param == "SLOT1"		
+	# puts "asfd #{__LINE__}-#{__FILE__}"
+end
+			if @sharedMem.GetDispPsToolTip(slotLabel2Param).nil?
+if slotLabel2Param == "SLOT1"		
+	# puts "asfd #{__LINE__}-#{__FILE__}"
+end
+				toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+			else
+if slotLabel2Param == "SLOT1"		
+	# puts "asfd #{__LINE__}-#{__FILE__}"
+end
+				if @sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam].nil?
+if slotLabel2Param == "SLOT1"		
+	# puts "asfd #{__LINE__}-#{__FILE__}"
+end
+					toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+				else				
+if slotLabel2Param == "SLOT1"		
+	# puts "asfd #{__LINE__}-#{__FILE__} '#{@sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]}'"
+end
+					toBeReturned = "<table title=\"#{@sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+				end
+			end
+		end
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
 		toBeReturned += "<tr>"
 		toBeReturned += "	<td #{vStyleL} >
@@ -684,6 +714,7 @@ class UserInterface
 		return toBeReturned
 		# End of 'DutCell("S20",dut20[2])'
 	end
+	
 	
 	def getDutStyle(tOrI,lOrC,sValue,errorColor)
 		if errorColor.nil?
@@ -703,6 +734,7 @@ class UserInterface
 		end
 	end
 
+
 	def DutCell(slotLabel2Param, labelParam,rawDataParam)
 		muxData = @sharedMem.GetDispMuxData(slotLabel2Param)
 		current = SharedLib::getCurrentDutDisplay(muxData,rawDataParam)
@@ -715,12 +747,18 @@ class UserInterface
 		cellColor = setBkColor(slotLabel2Param,"#99bb11")
 		if tcuData == "---"
 			cellColor = "#B6B6B4"
+			enableToolTip = false
 		else
 			temperature = SharedLib.make5point2Format(tcuData.split(',')[2])
+			enableToolTip = true
 		end
 		# puts "rawDataParam=#{rawDataParam}, tcuData=#{tcuData} #{__LINE__}-#{__FILE__}"
 		
-		toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+		if enableToolTip
+			toBeReturned = "<table title=\"#{@sharedMem.GetDispDutToolTip(slotLabel2Param)}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+		else
+			toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+		end
 		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
 		toBeReturned += "<tr>"
 		
@@ -741,9 +779,11 @@ class UserInterface
 		toBeReturned += "</tr>"
 		toBeReturned += "<tr><td #{iStyleL}><font size=\"1\">Current</font></td><td #{iStyleC}><font size=\"1\">#{current} A</font></td></tr>"
 		toBeReturned += "</table>"
+		
 		return toBeReturned
 		# End of 'DutCell("S20",dut20[2])'
 	end
+
 
 	def getRows(dirParam)
 		repoDir = StepConfigFileFolder
