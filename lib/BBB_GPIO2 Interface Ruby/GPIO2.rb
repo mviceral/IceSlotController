@@ -180,16 +180,20 @@ class GPIO2
     
     
   
-  def initialize
-#@Removed comment to run on real machine
-  GPIOPin.new(:P8_45, :IN) 
-  GPIOPin.new(:P8_46, :IN) 
-  GPIOPin.new(:P8_43, :IN) 
-  GPIOPin.new(:P8_44, :IN) 
-  GPIOPin.new(:P8_41, :IN) 
-  GPIOPin.new(:P8_42, :IN) 
-  GPIOPin.new(:P8_39, :IN) 
-  GPIOPin.new(:P8_40, :IN) 
+    def initialize
+        begin
+            GPIOPin.new(:P8_45, :IN) 
+            GPIOPin.new(:P8_46, :IN) 
+            GPIOPin.new(:P8_43, :IN) 
+            GPIOPin.new(:P8_44, :IN) 
+            GPIOPin.new(:P8_41, :IN) 
+            GPIOPin.new(:P8_42, :IN) 
+            GPIOPin.new(:P8_39, :IN) 
+            GPIOPin.new(:P8_40, :IN) 
+            rescue => e
+                puts e.message  
+			    puts e.backtrace.inspect 
+        end
 
 #@Removed comment to run on real machine
     initPort2()

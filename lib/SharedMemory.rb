@@ -17,7 +17,9 @@ class SharedMemory
     include DRb::DRbUndumped
 #    include SharedMemoryExtension
 #    include Singleton
-    
+
+    PsToolTip = "PsToolTip"
+    DutToolTip = "DutToolTip"    
     Mode = "Mode"
     Cmd = "Cmd"
     CmdProcessed = "CmdProcessed"
@@ -711,7 +713,8 @@ class SharedMemory
 		else
 			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = nil
 		end
-		
+		ds[SharedLib::PC][slotOwnerParam][PsToolTip] = hash[PsToolTip]
+		ds[SharedLib::PC][slotOwnerParam][DutToolTip] = hash[DutToolTip]
 		ds[SharedLib::PC][slotOwnerParam][ErrorColor] = hash[ErrorColor]
 		ds[SharedLib::PC][slotOwnerParam][StopMessage] = hash[StopMessage]
 
@@ -1197,6 +1200,34 @@ class SharedMemory
         # puts "@setData.length=#{@setData.length}"
         # gets
         # puts "writeAndFreeLocked(@setData) = #{writeAndFreeLocked(@setData)}"
+    end
+
+    def GetDispDutToolTip(slotLabel2Param)
+		return getMemory()[SharedLib::PC][slotLabel2Param][DutToolTip]
+    end
+    
+    def getDutToolTip()
+        return getMemory()[DutToolTip]
+    end
+    def setDutToolTip(dataParam)
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        ds[DutToolTip] = dataParam
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+    end
+    
+    def GetDispPsToolTip(slotLabel2Param)
+		return getMemory()[SharedLib::PC][slotLabel2Param][PsToolTip]
+    end
+    def getPsToolTip()
+        return getMemory()[PsToolTip]
+    end
+    def setPsToolTip(psParam,dataParam)
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        if ds[PsToolTip].nil?
+            ds[PsToolTip] = Hash.new
+        end
+        ds[PsToolTip][psParam] = dataParam
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
 =begin    
