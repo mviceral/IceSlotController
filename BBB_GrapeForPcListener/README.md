@@ -15,16 +15,19 @@ mkdir /mnt/card
 mount /dev/mmcblk0p1 /mnt/card
 vi /mnt/card/uEnv.txt
 
-- Set the time zone
-ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime
-
 -Then insert the following line.
 optargs=quiet capemgr.disable_partno=BB-BONELT-HDMI,BB-BONELT-HDMIN
 
 -Reboot the board:
 shutdown -r now
 
+- Set the time zone
+ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime
+
 #
 # To setup the static ip address of BBB
 # Read up on http://www.mathworks.com/help/simulink/ug/getting-the-beagleboard-ip-address.html
 #
+
+# To update to the latest ruby so the SPI would run, do the command below.
+\curl -sSL https://get.rvm.io | bash -s stable --ruby
