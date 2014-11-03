@@ -87,11 +87,30 @@ class UserInterface
 	end
 
 	def getBoardIp(slotParam, fromParam)
-		if @slotToIp.nil? # || @slotToIp[slotParam].nil? ||@slotToIp[slotParam].length == 0
+		if @slotToIp.nil?
 			@slotToIp = Hash.new
-			#@slotToIp[SharedLib::SLOT1] = "192.168.1.211"
-			@slotToIp[SharedLib::SLOT2] = "192.168.1.212"
-			#@slotToIp[SLOT3] = ""
+
+			# Read the IP addresses from the file.
+			lenOfStrToLookInto = "SLOT1 IP".length
+  		File.open("../Mosys ICEngInc.config", "r") do |f|
+  			f.each_line do |line|
+#  				puts "line='#{line}' #{__LINE__}-#{__FILE__}"
+					if line[0..(lenOfStrToLookInto-1)] == "SLOT1 IP"
+						@slotToIp[SharedLib::SLOT1] = line[(lenOfStrToLookInto+1)..-1].strip
+					elsif line[0..(lenOfStrToLookInto-1)] == "SLOT2 IP"
+						@slotToIp[SharedLib::SLOT2] = line[(lenOfStrToLookInto+1)..-1].strip
+					elsif line[0..(lenOfStrToLookInto-1)] == "SLOT3 IP"
+						@slotToIp[SharedLib::SLOT3] = line[(lenOfStrToLookInto+1)..-1].strip
+			    end
+  			end
+  		end
+=begin  		
+  		@slotToIp.each do |key, array|
+				puts "#{key}-----"
+				puts array
+			end
+			SharedLib.pause "Checking values of @slotToIp","#{__LINE__}-#{__FILE__}"
+=end			
 		end
 		# puts "slotParam='#{slotParam}' @slotToIp='#{@slotToIp}' fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
 		return @slotToIp[slotParam]
@@ -514,6 +533,8 @@ class UserInterface
 		# puts "About to send to the Board. #{__LINE__}-#{__FILE__}"
 		# exit
 		begin
+			puts "LoadConfig on IP='#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}'"
+			
 			@response = 
 		    RestClient.post "#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
 			puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
@@ -2353,10 +2374,10 @@ end
 		# Make sure that the sequence order are unique such that there are no same sequence number in the sequence
 		# vice it's a zero.
 		#
-		seqUpCol = 5 #6
-		seqUpDlyMsCol = 6 #7
-		seqDownCol = 7 #8
-		seqDownDlyMsCol = 8 #9
+		seqUpCol = 5
+		seqUpDlyMsCol = 6
+		seqDownCol = 7
+		seqDownDlyMsCol = 8
 		sequenceUpHash = Hash.new
 		sequenceDownHash = Hash.new
 		@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
