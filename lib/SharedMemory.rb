@@ -33,7 +33,8 @@ class SharedMemory
 	AlarmWait = "Alarm Wait"
 	AutoRestart = "Auto Restart"
 	StopOnTolerance = "Stop on Tolerance"
-
+	LoggingInt = "Log Int"
+	
 	# For the color flags for the GUI.
 	DontSendErrorColor = true
 	CurrentState = "CurrentState"

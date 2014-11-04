@@ -610,7 +610,7 @@ class UserInterface
 		bkcolor = setBkColor(slotLabel2Param,"#6699aa")
 		toBeReturned = "<table bgcolor=\"#{bkcolor}\" width=\"#{cellWidth}\">"
 		toBeReturned += "<tr><td><font size=\"1\">P5V</font></td><td><font size=\"1\">#{posVolt}V</font></td></tr>"
-		toBeReturned += "<tr><td><font size=\"1\">N5V</font></td><td><font size=\"1\">#{negVolt}V</font></td></tr>"
+		toBeReturned += "<tr><td><font size=\"1\">N5V</font></td><td><font size=\"1\">-#{negVolt}V</font></td></tr>"
 		toBeReturned += "<tr><td><font size=\"1\">P12V</font></td><td><font size=\"1\">#{largeVolt}V</font></td></tr>"
 		toBeReturned += "</table>"
 		return toBeReturned
@@ -2121,6 +2121,10 @@ end
 			end
 
 			if mustBeNumber(configFileName,8+offset,config,SharedMemory::AlarmWait) == false
+					return false
+			end
+			
+			if mustBeNumber(configFileName,8+offset,config,SharedMemory::LoggingInt) == false
 					return false
 			end
 			

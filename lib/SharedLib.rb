@@ -215,43 +215,46 @@ class SharedLib
 
 	def stepConfigFileTemplate
 		return "Item,Name,Description,Type,Value
-		,Pretest (site identification),,T,STRING
-		1,Power Supplies,PS Config For Pretest.ps_config,File,
+		,Pretest ( site identification),,T,STRING
+		1,Power Supplies,PS Config For Pretest.ps_config,File, 
 		2,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		3,DUT Site Activation Min Current File ,SiteMin.mincurr_config,File,
+		3,DUT Site Activation Min Current File ,SiteMin.minCurr_config,File, 
 		,Step Name,File Name A ,N,1
-		1,Power Supplies,PS Config A.ps_config,File,
-		2,Temperature,TMP File Name Z,File,
+		1,Power Supplies,V0=1.095V V1=1.08V V3=1.115V V7=1.120V and V2=V4=2.1V.ps_config,File, 
+		2,Temperature,BE2_temp_Room.temp_config,File, 
 		3,Step Name,Step Name,T,STRING
-		4,TIME,STEP TIME,M,2400
-		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10
+		4,TIME,STEP TIME,M,2
+		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,0.25
 		6,Alarm Wait,WAIT TIME ON ALARM,M,1
-		7,Auto Restart,Auto restart,B,1
-		8,Stop on Tolerance,Stop on tolerance limit,B,0
-		9,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		10,Next Step,Next Step Name 'B',T,STRING
+		7,Log Int,Logging interval,M,5
+		8,Auto Restart,Auto restart,B,1
+		9,Stop on Tolerance,Stop on tolerance limit,B,0
+		10,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
+		11,Next Step,Next Step Name 'B',T,STRING
 		,Step Name,File Name B,N,2
-		1,Power Supplies,PS Config B.ps_config,File,
-		2,Temperature,TMP File Name Z,File,
+		1,Power Supplies,V0=1.095V V1=1.08V V3=1.115V V7=1.120V and V2=V4=2.1V.ps_config,File, 
+		2,Temperature,BE2_temp_Room.temp_config,File, 
 		3,Step Name,Step Name,T,STRING
-		4,TIME,STEP TIME,M,2400
-		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10
+		4,TIME,STEP TIME,M,2
+		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,0.25
 		6,Alarm Wait,WAIT TIME ON ALARM,M,1
-		7,Auto Restart,Auto restart,B,1
-		8,Stop on Tolerance,Stop on tolerance limit,B,0
-		9,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		10,Next Step,Next Step Name 'C',T,STRING
+		7,Log Int,Logging interval,M,5
+		8,Auto Restart,Auto restart,B,1
+		9,Stop on Tolerance,Stop on tolerance limit,B,0
+		10,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
+		11,Next Step,Next Step Name 'C',T,STRING
 		,Step Name,File Name C,N,3
-		1,Power Supplies,PS Config C.ps_config,File,
-		2,Temperature,TMP File Name Z,File,
+		1,Power Supplies,V0=1.095V V1=1.08V V3=1.115V V7=1.120V and V2=V4=2.1V.ps_config,File, 
+		2,Temperature,BE2_temp_Room.temp_config,File, 
 		3,Step Name,Step Name,T,STRING
-		4,TIME,STEP TIME,M,2400
-		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,10
+		4,TIME,STEP TIME,M,2
+		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,0.25
 		6,Alarm Wait,WAIT TIME ON ALARM,M,1
-		7,Auto Restart,Auto restart,B,1
-		8,Stop on Tolerance,Stop on tolerance limit,B,0
-		9,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		10,Next Step,Next Step Name 'END',T,STRING
+		7,Log Int,Logging interval,M,5
+		8,Auto Restart,Auto restart,B,1
+		9,Stop on Tolerance,Stop on tolerance limit,B,0
+		10,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
+		11,Next Step,Next Step Name 'C',T,STRING
 		,if Condition,Count >= 10 END,F,FUNCTION
 		,Count ++,incrament count,F,FUNCTION"
 	end
