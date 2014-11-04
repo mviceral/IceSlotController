@@ -155,7 +155,7 @@ class UserInterface
 				slotConfigStep = getSlotConfigStep(stepName)
 				slotConfigStep[itemNameParam] = stepTime
 			end
-			ct += 11
+			ct += @totalRowsToLookAt
 			# End of 'while ct < config.length do' 
 		end
 		return true
@@ -195,7 +195,7 @@ class UserInterface
 					# puts "itemNameParam='#{itemNameParam}'"
 				end
 			end				
-			ct += 11
+			ct += @totalRowsToLookAt
 			# End of 'while ct < config.length do' 
 		end
 		return true
@@ -1882,6 +1882,7 @@ end
 			# We're going to parse a step file.  Hard code settings:  "Item","Name","Description","Type","Value" are
 			# starting on row 2, col A if viewed from Excel.
 			#
+			@totalRowsToLookAt = 12
 			row = 0
 			colContent = config[row].split(",")
 			if (colContent[0].upcase.strip != "ITEM")
@@ -1995,7 +1996,7 @@ end
 					end				
 					valueCounter += 1
 				end
-				ct += 11
+				ct += @totalRowsToLookAt
 			end
 			
 			#
@@ -2034,7 +2035,7 @@ end
 						uniqueStepNames[colContent] = "nn" # nn - not nil.
 					end
 				end				
-				ct += 11
+				ct += @totalRowsToLookAt
 			end
 			
 			#
@@ -2060,7 +2061,7 @@ end
 						end
 					end
 				end
-				ct += 11
+				ct += @totalRowsToLookAt
 			end
 
 			
@@ -2101,7 +2102,7 @@ end
 						end
 					end
 				end
-				ct += 11
+				ct += @totalRowsToLookAt
 			end
 						
 			#
@@ -2124,7 +2125,7 @@ end
 					return false
 			end
 			
-			if mustBeNumber(configFileName,8+offset,config,SharedMemory::LoggingInt) == false
+			if mustBeNumber(configFileName,9+offset,config,SharedMemory::LoggingInt) == false
 					return false
 			end
 			
@@ -2132,11 +2133,11 @@ end
 			# Make sure that 'Auto Restart' and 'Stop on Tolerance' are boolean (1 or 0)
 			#
 
-			if mustBeBoolean(configFileName,9+offset,config,SharedMemory::AutoRestart) == false
+			if mustBeBoolean(configFileName,10+offset,config,SharedMemory::AutoRestart) == false
 					return false
 			end
 						
-			if mustBeBoolean(configFileName,10+offset,config,SharedMemory::StopOnTolerance) == false
+			if mustBeBoolean(configFileName,11+offset,config,SharedMemory::StopOnTolerance) == false
 					return false
 			end
 			
@@ -2198,7 +2199,7 @@ end
 				#
 				# How are we going to inform the user that the file is not a good one?
 				#
-				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{SharedLib.makeUriFriendly(colContent)}"
 				@redirectErrorFaultyPsConfig = redirectWithError
 				return false
 			end
@@ -2270,7 +2271,7 @@ end
 				#
 				# How are we going to inform the user that the file is not a good one?
 				#
-				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{colContent}"
+				@redirectWithError += "&ErrInFile=#{SharedLib.makeUriFriendly(fileNameParam)}&ErrRow=#{(ct+2)}&ErrCol=3&ErrName=#{SharedLib.makeUriFriendly(colContent)}"
 				@redirectErrorFaultyPsConfig = redirectWithError
 				return false
 			end
@@ -2404,7 +2405,7 @@ end
 				# How are we going to inform the user that the file is not a good one?
 				#
 				@redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
-				@redirectWithError += "&ErrRow=#{ct+1}&ErrCol=3&ErrName=#{colContent}"
+				@redirectWithError += "&ErrRow=#{ct+1}&ErrCol=3&ErrName=#{SharedLib.makeUriFriendly(colContent)}"
 				return false
 			end
 			ct += 1
