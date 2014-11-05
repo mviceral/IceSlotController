@@ -1,9 +1,9 @@
 ruby killRubyCodes.rb
 pushd ./lib/DRbSharedMemory/
-ruby Server.rb & 
+bash runSharedMemory.sh &
 popd
 pushd ./BBB_GrapeForPcListener/
-rackup config.ru & 
+bash runBoardGrape.sh &
 popd
 pushd ./BBB_Sampler/
 bash runSampler.sh & 
