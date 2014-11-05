@@ -1558,7 +1558,7 @@ class TCUSampler
         # secs =  (@samplerData.GetStepTimeLeft()-mins*60.0).to_i
         tbs = ""
         # tbs += "Log Time Left: #{SharedLib::makeTime2colon2Format(mins,secs)} (mm:ss)\n"
-        tbs += "Log Time: #{Time.new.inspect}\n"
+        tbs += "Interval Log: system time - #{Time.new.inspect}\n"
         tbs += "#{DutNum}|#{DutStatus}|#{DutTemp}|#{DutCurrent}|#{DutHeatDuty}|#{DutCoolDuty}|#{DutControllerTemp}|\n"
         dutCt = 0
         # tbs += "eiPs=#{eiPs}\n"
@@ -1666,7 +1666,7 @@ class TCUSampler
         if @isOkToLog
             mins =  (@samplerData.GetStepTimeLeft()/60.0).to_i
             secs =  (@samplerData.GetStepTimeLeft()-mins*60.0).to_i
-            tbs += "Log Time Left: #{SharedLib.makeTime2colon2Format(mins,secs)} (mm:ss)\n"
+            tbs += "\nSystem state snapshot:  step time left - #{SharedLib.makeTime2colon2Format(mins,secs)} (mm:ss)\n"
             tbs += "#{DutNum}|#{DutStatus}|#{DutTemp}|#{DutCurrent}|#{DutHeatDuty}|#{DutCoolDuty}|#{DutControllerTemp}\n"
             dutCt = 0
             muxData = @samplerData.GetDataMuxData("#{__LINE__}-#{__FILE__}")
@@ -1855,12 +1855,12 @@ class TCUSampler
     end
     
     def is2ndFault(key2,unit,tripMin,actualValue,tripMax)        
-        tbsParam = "Possible error - #{key2} out of bound trip points.  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} failed." # tbs - to be sent
+        tbsParam = "Possible error - #{key2} out of bound trip points.  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} failed.  If 2nd reading is at fault, system will shutdown." # tbs - to be sent
         return is2ndFaultBase(key2,unit,tripMin,actualValue,tripMax,tbsParam)
     end
     
     def is2ndFaultDut(key2,dutCt,unit,tripMin,actualValue,tripMax)        
-        tbsParam = "Possible error - DUT##{dutCt} out of bound trip points.  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} failed." # tbs - to be sent
+        tbsParam = "Possible error - DUT##{dutCt} out of bound trip points.  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} failed.  If 2nd reading is at fault, system will shutdown." # tbs - to be sent
         return is2ndFaultBase(key2,unit,tripMin,actualValue,tripMax,tbsParam)
     end
 
