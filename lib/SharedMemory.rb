@@ -438,7 +438,7 @@ class SharedMemory
 							writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 						end
 						rescue Exception => e
-							puts "e.message=#{e.message }"
+							puts "e.message=#{e.message } #{__LINE__}-#{__FILE__}"
 					end
 				end
 			end

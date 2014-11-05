@@ -670,32 +670,32 @@ class UserInterface
 
 		cellColor = setBkColor(slotLabel2Param,"#6699aa")
 		if cellColor == "#cccccc"
-if slotLabel2Param == "SLOT1"		
-	# puts "asfd #{__LINE__}-#{__FILE__}"
-end
+			# if slotLabel2Param == "SLOT1"		
+				# puts "asfd #{__LINE__}-#{__FILE__}"
+			# end
 			toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		else
-if slotLabel2Param == "SLOT1"		
-	# puts "asfd #{__LINE__}-#{__FILE__}"
-end
+			# if slotLabel2Param == "SLOT1"		
+				# puts "asfd #{__LINE__}-#{__FILE__}"
+			# end
 			if @sharedMem.GetDispPsToolTip(slotLabel2Param).nil?
-if slotLabel2Param == "SLOT1"		
-	# puts "asfd #{__LINE__}-#{__FILE__}"
-end
+				# if slotLabel2Param == "SLOT1"		
+					# puts "asfd #{__LINE__}-#{__FILE__}"
+				# end
 				toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 			else
-if slotLabel2Param == "SLOT1"		
-	# puts "asfd #{__LINE__}-#{__FILE__}"
-end
+				#if slotLabel2Param == "SLOT1"		
+					# puts "asfd #{__LINE__}-#{__FILE__}"
+				#end
 				if @sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam].nil?
-if slotLabel2Param == "SLOT1"		
-	# puts "asfd #{__LINE__}-#{__FILE__}"
-end
+					if slotLabel2Param == "SLOT1"		
+						# puts "asfd #{__LINE__}-#{__FILE__}"
+					end
 					toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 				else				
-if slotLabel2Param == "SLOT1"		
-	# puts "asfd #{__LINE__}-#{__FILE__} '#{@sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]}'"
-end
+					if slotLabel2Param == "SLOT1"		
+						# puts "asfd #{__LINE__}-#{__FILE__} '#{@sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]}'"
+					end
 					toBeReturned = "<table title=\"#{@sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 				end
 			end
@@ -745,17 +745,33 @@ end
 			tcuData = "---"
 		end
 		cellColor = setBkColor(slotLabel2Param,"#99bb11")
+		splittedData = nil
 		if tcuData == "---"
 			cellColor = "#B6B6B4"
 			enableToolTip = false
 		else
-			temperature = SharedLib.make5point2Format(tcuData.split(',')[2])
+			splittedData = tcuData.split(',')
+			temperature = SharedLib.make5point2Format(splittedData[2])
 			enableToolTip = true
 		end
 		# puts "rawDataParam=#{rawDataParam}, tcuData=#{tcuData} #{__LINE__}-#{__FILE__}"
 		
 		if enableToolTip
-			toBeReturned = "<table title=\"#{@sharedMem.GetDispDutToolTip(slotLabel2Param)}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+			# We need to get the Heating or Cooling state of the dut and the PWM value.
+			if @sharedMem.GetDispDutToolTip(slotLabel2Param).nil? == false && @sharedMem.GetDispDutToolTip(slotLabel2Param).length > 0
+				toDisplay = "PWM:"
+				if splittedData[3] == "0"
+					toDisplay += "H@"+splittedData[4]
+				else
+					toDisplay += "C@"+splittedData[4]
+				end
+				toDisplay += "&#10;#{@sharedMem.GetDispDutToolTip(slotLabel2Param)}"
+				# puts "slotLabel2Param='#{slotLabel2Param}' splittedData=#{splittedData}, tcuData='#{tcuData}' #{__LINE__}-#{__FILE__}"
+			else
+				toDisplay = ""
+			end
+			toBeReturned = "<table title=\"#{toDisplay}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+			# toBeReturned = "<table title=\"#{@sharedMem.GetDispDutToolTip(slotLabel2Param)}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		else
 			toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		end
