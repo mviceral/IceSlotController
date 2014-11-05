@@ -35,7 +35,13 @@ class DutObj
     def self.getTcuStatus(dutNumParam,uart1Param,gPIO2,singleCharParam)
         # puts "SetupAtHome='#{SetupAtHome}' #{__LINE__}-#{__FILE__}"
         if SetupAtHome
-            return "@1,33.156,70.619,0,76,Ok"
+            heating = "0"
+            rValue = Random.rand(100)+1
+            if (rValue) > 50
+                heating = "1"
+            end
+            # puts "rValue='#{rValue}', heating='#{heating}' #{__LINE__}-#{__FILE__}"
+            return "@1,33.156,70.619,#{heating},#{Random.rand(256)},Ok"
         end
         gPIO2.etsRxSel(dutNumParam)
         tbr = "" # tbr - to be returned

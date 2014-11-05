@@ -914,7 +914,7 @@ class TCUSampler
             end
             
             if (flagTolP <= actualValue && actualValue <= flagTolN) == false
-                reportToLogFile("NOTICE - #{key2} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed..\n");
+                reportToLogFile("NOTICE - #{key2} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.");
                 setErrorColorFlag(key2,SharedMemory::OrangeFlag,"#{__LINE__}-#{__FILE__}")
 
                 if (tripMin <= actualValue && actualValue <= tripMax) == false
@@ -922,7 +922,7 @@ class TCUSampler
                         setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                         # Turn on red light and buzzer and make it blink due to shutdown
                         setToAlarmMode()
-                        reportToLogFile("ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.\n")
+                        reportToLogFile("ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
                         @samplerData.setStopMessage("Trip Point Error. Stopped.")
                         setErrorColorFlag(key2,SharedMemory::RedFlag,"#{__LINE__}-#{__FILE__}")
 
@@ -1855,12 +1855,12 @@ class TCUSampler
     end
     
     def is2ndFault(key2,unit,tripMin,actualValue,tripMax)        
-        tbsParam = "Possible error - #{key2} out of bound trip points.  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} failed.\n" # tbs - to be sent
+        tbsParam = "Possible error - #{key2} out of bound trip points.  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} failed." # tbs - to be sent
         return is2ndFaultBase(key2,unit,tripMin,actualValue,tripMax,tbsParam)
     end
     
     def is2ndFaultDut(key2,dutCt,unit,tripMin,actualValue,tripMax)        
-        tbsParam = "Possible error - DUT##{dutCt} out of bound trip points.  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} failed.\n" # tbs - to be sent
+        tbsParam = "Possible error - DUT##{dutCt} out of bound trip points.  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} failed." # tbs - to be sent
         return is2ndFaultBase(key2,unit,tripMin,actualValue,tripMax,tbsParam)
     end
 
@@ -2128,7 +2128,7 @@ class TCUSampler
             						# puts "dutI#{ct} :tripMin='#{tripMin}' flagTolP='#{flagTolP}' actualValue='#{actualValue}' flagTolN='#{flagTolN}' tripMax='#{tripMax}' #{__LINE__}-#{__FILE__}"
                                     actualValue = SharedLib.getCurrentDutDisplay(muxData,"#{ct}").to_f
                                     if (flagTolP <= actualValue && actualValue <= flagTolN) == false
-                                        reportToLogFile("NOTICE - IDUT#{ct} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.\n")
+                                        reportToLogFile("NOTICE - IDUT#{ct} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.")
                                         setDutErrorColorFlag(key2,ct,SharedMemory::OrangeFlag)
 
                                         # actualValue = testBadMeasForTripPts("#{key2}#{ct}",actualValue,"#{__LINE__}-#{__FILE__}")
@@ -2136,7 +2136,7 @@ class TCUSampler
                                             if is2ndFaultDut("#{key2}#{ct}",ct,unit,tripMin,actualValue,tripMax)
                                                 setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                                                 setToAlarmMode()
-                                                reportToLogFile("ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.\n")
+                                                reportToLogFile("ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.")
                                                 @samplerData.setStopMessage("Trip Point Error. Stopped.")
                                                 setDutErrorColorFlag(key2,ct,SharedMemory::RedFlag)
                                                 # ct = 24 # break out of the loop.
@@ -2236,7 +2236,7 @@ class TCUSampler
                         	                splitted = @tcuData["#{dutCt}"].split(',')
                         					actualValue = SharedLib::make5point2Format(splitted[2]).to_f
                                             if (flagTolP <= actualValue && actualValue <= flagTolN) == false
-                                                reportToLogFile("NOTICE - DUT##{dutCt} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.\n")
+                                                reportToLogFile("NOTICE - DUT##{dutCt} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed.")
                                                 setDutErrorColorFlag(key2,dutCt,SharedMemory::OrangeFlag)
 
                                                 # actualValue = testBadMeasForTripPts("#{key2}#{dutCt}",actualValue,"#{__LINE__}-#{__FILE__}")
@@ -2247,7 +2247,7 @@ class TCUSampler
     
                                                         # Turn on red light and buzzer and make it blink due to shutdown
                                                         setToAlarmMode()
-                                                        reportToLogFile("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.\n") # tbs - to be sent
+                                                        reportToLogFile("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE.") # tbs - to be sent
                                                         @samplerData.setStopMessage("Trip Point Error. Stopped.")
                                                         setDutErrorColorFlag(key2,dutCt,SharedMemory::RedFlag)
                                                         return
