@@ -914,7 +914,7 @@ class SharedMemory
         
         errItem = Array.new
         errItem.push(errMsgParam)
-        errItem.push("#{timeOfErrorParam.inspect} (timeOfErrorParam.to_f)")
+        errItem.push("#{timeOfErrorParam.inspect}")
         
         ds[SharedLib::ErrorMsg].push(errItem)
         # PP.pp(ds[SharedLib::ErrorMsg])
