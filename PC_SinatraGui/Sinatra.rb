@@ -1043,6 +1043,8 @@ class UserInterface
 		elsif @sharedMem.GetDispAllStepsDone_YesNo(slotLabel2Param) == SharedLib::Yes &&
 				@sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? == false &&
 				@sharedMem.GetDispConfigurationFileName(slotLabel2Param).length > 0
+				
+				# Put the code here to chop up the log file if it's over 10meg in size.
 			topTable += "
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>ALL STEPS COMPLETE</td></tr>
 				 			<tr>
