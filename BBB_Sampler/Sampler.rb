@@ -2678,7 +2678,7 @@ class TCUSampler
                 stepNum = @stepToWorkOn[StepNum]
             end
             
-            if @samplerData.GetConfigurationFileName().length>0
+            if @samplerData.GetConfigurationFileName().nil? == false && @samplerData.GetConfigurationFileName().length>0
                 cfgName = "Yes"
             else
                 cfgName = "No"
