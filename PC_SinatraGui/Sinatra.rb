@@ -466,7 +466,7 @@ class UserInterface
 
 		fileName = getSlotProperties()["FileName"]
 		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
-		genFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,slotOwnerParam)
+		genFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,SharedLib.getBibID(slotOwnerParam))
 		settingsFileName =  genFileName+".log"
 		recipeStepFile = "../steps config file repository/#{fileName}"
 		recipeLastModified = File.mtime(recipeStepFile)
@@ -486,16 +486,15 @@ class UserInterface
 		ct = 0
 		while ct < config.length 
 			colContent = config[ct].split(":")
-			if colContent[0] == "Oven ID"
+			if colContent[0] == "System ID"
 				oven = colContent[1].chomp
 				oven = oven.strip
-			elsif colContent[0] == "#{slotOwnerParam} BIB#"
-				bibID = colContent[1].chomp
-				bibID = bibID.strip
 			end
 			ct += 1
 		end
-		writeToSettingsLog("System: #{oven}, Slot: #{slotOwnerParam}",settingsFileName)
+		bibID = SharedLib.getBibID(slotOwnerParam)
+		# writeToSettingsLog("System: #{oven}, Slot: #{slotOwnerParam}",settingsFileName)
+		writeToSettingsLog("System: #{oven}",settingsFileName)
 		writeToSettingsLog("BIB#: #{bibID}",settingsFileName)
 
 =begin
@@ -871,7 +870,11 @@ class UserInterface
 		return slotLabelParam.delete(' ')
 	end
 	
-	def GetSlotDisplay(slotLabelParam,slotLabel2Param)
+	def GetSlotDisplay(slotLabel2Param)
+		GetSlotDisplaySub("BIB#-#{SharedLib.getBibID(slotLabel2Param)}",slotLabel2Param)
+	end
+	
+	def GetSlotDisplaySub(slotLabelParam,slotLabel2Param)
 		setSlotOwner(slotLabel2Param)
 		getSlotDisplay_ToBeReturned = ""
 		getSlotDisplay_ToBeReturned += 	
@@ -1397,9 +1400,9 @@ end
 	<div id=\"myDiv\">
 	
 	<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
-		<tr><td><center>"+GetSlotDisplay("SLOT 1","SLOT1")+"</center></td></tr>
-		<tr><td><center>"+GetSlotDisplay("SLOT 2","SLOT2")+"</center></td></tr>
-		<tr><td><center>"+GetSlotDisplay("SLOT 3","SLOT3")+"</center></td></tr>
+		<tr><td><center>"+GetSlotDisplay("SLOT1")+"</center></td></tr>
+		<tr><td><center>"+GetSlotDisplay("SLOT2")+"</center></td></tr>
+		<tr><td><center>"+GetSlotDisplay("SLOT3")+"</center></td></tr>
 	</table>"
 		return displayForm
 		# end of 'def display'
@@ -2881,4 +2884,4 @@ get '/AckError' do
 	redirect "../"
 end
 
-# at 1177
+# at 1400
