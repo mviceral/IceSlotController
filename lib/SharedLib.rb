@@ -226,7 +226,7 @@ class SharedLib
 		4,TIME,STEP TIME,M,2
 		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,0.25
 		6,Alarm Wait,WAIT TIME ON ALARM,M,1
-		7,Log Int,Logging interval,M,5
+		7,Log Int,Logging interval,M,5		
 		8,Auto Restart,Auto restart,B,1
 		9,Stop on Tolerance,Stop on tolerance limit,B,0
 		10,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
