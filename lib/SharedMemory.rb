@@ -1217,11 +1217,13 @@ class SharedMemory
     end
     
     def GetDispPsToolTip(slotLabel2Param)
-		return getMemory()[SharedLib::PC][slotLabel2Param][PsToolTip]
+			return getMemory()[SharedLib::PC][slotLabel2Param][PsToolTip]
     end
+    
     def getPsToolTip()
         return getMemory()[PsToolTip]
     end
+    
     def setPsToolTip(psParam,dataParam)
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
         if ds[PsToolTip].nil?

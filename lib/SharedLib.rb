@@ -326,7 +326,7 @@ class SharedLib
 			end
 			ct += 1
 		end
-		return "#{slotOwnerParam}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{tbsubmitted}"
+		return "iceLog_brd#{slotOwnerParam}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{tbsubmitted}"
 	end
   
   def makeUriFriendly(stringParam)  
@@ -431,6 +431,38 @@ class SharedLib
         end
         return shours+":"+smin
     end
+
+	def setBibID(colContent,slotOwnerParam)
+			if colContent[0] == "#{slotOwnerParam} BIB#"
+				bibID = colContent[1].chomp
+				bibID = bibID.strip
+				@bibId[slotOwnerParam] = bibID
+			end
+	end
+	
+	def getBibID(slotOwnerParam)
+		if @bibId.nil?
+			@bibId = Hash.new
+			config = Array.new
+			File.open("../Mosys ICEngInc.config", "r") do |f|
+				f.each_line do |line|
+					config.push(line)
+				end			
+			end
+		
+			# Parse each lines and mind the information we need for the report.
+			ct = 0
+			while ct < config.length 
+				colContent = config[ct].split(":")
+				setBibID(colContent,"SLOT1")
+				setBibID(colContent,"SLOT2")
+				setBibID(colContent,"SLOT3")
+				ct += 1
+			end
+		end
+		return @bibId[slotOwnerParam]
+	end
+
 
     class << self
         extend Forwardable

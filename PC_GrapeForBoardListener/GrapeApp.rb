@@ -80,20 +80,20 @@ module MigrationCount
 						if data[SharedMemory::LogInfo].nil? == false
 							# Handle the logging information first.
 							arrData = data[SharedMemory::LogInfo]							
-							puts "arrData.class = #{arrData.class}, arrData.length='#{arrData.length}' #{__LINE__}-#{__FILE__}"
+							# puts "arrData.class = #{arrData.class}, arrData.length='#{arrData.length}' #{__LINE__}-#{__FILE__}"
 							arrData.each {
 								|hashX|
-							puts "x hash=#{hash} #{__LINE__}-#{__FILE__}"
+								# puts "x hash=#{hash} #{__LINE__}-#{__FILE__}"
 								hash = JSON.parse(hashX)
 								# The sent data is a log data.  Write it to file							
 								configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
-puts "hash[SharedLib::ConfigDateUpload]='#{hash[SharedLib::ConfigDateUpload]}'. #{__LINE__}-#{__FILE__}"
+								# puts "hash[SharedLib::ConfigDateUpload]='#{hash[SharedLib::ConfigDateUpload]}'. #{__LINE__}-#{__FILE__}"
 								fileName = hash[SharedLib::ConfigurationFileName]
-puts "hash[SharedLib::ConfigurationFileName]='#{hash[SharedLib::ConfigurationFileName]}' #{__LINE__}-#{__FILE__}"
+								# puts "hash[SharedLib::ConfigurationFileName]='#{hash[SharedLib::ConfigurationFileName]}' #{__LINE__}-#{__FILE__}"
 								slotOwnerParam = hash[SharedLib::SlotOwner]
-puts "hash[SharedLib::SlotOwner]='#{hash[SharedLib::SlotOwner]}' #{__LINE__}-#{__FILE__}"
-								dBaseFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,slotOwnerParam)+".log"		
-puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
+								# puts "hash[SharedLib::SlotOwner]='#{hash[SharedLib::SlotOwner]}' #{__LINE__}-#{__FILE__}"
+								dBaseFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,SharedLib.getBibID(slotOwnerParam))+".log"		
+								puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
 								# puts "dBaseFileName = #{dBaseFileName} #{__LINE__}-#{__FILE__}"
 								# puts "hash[SharedLib::DataLog]: #{__LINE__}-#{__FILE__}/n#{hash[SharedLib::DataLog]}"
 								`cd #{directory}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
