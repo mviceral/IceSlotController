@@ -216,12 +216,12 @@ class SharedLib
 	def stepConfigFileTemplate
 		return "Item,Name,Description,Type,Value
 		,Pretest ( site identification),,T,STRING
-		1,Power Supplies,PS Config For Pretest.ps_config,File, 
+		1,Power Supplies,PS Config For Pretest.ps_config,File,
 		2,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
-		3,DUT Site Activation Min Current File ,SiteMin.minCurr_config,File, 
+		3,DUT Site Activation Min Current File ,SiteMin.minCurr_config,File,
 		,Step Name,File Name A ,N,1
-		1,Power Supplies,V0=1.095V V1=1.08V V3=1.115V V7=1.120V and V2=V4=2.1V.ps_config,File, 
-		2,Temperature,BE2_temp_Room.temp_config,File, 
+		1,Power Supplies,V0=1.095V V1=1.08V V3=1.115V V7=1.120V and V2=V4=2.1V.ps_config,File,
+		2,Temperature,BE2_temp_Room.temp_config,File
 		3,Step Name,Step Name,T,STRING
 		4,TIME,STEP TIME,M,2
 		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,0.25
@@ -232,8 +232,8 @@ class SharedLib
 		10,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
 		11,Next Step,Next Step Name 'B',T,STRING
 		,Step Name,File Name B,N,2
-		1,Power Supplies,V0=1.095V V1=1.08V V3=1.115V V7=1.120V and V2=V4=2.1V.ps_config,File, 
-		2,Temperature,BE2_temp_Room.temp_config,File, 
+		1,Power Supplies,V0=1.095V V1=1.08V V3=1.115V V7=1.120V and V2=V4=2.1V.ps_config,File,
+		2,Temperature,BE2_temp_Room.temp_config,File
 		3,Step Name,Step Name,T,STRING
 		4,TIME,STEP TIME,M,2
 		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,0.25
@@ -244,8 +244,8 @@ class SharedLib
 		10,Mosys TCL Test Vector,Test Vector Name & Path,T,c-shell
 		11,Next Step,Next Step Name 'C',T,STRING
 		,Step Name,File Name C,N,3
-		1,Power Supplies,V0=1.095V V1=1.08V V3=1.115V V7=1.120V and V2=V4=2.1V.ps_config,File, 
-		2,Temperature,BE2_temp_Room.temp_config,File, 
+		1,Power Supplies,V0=1.095V V1=1.08V V3=1.115V V7=1.120V and V2=V4=2.1V.ps_config,File,
+		2,Temperature,BE2_temp_Room.temp_config,File
 		3,Step Name,Step Name,T,STRING
 		4,TIME,STEP TIME,M,2
 		5,TEMP WAIT,WAIT TIME ON TEMPERATURE,M,0.25

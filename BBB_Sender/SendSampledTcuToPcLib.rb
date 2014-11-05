@@ -244,7 +244,7 @@ Temperature Setting: <temp>
                     sentData = true
                     @packageInfo = nil
                     rescue Exception => e  
-                        puts "Failed to send.  Attempting again."
+                        puts "Failed to send to '#{@pcIpAddr}'.  Attempting again."
                         puts e.message  
                         # puts e.backtrace.inspect
                         # `echo "#{slotInfoJson}" >> PcDown.BackLog`
