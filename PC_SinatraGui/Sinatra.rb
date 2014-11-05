@@ -758,7 +758,7 @@ class UserInterface
 		if enableToolTip
 			# We need to get the Heating or Cooling state of the dut and the PWM value.
 			if @sharedMem.GetDispDutToolTip(slotLabel2Param).nil? == false && @sharedMem.GetDispDutToolTip(slotLabel2Param).length > 0
-				toDisplay = "PWM:"
+				toDisplay = "DUT #{labelParam}-&#10;PWM:"
 				if splittedData[3] == "0"
 					toDisplay += "H@"+splittedData[4]
 				else
@@ -769,7 +769,9 @@ class UserInterface
 			else
 				toDisplay = ""
 			end
-			toBeReturned = "<table title=\"#{toDisplay}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+			toBeReturned = "<a onClick=\"if (ctrlButtonPressed){alert('#{toDisplay}');}\"><table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+			toBeReturned.gsub! '&#10;', '\n'
+			# puts "toBeReturned='#{toBeReturned}' #{__LINE__}-#{__FILE__}"
 			# toBeReturned = "<table title=\"#{@sharedMem.GetDispDutToolTip(slotLabel2Param)}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		else
 			toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
@@ -793,7 +795,11 @@ class UserInterface
 			</td>"
 		toBeReturned += "</tr>"
 		toBeReturned += "<tr><td #{iStyleL}><font size=\"1\">Current</font></td><td #{iStyleC}><font size=\"1\">#{current} A</font></td></tr>"
-		toBeReturned += "</table>"
+		if enableToolTip
+			toBeReturned += "</table></a>"
+		else
+			toBeReturned += "</table>"
+		end
 		
 		return toBeReturned
 		# End of 'DutCell("S20",dut20[2])'
@@ -871,7 +877,7 @@ class UserInterface
 	end
 	
 	def GetSlotDisplay(slotLabel2Param)
-		GetSlotDisplaySub("BIB#-#{SharedLib.getBibID(slotLabel2Param)}",slotLabel2Param)
+		GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}",slotLabel2Param)
 	end
 	
 	def GetSlotDisplaySub(slotLabelParam,slotLabel2Param)
@@ -1394,16 +1400,27 @@ end
 		xmlhttp.send();
 	}
 	
-	setInterval(function(){loadXMLDoc()},1000);  
-	</script>
-
-	<div id=\"myDiv\">
+	setInterval(function(){loadXMLDoc()},1000);  /*1000 msec = 1sec*/
 	
-	<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
-		<tr><td><center>"+GetSlotDisplay("SLOT1")+"</center></td></tr>
-		<tr><td><center>"+GetSlotDisplay("SLOT2")+"</center></td></tr>
-		<tr><td><center>"+GetSlotDisplay("SLOT3")+"</center></td></tr>
-	</table>"
+	function isKeyPressed(event) {
+		  if (event.ctrlKey) {
+		  	ctrlButtonPressed = true;
+		      /*alert(\"The CTRL key was pressed!\");*/
+		  } else {
+		  	ctrlButtonPressed = false;
+		  		/*alert(\"The CTRL key was NOT pressed!\");*/		      
+		  }
+	}
+	</script>
+	<body onmousedown=\"isKeyPressed(event)\">
+		<div id=\"myDiv\">	
+			<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
+				<tr><td><center>"+GetSlotDisplay("SLOT1")+"</center></td></tr>
+				<tr><td><center>"+GetSlotDisplay("SLOT2")+"</center></td></tr>
+				<tr><td><center>"+GetSlotDisplay("SLOT3")+"</center></td></tr>
+			</table>
+		</div>
+	</body>"
 		return displayForm
 		# end of 'def display'
 	end
