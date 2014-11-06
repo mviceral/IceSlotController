@@ -314,7 +314,7 @@ class SharedLib
 		return newStr
 	end
   
-  def getFileNameRecord(fileName,configDateUpload,slotOwnerParam)
+  def getLogFileName(fileName,configDateUpload,slotOwnerParam)
   	configDateUpload = Time.at(configDateUpload.to_i)
 		ct = 0
 		tbsubmitted = ""

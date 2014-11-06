@@ -26,7 +26,7 @@ class SharedMemory
     
     TimeOfPcUpload = "TimeOfPcUpload"
     SlotOwner = "SlotOwner"
-    StepsLogRecordsPath = "../steps\\ log\\ records"
+    StepsLogRecordsPath = "~/slot-controller/steps\\ log\\ records"
 
     WaitTempMsg = "WaitTempMsg"
 	TempWait = "TEMP WAIT"
@@ -330,7 +330,7 @@ class SharedMemory
 	def getLogFileName(slotOwnerParam)
 		configDateUpload = Time.at(GetDispConfigDateUpload(slotOwnerParam).to_i)
 		fileName = GetDispConfigurationFileName(slotOwnerParam)
-		genFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,slotOwnerParam)
+		genFileName = SharedLib.getLogFileName(fileName,configDateUpload,slotOwnerParam)
 		return genFileName+".log"
 	end
 
