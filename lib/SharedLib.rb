@@ -1,5 +1,6 @@
 require 'singleton'
 require 'forwardable'
+require 'uri'
 
 class SharedLib
 	include Singleton
@@ -166,7 +167,15 @@ class SharedLib
     end
 
   def uriToStr(stringParam)
-  	return makeUriFriendlySub(stringParam,false)
+  	# puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
+  	# pause "Checking stringParam value.","#{__LINE__}-#{__FILE__}"
+  	if stringParam.nil? == false && stringParam.length>0
+	  	tbr =  URI.unescape(stringParam)
+  	else
+  		tbr = ""
+  	end	
+  	# puts "uriToStr - tbr = '#{tbr}' #{__LINE__}-#{__FILE__}"
+  	return tbr
   end
   
 	def getKnownRowNamesFor(fileTypeParam)
@@ -314,7 +323,7 @@ class SharedLib
 		return newStr
 	end
   
-  def getFileNameRecord(fileName,configDateUpload,slotOwnerParam)
+  def getLogFileName(fileName,configDateUpload,slotOwnerParam)
   	configDateUpload = Time.at(configDateUpload.to_i)
 		ct = 0
 		tbsubmitted = ""
@@ -330,9 +339,10 @@ class SharedLib
 	end
   
   def makeUriFriendly(stringParam)  
-  	return makeUriFriendlySub(stringParam,true)
+  	return URI.escape(stringParam)
   end
-  
+
+=begin  
     def makeUriFriendlySub(stringParam,trueFalseParam)
         tbr = replaceStr(stringParam," ","%20",trueFalseParam) # tbr - to be returned
         tbr = replaceStr(tbr,"!","%21",trueFalseParam)
@@ -359,7 +369,8 @@ class SharedLib
         tbr = replaceStr(tbr,"@","%40",trueFalseParam)	
         return tbr
 	end
-	
+=end
+
 	def replaceStr(stringParam,lookForParam,replaceWithParam,trueFalseParam)
 		if trueFalseParam == false
 			hold = lookForParam

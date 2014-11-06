@@ -128,8 +128,9 @@ class UserInterface
 		@redirectWithError
 	end
 	
-	def setConfigFileName(fileNameParam)
+	def setConfigFileName(fileNameParam, lotIDParam)
 		getSlotProperties()[FileName] = fileNameParam
+		getSlotProperties()[SharedMemory::LotID] = lotIDParam
 	end
 	
 	def mustBeBoolean(configFileName,ctParam,config,itemNameParam)
@@ -466,7 +467,7 @@ class UserInterface
 
 		fileName = getSlotProperties()["FileName"]
 		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
-		genFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,SharedLib.getBibID(slotOwnerParam))
+		genFileName = SharedLib.getLogFileName(fileName,configDateUpload,SharedLib.getBibID(slotOwnerParam))
 		settingsFileName =  genFileName+".log"
 		recipeStepFile = "../steps config file repository/#{fileName}"
 		recipeLastModified = File.mtime(recipeStepFile)
@@ -494,8 +495,12 @@ class UserInterface
 		end
 		bibID = SharedLib.getBibID(slotOwnerParam)
 		# writeToSettingsLog("System: #{oven}, Slot: #{slotOwnerParam}",settingsFileName)
+		hostName = `hostname -f`
+		hostName = hostName.strip
+		writeToSettingsLog("HostName: #{hostName}",settingsFileName)
 		writeToSettingsLog("System: #{oven}",settingsFileName)
 		writeToSettingsLog("BIB#: #{bibID}",settingsFileName)
+		writeToSettingsLog("Lot ID: #{getSlotProperties()[SharedMemory::LotID]}",settingsFileName)
 
 =begin
 		psItems = ["VPS0","IPS0","VPS1","IPS1","VPS2","IPS2","VPS3","IPS3","VPS4","IPS4","VPS5","IPS5","VPS6","IPS6","VPS7","IPS7","VPS8","IPS8","VPS9","IPS9","VPS10","IPS10","IDUT"]
@@ -668,6 +673,7 @@ class UserInterface
 		current = @sharedMem.getPsCurrent(muxData,eiPs,iIndexParam,labelParam)
 
 		cellColor = setBkColor(slotLabel2Param,"#6699aa")
+		withinATag = false
 		if cellColor == "#cccccc"
 			# if slotLabel2Param == "SLOT1"		
 				# puts "asfd #{__LINE__}-#{__FILE__}"
@@ -695,7 +701,11 @@ class UserInterface
 					if slotLabel2Param == "SLOT1"		
 						# puts "asfd #{__LINE__}-#{__FILE__} '#{@sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]}'"
 					end
-					toBeReturned = "<table title=\"#{@sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+					toDisplay = "#{labelParam}-&#10;"
+					toDisplay += @sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]
+					toBeReturned = "<a onClick=\"if (ctrlButtonPressed){alert('#{toDisplay}');}\"><table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+					toBeReturned.gsub! '&#10;', '\n'
+					withinATag = true
 				end
 			end
 		end
@@ -709,7 +719,12 @@ class UserInterface
 											</td>"
 		toBeReturned += "</tr>"
 		toBeReturned += "<tr><td #{iStyleL}><font size=\"1\">Current</font></td><td #{iStyleC}><font size=\"1\">#{current}A</font></td></tr>"
-		toBeReturned += "</table>"
+		
+		if withinATag
+			toBeReturned += "</table></a>"
+		else
+			toBeReturned += "</table>"
+		end		
 		return toBeReturned
 		# End of 'DutCell("S20",dut20[2])'
 	end
@@ -877,7 +892,14 @@ class UserInterface
 	end
 	
 	def GetSlotDisplay(slotLabel2Param)
-		GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}",slotLabel2Param)
+		lotID = @sharedMem.GetDispLotID(slotLabel2Param)
+		if lotID.nil? == false && lotID.length > 0
+			lotID = ", Lot ID: #{lotID}"
+		else
+			lotID = ""
+		end
+		
+		GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}#{lotID}",slotLabel2Param)
 	end
 	
 	def GetSlotDisplaySub(slotLabelParam,slotLabel2Param)
@@ -987,6 +1009,9 @@ class UserInterface
 								<td nowrap>
 									<font size=\"3\"/>#{slotLabelParam}
 								</td>
+								"
+=begin								
+								"
 								<td>&nbsp;</td>
 								<td style=\"border:1px solid black; border-collapse:collapse; width: 95%;\">
 									<font size=\"1\" color=\"red\"/>#{errMsg}
@@ -995,6 +1020,9 @@ class UserInterface
 									<button onclick=\"window.location='/AckError?slot=#{slotLabel2Param}'\" style=\"height:20px;
 									width:50px; font-size:10px\" />Ok</button>
 								</td>
+								"
+=end								
+		topTable += "
 							</tr>
 						</table>
 					</td>
@@ -1045,6 +1073,18 @@ class UserInterface
 				@sharedMem.GetDispConfigurationFileName(slotLabel2Param).length > 0
 				
 				# Put the code here to chop up the log file if it's over 10meg in size.
+				if @fileChoppedUp.nil?
+					@fileChoppedUp = Hash.new
+				end
+				
+				if @fileChoppedUp[slotLabel2Param] != @sharedMem.GetDispConfigurationFileName(slotLabel2Param)
+					# So it would not run the code in this block again if it's true.
+					@fileChoppedUp[slotLabel2Param] = @sharedMem.GetDispConfigurationFileName(slotLabel2Param)
+					
+					# See if the log file is over 10 meg.
+					directory = SharedMemory::StepsLogRecordsPath
+					# File.size("Compressed/#{project}.tar.bz2")
+				end
 			topTable += "
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>ALL STEPS COMPLETE</td></tr>
 				 			<tr>
@@ -1455,7 +1495,8 @@ end
 		#
 		tbr = "
 		<html>
-			<body>"
+			<body>
+			"
 		tbr += "
 						<font size=\"3\">"
 		tbr += "Slot #{getSlotOwner()[getSlotOwner().length-1..-1]} Setup<br>Step Files</font><br>"
@@ -1471,7 +1512,7 @@ end
 		while fileIndex< files.length
 			rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
 										style=\"height:20px; width:50px; font-size:10px\" 							
-										onclick=\"window.location='../TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}&File=#{SharedLib.makeUriFriendly(files[fileIndex])}'\" />
+										onclick=\"getLotId('#{getSlotOwner}','#{Load}','#{files[fileIndex]}');\" />
 										Select
 										</button><button 
 										style=\"height:20px; width:50px; font-size:10px\" 							
@@ -1647,6 +1688,47 @@ end
 		end
 		tbr += "
 					</form>
+				<script type=\"text/javascript\">
+					function getLotId(slotOwnerParam, btnStateParam, fileParam) {
+						var defaultValue = \"--LOT ID--\";
+						var lotID = prompt(\"Selected step config file: '\"+fileParam+\"'\\n\\nPlease provide the 'Lot ID' for this run:\", defaultValue);
+						if (lotID != null && lotID!=defaultValue) {
+							// Make sure that the inputed characters are all valid for filename.
+							faultyInput = false;
+							for (var a=0;a<lotID.length;a++) {
+								ch = lotID.charAt(a);
+								if (faultyInput == false && (ch==\"/\") || (ch.charCodeAt(0)==92) /* '\\'*/ || (ch==\"?\") || (ch==\"%\") || (ch==\"*\") || (ch==\":\") || (ch==\"|\") || (ch.charCodeAt(0)==34) /* '\"'*/ || (ch==\"<\") || ( ch==\">\") ||
+								(ch ==\"#\") ||
+								(ch == \"$\") ||
+								(ch == \"+\") ||
+								(ch == \"!\") ||
+								(ch == \"`\") ||
+								(ch == \"&\") ||
+								(ch.charCodeAt(0)==39) /* single quote */ ||
+								(ch == \"{\") ||
+								(ch == \"=\") ||
+								(ch == \"}\") ||
+								(ch == \" \") ||
+								(ch == \"@\") ) {
+									faultyInput = true;
+									break; // Break out of the loop.
+								}
+								// End of for loop.
+							}
+							
+							if (faultyInput)
+								// See reference.
+								// http://www.mtu.edu/umc/services/web/cms/characters-avoid/
+								alert (\"Entered Lot ID: '\"+lotID+\"'\\n\\nThe following chacters cannot be used for Lot ID: '/', '\\\\', '?', '%', '*', ':', '|', '\\\"', '<', '>', '#', '$', '+', '!', '`', '&', '‘', '{', '=', '}', ' ' (blank spaces), '@'..\\n\\nRe-select step config file and provide Lot ID to continue.\");
+							else
+								window.location=\"../TopBtnPressed?slot=\"+slotOwnerParam+\"&BtnState=\"+btnStateParam+\"&File=\"+encodeURIComponent(fileParam)+\"&LotID=\"+encodeURIComponent(lotID)+\"\";
+						}
+						else
+						{
+							alert (\"Lot ID not provided.  Re-select step config file and provide Lot ID to continue.\");
+						}
+					}
+				</script>
 			</body>
 		</html>
 		"
@@ -2552,7 +2634,7 @@ end
 		# End of 'checkFaultyPsConfig'	
 	end
 	
-	def setupBbbSlotProcess(fileNameParam, slotOwnerParam)
+	def setupBbbSlotProcess(fileNameParam, slotOwnerParam, lotIDParam)
 		#
 		# Find out what type of file we're dealing with:
 		# *.step - for Step file
@@ -2564,7 +2646,6 @@ end
 			return false
 		end
 	
-
 		config = Array.new
 		File.open("#{dirFileRepository}/#{fileNameParam}", "r") do |f|
 			f.each_line do |line|
@@ -2575,12 +2656,14 @@ end
 		if parseTheConfigFile(config,"#{fileNameParam}") == false
 			return false
 		end
-		setConfigFileName("#{fileNameParam}")
+		
+		setConfigFileName("#{fileNameParam}",lotIDParam)
 		# PP.pp(slotProperties)
+		
 		if setBbbConfigUpload(slotOwnerParam) == false
 			return false
 		end
-		
+				
 		return true
 	end
 	
@@ -2680,8 +2763,9 @@ get '/TopBtnPressed' do
 		#
 		settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}"
 		settings.ui.redirectWithError += "&BtnState=#{settings.ui.Load}"	
-		
-		if settings.ui.setupBbbSlotProcess("#{params[:File]}","#{params[:slot]}") == false
+		# puts "LotID='#{params[:LotID]}'"
+		# SharedLib.pause "Checking LotID","#{__LINE__}-#{__FILE__}"
+		if settings.ui.setupBbbSlotProcess(params[:File],params[:slot],params[:LotID]) == false
 			redirect settings.ui.redirectWithError
 		end
 		redirect "../"
@@ -2903,4 +2987,4 @@ get '/AckError' do
 	redirect "../"
 end
 
-# at 1400
+# at 1480

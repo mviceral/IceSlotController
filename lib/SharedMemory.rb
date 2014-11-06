@@ -14,21 +14,21 @@ require 'drb/drb'
 # Adding the mode of the BBB
 
 class SharedMemory 
-    include DRb::DRbUndumped
-#    include SharedMemoryExtension
-#    include Singleton
-
-    PsToolTip = "PsToolTip"
-    DutToolTip = "DutToolTip"    
-    Mode = "Mode"
-    Cmd = "Cmd"
-    CmdProcessed = "CmdProcessed"
-    
-    TimeOfPcUpload = "TimeOfPcUpload"
-    SlotOwner = "SlotOwner"
-    StepsLogRecordsPath = "../steps\\ log\\ records"
-
-    WaitTempMsg = "WaitTempMsg"
+	include DRb::DRbUndumped
+	#    include SharedMemoryExtension
+	#    include Singleton
+	
+	PsToolTip = "PsToolTip"
+	DutToolTip = "DutToolTip"    
+	Mode = "Mode"
+	Cmd = "Cmd"
+	CmdProcessed = "CmdProcessed"
+	
+	TimeOfPcUpload = "TimeOfPcUpload"
+	SlotOwner = "SlotOwner"
+	StepsLogRecordsPath = "~/slot-controller/steps\\ log\\ records"
+	
+	WaitTempMsg = "WaitTempMsg"
 	TempWait = "TEMP WAIT"
 	AlarmWait = "Alarm Wait"
 	AutoRestart = "Auto Restart"
@@ -41,17 +41,17 @@ class SharedMemory
 	Latch = "Latch"
 	ErrorColor = "ErrorColor"
 	StopMessage = "StopMessage"
-
+	
 	OrangeColor = "#ff9900"
 	RedColor = "#ff0000"
 	
-    GreenFlag = 0
-    OrangeFlag = 1
-    RedFlag = 2
-    
-    SystemInfo = "SystemInfo"
-	LogInfo = "LogInfo"
+	GreenFlag = 0
+	OrangeFlag = 1
+	RedFlag = 2  
+	SystemInfo = "SystemInfo"
 	
+	LogInfo = "LogInfo"
+	LotID = "LotID"
     def writeAndFreeLocked(strParam, fromParam)
 =begin
         if @lockedAt == ""
@@ -330,7 +330,7 @@ class SharedMemory
 	def getLogFileName(slotOwnerParam)
 		configDateUpload = Time.at(GetDispConfigDateUpload(slotOwnerParam).to_i)
 		fileName = GetDispConfigurationFileName(slotOwnerParam)
-		genFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,slotOwnerParam)
+		genFileName = SharedLib.getLogFileName(fileName,configDateUpload,slotOwnerParam)
 		return genFileName+".log"
 	end
 
@@ -714,6 +714,7 @@ class SharedMemory
 		else
 			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = nil
 		end
+		ds[SharedLib::PC][slotOwnerParam][LotID] = SharedLib.uriToStr(hash[LotID])
 		ds[SharedLib::PC][slotOwnerParam][PsToolTip] = hash[PsToolTip]
 		ds[SharedLib::PC][slotOwnerParam][DutToolTip] = hash[DutToolTip]
 		ds[SharedLib::PC][slotOwnerParam][ErrorColor] = hash[ErrorColor]
@@ -1233,6 +1234,21 @@ class SharedMemory
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
+    def GetDispLotID(slotOwnerParam)
+    	if getMemory().nil? == false
+    		if getMemory()[SharedLib::PC].nil? == false
+    			if getMemory()[SharedLib::PC][slotOwnerParam].nil? == false
+    				return getMemory()[SharedLib::PC][slotOwnerParam][LotID]
+    			else
+    				return nil
+    			end
+    		else
+    			return nil
+    		end
+    	else
+    		return nil
+    	end
+    end
 =begin    
     class << self
       extend Forwardable
