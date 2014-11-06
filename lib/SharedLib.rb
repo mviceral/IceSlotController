@@ -167,14 +167,14 @@ class SharedLib
     end
 
   def uriToStr(stringParam)
-  	puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
+  	# puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
   	# pause "Checking stringParam value.","#{__LINE__}-#{__FILE__}"
   	if stringParam.nil? == false && stringParam.length>0
 	  	tbr =  URI.unescape(stringParam)
   	else
   		tbr = ""
   	end	
-  	puts "uriToStr - tbr = '#{tbr}' #{__LINE__}-#{__FILE__}"
+  	# puts "uriToStr - tbr = '#{tbr}' #{__LINE__}-#{__FILE__}"
   	return tbr
   end
   
