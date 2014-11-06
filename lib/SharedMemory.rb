@@ -14,21 +14,21 @@ require 'drb/drb'
 # Adding the mode of the BBB
 
 class SharedMemory 
-  include DRb::DRbUndumped
-#    include SharedMemoryExtension
-#    include Singleton
-
-  PsToolTip = "PsToolTip"
-  DutToolTip = "DutToolTip"    
-  Mode = "Mode"
-  Cmd = "Cmd"
-  CmdProcessed = "CmdProcessed"
-  
-  TimeOfPcUpload = "TimeOfPcUpload"
-  SlotOwner = "SlotOwner"
-  StepsLogRecordsPath = "~/slot-controller/steps\\ log\\ records"
-
-  WaitTempMsg = "WaitTempMsg"
+	include DRb::DRbUndumped
+	#    include SharedMemoryExtension
+	#    include Singleton
+	
+	PsToolTip = "PsToolTip"
+	DutToolTip = "DutToolTip"    
+	Mode = "Mode"
+	Cmd = "Cmd"
+	CmdProcessed = "CmdProcessed"
+	
+	TimeOfPcUpload = "TimeOfPcUpload"
+	SlotOwner = "SlotOwner"
+	StepsLogRecordsPath = "~/slot-controller/steps\\ log\\ records"
+	
+	WaitTempMsg = "WaitTempMsg"
 	TempWait = "TEMP WAIT"
 	AlarmWait = "Alarm Wait"
 	AutoRestart = "Auto Restart"
@@ -41,15 +41,15 @@ class SharedMemory
 	Latch = "Latch"
 	ErrorColor = "ErrorColor"
 	StopMessage = "StopMessage"
-
+	
 	OrangeColor = "#ff9900"
 	RedColor = "#ff0000"
 	
-  GreenFlag = 0
-  OrangeFlag = 1
-  RedFlag = 2  
-  SystemInfo = "SystemInfo"
-  
+	GreenFlag = 0
+	OrangeFlag = 1
+	RedFlag = 2  
+	SystemInfo = "SystemInfo"
+	
 	LogInfo = "LogInfo"
 	LotID = "LotID"
     def writeAndFreeLocked(strParam, fromParam)
