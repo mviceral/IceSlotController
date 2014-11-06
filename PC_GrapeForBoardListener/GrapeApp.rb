@@ -92,7 +92,7 @@ module MigrationCount
 								# puts "hash[SharedLib::ConfigurationFileName]='#{hash[SharedLib::ConfigurationFileName]}' #{__LINE__}-#{__FILE__}"
 								slotOwnerParam = hash[SharedLib::SlotOwner]
 								# puts "hash[SharedLib::SlotOwner]='#{hash[SharedLib::SlotOwner]}' #{__LINE__}-#{__FILE__}"
-								dBaseFileName = SharedLib.getFileNameRecord(fileName,configDateUpload,SharedLib.getBibID(slotOwnerParam))+".log"		
+								dBaseFileName = SharedLib.getLogFileName(fileName,configDateUpload,SharedLib.getBibID(slotOwnerParam))+".log"		
 								puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
 								# puts "dBaseFileName = #{dBaseFileName} #{__LINE__}-#{__FILE__}"
 								# puts "hash[SharedLib::DataLog]: #{__LINE__}-#{__FILE__}/n#{hash[SharedLib::DataLog]}"

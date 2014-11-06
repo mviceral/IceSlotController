@@ -12,7 +12,7 @@ trap "rm -f ${LockFile}; exit" INT TERM EXIT
 echo $$ > ${LockFile}
 
 # do stuff
-cd /home/cseven/slot-controller/PC_SinatraGui/
+cd ~/slot-controller/PC_SinatraGui/
 ruby Sinatra.rb 
 
 rm -f ${LockFile}
