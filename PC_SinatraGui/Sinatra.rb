@@ -129,7 +129,6 @@ class UserInterface
 	end
 	
 	def setConfigFileName(fileNameParam, lotIDParam)
-puts "passed #{__LINE__}-#{__FILE__}"	
 		getSlotProperties()[FileName] = fileNameParam
 		getSlotProperties()[SharedMemory::LotID] = lotIDParam
 	end
@@ -496,8 +495,12 @@ puts "passed #{__LINE__}-#{__FILE__}"
 		end
 		bibID = SharedLib.getBibID(slotOwnerParam)
 		# writeToSettingsLog("System: #{oven}, Slot: #{slotOwnerParam}",settingsFileName)
+		hostName = `hostname -f`
+		hostName = hostName.strip
+		writeToSettingsLog("HostName: #{hostName}",settingsFileName)
 		writeToSettingsLog("System: #{oven}",settingsFileName)
 		writeToSettingsLog("BIB#: #{bibID}",settingsFileName)
+		writeToSettingsLog("Lot ID: #{getSlotProperties()[SharedMemory::LotID]}",settingsFileName)
 
 =begin
 		psItems = ["VPS0","IPS0","VPS1","IPS1","VPS2","IPS2","VPS3","IPS3","VPS4","IPS4","VPS5","IPS5","VPS6","IPS6","VPS7","IPS7","VPS8","IPS8","VPS9","IPS9","VPS10","IPS10","IDUT"]
@@ -889,7 +892,14 @@ puts "passed #{__LINE__}-#{__FILE__}"
 	end
 	
 	def GetSlotDisplay(slotLabel2Param)
-		GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}",slotLabel2Param)
+		lotID = @sharedMem.GetDispLotID(slotLabel2Param)
+		if lotID.nil? == false && lotID.length > 0
+			lotID = ", Lot ID: #{lotID}"
+		else
+			lotID = ""
+		end
+		
+		GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}#{lotID}",slotLabel2Param)
 	end
 	
 	def GetSlotDisplaySub(slotLabelParam,slotLabel2Param)
@@ -999,6 +1009,9 @@ puts "passed #{__LINE__}-#{__FILE__}"
 								<td nowrap>
 									<font size=\"3\"/>#{slotLabelParam}
 								</td>
+								"
+=begin								
+								"
 								<td>&nbsp;</td>
 								<td style=\"border:1px solid black; border-collapse:collapse; width: 95%;\">
 									<font size=\"1\" color=\"red\"/>#{errMsg}
@@ -1007,6 +1020,9 @@ puts "passed #{__LINE__}-#{__FILE__}"
 									<button onclick=\"window.location='/AckError?slot=#{slotLabel2Param}'\" style=\"height:20px;
 									width:50px; font-size:10px\" />Ok</button>
 								</td>
+								"
+=end								
+		topTable += "
 							</tr>
 						</table>
 					</td>
@@ -2741,53 +2757,39 @@ end
 
 get '/TopBtnPressed' do
 	settings.ui.setSlotOwner("#{SharedLib.uriToStr(params[:slot])}")
-puts "passed #{__LINE__}-#{__FILE__}"
 	if params[:File].nil? == false
 		#
 		# Setup the string for error
 		#
 		settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}"
 		settings.ui.redirectWithError += "&BtnState=#{settings.ui.Load}"	
-		puts "LotID='#{params[:LotID]}'"
-		SharedLib.pause "Checking LotID","#{__LINE__}-#{__FILE__}"
+		# puts "LotID='#{params[:LotID]}'"
+		# SharedLib.pause "Checking LotID","#{__LINE__}-#{__FILE__}"
 		if settings.ui.setupBbbSlotProcess(params[:File],params[:slot],params[:LotID]) == false
 			redirect settings.ui.redirectWithError
 		end
 		redirect "../"
 	else
-puts "passed #{__LINE__}-#{__FILE__}"
 		if (SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && SharedLib.uriToStr(params[:ErrGeneral]) != "")
-puts "passed #{__LINE__}-#{__FILE__}"
 			if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
-puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, *.mincurr_config, or *.temp_config"
 			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
-puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Board PcListener is down."
 			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
-puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', No file selected for upload."
 			elsif SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && 
 						SharedLib.uriToStr(params[:ErrGeneral]).length >0
-puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "#{SharedLib.uriToStr(params[:ErrGeneral])}"
 				return settings.ui.loadFile
 			end
 		end		
-puts "passed #{__LINE__}-#{__FILE__}"
-puts "params[:BtnState] = '#{params[:BtnState]}' #{__LINE__}-#{__FILE__}"
-puts "SharedLib.uriToStr(params[:BtnState]) = '#{SharedLib.uriToStr(params[:BtnState])}' #{__LINE__}-#{__FILE__}"
-hold = SharedLib.uriToStr("#{params[:BtnState]}")
-puts "SharedLib.uriToStr(#{params[:BtnState]}) = '#{hold}' #{__LINE__}-#{__FILE__}"
 		if SharedLib.uriToStr(params[:BtnState]) == settings.ui.Load	
-puts "passed #{__LINE__}-#{__FILE__}"
 			#
 			# The Load button got pressed.
 			#		
 			settings.ui.setFileInError("#{SharedLib.uriToStr(params[:ErrInFile])}")
 			if SharedLib.uriToStr(params[:ErrStepTempNotFound]).nil? == false && 
 			SharedLib.uriToStr(params[:ErrStepTempNotFound]) != ""
-puts "passed #{__LINE__}-#{__FILE__}"
 				calledFrom = "#{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
 				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"
@@ -2795,7 +2797,6 @@ puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral += " '#{SharedLib.uriToStr(params[:ErrStepTempNotFound])}' is not found."
 			elsif SharedLib.uriToStr(params[:ErrStepPsNotFound]).nil? == false && 
 			SharedLib.uriToStr(params[:ErrStepPsNotFound]) != ""
-puts "passed #{__LINE__}-#{__FILE__}"
 				calledFrom = "#{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
 				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"
@@ -2803,46 +2804,34 @@ puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral += " '#{SharedLib.uriToStr(params[:ErrStepPsNotFound])}' is not found."
 			elsif SharedLib.uriToStr(params[:ErrTempFileNotGiven]).nil? == false && 
 			SharedLib.uriToStr(params[:ErrTempFileNotGiven]) != ""
-puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
 				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "
 				settings.ui.upLoadConfigErrorGeneral += "Step Name, Temperature configuration file is not given."
 			elsif SharedLib.uriToStr(params[:ErrPsFileNotGiven]).nil? == false && 
 			SharedLib.uriToStr(params[:ErrPsFileNotGiven]) != ""
-puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
 				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "
 				settings.ui.upLoadConfigErrorGeneral += "Step Name, Power Supply configuration file is not given."
 			elsif SharedLib.uriToStr(params[:ErrStepNameNotGiven]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameNotGiven]) != ""
-puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Row '#{SharedLib.uriToStr(params[:ErrRow])}' on step file requires a filename.."
 			elsif SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]) != ""
-puts "passed #{__LINE__}-#{__FILE__}"
 				fileName = SharedLib.uriToStr(params[:ErrStepNameAlreadyFound])
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Duplicate filename '#{fileName}' in the step file list."
 			elsif SharedLib.uriToStr(params[:ErrStepFormat]).nil? == false && SharedLib.uriToStr(params[:ErrStepFormat]) != ""
-puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  Column labels must start on column A, row 1."
 			elsif (SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && SharedLib.uriToStr(params[:ErrGeneral]) != "")
-puts "passed #{__LINE__}-#{__FILE__}"
 				if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
-puts "passed #{__LINE__}-#{__FILE__}"
 					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, *.mincurr_config, or *.temp_config"
 				elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
-puts "passed #{__LINE__}-#{__FILE__}"
 					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Board PcListener is down."
 				elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
-puts "passed #{__LINE__}-#{__FILE__}"
 					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', No file selected for upload."
 				elsif SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && 
 							SharedLib.uriToStr(params[:ErrGeneral]).length >0
-puts "passed #{__LINE__}-#{__FILE__}"
 					settings.ui.upLoadConfigErrorGeneral = "#{SharedLib.uriToStr(params[:ErrGeneral])}"
 				end
-puts "passed #{__LINE__}-#{__FILE__}"
 			elsif (SharedLib.uriToStr(params[:ErrRow]).nil? == false && SharedLib.uriToStr(params[:ErrRow]) != "") || 
 				 (SharedLib.uriToStr(params[:ErrIndex]).nil? == false && SharedLib.uriToStr(params[:ErrIndex]) != "")
-puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorInFile = SharedLib.uriToStr(params[:ErrInFile])
 				settings.ui.upLoadConfigErrorIndex = SharedLib.uriToStr(params[:ErrIndex])
 				settings.ui.upLoadConfigErrorRow = SharedLib.uriToStr(params[:ErrRow])
@@ -2851,25 +2840,20 @@ puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigErrorColType = SharedLib.uriToStr(params[:ErrColType])
 				settings.ui.upLoadConfigErrorValue = SharedLib.uriToStr(params[:ErrValue])
 			elsif SharedLib.uriToStr(params[:MsgFileUpload]).nil? == false
-puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.upLoadConfigGoodUpload = "File '#{SharedLib.uriToStr(params[:MsgFileUpload])}' has been uploaded."
 				settings.ui.upLoadConfigErrorName = ""
 			else
-puts "passed #{__LINE__}-#{__FILE__}"
 				settings.ui.clearError
 			end
-puts "passed #{__LINE__}-#{__FILE__}"
 		
 			return settings.ui.loadFile
 		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Run
-puts "passed #{__LINE__}-#{__FILE__}"
 			#
 			# The Run button got pressed.
 			#
 			settings.ui.setToRunMode(params[:slot])
 			redirect "../"
 		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Stop
-puts "passed #{__LINE__}-#{__FILE__}"
 			#
 			# The Stop button got pressed.
 			#
@@ -2881,23 +2865,19 @@ puts "passed #{__LINE__}-#{__FILE__}"
 			#
 			redirect "../"
 		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Clear
-puts "passed #{__LINE__}-#{__FILE__}"
 			#
 			# The Clear button got pressed.
 			#
 			settings.ui.setToLoadMode(params[:slot])
 			redirect "../"
 		elsif SharedLib.uriToStr(params[:BtnState]) == "ClearError"
-puts "passed #{__LINE__}-#{__FILE__}"
 			#
 			# The clear error button got pressed.
 			#
 			settings.ui.setBbbClearError(params[:slot])
 			redirect "../"			
 		end
-puts "passed #{__LINE__}-#{__FILE__}"
 	end
-puts "passed #{__LINE__}-#{__FILE__}"
 end
 
 get '/' do 
@@ -2911,12 +2891,9 @@ end
 
 
 post '/TopBtnPressed' do		
-puts "passed #{__LINE__}-#{__FILE__}"
 	if settings.ui.slotOwnerThe.nil? || settings.ui.slotOwnerThe == ""
-puts "passed #{__LINE__}-#{__FILE__}"
 		redirect "../"
 	end
-puts "passed #{__LINE__}-#{__FILE__}"
 	settings.ui.clearError()
 
 	tbr = "" # To be returned.

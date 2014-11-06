@@ -714,6 +714,7 @@ class SharedMemory
 		else
 			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = nil
 		end
+		ds[SharedLib::PC][slotOwnerParam][LotID] = SharedLib.uriToStr(hash[LotID])
 		ds[SharedLib::PC][slotOwnerParam][PsToolTip] = hash[PsToolTip]
 		ds[SharedLib::PC][slotOwnerParam][DutToolTip] = hash[DutToolTip]
 		ds[SharedLib::PC][slotOwnerParam][ErrorColor] = hash[ErrorColor]
@@ -1233,6 +1234,21 @@ class SharedMemory
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
+    def GetDispLotID(slotOwnerParam)
+    	if getMemory().nil? == false
+    		if getMemory()[SharedLib::PC].nil? == false
+    			if getMemory()[SharedLib::PC][slotOwnerParam].nil? == false
+    				return getMemory()[SharedLib::PC][slotOwnerParam][LotID]
+    			else
+    				return nil
+    			end
+    		else
+    			return nil
+    		end
+    	else
+    		return nil
+    	end
+    end
 =begin    
     class << self
       extend Forwardable
