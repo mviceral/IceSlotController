@@ -1,8 +1,15 @@
 Device,IP address
+
+# Work PC IP address
 #PC,192.168.1.210
-PC,192.168.1.59
-#PC,192.168.7.1
+
+# Home PC IP address
+PC,192.168.1.74
+
+# BBB IP Address
 BBB Slot (me),192.168.1.212
+
+# PS IP addresses
 PS0,0.168.1.213
 PS1,0.168.1.214
 PS2,0.168.1.215

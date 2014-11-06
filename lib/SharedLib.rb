@@ -166,7 +166,7 @@ class SharedLib
     end
 
   def uriToStr(stringParam)
-  	return makeUriFriendlySub(stringParam,false)
+  	return URI.unescape(CGI::escape(Base64.decode64(stringParam)))
   end
   
 	def getKnownRowNamesFor(fileTypeParam)
@@ -330,9 +330,10 @@ class SharedLib
 	end
   
   def makeUriFriendly(stringParam)  
-  	return makeUriFriendlySub(stringParam,true)
+  	return encode_www_form_component(stringParam)
   end
-  
+
+=begin  
     def makeUriFriendlySub(stringParam,trueFalseParam)
         tbr = replaceStr(stringParam," ","%20",trueFalseParam) # tbr - to be returned
         tbr = replaceStr(tbr,"!","%21",trueFalseParam)
@@ -359,7 +360,8 @@ class SharedLib
         tbr = replaceStr(tbr,"@","%40",trueFalseParam)	
         return tbr
 	end
-	
+=end
+
 	def replaceStr(stringParam,lookForParam,replaceWithParam,trueFalseParam)
 		if trueFalseParam == false
 			hold = lookForParam
