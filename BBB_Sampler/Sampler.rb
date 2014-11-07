@@ -2557,28 +2557,6 @@ class TCUSampler
         # Disable SPI device
         # spi.disable
     end
-    
-    def getVersionOfSampler(samplerData)
-        if samplerData.nil?
-            puts "@samplerData must not be nil."
-            puts "Terminating code. #{__LINE__}-#{__FILE__}"
-            exit
-        end
-        fileObj = File.new("Sampler.rb", "r")
-        while (line = fileObj.gets)
-            lineParts = line.split(":")
-            # puts "lineParts[0].stri p= '#{lineParts[0].strip}'  #{__LINE__}-#{__FILE__}"
-            if lineParts[0].strip == "# SlotCtrl code version"
-                # puts "lineParts[1].stri p= '#{lineParts[1].strip}'  #{__LINE__}-#{__FILE__}"
-                ver = lineParts[1].strip
-            end
-            "# SlotCtrl code version: 1"
-        end
-        fileObj.close
-        samplerData.setSlotCtrlrVer(ver)
-        # puts "Slot Controller version: #{ver} #{__LINE__}-#{__FILE__}"
-        # SharedLib.pause "Checking version.","#{__LINE__}-#{__FILE__}"
-    end
 
     def runTCUSampler
         puts "Running Sampler.rb"
@@ -2600,7 +2578,7 @@ class TCUSampler
     	@samplerData.SetupData()
     	@samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
     	
-        getVersionOfSampler(@samplerData)
+        setVersionOfCode(@samplerData,"Sampler.rb",SharedMemory::SlotCtrlVer)
         turnOffHeaters()
     	initMuxValueFunc()
     	initpollAdcInputFunc()
