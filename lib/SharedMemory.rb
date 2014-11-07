@@ -709,11 +709,8 @@ class SharedMemory
 			end
 		end
 
-		if hash[SharedMemory::WaitTempMsg].nil? == false
-			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = hash[SharedMemory::WaitTempMsg]
-		else
-			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = nil
-		end
+		ds[SharedLib::PC][slotOwnerParam][SharedMemory::SlotCtrlVer] = hash[SharedMemory::SlotCtrlVer]
+		ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = hash[SharedMemory::WaitTempMsg]
 		ds[SharedLib::PC][slotOwnerParam][LotID] = SharedLib.uriToStr(hash[LotID])
 		ds[SharedLib::PC][slotOwnerParam][PsToolTip] = hash[PsToolTip]
 		ds[SharedLib::PC][slotOwnerParam][DutToolTip] = hash[DutToolTip]

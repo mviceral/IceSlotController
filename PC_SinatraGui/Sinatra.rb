@@ -1,6 +1,6 @@
 # Code to look at:
 # "BBB PcListener is down.  Need to handle this in production code level."
-# @1468
+# @519
 require 'rubygems'
 require 'sinatra'
 #require 'sqlite3'
@@ -516,6 +516,7 @@ class UserInterface
 		writeToSettingsLog("System: #{systemID}",settingsFileName)
 		writeToSettingsLog("BIB#: #{bibID}",settingsFileName)
 		writeToSettingsLog("Lot ID: #{getSlotProperties()[SharedMemory::LotID]}",settingsFileName)
+		writeToSettingsLog("Slot Controller Software Ver: #{@sharedMem.GetDispSlotCtrlVer(slotOwnerParam)}",settingsFileName)
 
 =begin
 		psItems = ["VPS0","IPS0","VPS1","IPS1","VPS2","IPS2","VPS3","IPS3","VPS4","IPS4","VPS5","IPS5","VPS6","IPS6","VPS7","IPS7","VPS8","IPS8","VPS9","IPS9","VPS10","IPS10","IDUT"]
