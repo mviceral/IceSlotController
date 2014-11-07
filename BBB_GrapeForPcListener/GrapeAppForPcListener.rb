@@ -3,7 +3,7 @@ require 'grape'
 #require 'singleton'
 #require 'forwardable'
 require 'pp'
-# require 'sqlite3'
+#require 'sqlite3'
 require 'drb/drb'
 
 require_relative '../lib/SharedLib'

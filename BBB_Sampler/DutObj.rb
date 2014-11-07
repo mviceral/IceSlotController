@@ -41,7 +41,7 @@ class DutObj
                 heating = "1"
             end
             # puts "rValue='#{rValue}', heating='#{heating}' #{__LINE__}-#{__FILE__}"
-            return "@1,33.156,70.619,#{heating},#{Random.rand(256)},Ok"
+            return "@1,33.156,#{70+Random.rand(3)}.#{Random.rand(1000)},#{heating},#{Random.rand(256)},Ok"
         end
         gPIO2.etsRxSel(dutNumParam)
         tbr = "" # tbr - to be returned
