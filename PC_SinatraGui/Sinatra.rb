@@ -1443,7 +1443,7 @@ end
 		{
 			if (xmlhttp.readyState==4 && xmlhttp.status==200)
 			{
-				document.getElementById(\"myDiv\").innerHTML=xmlhttp.responseText;
+				document.getElementById(\"myDiv1\").innerHTML=xmlhttp.responseText;
 			}
 		}	
 		xmlhttp.open(\"POST\",\"../\",true);
@@ -1463,13 +1463,13 @@ end
 	}
 	</script>
 	<body onmousedown=\"isKeyPressed(event)\">
-		<div id=\"myDiv\">	
-			<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
-				<tr><td><center>"+GetSlotDisplay("SLOT1")+"</center></td></tr>
-				<tr><td><center>"+GetSlotDisplay("SLOT2")+"</center></td></tr>
-				<tr><td><center>"+GetSlotDisplay("SLOT3")+"</center></td></tr>
-			</table>
-		</div>
+			<div id=\"myDiv1\">	
+				<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
+					<tr><td><center>"+GetSlotDisplay("SLOT1")+"</center></td></tr>
+					<tr><td><center>"+GetSlotDisplay("SLOT2")+"</center></td></tr>
+					<tr><td><center>"+GetSlotDisplay("SLOT3")+"</center></td></tr>
+				</table>
+			</div>
 	</body>"
 		return displayForm
 		# end of 'def display'
