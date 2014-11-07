@@ -323,7 +323,7 @@ class SharedLib
 		return newStr
 	end
   
-  def getLogFileName(fileName,configDateUpload,slotOwnerParam)
+  def getLogFileName(fileName,configDateUpload,slotOwnerParam,lotIDParam)
   	configDateUpload = Time.at(configDateUpload.to_i)
 		ct = 0
 		tbsubmitted = ""
@@ -335,7 +335,7 @@ class SharedLib
 			end
 			ct += 1
 		end
-		return "iceLog_brd#{slotOwnerParam}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{tbsubmitted}"
+		return "iceLog_brd#{slotOwnerParam}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{lotIDParam}"
 	end
   
   def makeUriFriendly(stringParam)  

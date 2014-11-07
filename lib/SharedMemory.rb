@@ -330,7 +330,7 @@ class SharedMemory
 	def getLogFileName(slotOwnerParam)
 		configDateUpload = Time.at(GetDispConfigDateUpload(slotOwnerParam).to_i)
 		fileName = GetDispConfigurationFileName(slotOwnerParam)
-		genFileName = SharedLib.getLogFileName(fileName,configDateUpload,slotOwnerParam)
+		genFileName = SharedLib.getLogFileName(fileName,configDateUpload,slotOwnerParam,GetDispLotID(slotOwnerParam))
 		return genFileName+".log"
 	end
 
