@@ -1,6 +1,6 @@
 # Code to look at:
 # "BBB PcListener is down.  Need to handle this in production code level."
-# 
+# @1468
 require 'rubygems'
 require 'sinatra'
 #require 'sqlite3'
@@ -468,6 +468,29 @@ class UserInterface
 		`cd #{SharedMemory::StepsLogRecordsPath}; echo \"#{toBeWritten}\" >> #{settingsFileName}`
 	end
 
+	def getSystemID()
+		if @systemID.nil?
+			config = Array.new
+			File.open("../Mosys ICEngInc.config", "r") do |f|
+				f.each_line do |line|
+					config.push(line)
+				end			
+			end
+	
+			# Parse each lines and mind the information we need for the report.
+			ct = 0
+			while ct < config.length 
+				colContent = config[ct].split(":")
+				if colContent[0] == "System ID"
+					@systemID = colContent[1].chomp
+					@systemID = @systemID.strip
+				end
+				ct += 1
+			end
+		end
+		return @systemID
+	end
+
 	def setBbbConfigUpload(slotOwnerParam)
 		slotProperties[slotOwnerParam][SharedLib::ConfigDateUpload] = Time.now.to_f
 		slotProperties[slotOwnerParam][SharedLib::SlotOwner] = slotOwnerParam
@@ -484,29 +507,13 @@ class UserInterface
 		
 		# Get the oven ID
 		# Read the content of the file "Mosys ICEngInc.config" file to get the needed information...
-		config = Array.new
-		File.open("../Mosys ICEngInc.config", "r") do |f|
-			f.each_line do |line|
-				config.push(line)
-			end			
-		end
-		
-		# Parse each lines and mind the information we need for the report.
-		ct = 0
-		while ct < config.length 
-			colContent = config[ct].split(":")
-			if colContent[0] == "System ID"
-				oven = colContent[1].chomp
-				oven = oven.strip
-			end
-			ct += 1
-		end
+		systemID = getSystemID()
 		bibID = SharedLib.getBibID(slotOwnerParam)
-		# writeToSettingsLog("System: #{oven}, Slot: #{slotOwnerParam}",settingsFileName)
-		hostName = `hostname -f`
+		# writeToSettingsLog("System: #{systemID}, Slot: #{slotOwnerParam}",settingsFileName)
+		hostName = `hostname -A`
 		hostName = hostName.strip
 		writeToSettingsLog("HostName: #{hostName}",settingsFileName)
-		writeToSettingsLog("System: #{oven}",settingsFileName)
+		writeToSettingsLog("System: #{systemID}",settingsFileName)
 		writeToSettingsLog("BIB#: #{bibID}",settingsFileName)
 		writeToSettingsLog("Lot ID: #{getSlotProperties()[SharedMemory::LotID]}",settingsFileName)
 
@@ -1465,6 +1472,7 @@ end
 	<body onmousedown=\"isKeyPressed(event)\">
 			<div id=\"myDiv1\">	
 				<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
+					<tr><td><center>"+getSystemID()+"</center></td></tr>
 					<tr><td><center>"+GetSlotDisplay("SLOT1")+"</center></td></tr>
 					<tr><td><center>"+GetSlotDisplay("SLOT2")+"</center></td></tr>
 					<tr><td><center>"+GetSlotDisplay("SLOT3")+"</center></td></tr>

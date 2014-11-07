@@ -95,7 +95,7 @@ module MigrationCount
 								hashForLotId = JSON.parse(data[SharedMemory::SystemInfo])
 								lotID = hashForLotId[SharedMemory::LotID]
 								dBaseFileName = SharedLib.getLogFileName(fileName,configDateUpload,SharedLib.getBibID(slotOwnerParam),lotID)+".log"		
-								puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
+								# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
 								# puts "dBaseFileName = #{dBaseFileName} #{__LINE__}-#{__FILE__}"
 								# puts "hash[SharedLib::DataLog]: #{__LINE__}-#{__FILE__}/n#{hash[SharedLib::DataLog]}"
 								`cd #{directory}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`

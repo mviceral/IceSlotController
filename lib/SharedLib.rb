@@ -335,7 +335,7 @@ class SharedLib
 			end
 			ct += 1
 		end
-		return "iceLog_brd#{slotOwnerParam}_#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_#{lotIDParam}"
+		return "iceLog_brd#{slotOwnerParam}_time#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_lot#{lotIDParam}"
 	end
   
   def makeUriFriendly(stringParam)  

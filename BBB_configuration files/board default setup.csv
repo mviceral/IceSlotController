@@ -12,5 +12,5 @@ index,Name,Type,Unit,SET,MIN,MAX,Tol+,Tol-,control,,,,,,,
 10,BIB P12V,Slot PS Voltage,V,12,10.8,13.2,11.4,12.6,YES,OFF,SEQUP,ON,ON,ON,SEQDN,Slot PCB
 11,BIB N5v,Slot PS Voltage,V,-5,-4.5,-5.5,-4.75,-5.25,YES,OFF,SEQUP,ON,ON,ON,SEQDN,Slot PCB
 12,CALREF,Slot Ref Voltage,V,1.2,1.08,1.32,1.14,1.26,,ON,ON,ON,ON,ON,ON,
-13,TSNSR1,Slot Temperatrure sensor,C,65,22,81.25,61.75,68.25,,ON,ON,ON,ON,ON,ON,
-14,TSNSR2,Slot Temperatrure sensor,C,65,22,81.25,61.75,68.25,,ON,ON,ON,ON,ON,ON,
+13,TSNSR1,Slot Temperatrure sensor,C,65,22,81.25,61.75,21,,ON,ON,ON,ON,ON,ON,
+14,TSNSR2,Slot Temperatrure sensor,C,65,22,81.25,61.75,12,,ON,ON,ON,ON,ON,ON,
