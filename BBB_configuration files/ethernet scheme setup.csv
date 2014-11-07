@@ -7,7 +7,8 @@ Device,IP address
 PC,192.168.1.59
 
 # BBB IP Address
-BBB Slot (me),192.168.1.212
+SlotCtrlr IP,192.168.1.212
+SlotCtrlr ID, SLOT1
 
 # PS IP addresses
 PS0,0.168.1.213

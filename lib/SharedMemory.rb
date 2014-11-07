@@ -1249,6 +1249,34 @@ class SharedMemory
     		return nil
     	end
     end
+    
+    SlotCtrlVer = "SlotCtrlVer"
+    def setSlotCtrlrVer(verParm)
+        ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        ds[SlotCtrlVer] = verParm
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+    end
+    
+    def getSlotCtrlVer()
+        return getMemory()[SlotCtrlVer]
+    end
+    
+    def GetDispSlotCtrlVer(slotOwnerParam)
+    	if getMemory().nil? == false
+    		if getMemory()[SharedLib::PC].nil? == false
+    			if getMemory()[SharedLib::PC][slotOwnerParam].nil? == false
+    				return getMemory()[SharedLib::PC][slotOwnerParam][SlotCtrlVer]
+    			else
+    				return nil
+    			end
+    		else
+    			return nil
+    		end
+    	else
+    		return nil
+    	end
+    end
+    
 =begin    
     class << self
       extend Forwardable
