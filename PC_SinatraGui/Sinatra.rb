@@ -132,15 +132,17 @@ class UserInterface
 		getSlotProperties()[FileName] = fileNameParam
 		getSlotProperties()[SharedMemory::LotID] = lotIDParam
 	end
-	
+	RowOfStepName = 8
 	def mustBeBoolean(configFileName,ctParam,config,itemNameParam)
 		#
 		# returns true if the 
 		#
-		indexOfStepNameFromCt = ctParam - 5
+		indexOfStepNameFromCt = ctParam - RowOfStepName
 		ct = ctParam #9 "Auto Restart"
 		while ct < config.length do
-			stepName = config[ct-indexOfStepNameFromCt].split(",")[2].strip # Get the row data for the step file name.
+			stepName = config[ct-indexOfStepNameFromCt].split(",")[4].strip # Get the row data for the step file name.
+			# puts "stepName = '#{stepName}'"
+			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 			stepTime = config[ct].split(",")[4].strip
 			if (stepTime=="1" || stepTime == "0") == false
 				#
@@ -166,14 +168,20 @@ class UserInterface
 		#
 		# returns true if the 
 		#
-		indexOfStepName = ctParam - 5
+		indexOfStepName = ctParam - RowOfStepName 
+		# puts "ctParam='#{ctParam}', RowOfStepName='#{RowOfStepName}', indexOfStepName='#{indexOfStepName}'"
 		ct = ctParam
-		while ct < config.length do
+		while ct < config.length && (ct-indexOfStepName) < config.length do
+			# puts "ct='#{ct}', indexOfStepName='#{indexOfStepName}', ct-indexOfStepName='#{ct-indexOfStepName}', config.length='#{config.length}'"
 			colName = config[ct-indexOfStepName].split(",")[1].strip # Get the row data for the step file name.
-			stepName = config[ct-indexOfStepName].split(",")[2].strip # Get the row data for the step file name.
-			# pause("colName = #{colName}, stepName='#{stepName}'","#{__LINE__}-#{__FILE__}")
+			stepName = config[ct-indexOfStepName].split(",")[4].strip # Get the row data for the step file name.
+			# puts "stepName = '#{stepName}' indexOfStepName-ct='#{indexOfStepName-ct}'"
+			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
+			
 			if colName == "Step Name"
-				stepName = config[ct-indexOfStepName].split(",")[2].strip # Get the row data for the step file name.
+				stepName = config[ct-indexOfStepName].split(",")[4].strip # Get the row data for the step file name.
+			# puts "stepName = '#{stepName}'"
+			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 				stepTime = config[ct].split(",")[4].strip
 				if SharedLib.is_a_number?(stepTime) == false
 					#
@@ -467,7 +475,7 @@ class UserInterface
 
 		fileName = getSlotProperties()["FileName"]
 		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
-		genFileName = SharedLib.getLogFileName(fileName,configDateUpload,SharedLib.getBibID(slotOwnerParam))
+		genFileName = SharedLib.getLogFileName(fileName,configDateUpload,SharedLib.getBibID(slotOwnerParam),slotProperties[slotOwnerParam][SharedMemory::LotID])
 		settingsFileName =  genFileName+".log"
 		recipeStepFile = "../steps config file repository/#{fileName}"
 		recipeLastModified = File.mtime(recipeStepFile)
@@ -1823,6 +1831,8 @@ end
 		# PP.pp(getSlotProperties()["Steps"])
 		# pause("checking the new \"Steps\" value","#{__LINE__}-#{__FILE__}")
 
+		# puts "stepName='#{stepName}'"
+		# PP.pp(slotConfigStep)
 		# End of 'def setItemParameter(nameParam, param, valueParam)'
 	end
 
@@ -2034,8 +2044,11 @@ end
 			# Make sure that the PS file for the pretest is valid.
 			#   How are we going to check whether the file is present or not?
 			ct = 2 # this is the row for the pretest power supply config file.
-			@stepName = config[ct-1].split(",")[1].strip # Get the row data for file name.
-			colContent = config[ct].split(",")[2].strip
+			@stepName = config[ct-1].split(",")[4].strip # Get the row data for file name.
+			# puts "@stepName = '#{@stepName}'"
+			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
+
+			colContent = config[ct].split(",")[4].strip
 			if colContent.nil? == true || colContent.length == 0
 				@redirectWithError += "&ErrInFile="
 				@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
@@ -2053,8 +2066,10 @@ end
 			# Make sure that the 'DUT Site Activation Min Current File' is present and valid.
 			#
 			ct = 4 # this is the row for the pretest 'DUT Site Activation Min Current File'
-			@stepName = config[1].split(",")[1].strip # Get the row data for file name.
-			colContent = config[ct].split(",")[2].strip
+			@stepName = config[1].split(",")[4].strip # Get the row data for file name.
+			# puts "@stepName = '#{@stepName}'"
+			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
+			colContent = config[ct].split(",")[4].strip
 			if colContent.nil? == true || colContent.length == 0
 				@redirectWithError += "&ErrInFile="
 				@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
@@ -2080,7 +2095,9 @@ end
 				colName = config[ct].split(",")[1].strip # Get the row data for file name.
 				if colName == "Step Name"
 					# The section of the read file is still working on a step.
-					@stepName = config[ct].split(",")[2].strip # Get the row data for file name.
+					@stepName = config[ct].split(",")[4].strip # Get the row data for file name.
+			puts "@stepName = '#{@stepName}'"
+			SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 					valueColumnOrStepNameRow = config[ct].split(",")[4].strip
 					#
 					# Must be a number test.
@@ -2088,7 +2105,7 @@ end
 					if SharedLib.is_a_number?(valueColumnOrStepNameRow) == false
 							error = "Error: In file '#{configFileName}', 'Value' "
 							error += "'#{valueColumnOrStepNameRow}' "
-							error += "on Step Name '#{columns[2]}' must be a number."
+							error += "on Step Name '#{columns[4]}' must be a number."
 							@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 							return false
 					end
@@ -2099,7 +2116,7 @@ end
 					if uniqueStepValue[valueColumnOrStepNameRow].nil? == false
 							error = "Error: In file '#{configFileName}', 'Value' "
 							error += "'#{valueColumnOrStepNameRow}' "						
-							error += "on Step Name '#{columns[2]}' must be unique."
+							error += "on Step Name '#{columns[4]}' must be unique."
 							@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 							return false
 					end
@@ -2110,7 +2127,7 @@ end
 					if valueColumnOrStepNameRow.to_i != valueCounter
 							error = "Error: In file '#{configFileName}', 'Value' "
 							error += "'#{valueColumnOrStepNameRow}' valueColumnOrStepNameRow.to_i=#{valueColumnOrStepNameRow.to_i} valueCounter=#{valueCounter} ct=#{ct} "
-							error += "on Step Name '#{columns[2]}' must be listed in increasing order."
+							error += "on Step Name '#{columns[4]}' must be listed in increasing order."
 							@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 							return false
 					end				
@@ -2125,7 +2142,7 @@ end
 			uniqueStepNames = Hash.new
 			ct = beginningLineOfSteps
 			while ct < config.length do
-				colContent = config[ct].split(",")[2].strip
+				colContent = config[ct].split(",")[4].strip
 				if uniqueStepNames[colContent].nil? == false
 					#
 					# The condition says that the step name is already used.  Can't process the file...
@@ -2165,8 +2182,11 @@ end
 			while ct < config.length do
 				colName = config[ct].split(",")[1].strip
 				if colName == 	"Power Supplies"
-					@stepName = config[ct-1].split(",")[2].strip # Get the row data for file name.
-					colContent = config[ct].split(",")[2].strip
+					@stepName = config[ct+2].split(",")[4].strip # Get the row data for file name.
+			# puts "@stepName = '#{@stepName}' ct-3='#{ct-3}'"
+			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
+					colContent = config[ct].split(",")[4].strip
+					colContent = colContent.chomp
 					if colContent.nil? == true || colContent.length == 0
 						@redirectWithError += "&ErrInFile="
 						@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
@@ -2190,8 +2210,10 @@ end
 			#
 			ct = beginningLineOfSteps+2
 			while ct < config.length do
-				@stepName = config[ct-2].split(",")[2].strip # Get the row data for the step file name.
-				colContent = config[ct].split(",")[2].strip
+				@stepName = config[ct+1].split(",")[4].strip # Get the row data for the step file name.
+			# puts "@stepName = '#{@stepName}'"
+			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
+				colContent = config[ct].split(",")[4].strip
 				if colContent.nil? == true || colContent.length == 0
 					fromHere = "#{__LINE__}-#{__FILE__}"
 					@redirectWithError += "&ErrInFile="
@@ -2325,7 +2347,7 @@ end
 			end
 			ct += 1
 		end
-
+		
 		slotConfigStep = getSlotConfigStep(stepName)
 		if slotConfigStep[configFileType].nil?
 			slotConfigStep[configFileType] = Hash.new
@@ -2360,6 +2382,9 @@ end
 			end
 			ct+=1
 		end
+		# PP.pp(slotConfigStep)
+		# puts "stepName='#{stepName}'"
+		# SharedLib.pause "Checking the configstep","#{__LINE__}-#{__FILE__}"
 	end
 
 	def checkFaultyPsConfig(fileNameParam,fromParam)
