@@ -1,4 +1,4 @@
-# ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
+# @1249
 require 'timeout'
 require 'beaglebone'
 require_relative 'DutObj'
@@ -1241,16 +1241,38 @@ class TCUSampler
 		ethernetScheme = Array.new
 		@ethernetScheme = Hash.new
 		File.open("../BBB_configuration files/ethernet scheme setup.csv", "r") do |f|
-			f.each_line do |line|
+			f.each_line do |line| 
 				ethernetScheme.push(line)
 			end
 		end
+		
+		# Fish for the SlotOwner value...
+		# puts "ethernetScheme=#{ethernetScheme}"
+		ct = 0
+		while ct < ethernetScheme.length do
+            if ct >= 1
+		        splittedLine = ethernetScheme[ct].split(",")
+    			# puts "splittedLine[0].strip='#{splittedLine[0].strip}'"
+    			if splittedLine.nil? == false && splittedLine[0].strip == "SlotCtrlr ID"
+    			    slotOwner = splittedLine[1].strip
+    			end
+            end
+            ct += 1
+        end
+		@samplerData.SetSlotOwner(slotOwner)
+		# puts "slotOwner='#{slotOwner}'"
+		# SharedLib.pause "Fishing for slot controller ID","#{__LINE__}-#{__FILE__}"
+		
+		
+		# Get the IP address of the PS
 		SharedLib.bbbLog("No value checking in code within this section, ie, if column value is a valid number, or column name is not recognize. #{__LINE__}-#{__FILE__}")
 		ct = 0
 		while ct < ethernetScheme.length do
             if ct >= 1
 		        columns = ethernetScheme[ct].split(",")
-                @ethernetScheme[columns[0]] = columns[1]
+		        if columns[1].nil? == false
+                    @ethernetScheme[columns[0]] = columns[1].strip
+		        end
             end
             ct += 1
         end
@@ -2535,8 +2557,31 @@ class TCUSampler
         # Disable SPI device
         # spi.disable
     end
+    
+    def getVersionOfSampler(samplerData)
+        if samplerData.nil?
+            puts "@samplerData must not be nil."
+            puts "Terminating code. #{__LINE__}-#{__FILE__}"
+            exit
+        end
+        fileObj = File.new("Sampler.rb", "r")
+        while (line = fileObj.gets)
+            lineParts = line.split(":")
+            # puts "lineParts[0].stri p= '#{lineParts[0].strip}'  #{__LINE__}-#{__FILE__}"
+            if lineParts[0].strip == "# SlotCtrl code version"
+                # puts "lineParts[1].stri p= '#{lineParts[1].strip}'  #{__LINE__}-#{__FILE__}"
+                ver = lineParts[1].strip
+            end
+            "# SlotCtrl code version: 1"
+        end
+        fileObj.close
+        samplerData.setSlotCtrlrVer(ver)
+        # puts "Slot Controller version: #{ver} #{__LINE__}-#{__FILE__}"
+        # SharedLib.pause "Checking version.","#{__LINE__}-#{__FILE__}"
+    end
 
     def runTCUSampler
+        puts "Running Sampler.rb"
         setBoardPsDefaultSettings()
 
         @gPIO2 = GPIO2.new
@@ -2555,6 +2600,7 @@ class TCUSampler
     	@samplerData.SetupData()
     	@samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
     	
+        getVersionOfSampler(@samplerData)
         turnOffHeaters()
     	initMuxValueFunc()
     	initpollAdcInputFunc()
@@ -2862,11 +2908,6 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 303
-# 584
-# [ ] Restore the error messages.
-# [ ] Rename reports based on BIB number.
-# [ ] Get the logger polished out
-# [ ] Get the GUI Finish
-# [ ] Test the run-away temps
-# 
+#############################################################################################
+# SlotCtrl code version: 1.0.0
+# - First version.
