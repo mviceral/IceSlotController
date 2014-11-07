@@ -236,6 +236,12 @@ Temperature Setting: <temp>
         
         @arrOfDataToSend.push(newSlotInfoJson)
 
+        if @xCountPassedThenSendAgain.nil? || @xCountPassedThenSendAgain >= 5
+            puts "Sending slotCtrl data to PC (#{@pcIpAddr}) #{__LINE__}-#{__FILE__}."
+            @xCountPassedThenSendAgain = 0
+        end
+        @xCountPassedThenSendAgain += 1
+        
         while @arrOfDataToSend.length > 0
             slotInfoJson = @arrOfDataToSend.shift
             ct = 0

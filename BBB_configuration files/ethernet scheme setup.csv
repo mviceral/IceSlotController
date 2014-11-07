@@ -4,7 +4,7 @@ Device,IP address
 #PC,192.168.1.210
 
 # Home PC IP address
-PC,192.168.1.74
+PC,192.168.1.59
 
 # BBB IP Address
 BBB Slot (me),192.168.1.212

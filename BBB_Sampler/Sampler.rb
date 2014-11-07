@@ -564,6 +564,9 @@ class TCUSampler
 	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
 	    	stepNumber<getConfiguration()["Steps"].length && 
 	    	@stepToWorkOn.nil?
+	    	# puts "stepNumber='#{stepNumber}''"
+	    	# PP.pp (getConfiguration())
+	    	# SharedLib.pause "Checking content of 'TempConfig'","#{__LINE__}-#{__FILE__}"
 	    	# puts "A0 #{__LINE__}-#{__FILE__}"
 	        if @stepToWorkOn.nil?
 	            # puts "A1 #{__LINE__}-#{__FILE__}"
@@ -571,7 +574,7 @@ class TCUSampler
 		            if @stepToWorkOn.nil?
                         getConfiguration()[Steps][key].each do |key2, array2|
                             # Get which step to work on and setup the power supply settings.
-                            # puts "key='#{key}', key2='#{key2}' #{__LINE__}-#{__FILE__}"
+                            # puts "key='#{key}', key2='#{key2}', StepNum='#{StepNum}' #{__LINE__}-#{__FILE__}"
                             # SharedLib.pause "Checking key, and key2 values.","#{__LINE__}-#{__FILE__}"
                             if key2 == StepNum 
                                 if getConfiguration()[Steps][key][key2].to_i == (stepNumber+1) 
@@ -579,8 +582,8 @@ class TCUSampler
                                     # puts "A4 getConfiguration()[Steps][key][StepTimeLeft].to_i=#{getConfiguration()[Steps][key][StepTimeLeft].to_i} #{__LINE__}-#{__FILE__}"
                                     if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0
                                         # This is the step we want to work on.  Set the temperature settings.
-                                        # PP.pp(getConfiguration()[Steps][key]["TempConfig"])
-                                        # puts "Checking content of 'TempConfig' #{__LINE__}-#{__FILE__}"
+                                        # PP.pp(getConfiguration()[Steps][key])
+                                        # SharedLib.pause "Checking content of 'TempConfig'","#{__LINE__}-#{__FILE__}"
                                         @tempSetPoint = getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"]
                                         @loggingTime = 60*getConfiguration()[Steps][key]["Log Int"].to_i
                                         # puts "@loggingTime='#{@loggingTime}' #{__LINE__}-#{__FILE__}"
@@ -1781,7 +1784,7 @@ class TCUSampler
             adcData = @samplerData.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
             temp1Param = (adcData[SharedLib::SlotTemp1.to_s].to_f/1000.0).round(4)
             deltaTemp = (temp1Param-@tempSetPoint).round(4)
-            print "AmbientTemp(#{temp1Param})-TempSetPoint(#{@tempSetPoint})='#{deltaTemp}' [#{__LINE__}-#{__FILE__}] "
+            #print "AmbientTemp(#{temp1Param})-TempSetPoint(#{@tempSetPoint})='#{deltaTemp}' [#{__LINE__}-#{__FILE__}] "
             if @samplerData.GetConfigurationFileName().length>0
                 if deltaTemp < -25.0
                     fanCtrl(FanPwm1, FanValue)
@@ -2698,7 +2701,12 @@ class TCUSampler
                 ctw = SharedLib::DashLines
                 twtimeleft = SharedLib::DashLines
             end
-            puts "Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} temp time wait left ='#{twtimeleft}' #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+            if @samplerData.GetBbbMode() == SharedLib::InRunMode
+                waitTimeInspect = ""
+            else
+                waitTimeInspect = "temp time wait left ='#{twtimeleft}'"
+            end
+            puts "Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} #{waitTimeInspect} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             @samplerData.SetSlotTime(Time.now.to_i)
             if skipLimboStateCheck
                 skipLimboStateCheck = false
