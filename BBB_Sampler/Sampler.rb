@@ -18,7 +18,7 @@ SERVER_URI="druby://localhost:8787"
 include Beaglebone
 
 TOTAL_DUTS_TO_LOOK_AT  = 24
-SetupAtHome = true # So we can do some work at home
+SetupAtHome = false # So we can do some work at home
 
 class TCUSampler
     SlotBibNum = "SLOT BIB#"
@@ -2578,7 +2578,7 @@ class TCUSampler
     	@samplerData.SetupData()
     	@samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
     	
-        setVersionOfCode(@samplerData,"Sampler.rb",SharedMemory::SlotCtrlVer)
+        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.0")
         turnOffHeaters()
     	initMuxValueFunc()
     	initpollAdcInputFunc()

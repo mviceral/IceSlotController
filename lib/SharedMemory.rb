@@ -1255,7 +1255,7 @@ class SharedMemory
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
-    def setCodeVersion(codeTypeParam)
+    def getCodeVersion(codeTypeParam)
         return getMemory()[codeTypeParam]
     end
     

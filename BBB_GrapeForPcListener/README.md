@@ -11,15 +11,16 @@ ruby extconf.rb
 make
 popd
 gem install beaglebone
+
+
 mkdir /mnt/card
 mount /dev/mmcblk0p1 /mnt/card
 vi /mnt/card/uEnv.txt
 
-- Set the time zone
-ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime
-
 -Then insert the following line.  No carriage return at the end of line?
 optargs=quiet capemgr.disable_partno=BB-BONELT-HDMI,BB-BONELT-HDMIN
+
+umount /mnt/card
 
 -Reboot the board:
 shutdown -r now
@@ -34,3 +35,7 @@ ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime
 
 # To update to the latest ruby so the SPI would run, do the command below.
 \curl -sSL https://get.rvm.io | bash -s stable --ruby
+
+- Set the time zone
+ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime
+
