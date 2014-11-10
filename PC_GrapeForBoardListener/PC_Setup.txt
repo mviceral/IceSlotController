@@ -152,7 +152,7 @@ sudo yum install tcl.x86_64 tk.x86_64
 # make sure to have the following items in the /etc/network/interfaces
 auto eth0
  iface eth0 inet static
-    address 192.168.1.211
+    address 192.168.1.212
     netmask 255.255.255.0
     network 192.168.1.0
     gateway 192.168.1.2

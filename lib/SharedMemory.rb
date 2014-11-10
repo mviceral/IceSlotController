@@ -709,11 +709,8 @@ class SharedMemory
 			end
 		end
 
-		if hash[SharedMemory::WaitTempMsg].nil? == false
-			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = hash[SharedMemory::WaitTempMsg]
-		else
-			ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = nil
-		end
+		ds[SharedLib::PC][slotOwnerParam][SharedMemory::SlotCtrlVer] = hash[SharedMemory::SlotCtrlVer]
+		ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = hash[SharedMemory::WaitTempMsg]
 		ds[SharedLib::PC][slotOwnerParam][LotID] = SharedLib.uriToStr(hash[LotID])
 		ds[SharedLib::PC][slotOwnerParam][PsToolTip] = hash[PsToolTip]
 		ds[SharedLib::PC][slotOwnerParam][DutToolTip] = hash[DutToolTip]
@@ -1251,21 +1248,22 @@ class SharedMemory
     end
     
     SlotCtrlVer = "SlotCtrlVer"
-    def setSlotCtrlrVer(verParm)
+    GuiVer = "GuiVer"
+    def setCodeVersion(codeTypeParam,verParm)
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
-        ds[SlotCtrlVer] = verParm
+        ds[codeTypeParam] = verParm
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
     
-    def getSlotCtrlVer()
-        return getMemory()[SlotCtrlVer]
+    def getCodeVersion(codeTypeParam)
+        return getMemory()[codeTypeParam]
     end
     
-    def GetDispSlotCtrlVer(slotOwnerParam)
+    def GetDispCodeVersion(slotOwnerParam,codeTypeParam)
     	if getMemory().nil? == false
     		if getMemory()[SharedLib::PC].nil? == false
     			if getMemory()[SharedLib::PC][slotOwnerParam].nil? == false
-    				return getMemory()[SharedLib::PC][slotOwnerParam][SlotCtrlVer]
+    				return getMemory()[SharedLib::PC][slotOwnerParam][codeTypeParam]
     			else
     				return nil
     			end

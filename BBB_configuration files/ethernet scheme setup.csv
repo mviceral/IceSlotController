@@ -1,14 +1,24 @@
+# To enable entry, remove comment marker '#' in front of line
 Device,IP address
 
 # Work PC IP address
 PC,192.168.1.210
 
+<<<<<<< HEAD
 # Home PC IP address
 #PC,192.168.1.59
 
 # BBB IP Address
 SlotCtrlr IP,192.168.1.211
 SlotCtrlr ID, SLOT1
+=======
+# Dev PC IP address
+# PC,192.168.1.59
+
+# BBB IP Address
+SlotCtrlr IP,192.168.1.212
+SlotCtrlr ID, SLOT2
+>>>>>>> 191c7ebf8b236861c600a73bd9e89055b4cb34a7
 
 # PS IP addresses
 PS0,192.168.1.213
