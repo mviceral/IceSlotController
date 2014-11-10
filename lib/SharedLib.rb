@@ -140,6 +140,8 @@ class SharedLib
 
 	# Shared memory accessor
 	MemAccessor = "MemAccessor"
+
+	Pc_SlotCtrlIps = "Pc_SlotCtrlIps.config"
     
     #
     # Functions
@@ -455,7 +457,7 @@ class SharedLib
 		if @bibId.nil?
 			@bibId = Hash.new
 			config = Array.new
-			File.open("../Mosys ICEngInc.config", "r") do |f|
+			File.open("../#{Pc_SlotCtrlIps}", "r") do |f|
 				f.each_line do |line|
 					config.push(line)
 				end			
