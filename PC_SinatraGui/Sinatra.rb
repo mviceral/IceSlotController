@@ -18,8 +18,7 @@ class UserInterface
 	#
 	# Template flags
 	#
-	PretestSiteIdentification = "Pretest (site identification)"
-	
+	PretestSiteIdentification = "Pretest (site identification)"	
 	StepConfigFileFolder = "../steps\ config\ file\ repository"
 
 	#
@@ -92,7 +91,7 @@ class UserInterface
 
 			# Read the IP addresses from the file.
 			lenOfStrToLookInto = "SLOT1 IP".length
-  		File.open("../Mosys ICEngInc.config", "r") do |f|
+  		File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
   			f.each_line do |line|
 #  				puts "line='#{line}' #{__LINE__}-#{__FILE__}"
 					if line[0..(lenOfStrToLookInto-1)] == "SLOT1 IP"
@@ -471,7 +470,7 @@ class UserInterface
 	def getSystemID()
 		if @systemID.nil?
 			config = Array.new
-			File.open("../Mosys ICEngInc.config", "r") do |f|
+			File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
 				f.each_line do |line|
 					config.push(line)
 				end			
@@ -506,7 +505,7 @@ class UserInterface
 		writeToSettingsLog("Program: #{fileName}, Last modified: #{recipeLastModified}",settingsFileName)
 		
 		# Get the oven ID
-		# Read the content of the file "Mosys ICEngInc.config" file to get the needed information...
+		# Read the content of the file "#{SharedLib::Pc_SlotCtrlIps}" file to get the needed information...
 		systemID = getSystemID()
 		bibID = SharedLib.getBibID(slotOwnerParam)
 		# writeToSettingsLog("System: #{systemID}, Slot: #{slotOwnerParam}",settingsFileName)
@@ -914,8 +913,19 @@ class UserInterface
 		else
 			lotID = ""
 		end
-		
-		GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}#{lotID}",slotLabel2Param)
+=begin
+		if @lastDispSent.nil? || @lastDispSent == slotLabel2Param
+			if @reSendData.nil?
+				@reSendData = GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}#{lotID}",slotLabel2Param)
+			end
+			return @reSendData;
+		else
+			@lastDispSent = slotLabel2Param
+			@reSendData = 
+		end
+
+=end
+		return GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}#{lotID}",slotLabel2Param)
 	end
 	
 	def GetSlotDisplaySub(slotLabelParam,slotLabel2Param)
@@ -1451,7 +1461,7 @@ end
 		{
 			if (xmlhttp.readyState==4 && xmlhttp.status==200)
 			{
-				document.getElementById(\"myDiv1\").innerHTML=xmlhttp.responseText;
+				document.getElementById(\"myDiv\").innerHTML=xmlhttp.responseText;
 			}
 		}	
 		xmlhttp.open(\"POST\",\"../\",true);
@@ -1471,14 +1481,14 @@ end
 	}
 	</script>
 	<body onmousedown=\"isKeyPressed(event)\">
-			<div id=\"myDiv1\">	
-				<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
-					<tr><td><center>"+getSystemID()+"</center></td></tr>
-					<tr><td><center>"+GetSlotDisplay("SLOT1")+"</center></td></tr>
-					<tr><td><center>"+GetSlotDisplay("SLOT2")+"</center></td></tr>
-					<tr><td><center>"+GetSlotDisplay("SLOT3")+"</center></td></tr>
-				</table>
-			</div>
+		<div id=\"myDiv\">
+		<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
+			<tr><td><center>"+getSystemID()+"</center></td></tr>
+			<tr><td><center>"+GetSlotDisplay("SLOT1")+"</center></td></tr>
+			<tr><td><center>"+GetSlotDisplay("SLOT2")+"</center></td></tr>
+			<tr><td><center>"+GetSlotDisplay("SLOT3")+"</center></td></tr>
+		</table>
+		</div>
 	</body>"
 		return displayForm
 		# end of 'def display'
