@@ -9,6 +9,7 @@ require_relative 'SharedLib'
 require 'json'
 require 'pp'
 require 'drb/drb'
+require 'uri'
 
 # V1 - version 1
 # Adding the mode of the BBB
@@ -743,8 +744,8 @@ puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = hash[SharedMemory::WaitTempMsg]
 puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 puts "hash[LotID]='#{hash[LotID]}'. #{__LINE__}-#{__FILE__}"
-puts "uriToStr(hash[LotID])='#{uriToStr(hash[LotID])}'. #{__LINE__}-#{__FILE__}"
-		ds[SharedLib::PC][slotOwnerParam][LotID] = uriToStr(hash[LotID])
+puts "hash[LotID]='#{hash[LotID]}'. #{__LINE__}-#{__FILE__}"
+		ds[SharedLib::PC][slotOwnerParam][LotID] = hash[LotID]
 puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][PsToolTip] = hash[PsToolTip]
 puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
@@ -777,11 +778,13 @@ puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 	end
 
 
-  def uriToStr(stringParam)
+  def self.uriToStr(stringParam)
   	puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
   	# pause "Checking stringParam value.","#{__LINE__}-#{__FILE__}"
   	if stringParam.nil? == false && stringParam.length>0
+  	puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
 	  	tbr =  URI.unescape(stringParam)
+  	puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
   	else
   		tbr = ""
   	end	

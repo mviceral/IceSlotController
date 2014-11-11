@@ -1756,7 +1756,7 @@ end
 								// http://www.mtu.edu/umc/services/web/cms/characters-avoid/
 								alert (\"Entered Lot ID: '\"+lotID+\"'\\n\\nThe following chacters cannot be used for Lot ID: '/', '\\\\', '?', '%', '*', ':', '|', '\\\"', '<', '>', '#', '$', '+', '!', '`', '&', '‘', '{', '=', '}', ' ' (blank spaces), '@'..\\n\\nRe-select step config file and provide Lot ID to continue.\");
 							else
-								window.location=\"../TopBtnPressed?slot=\"+slotOwnerParam+\"&BtnState=\"+btnStateParam+\"&File=\"+encodeURIComponent(fileParam)+\"&LotID=\"+encodeURIComponent(lotID)+\"\";
+								window.location=\"../TopBtnPressed?slot=\"+slotOwnerParam+\"&BtnState=\"+btnStateParam+\"&File=\"+encodeURIComponent(fileParam)+\"&LotID=\"+lotID+\"\";
 						}
 						else
 						{
