@@ -94,7 +94,7 @@ module MigrationCount
 								# puts "hash[SharedLib::SlotOwner]='#{hash[SharedLib::SlotOwner]}' #{__LINE__}-#{__FILE__}"
 								hashForLotId = JSON.parse(data[SharedMemory::SystemInfo])
 								lotID = hashForLotId[SharedMemory::LotID]
-								dBaseFileName = SharedLib.getLogFileName(fileName,configDateUpload,SharedLib.getBibID(slotOwnerParam),lotID)+".log"		
+								dBaseFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),lotID)+".log"		
 								# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
 								# puts "dBaseFileName = #{dBaseFileName} #{__LINE__}-#{__FILE__}"
 								# puts "hash[SharedLib::DataLog]: #{__LINE__}-#{__FILE__}/n#{hash[SharedLib::DataLog]}"
@@ -103,8 +103,19 @@ module MigrationCount
 						end
 						
 						hash = JSON.parse(data[SharedMemory::SystemInfo])
+puts "check #{__LINE__}-#{__FILE__}"
 						sharedMem = @@sharedMemService.getSharedMem()		 
-						sharedMem.setDataFromBoardToPc(hash)
+puts "check #{__LINE__}-#{__FILE__}"
+						sharedMem.processRecDataFromPC(hash)
+puts "check #{__LINE__}-#{__FILE__}"
+=begin						
+						if @lastSlotCtlrUpdated != hash[SharedLib::SlotOwner]
+							@lastSlotCtlrUpdated = hash[SharedLib::SlotOwner]
+							sharedMem = @@sharedMemService.getSharedMem()		 
+							sharedMem.processRecDataFromPC(hash)
+							puts "Time=#{Time.now.inspect} IP='#{@lastSlotCtlrUpdated}' #{__LINE__}-#{__FILE__}"
+						end
+=end						
 =begin						
 						# puts "dBaseFileName='#{dBaseFileName}'"
 						# logging code.

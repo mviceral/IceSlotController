@@ -497,7 +497,7 @@ class UserInterface
 
 		fileName = getSlotProperties()["FileName"]
 		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
-		genFileName = SharedLib.getLogFileName(fileName,configDateUpload,SharedLib.getBibID(slotOwnerParam),slotProperties[slotOwnerParam][SharedMemory::LotID])
+		genFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),slotProperties[slotOwnerParam][SharedMemory::LotID])
 		settingsFileName =  genFileName+".log"
 		recipeStepFile = "../steps config file repository/#{fileName}"
 		recipeLastModified = File.mtime(recipeStepFile)
@@ -515,7 +515,9 @@ class UserInterface
 		writeToSettingsLog("System: #{systemID}",settingsFileName)
 		writeToSettingsLog("BIB#: #{bibID}",settingsFileName)
 		writeToSettingsLog("Lot ID: #{getSlotProperties()[SharedMemory::LotID]}",settingsFileName)
-		writeToSettingsLog("Slot Controller Software Ver: #{@sharedMem.GetDispSlotCtrlVer(slotOwnerParam)}",settingsFileName)
+		writeToSettingsLog("Slot Controller Software Ver: #{@sharedMem.GetDispCodeVersion(slotOwnerParam,SharedMemory::SlotCtrlVer)}",settingsFileName)
+		writeToSettingsLog("PC Software Ver: #{@sharedMem.getCodeVersion(SharedMemory::PcVer)}",settingsFileName)
+		writeToSettingsLog("",settingsFileName)
 
 =begin
 		psItems = ["VPS0","IPS0","VPS1","IPS1","VPS2","IPS2","VPS3","IPS3","VPS4","IPS4","VPS5","IPS5","VPS6","IPS6","VPS7","IPS7","VPS8","IPS8","VPS9","IPS9","VPS10","IPS10","IDUT"]
@@ -583,6 +585,7 @@ class UserInterface
 		DRb.start_service
 		@sharedMemService = DRbObject.new_with_uri(SERVER_URI)
 		@sharedMem = SharedMemory.new
+		@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.0")
 		# end of 'def initialize'
 	end
 
@@ -913,18 +916,6 @@ class UserInterface
 		else
 			lotID = ""
 		end
-=begin
-		if @lastDispSent.nil? || @lastDispSent == slotLabel2Param
-			if @reSendData.nil?
-				@reSendData = GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}#{lotID}",slotLabel2Param)
-			end
-			return @reSendData;
-		else
-			@lastDispSent = slotLabel2Param
-			@reSendData = 
-		end
-
-=end
 		return GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}#{lotID}",slotLabel2Param)
 	end
 	
@@ -1109,7 +1100,24 @@ class UserInterface
 					
 					# See if the log file is over 10 meg.
 					directory = SharedMemory::StepsLogRecordsPath
-					# File.size("Compressed/#{project}.tar.bz2")
+					generalFileName = SharedLib.getLogFileName(@sharedMem.GetDispConfigDateUpload(slotLabel2Param),SharedLib.getBibID(slotLabel2Param),@sharedMem.GetDispLotID(slotLabel2Param))
+					dBaseFileName = generalFileName+".log"		
+					# puts "dBaseFileName = '#{dBaseFileName}' #{__LINE__}-#{__FILE__}"
+					fileitem = `ls -l #{directory}| grep #{dBaseFileName}`.strip
+					# puts "fileitem = #{fileitem}"
+					fileItemParts = fileitem.split(" ")					
+=begin					
+					puts "fileItemParts[0] = '#{fileItemParts[0]}' #{__LINE__}-#{__FILE__}"
+					puts "fileItemParts[1] = '#{fileItemParts[1]}' #{__LINE__}-#{__FILE__}"
+					puts "fileItemParts[2] = '#{fileItemParts[2]}' #{__LINE__}-#{__FILE__}"
+					puts "fileItemParts[3] = '#{fileItemParts[3]}' #{__LINE__}-#{__FILE__}"
+					puts "fileItemParts[4] = '#{fileItemParts[4]}' #{__LINE__}-#{__FILE__}"
+					puts "fileItemParts[5] = '#{fileItemParts[5]}' #{__LINE__}-#{__FILE__}"					
+					puts "fileItemParts[6] = '#{fileItemParts[6]}' #{__LINE__}-#{__FILE__}"
+=end					
+					if fileItemParts[4].to_i > 10000
+						`cd #{directory}; split -b 10000000 #{dBaseFileName} #{generalFileName}_Part`
+					end
 				end
 			topTable += "
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>ALL STEPS COMPLETE</td></tr>
@@ -1377,7 +1385,7 @@ end
 	
 	def display
 		# Get a fresh data...
-		@sharedMem.processRecDataFromPC(@sharedMemService.getSharedMem().getDataFromBoardToPc())
+		@sharedMem = @sharedMemService.getSharedMem() # .processRecDataFromPC(.getDataFromBoardToPc())
 		displayForm =  "	
 	<style>	 
 	.myButton {
@@ -2778,7 +2786,7 @@ end
 
 get '/ViewFile' do
 	config = Array.new
-	File.open("#{settings.ui.dirFileRepository}/#{SharedLib.uriToStr(params[:File])}", "r") do |f|
+	File.open("#{settings.ui.dirFileRepository}/#{SharedMemory.uriToStr(params[:File])}", "r") do |f|
 		f.each_line do |line|
 			config.push(line)
 		end
@@ -2786,7 +2794,7 @@ get '/ViewFile' do
 	tbr = ""; # tbr - to be returned
 	tbr += "
 	<FORM>"
-	tbr += "File content of '#{SharedLib.uriToStr(params[:File])}'&nbsp;
+	tbr += "File content of '#{SharedMemory.uriToStr(params[:File])}'&nbsp;
 		<INPUT Type=\"button\" VALUE=\"Back\" onClick=\"history.go(-1);return true;\"><br>
 	"	
 	# 
@@ -2800,7 +2808,7 @@ get '/ViewFile' do
 end
 
 get '/TopBtnPressed' do
-	settings.ui.setSlotOwner("#{SharedLib.uriToStr(params[:slot])}")
+	settings.ui.setSlotOwner("#{SharedMemory.uriToStr(params[:slot])}")
 	if params[:File].nil? == false
 		#
 		# Setup the string for error
@@ -2814,90 +2822,90 @@ get '/TopBtnPressed' do
 		end
 		redirect "../"
 	else
-		if (SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && SharedLib.uriToStr(params[:ErrGeneral]) != "")
-			if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, *.mincurr_config, or *.temp_config"
-			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Board PcListener is down."
-			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', No file selected for upload."
-			elsif SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && 
-						SharedLib.uriToStr(params[:ErrGeneral]).length >0
-				settings.ui.upLoadConfigErrorGeneral = "#{SharedLib.uriToStr(params[:ErrGeneral])}"
+		if (SharedMemory.uriToStr(params[:ErrGeneral]).nil? == false && SharedMemory.uriToStr(params[:ErrGeneral]) != "")
+			if SharedMemory.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, *.mincurr_config, or *.temp_config"
+			elsif SharedMemory.uriToStr(params[:ErrGeneral]) == "bbbDown"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Board PcListener is down."
+			elsif SharedMemory.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', No file selected for upload."
+			elsif SharedMemory.uriToStr(params[:ErrGeneral]).nil? == false && 
+						SharedMemory.uriToStr(params[:ErrGeneral]).length >0
+				settings.ui.upLoadConfigErrorGeneral = "#{SharedMemory.uriToStr(params[:ErrGeneral])}"
 				return settings.ui.loadFile
 			end
 		end		
-		if SharedLib.uriToStr(params[:BtnState]) == settings.ui.Load	
+		if SharedMemory.uriToStr(params[:BtnState]) == settings.ui.Load	
 			#
 			# The Load button got pressed.
 			#		
-			settings.ui.setFileInError("#{SharedLib.uriToStr(params[:ErrInFile])}")
-			if SharedLib.uriToStr(params[:ErrStepTempNotFound]).nil? == false && 
-			SharedLib.uriToStr(params[:ErrStepTempNotFound]) != ""
+			settings.ui.setFileInError("#{SharedMemory.uriToStr(params[:ErrInFile])}")
+			if SharedMemory.uriToStr(params[:ErrStepTempNotFound]).nil? == false && 
+			SharedMemory.uriToStr(params[:ErrStepTempNotFound]) != ""
 				calledFrom = "#{__LINE__}-#{__FILE__}"
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
-				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', "
+				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedMemory.uriToStr(params[:ErrInStep])}'"
 				settings.ui.upLoadConfigErrorGeneral += " Step Name, Temperature configuration file"
-				settings.ui.upLoadConfigErrorGeneral += " '#{SharedLib.uriToStr(params[:ErrStepTempNotFound])}' is not found."
-			elsif SharedLib.uriToStr(params[:ErrStepPsNotFound]).nil? == false && 
-			SharedLib.uriToStr(params[:ErrStepPsNotFound]) != ""
+				settings.ui.upLoadConfigErrorGeneral += " '#{SharedMemory.uriToStr(params[:ErrStepTempNotFound])}' is not found."
+			elsif SharedMemory.uriToStr(params[:ErrStepPsNotFound]).nil? == false && 
+			SharedMemory.uriToStr(params[:ErrStepPsNotFound]) != ""
 				calledFrom = "#{__LINE__}-#{__FILE__}"
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
-				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', "
+				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedMemory.uriToStr(params[:ErrInStep])}'"
 				settings.ui.upLoadConfigErrorGeneral += " Step Name, Power Supply configuration"
-				settings.ui.upLoadConfigErrorGeneral += " '#{SharedLib.uriToStr(params[:ErrStepPsNotFound])}' is not found."
-			elsif SharedLib.uriToStr(params[:ErrTempFileNotGiven]).nil? == false && 
-			SharedLib.uriToStr(params[:ErrTempFileNotGiven]) != ""
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
-				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "
+				settings.ui.upLoadConfigErrorGeneral += " '#{SharedMemory.uriToStr(params[:ErrStepPsNotFound])}' is not found."
+			elsif SharedMemory.uriToStr(params[:ErrTempFileNotGiven]).nil? == false && 
+			SharedMemory.uriToStr(params[:ErrTempFileNotGiven]) != ""
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', "
+				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedMemory.uriToStr(params[:ErrInStep])}' "
 				settings.ui.upLoadConfigErrorGeneral += "Step Name, Temperature configuration file is not given."
-			elsif SharedLib.uriToStr(params[:ErrPsFileNotGiven]).nil? == false && 
-			SharedLib.uriToStr(params[:ErrPsFileNotGiven]) != ""
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
-				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "
+			elsif SharedMemory.uriToStr(params[:ErrPsFileNotGiven]).nil? == false && 
+			SharedMemory.uriToStr(params[:ErrPsFileNotGiven]) != ""
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', "
+				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedMemory.uriToStr(params[:ErrInStep])}' "
 				settings.ui.upLoadConfigErrorGeneral += "Step Name, Power Supply configuration file is not given."
-			elsif SharedLib.uriToStr(params[:ErrStepNameNotGiven]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameNotGiven]) != ""
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Row '#{SharedLib.uriToStr(params[:ErrRow])}' on step file requires a filename.."
-			elsif SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]) != ""
-				fileName = SharedLib.uriToStr(params[:ErrStepNameAlreadyFound])
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Duplicate filename '#{fileName}' in the step file list."
-			elsif SharedLib.uriToStr(params[:ErrStepFormat]).nil? == false && SharedLib.uriToStr(params[:ErrStepFormat]) != ""
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  Column labels must start on column A, row 1."
-			elsif (SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && SharedLib.uriToStr(params[:ErrGeneral]) != "")
-				if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
-					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, *.mincurr_config, or *.temp_config"
-				elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
-					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Board PcListener is down."
-				elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
-					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', No file selected for upload."
-				elsif SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && 
-							SharedLib.uriToStr(params[:ErrGeneral]).length >0
-					settings.ui.upLoadConfigErrorGeneral = "#{SharedLib.uriToStr(params[:ErrGeneral])}"
+			elsif SharedMemory.uriToStr(params[:ErrStepNameNotGiven]).nil? == false && SharedMemory.uriToStr(params[:ErrStepNameNotGiven]) != ""
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Row '#{SharedMemory.uriToStr(params[:ErrRow])}' on step file requires a filename.."
+			elsif SharedMemory.uriToStr(params[:ErrStepNameAlreadyFound]).nil? == false && SharedMemory.uriToStr(params[:ErrStepNameAlreadyFound]) != ""
+				fileName = SharedMemory.uriToStr(params[:ErrStepNameAlreadyFound])
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Duplicate filename '#{fileName}' in the step file list."
+			elsif SharedMemory.uriToStr(params[:ErrStepFormat]).nil? == false && SharedMemory.uriToStr(params[:ErrStepFormat]) != ""
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  Column labels must start on column A, row 1."
+			elsif (SharedMemory.uriToStr(params[:ErrGeneral]).nil? == false && SharedMemory.uriToStr(params[:ErrGeneral]) != "")
+				if SharedMemory.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
+					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, *.mincurr_config, or *.temp_config"
+				elsif SharedMemory.uriToStr(params[:ErrGeneral]) == "bbbDown"
+					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Board PcListener is down."
+				elsif SharedMemory.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
+					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', No file selected for upload."
+				elsif SharedMemory.uriToStr(params[:ErrGeneral]).nil? == false && 
+							SharedMemory.uriToStr(params[:ErrGeneral]).length >0
+					settings.ui.upLoadConfigErrorGeneral = "#{SharedMemory.uriToStr(params[:ErrGeneral])}"
 				end
-			elsif (SharedLib.uriToStr(params[:ErrRow]).nil? == false && SharedLib.uriToStr(params[:ErrRow]) != "") || 
-				 (SharedLib.uriToStr(params[:ErrIndex]).nil? == false && SharedLib.uriToStr(params[:ErrIndex]) != "")
-				settings.ui.upLoadConfigErrorInFile = SharedLib.uriToStr(params[:ErrInFile])
-				settings.ui.upLoadConfigErrorIndex = SharedLib.uriToStr(params[:ErrIndex])
-				settings.ui.upLoadConfigErrorRow = SharedLib.uriToStr(params[:ErrRow])
-				settings.ui.upLoadConfigErrorCol = SharedLib.uriToStr(params[:ErrCol])
-				settings.ui.upLoadConfigErrorName = SharedLib.uriToStr(params[:ErrName])
-				settings.ui.upLoadConfigErrorColType = SharedLib.uriToStr(params[:ErrColType])
-				settings.ui.upLoadConfigErrorValue = SharedLib.uriToStr(params[:ErrValue])
-			elsif SharedLib.uriToStr(params[:MsgFileUpload]).nil? == false
-				settings.ui.upLoadConfigGoodUpload = "File '#{SharedLib.uriToStr(params[:MsgFileUpload])}' has been uploaded."
+			elsif (SharedMemory.uriToStr(params[:ErrRow]).nil? == false && SharedMemory.uriToStr(params[:ErrRow]) != "") || 
+				 (SharedMemory.uriToStr(params[:ErrIndex]).nil? == false && SharedMemory.uriToStr(params[:ErrIndex]) != "")
+				settings.ui.upLoadConfigErrorInFile = SharedMemory.uriToStr(params[:ErrInFile])
+				settings.ui.upLoadConfigErrorIndex = SharedMemory.uriToStr(params[:ErrIndex])
+				settings.ui.upLoadConfigErrorRow = SharedMemory.uriToStr(params[:ErrRow])
+				settings.ui.upLoadConfigErrorCol = SharedMemory.uriToStr(params[:ErrCol])
+				settings.ui.upLoadConfigErrorName = SharedMemory.uriToStr(params[:ErrName])
+				settings.ui.upLoadConfigErrorColType = SharedMemory.uriToStr(params[:ErrColType])
+				settings.ui.upLoadConfigErrorValue = SharedMemory.uriToStr(params[:ErrValue])
+			elsif SharedMemory.uriToStr(params[:MsgFileUpload]).nil? == false
+				settings.ui.upLoadConfigGoodUpload = "File '#{SharedMemory.uriToStr(params[:MsgFileUpload])}' has been uploaded."
 				settings.ui.upLoadConfigErrorName = ""
 			else
 				settings.ui.clearError
 			end
 		
 			return settings.ui.loadFile
-		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Run
+		elsif SharedMemory.uriToStr(params[:BtnState]) == settings.ui.Run
 			#
 			# The Run button got pressed.
 			#
 			settings.ui.setToRunMode(params[:slot])
 			redirect "../"
-		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Stop
+		elsif SharedMemory.uriToStr(params[:BtnState]) == settings.ui.Stop
 			#
 			# The Stop button got pressed.
 			#
@@ -2908,13 +2916,13 @@ get '/TopBtnPressed' do
 			# Formula : Time now - Time of run, then convert to hours, mins, sec.
 			#
 			redirect "../"
-		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Clear
+		elsif SharedMemory.uriToStr(params[:BtnState]) == settings.ui.Clear
 			#
 			# The Clear button got pressed.
 			#
 			settings.ui.setToLoadMode(params[:slot])
 			redirect "../"
-		elsif SharedLib.uriToStr(params[:BtnState]) == "ClearError"
+		elsif SharedMemory.uriToStr(params[:BtnState]) == "ClearError"
 			#
 			# The clear error button got pressed.
 			#
@@ -3031,4 +3039,4 @@ get '/AckError' do
 	redirect "../"
 end
 
-# at 1480
+# at 1116
