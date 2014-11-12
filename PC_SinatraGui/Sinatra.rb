@@ -22,8 +22,7 @@ class UserInterface
 	#
 	PretestSiteIdentification = "Pretest (site identification)"	
 	StepConfigFileFolder = "../steps\ config\ file\ repository"
-	TrHeight="2px" 
-	TdHeight="1"
+
 	#
 	# Settings file constants
 	#
@@ -243,13 +242,13 @@ class UserInterface
 								columns = configTemplateRows[rowCt].split(",")
 								colCt = 0
 								while colCt<columns.length do
-									tbr += "<td height=\"#{TdHeight}\" style=\"border: 1px solid black;\"><font size=\"1\">"+columns[colCt]
+									tbr += "<td style=\"border: 1px solid black;\"><font size=\"1\">"+columns[colCt]
 									tbr += "</font></td>"		
 									colCt += 1
 								end
 					
 								while colCt<maxColCt do
-									tbr += "<td height=\"#{TdHeight}\" style=\"border: 1px solid black;\"><font size=\"1\">&nbsp;</font></td>"		
+									tbr += "<td style=\"border: 1px solid black;\"><font size=\"1\">&nbsp;</font></td>"		
 									colCt += 1
 								end
 					
@@ -805,15 +804,15 @@ class UserInterface
 			else
 				toDisplay = ""
 			end
-			toBeReturned = "<a onClick=\"if (ctrlButtonPressed){alert('#{toDisplay}');}\"><table style=\"height:10px;\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+			toBeReturned = "<a onClick=\"if (ctrlButtonPressed){alert('#{toDisplay}');}\"><table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 			toBeReturned.gsub! '&#10;', '\n'
 			# puts "toBeReturned='#{toBeReturned}' #{__LINE__}-#{__FILE__}"
 			# toBeReturned = "<table title=\"#{@sharedMem.GetDispDutToolTip(slotLabel2Param)}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		else
-			toBeReturned = "<table style=\"height:10px;\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+			toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		end
-		toBeReturned += "<tr style=\"height:#{TrHeight};\"><td height=\"#{TdHeight}\"><font size=\"1\">"+labelParam+"</font></td></tr>"
-		toBeReturned += "<tr style=\"height:#{TrHeight};\">"
+		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
+		toBeReturned += "<tr>"
 		
 		errorColor = @sharedMem.GetDispErrorColor(slotLabel2Param)
 		sValue = labelParam[1..-1]		
@@ -822,14 +821,14 @@ class UserInterface
 		iStyleL = getDutStyle("IDUT","Latch",sValue,errorColor)
 		iStyleC = getDutStyle("IDUT","CurrentState",sValue,errorColor)		
 		toBeReturned += "	
-			<td height=\"#{TdHeight}\" #{tStyleL} >
+			<td #{tStyleL} >
 				<font size=\"1\">Temp</font>
 			</td>
-			<td height=\"#{TdHeight}\" #{tStyleC} >
+			<td #{tStyleC} >
 				<font size=\"1\">#{temperature} C</font>
 			</td>"
 		toBeReturned += "</tr>"
-		toBeReturned += "<tr style=\"height:#{TrHeight};\"><td height=\"#{TdHeight}\" #{iStyleL}><font size=\"1\">Current</font></td><td height=\"#{TdHeight}\" #{iStyleC}><font size=\"1\">#{current} A</font></td></tr>"
+		toBeReturned += "<tr><td #{iStyleL}><font size=\"1\">Current</font></td><td #{iStyleC}><font size=\"1\">#{current} A</font></td></tr>"
 		if enableToolTip
 			toBeReturned += "</table></a>"
 		else
@@ -849,7 +848,7 @@ class UserInterface
 		totalColumns = 0
 		rowItems = ""
 		while fileIndex< files.length
-			rowItems += "<td height=\"#{TdHeight}\" style=\"border: 1px solid black;\">&nbsp;<button 
+			rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
 							style=\"height:20px; width:50px; font-size:10px\" 							
 							onclick=\"window.location='../ViewFile?File=#{files[fileIndex]}'\" />
 							View
@@ -865,7 +864,7 @@ class UserInterface
 		
 		if totalColumns != 0
 			while (totalColumns >= 4) == false
-				rowItems += "<td height=\"#{TdHeight}\" style=\"border: 1px solid black;\">&nbsp;<button 
+				rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
 							style=\"height:20px; width:50px; font-size:10px\" 							
 							onclick=\"\"  DISABLED/>
 							View
@@ -928,94 +927,94 @@ class UserInterface
 		getSlotDisplay_ToBeReturned = ""
 		getSlotDisplay_ToBeReturned += 	
 		"<table style=\"height:20%; border-collapse : collapse; border : 1px solid black;\"  bgcolor=\"#000000\">"
-		getSlotDisplay_ToBeReturned += 	"<tr style=\"height:#{TrHeight};\">"
+		getSlotDisplay_ToBeReturned += 	"<tr>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S20","20")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S20","20")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S16","16")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S16","16")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S12","12")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S12","12")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S8","8")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S8","8")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S4","4")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S4","4")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S0","0")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S0","0")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS0","32",nil)+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS0","32",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS4","36",nil)+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS4","36",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS8","40","25")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS8","40","25")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"5V","48","29")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"5V","48","29")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
-		getSlotDisplay_ToBeReturned += 	"<tr style=\"height:#{TrHeight};\">"
+		getSlotDisplay_ToBeReturned += 	"<tr>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S21","21")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S21","21")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S17","17")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S17","17")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S13","13")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S13","13")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S9","9")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S9","9")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S5","5")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S5","5")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S1","1")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S1","1")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS1","33",nil)+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS1","33",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS5","37",nil)+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS5","37",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS9","41","26")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS9","41","26")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"12V","46","30")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"12V","46","30")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
-		getSlotDisplay_ToBeReturned += 	"<tr style=\"height:#{TrHeight};\">"
+		getSlotDisplay_ToBeReturned += 	"<tr>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S22","22")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S22","22")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S18","18")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S18","18")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S14","14")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S14","14")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S10","10")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S10","10")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S6","6")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S6","6")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S2","2")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S2","2")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS2","34",nil)+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS2","34",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS6","38","24")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS6","38","24")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS10","42","27")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS10","42","27")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"24V","47","31")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"24V","47","31")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
-		getSlotDisplay_ToBeReturned += 	"<tr style=\"height:#{TrHeight};\">"
+		getSlotDisplay_ToBeReturned += 	"<tr>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S23","23")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S23","23")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S19","19")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S19","19")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S15","15")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S15","15")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S11","11")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S11","11")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S7","7")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S7","7")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S3","3")+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S3","3")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS3","35",nil)+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS3","35",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS7","39",nil)+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS7","39",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : 
+		"<td style=\"border-collapse : 
 			collapse; border : 1px solid black;\">"+PNPCell(slotLabel2Param,"43","44","45")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell(slotLabel2Param)+"</td>"
+		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell(slotLabel2Param)+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
 		getSlotDisplay_ToBeReturned += 	"</table>"
 		errMsg = @sharedMem.getDispErrorMsg(slotLabel2Param)
@@ -1034,7 +1033,7 @@ class UserInterface
 =begin								
 								"
 								<td>&nbsp;</td>
-								<td height=\"#{TdHeight}\" style=\"border:1px solid black; border-collapse:collapse; width: 95%;\">
+								<td style=\"border:1px solid black; border-collapse:collapse; width: 95%;\">
 									<font size=\"1\" color=\"red\"/>#{errMsg}
 								</td>
 								<td>
@@ -1054,7 +1053,7 @@ class UserInterface
 			topTable += "								
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>Step '#{stepNum}'</td></tr>
 				 			<tr>
-				 				<td height=\"#{TdHeight}\" style=\"background-color:#{SharedMemory::RedColor}\" align=\"center\">
+				 				<td style=\"background-color:#{SharedMemory::RedColor}\" align=\"center\">
 				 					<font 				 						
 				 						size=\"2\" 
 				 						style=\"font-style: italic;\">"
@@ -1438,7 +1437,7 @@ end
 		totalColumns = 0
 		rowItems = ""
 		while fileIndex< files.length
-			rowItems += "<td height=\"#{TdHeight}\" style=\"border: 1px solid black;\">&nbsp;<button 
+			rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
 										style=\"height:20px; width:50px; font-size:10px\" 							
 										onclick=\"getLotId('#{getSlotOwner}','#{Load}','#{files[fileIndex]}');\" />
 										Select
@@ -1460,7 +1459,7 @@ end
 		
 		if totalColumns != 0
 			while (totalColumns >= 4) == false
-				rowItems += "<td height=\"#{TdHeight}\" style=\"border: 1px solid black;\">&nbsp;<button 
+				rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
 							style=\"height:20px; width:50px; font-size:10px\" 							
 							onclick=\"\" DISABLED/>
 							Select
@@ -2829,7 +2828,7 @@ post '/dataDisplay' do
 	settings.ui.updatedSharedMemory()
 	tbr = "
 		<table height=\"60%\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
-			<tr style=\"height:#{UserInterface::TrHeight};\"><td height=\"#{UserInterface::TdHeight}\" ><center>"
+			<tr><td><center>"
 	tbr += settings.ui.GetSlotDisplay("SLOT1")
 	tbr += "</center></td></tr>
 			<tr><td><center>"
