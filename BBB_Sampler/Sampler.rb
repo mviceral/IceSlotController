@@ -2702,6 +2702,12 @@ class TCUSampler
         
         # @samplerData.ReportError("Error test. #{__LINE__}-#{__FILE__}")
         @timeOfLog = Time.now
+
+	# Turn off the fans of the TCUs since we just booted up.
+        ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,0.0)
+        ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,0.0)
+        setTcuToRunMode()                        
+
         while true
             stepNum = ""
             if @stepToWorkOn.nil? == false
@@ -2775,10 +2781,11 @@ class TCUSampler
         		    puts "\n\n\nNew command from PC - '#{pcCmd}' @samplerData.GetPcCmd().length='#{pcCmdObj.length}'  #{__LINE__}-#{__FILE__}"
                     @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    case pcCmd
-        		    when SharedLib::RunFromPc
+        	    when SharedLib::RunFromPc
                         @samplerData.setDontSendErrorColor(false)
-    		            setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
+    		        setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
                         @samplerData.clearStopMessage()
+        		checkDeadTcus(uart1)
                     when SharedLib::ClearErrFromPc
                         @boardData[SharedMemory::ErrorColor] = nil
                         @samplerData.setDontSendErrorColor(true)
@@ -2787,7 +2794,7 @@ class TCUSampler
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                         
         		    when SharedLib::ClearConfigFromPc
-                        @samplerData.clearStopMessage()
+                    		@samplerData.clearStopMessage()
         		        @samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
                         @samplerData.setErrorColor(nil,"#{__LINE__}-#{__FILE__}")
             		    setBoardData(Hash.new,uart1)
