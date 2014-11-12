@@ -3,6 +3,8 @@
 # @519
 require 'rubygems'
 require 'sinatra'
+development = true
+require 'sinatra/reloader' if development?
 #require 'sqlite3'
 require 'json'
 require 'rest_client'
@@ -20,7 +22,8 @@ class UserInterface
 	#
 	PretestSiteIdentification = "Pretest (site identification)"	
 	StepConfigFileFolder = "../steps\ config\ file\ repository"
-
+	TrHeight="2px" 
+	TdHeight="1"
 	#
 	# Settings file constants
 	#
@@ -240,13 +243,13 @@ class UserInterface
 								columns = configTemplateRows[rowCt].split(",")
 								colCt = 0
 								while colCt<columns.length do
-									tbr += "<td style=\"border: 1px solid black;\"><font size=\"1\">"+columns[colCt]
+									tbr += "<td height=\"#{TdHeight}\" style=\"border: 1px solid black;\"><font size=\"1\">"+columns[colCt]
 									tbr += "</font></td>"		
 									colCt += 1
 								end
 					
 								while colCt<maxColCt do
-									tbr += "<td style=\"border: 1px solid black;\"><font size=\"1\">&nbsp;</font></td>"		
+									tbr += "<td height=\"#{TdHeight}\" style=\"border: 1px solid black;\"><font size=\"1\">&nbsp;</font></td>"		
 									colCt += 1
 								end
 					
@@ -767,7 +770,7 @@ class UserInterface
 	end
 
 
-	def DutCell(slotLabel2Param, labelParam,rawDataParam)
+	def DutCell(slotLabel2Param, labelParam,rawDataParam)		
 		muxData = @sharedMem.GetDispMuxData(slotLabel2Param)
 		current = SharedLib::getCurrentDutDisplay(muxData,rawDataParam)
 
@@ -802,15 +805,15 @@ class UserInterface
 			else
 				toDisplay = ""
 			end
-			toBeReturned = "<a onClick=\"if (ctrlButtonPressed){alert('#{toDisplay}');}\"><table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+			toBeReturned = "<a onClick=\"if (ctrlButtonPressed){alert('#{toDisplay}');}\"><table style=\"height:10px;\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 			toBeReturned.gsub! '&#10;', '\n'
 			# puts "toBeReturned='#{toBeReturned}' #{__LINE__}-#{__FILE__}"
 			# toBeReturned = "<table title=\"#{@sharedMem.GetDispDutToolTip(slotLabel2Param)}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		else
-			toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
+			toBeReturned = "<table style=\"height:10px;\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		end
-		toBeReturned += "<tr><td><font size=\"1\">"+labelParam+"</font></td></tr>"
-		toBeReturned += "<tr>"
+		toBeReturned += "<tr style=\"height:#{TrHeight};\"><td height=\"#{TdHeight}\"><font size=\"1\">"+labelParam+"</font></td></tr>"
+		toBeReturned += "<tr style=\"height:#{TrHeight};\">"
 		
 		errorColor = @sharedMem.GetDispErrorColor(slotLabel2Param)
 		sValue = labelParam[1..-1]		
@@ -818,16 +821,15 @@ class UserInterface
 		tStyleC = getDutStyle("TDUT","CurrentState",sValue,errorColor)
 		iStyleL = getDutStyle("IDUT","Latch",sValue,errorColor)
 		iStyleC = getDutStyle("IDUT","CurrentState",sValue,errorColor)		
-		
 		toBeReturned += "	
-			<td #{tStyleL} >
+			<td height=\"#{TdHeight}\" #{tStyleL} >
 				<font size=\"1\">Temp</font>
 			</td>
-			<td #{tStyleC} >
+			<td height=\"#{TdHeight}\" #{tStyleC} >
 				<font size=\"1\">#{temperature} C</font>
 			</td>"
 		toBeReturned += "</tr>"
-		toBeReturned += "<tr><td #{iStyleL}><font size=\"1\">Current</font></td><td #{iStyleC}><font size=\"1\">#{current} A</font></td></tr>"
+		toBeReturned += "<tr style=\"height:#{TrHeight};\"><td height=\"#{TdHeight}\" #{iStyleL}><font size=\"1\">Current</font></td><td height=\"#{TdHeight}\" #{iStyleC}><font size=\"1\">#{current} A</font></td></tr>"
 		if enableToolTip
 			toBeReturned += "</table></a>"
 		else
@@ -847,7 +849,7 @@ class UserInterface
 		totalColumns = 0
 		rowItems = ""
 		while fileIndex< files.length
-			rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
+			rowItems += "<td height=\"#{TdHeight}\" style=\"border: 1px solid black;\">&nbsp;<button 
 							style=\"height:20px; width:50px; font-size:10px\" 							
 							onclick=\"window.location='../ViewFile?File=#{files[fileIndex]}'\" />
 							View
@@ -863,7 +865,7 @@ class UserInterface
 		
 		if totalColumns != 0
 			while (totalColumns >= 4) == false
-				rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
+				rowItems += "<td height=\"#{TdHeight}\" style=\"border: 1px solid black;\">&nbsp;<button 
 							style=\"height:20px; width:50px; font-size:10px\" 							
 							onclick=\"\"  DISABLED/>
 							View
@@ -908,7 +910,9 @@ class UserInterface
 	def removeWhiteSpace(slotLabelParam)
 		return slotLabelParam.delete(' ')
 	end
-	
+	def updatedSharedMemory
+			@sharedMem = @sharedMemService.getSharedMem() # .processRecDataFromPC(.getDataFromBoardToPc())
+	end
 	def GetSlotDisplay(slotLabel2Param)
 		lotID = @sharedMem.GetDispLotID(slotLabel2Param)
 		if lotID.nil? == false && lotID.length > 0
@@ -919,99 +923,99 @@ class UserInterface
 		return GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}#{lotID}",slotLabel2Param)
 	end
 	
-	def GetSlotDisplaySub(slotLabelParam,slotLabel2Param)
+	def GetSlotDisplaySub(slotLabelParam,slotLabel2Param)		
 		setSlotOwner(slotLabel2Param)
 		getSlotDisplay_ToBeReturned = ""
 		getSlotDisplay_ToBeReturned += 	
-		"<table style=\"border-collapse : collapse; border : 1px solid black;\"  bgcolor=\"#000000\">"
-		getSlotDisplay_ToBeReturned += 	"<tr>"
+		"<table style=\"height:20%; border-collapse : collapse; border : 1px solid black;\"  bgcolor=\"#000000\">"
+		getSlotDisplay_ToBeReturned += 	"<tr style=\"height:#{TrHeight};\">"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S20","20")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S20","20")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S16","16")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S16","16")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S12","12")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S12","12")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S8","8")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S8","8")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S4","4")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S4","4")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S0","0")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S0","0")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS0","32",nil)+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS0","32",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS4","36",nil)+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS4","36",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS8","40","25")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS8","40","25")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"5V","48","29")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"5V","48","29")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
-		getSlotDisplay_ToBeReturned += 	"<tr>"
+		getSlotDisplay_ToBeReturned += 	"<tr style=\"height:#{TrHeight};\">"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S21","21")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S21","21")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S17","17")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S17","17")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S13","13")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S13","13")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S9","9")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S9","9")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S5","5")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S5","5")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S1","1")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S1","1")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS1","33",nil)+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS1","33",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS5","37",nil)+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS5","37",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS9","41","26")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS9","41","26")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"12V","46","30")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"12V","46","30")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
-		getSlotDisplay_ToBeReturned += 	"<tr>"
+		getSlotDisplay_ToBeReturned += 	"<tr style=\"height:#{TrHeight};\">"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S22","22")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S22","22")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S18","18")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S18","18")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S14","14")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S14","14")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S10","10")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S10","10")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S6","6")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S6","6")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S2","2")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S2","2")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS2","34",nil)+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS2","34",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS6","38","24")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS6","38","24")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS10","42","27")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS10","42","27")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"24V","47","31")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"24V","47","31")+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
-		getSlotDisplay_ToBeReturned += 	"<tr>"
+		getSlotDisplay_ToBeReturned += 	"<tr style=\"height:#{TrHeight};\">"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S23","23")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S23","23")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S19","19")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S19","19")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S15","15")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S15","15")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S11","11")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S11","11")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S7","7")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S7","7")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S3","3")+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S3","3")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS3","35",nil)+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS3","35",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS7","39",nil)+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+PsCell(slotLabel2Param,"PS7","39",nil)+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : 
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : 
 			collapse; border : 1px solid black;\">"+PNPCell(slotLabel2Param,"43","44","45")+"</td>"
 		getSlotDisplay_ToBeReturned += 	
-		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell(slotLabel2Param)+"</td>"
+		"<td height=\"#{TdHeight}\" style=\"border-collapse : collapse; border : 1px solid black;\">"+SlotCell(slotLabel2Param)+"</td>"
 		getSlotDisplay_ToBeReturned += 	"</tr>"
 		getSlotDisplay_ToBeReturned += 	"</table>"
 		errMsg = @sharedMem.getDispErrorMsg(slotLabel2Param)
@@ -1030,7 +1034,7 @@ class UserInterface
 =begin								
 								"
 								<td>&nbsp;</td>
-								<td style=\"border:1px solid black; border-collapse:collapse; width: 95%;\">
+								<td height=\"#{TdHeight}\" style=\"border:1px solid black; border-collapse:collapse; width: 95%;\">
 									<font size=\"1\" color=\"red\"/>#{errMsg}
 								</td>
 								<td>
@@ -1050,7 +1054,7 @@ class UserInterface
 			topTable += "								
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>Step '#{stepNum}'</td></tr>
 				 			<tr>
-				 				<td style=\"background-color:#{SharedMemory::RedColor}\" align=\"center\">
+				 				<td height=\"#{TdHeight}\" style=\"background-color:#{SharedMemory::RedColor}\" align=\"center\">
 				 					<font 				 						
 				 						size=\"2\" 
 				 						style=\"font-style: italic;\">"
@@ -1386,118 +1390,7 @@ end
 	def display
 		# Get a fresh data...
 		@sharedMem = @sharedMemService.getSharedMem() # .processRecDataFromPC(.getDataFromBoardToPc())
-		displayForm =  "	
-	<style>	 
-	.myButton {
-		-moz-box-shadow:inset 1px 2px 3px 0px #91b8b3;
-		-webkit-box-shadow:inset 1px 2px 3px 0px #91b8b3;
-		box-shadow:inset 1px 2px 3px 0px #91b8b3;
-		background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #768d87), color-stop(1, #6c7c7c));
-		background:-moz-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
-		background:-webkit-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
-		background:-o-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
-		background:-ms-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
-		background:linear-gradient(to bottom, #768d87 5%, #6c7c7c 100%);
-		filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#768d87', endColorstr='#6c7c7c',GradientType=0);
-		background-color:#768d87;
-		-moz-border-radius:2px;
-		-webkit-border-radius:2px;
-		border-radius:2px;
-		border:1px solid #566963;
-		display:inline-block;
-		cursor:pointer;
-		color:#ffffff;
-		font-family:arial;
-		font-size:10px;
-		font-weight:bold;
-		padding:0px 3px;
-		text-decoration:none;
-		text-shadow:0px -1px 0px #2b665e;
-	}
-	.myButton:hover {
-		background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #6c7c7c), color-stop(1, #768d87));
-		background:-moz-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
-		background:-webkit-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
-		background:-o-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
-		background:-ms-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
-		background:linear-gradient(to bottom, #6c7c7c 5%, #768d87 100%);
-		filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#6c7c7c', endColorstr='#768d87',GradientType=0);
-		background-color:#6c7c7c;
-	}
-	.myButton:active {
-		position:relative;
-		top:1px;
-	}
-
-	#slotA
-	{
-	border:1px solid black;
-	border-collapse:collapse;
-	}
-	</style>
-	
-	<script type=\"text/javascript\">
-
-	ct = 0;
-	function updateBtnColor(SlotParam,ct) {
-		var btn = document.getElementById(\"btn_\"+SlotParam);
-		if (ct == 0)
-			btn.style=\"background: #ffaa77 no-repeat left;\"
-		if (ct == 1)
-			btn.style=\"background: #ffaa00 no-repeat left;\"			
-		if (ct == 2)
-			btn.style=\"background: #ff0077 no-repeat left;\"			
-		if (ct == 3)
-			btn.style=\"background: #00aa77 no-repeat left;\"
-	}
-		
-	function loadXMLDoc()
-	{
-		var xmlhttp;
-		if (window.XMLHttpRequest)
-		{
-			// code for IE7+, Firefox, Chrome, Opera, Safari
-			xmlhttp=new XMLHttpRequest();
-		}
-		else
-		{
-			// code for IE6, IE5
-			xmlhttp=new ActiveXObject(\"Microsoft.XMLHTTP\");
-		}
-
-		xmlhttp.onreadystatechange=function()
-		{
-			if (xmlhttp.readyState==4 && xmlhttp.status==200)
-			{
-				document.getElementById(\"myDiv\").innerHTML=xmlhttp.responseText;
-			}
-		}	
-		xmlhttp.open(\"POST\",\"../\",true);
-		xmlhttp.send();
-	}
-	
-	setInterval(function(){loadXMLDoc()},1000);  /*1000 msec = 1sec*/
-	
-	function isKeyPressed(event) {
-		  if (event.ctrlKey) {
-		  	ctrlButtonPressed = true;
-		      /*alert(\"The CTRL key was pressed!\");*/
-		  } else {
-		  	ctrlButtonPressed = false;
-		  		/*alert(\"The CTRL key was NOT pressed!\");*/		      
-		  }
-	}
-	</script>
-	<body onmousedown=\"isKeyPressed(event)\">
-		<div id=\"myDiv\">
-		<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
-			<tr><td><center>"+getSystemID()+"</center></td></tr>
-			<tr><td><center>"+GetSlotDisplay("SLOT1")+"</center></td></tr>
-			<tr><td><center>"+GetSlotDisplay("SLOT2")+"</center></td></tr>
-			<tr><td><center>"+GetSlotDisplay("SLOT3")+"</center></td></tr>
-		</table>
-		</div>
-	</body>"
+		displayForm =  ""	
 		return displayForm
 		# end of 'def display'
 	end
@@ -1545,7 +1438,7 @@ end
 		totalColumns = 0
 		rowItems = ""
 		while fileIndex< files.length
-			rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
+			rowItems += "<td height=\"#{TdHeight}\" style=\"border: 1px solid black;\">&nbsp;<button 
 										style=\"height:20px; width:50px; font-size:10px\" 							
 										onclick=\"getLotId('#{getSlotOwner}','#{Load}','#{files[fileIndex]}');\" />
 										Select
@@ -1567,7 +1460,7 @@ end
 		
 		if totalColumns != 0
 			while (totalColumns >= 4) == false
-				rowItems += "<td style=\"border: 1px solid black;\">&nbsp;<button 
+				rowItems += "<td height=\"#{TdHeight}\" style=\"border: 1px solid black;\">&nbsp;<button 
 							style=\"height:20px; width:50px; font-size:10px\" 							
 							onclick=\"\" DISABLED/>
 							Select
@@ -2932,12 +2825,32 @@ get '/TopBtnPressed' do
 	end
 end
 
+post '/dataDisplay' do
+	settings.ui.updatedSharedMemory()
+	tbr = "
+		<table height=\"60%\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
+			<tr style=\"height:#{UserInterface::TrHeight};\"><td height=\"#{UserInterface::TdHeight}\" ><center>"
+	tbr += settings.ui.GetSlotDisplay("SLOT1")
+	tbr += "</center></td></tr>
+			<tr><td><center>"
+	tbr += settings.ui.GetSlotDisplay("SLOT2")
+	tbr += "</center></td></tr>
+			<tr><td><center>"
+	tbr += settings.ui.GetSlotDisplay("SLOT3")
+	tbr += "</center></td></tr>
+		</table>		
+	"				
+	return tbr
+end
+
 get '/' do 
-	return settings.ui.display
+	# return settings.ui.display
+	erb :home
 end
 
 post '/' do	
-	return settings.ui.display
+	# return settings.ui.display
+	erb :home
 end
 
 
@@ -3039,4 +2952,129 @@ get '/AckError' do
 	redirect "../"
 end
 
-# at 1116
+__END__
+@@home
+<!doctype html>
+<html lang="en">
+	<head>
+ 		<title><%= settings.ui.getSystemID() %></title>
+	<style>
+	html, body {
+    height: 100%;
+	}
+	
+	.myButton {
+		-moz-box-shadow:inset 1px 2px 3px 0px #91b8b3;
+		-webkit-box-shadow:inset 1px 2px 3px 0px #91b8b3;
+		box-shadow:inset 1px 2px 3px 0px #91b8b3;
+		background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #768d87), color-stop(1, #6c7c7c));
+		background:-moz-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
+		background:-webkit-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
+		background:-o-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
+		background:-ms-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
+		background:linear-gradient(to bottom, #768d87 5%, #6c7c7c 100%);
+		filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#768d87', endColorstr='#6c7c7c',GradientType=0);
+		background-color:#768d87;
+		-moz-border-radius:2px;
+		-webkit-border-radius:2px;
+		border-radius:2px;
+		border:1px solid #566963;
+		display:inline-block;
+		cursor:pointer;
+		color:#ffffff;
+		font-family:arial;
+		font-size:10px;
+		font-weight:bold;
+		padding:0px 3px;
+		text-decoration:none;
+		text-shadow:0px -1px 0px #2b665e;
+	}
+	.myButton:hover {
+		background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #6c7c7c), color-stop(1, #768d87));
+		background:-moz-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+		background:-webkit-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+		background:-o-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+		background:-ms-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+		background:linear-gradient(to bottom, #6c7c7c 5%, #768d87 100%);
+		filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#6c7c7c', endColorstr='#768d87',GradientType=0);
+		background-color:#6c7c7c;
+	}
+	.myButton:active {
+		position:relative;
+		top:1px;
+	}
+
+	#slotA
+	{
+	border:1px solid black;
+	border-collapse:collapse;
+	}
+	</style>
+	
+	<script type="text/javascript">
+
+	ct = 0;
+	function updateBtnColor(SlotParam,ct) {
+		var btn = document.getElementById("btn_"+SlotParam);
+		if (ct == 0)
+			btn.style="background: #ffaa77 no-repeat left;"
+		if (ct == 1)
+			btn.style="background: #ffaa00 no-repeat left;"			
+		if (ct == 2)
+			btn.style="background: #ff0077 no-repeat left;"			
+		if (ct == 3)
+			btn.style="background: #00aa77 no-repeat left;"
+	}
+		
+	function loadXMLDoc()
+	{
+		var xmlhttp;
+		if (window.XMLHttpRequest)
+		{
+			// code for IE7+, Firefox, Chrome, Opera, Safari
+			xmlhttp=new XMLHttpRequest();
+		}
+		else
+		{
+			// code for IE6, IE5
+			xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+		}
+
+		xmlhttp.onreadystatechange=function()
+		{
+			if (xmlhttp.readyState==4 && xmlhttp.status==200)
+			{
+				document.getElementById("myDiv").innerHTML=xmlhttp.responseText;
+			}
+		}	
+		xmlhttp.open("POST","../dataDisplay",true);
+		xmlhttp.send();
+	}
+	
+	setInterval(function(){loadXMLDoc()},1000);  /*1000 msec = 1sec*/
+	
+	function isKeyPressed(event) {
+		  if (event.ctrlKey) {
+		  	ctrlButtonPressed = true;
+		      /*alert("The CTRL key was pressed!");*/
+		  } else {
+		  	ctrlButtonPressed = false;
+		  		/*alert("The CTRL key was NOT pressed!");*/		      
+		  }
+	}
+	</script>
+		<meta charset="utf-8">
+	</head>
+	<body onmousedown="isKeyPressed(event)">
+		<table>
+			<tr>
+				<td align="left"><img src="../ICE_logo_small.bmp" style="width:<%= 388/1.5 %>px;height:<%= 105/1.5%>px"></td>
+				<td width="100%"></td>
+				<td align="center" nowrap><font size="5"><%= settings.ui.getSystemID() %>&nbsp;&nbsp;&nbsp;</font></td>
+				<td></td>
+			</tf>
+		</table>		
+		<div style="height: 300px;" id="myDiv">
+		</div>
+	</body>
+</html>
