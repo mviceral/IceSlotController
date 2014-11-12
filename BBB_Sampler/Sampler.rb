@@ -18,7 +18,7 @@ SERVER_URI="druby://localhost:8787"
 include Beaglebone
 
 TOTAL_DUTS_TO_LOOK_AT  = 24
-SetupAtHome = false # So we can do some work at home
+SetupAtHome = true # So we can do some work at home
 
 class TCUSampler
     SlotBibNum = "SLOT BIB#"
