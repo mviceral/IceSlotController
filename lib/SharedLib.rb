@@ -425,9 +425,7 @@ class SharedLib
     end
 
 	def setBibID(colContent,slotOwnerParam)
-puts "SharedLib.rb #{__LINE__}-#{__FILE__}"
 			if colContent[0] == "#{slotOwnerParam} BIB#"
-puts "SharedLib.rb #{__LINE__}-#{__FILE__}"
 				bibID = colContent[1].chomp
 				bibID = bibID.strip
 				@bibId[slotOwnerParam] = bibID

@@ -3076,12 +3076,13 @@ __END__
 			slotCtrlVer = ""
 			slotNum = 1
 			while pcVer.nil? || pcVer.length == 0 || slotCtrlVer.nil? || slotCtrlVer.length == 0
+				sleep(1)
 				pcVer = settings.ui.sharedMem.getCodeVersion(SharedMemory::PcVer)
-				puts "SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
+				# puts "SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
 
 				settings.ui.updatedSharedMemory()
 				slotCtrlVer = settings.ui.sharedMem.GetDispCodeVersion("SLOT#{slotNum}",SharedMemory::SlotCtrlVer)
-				puts "SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
+				# puts "SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
 				if slotCtrlVer.nil? || slotCtrlVer.length == 0
 					slotNum += 1
 					if slotNum >= 4
