@@ -6,6 +6,7 @@ gem install grape
 apt-get install libsqlite3-dev
 gem install sqlite3
 gem install rest-client
+gem install sinatra-contrib
 pushd ../lib
 ruby extconf.rb
 make
