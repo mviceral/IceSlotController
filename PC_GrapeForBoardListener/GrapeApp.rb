@@ -103,11 +103,8 @@ module MigrationCount
 						end
 						
 						hash = JSON.parse(data[SharedMemory::SystemInfo])
-puts "check #{__LINE__}-#{__FILE__}"
 						sharedMem = @@sharedMemService.getSharedMem()		 
-puts "check #{__LINE__}-#{__FILE__}"
 						sharedMem.processRecDataFromPC(hash)
-puts "check #{__LINE__}-#{__FILE__}"
 =begin						
 						if @lastSlotCtlrUpdated != hash[SharedLib::SlotOwner]
 							@lastSlotCtlrUpdated = hash[SharedLib::SlotOwner]
