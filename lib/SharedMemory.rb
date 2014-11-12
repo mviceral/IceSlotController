@@ -9,6 +9,7 @@ require_relative 'SharedLib'
 require 'json'
 require 'pp'
 require 'drb/drb'
+require 'uri'
 
 # V1 - version 1
 # Adding the mode of the BBB
@@ -294,7 +295,9 @@ class SharedMemory
 	end
 
 	def setDataFromBoardToPc(hash)
-		@dataFromBoardToPc = hash
+puts "setDataFromBoardToPc got called. #{__LINE__}-#{__FILE__}"
+		processRecDataFromPC(hash)
+		# @dataFromBoardToPc = hash
 	end
 	
 	def getDataFromBoardToPc()
@@ -302,22 +305,27 @@ class SharedMemory
 	end
 	
 	def processRecDataFromPC(hash)
-		# puts "hash[SharedLib::SlotOwner].nil? = #{hash[SharedLib::SlotOwner].nil?}"
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		if hash.nil? == false 
 			if ((hash[SharedLib::SlotOwner].nil? == false &&
 			       (hash[SharedLib::SlotOwner] != SharedLib::SLOT1 &&
 				hash[SharedLib::SlotOwner] != SharedLib::SLOT2 &&
 				hash[SharedLib::SlotOwner] != SharedLib::SLOT3) == true) || hash[SharedLib::SlotOwner].nil?)
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 				# Flush out the  memory...
 				# @data.WriteDataV1("","")
 			else
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
+				# See if we can alternate the update of the shared memory item.
 				SetDataBoardToPc(hash)
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 				SetDispSlotOwner(hash[SharedLib::SlotOwner])
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 
 				# printDataContent(hash[SharedLib::SlotOwner])
 				# puts "Error color check #{__LINE__}-#{__FILE__}"
 				# PP.pp(GetDispErrorColor(hash[SharedLib::SlotOwner]))
-				configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
+				# configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
 			end
 		end
 	end
@@ -327,12 +335,14 @@ class SharedMemory
 		@lockedAt = ""		
 	end
 	
+=begin	
 	def getLogFileName(slotOwnerParam)
 		configDateUpload = Time.at(GetDispConfigDateUpload(slotOwnerParam).to_i)
 		fileName = GetDispConfigurationFileName(slotOwnerParam)
 		genFileName = SharedLib.getLogFileName(fileName,configDateUpload,slotOwnerParam,GetDispLotID(slotOwnerParam))
 		return genFileName+".log"
 	end
+=end
 
 	def getPsVolts(muxData,adcData,rawDataParam)
 		if rawDataParam.to_i >= 48
@@ -684,38 +694,67 @@ class SharedMemory
     end
 
 	def SetDataBoardToPc(hash)
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds = lockMemory("#{__LINE__}-#{__FILE__}")
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		if ds[SharedLib::PC].nil?
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			ds[SharedLib::PC] = Hash.new
 		end
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		
 		if hash[SharedLib::ButtonDisplay].nil? == false
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			if ds[SharedLib::PC][hash[SharedLib::SlotOwner]].nil?
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 				ds[SharedLib::PC][hash[SharedLib::SlotOwner]] = Hash.new
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			end
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			
 			ds[SharedLib::PC][hash[SharedLib::SlotOwner]][SharedLib::ButtonDisplay] = hash[SharedLib::ButtonDisplay]
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		end
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 
 		if ds[SharedLib::PC].nil?
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			ds[SharedLib::PC] = Hash.new
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		end
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 
 		slotOwnerParam = hash[SharedLib::SlotOwner]
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		if slotOwnerParam.nil? == false && slotOwnerParam.length > 0
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			if ds[SharedLib::PC][slotOwnerParam].nil?
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 				ds[SharedLib::PC][slotOwnerParam] = Hash.new
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			end
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		end
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 
 		ds[SharedLib::PC][slotOwnerParam][SharedMemory::SlotCtrlVer] = hash[SharedMemory::SlotCtrlVer]
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = hash[SharedMemory::WaitTempMsg]
-		ds[SharedLib::PC][slotOwnerParam][LotID] = SharedLib.uriToStr(hash[LotID])
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
+puts "hash[LotID]='#{hash[LotID]}'. #{__LINE__}-#{__FILE__}"
+puts "hash[LotID]='#{hash[LotID]}'. #{__LINE__}-#{__FILE__}"
+		ds[SharedLib::PC][slotOwnerParam][LotID] = hash[LotID]
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][PsToolTip] = hash[PsToolTip]
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][DutToolTip] = hash[DutToolTip]
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][ErrorColor] = hash[ErrorColor]
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][StopMessage] = hash[StopMessage]
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 
 		SetDispBoardData(
 			hash[SharedLib::ConfigurationFileName],
@@ -735,7 +774,24 @@ class SharedMemory
 			hash[SharedLib::Eips],
 			hash[SharedLib::ErrorMsg],
 			hash[SharedLib::TotalTimeOfStepsInQueue])
+puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 	end
+
+
+  def self.uriToStr(stringParam)
+  	puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
+  	# pause "Checking stringParam value.","#{__LINE__}-#{__FILE__}"
+  	if stringParam.nil? == false && stringParam.length>0
+  	puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
+	  	tbr =  URI.unescape(stringParam)
+  	puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
+  	else
+  		tbr = ""
+  	end	
+  	puts "uriToStr - tbr = '#{tbr}' #{__LINE__}-#{__FILE__}"
+  	return tbr
+  end
+  
 
     def SetAllStepsDone_YesNo(allStepsDone_YesNoParam,fromParam)
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
@@ -1248,7 +1304,7 @@ class SharedMemory
     end
     
     SlotCtrlVer = "SlotCtrlVer"
-    GuiVer = "GuiVer"
+    PcVer = "PcVer"
     def setCodeVersion(codeTypeParam,verParm)
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
         ds[codeTypeParam] = verParm

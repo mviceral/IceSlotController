@@ -3,6 +3,8 @@
 # @519
 require 'rubygems'
 require 'sinatra'
+development = true
+require 'sinatra/reloader' if development?
 #require 'sqlite3'
 require 'json'
 require 'rest_client'
@@ -497,7 +499,7 @@ class UserInterface
 
 		fileName = getSlotProperties()["FileName"]
 		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
-		genFileName = SharedLib.getLogFileName(fileName,configDateUpload,SharedLib.getBibID(slotOwnerParam),slotProperties[slotOwnerParam][SharedMemory::LotID])
+		genFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),slotProperties[slotOwnerParam][SharedMemory::LotID])
 		settingsFileName =  genFileName+".log"
 		recipeStepFile = "../steps config file repository/#{fileName}"
 		recipeLastModified = File.mtime(recipeStepFile)
@@ -515,7 +517,9 @@ class UserInterface
 		writeToSettingsLog("System: #{systemID}",settingsFileName)
 		writeToSettingsLog("BIB#: #{bibID}",settingsFileName)
 		writeToSettingsLog("Lot ID: #{getSlotProperties()[SharedMemory::LotID]}",settingsFileName)
-		writeToSettingsLog("Slot Controller Software Ver: #{@sharedMem.GetDispSlotCtrlVer(slotOwnerParam)}",settingsFileName)
+		writeToSettingsLog("Slot Controller Software Ver: #{@sharedMem.GetDispCodeVersion(slotOwnerParam,SharedMemory::SlotCtrlVer)}",settingsFileName)
+		writeToSettingsLog("PC Software Ver: #{@sharedMem.getCodeVersion(SharedMemory::PcVer)}",settingsFileName)
+		writeToSettingsLog("",settingsFileName)
 
 =begin
 		psItems = ["VPS0","IPS0","VPS1","IPS1","VPS2","IPS2","VPS3","IPS3","VPS4","IPS4","VPS5","IPS5","VPS6","IPS6","VPS7","IPS7","VPS8","IPS8","VPS9","IPS9","VPS10","IPS10","IDUT"]
@@ -583,6 +587,7 @@ class UserInterface
 		DRb.start_service
 		@sharedMemService = DRbObject.new_with_uri(SERVER_URI)
 		@sharedMem = SharedMemory.new
+		@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.0")
 		# end of 'def initialize'
 	end
 
@@ -764,7 +769,7 @@ class UserInterface
 	end
 
 
-	def DutCell(slotLabel2Param, labelParam,rawDataParam)
+	def DutCell(slotLabel2Param, labelParam,rawDataParam)		
 		muxData = @sharedMem.GetDispMuxData(slotLabel2Param)
 		current = SharedLib::getCurrentDutDisplay(muxData,rawDataParam)
 
@@ -815,7 +820,6 @@ class UserInterface
 		tStyleC = getDutStyle("TDUT","CurrentState",sValue,errorColor)
 		iStyleL = getDutStyle("IDUT","Latch",sValue,errorColor)
 		iStyleC = getDutStyle("IDUT","CurrentState",sValue,errorColor)		
-		
 		toBeReturned += "	
 			<td #{tStyleL} >
 				<font size=\"1\">Temp</font>
@@ -905,7 +909,9 @@ class UserInterface
 	def removeWhiteSpace(slotLabelParam)
 		return slotLabelParam.delete(' ')
 	end
-	
+	def updatedSharedMemory
+			@sharedMem = @sharedMemService.getSharedMem() # .processRecDataFromPC(.getDataFromBoardToPc())
+	end
 	def GetSlotDisplay(slotLabel2Param)
 		lotID = @sharedMem.GetDispLotID(slotLabel2Param)
 		if lotID.nil? == false && lotID.length > 0
@@ -913,26 +919,14 @@ class UserInterface
 		else
 			lotID = ""
 		end
-=begin
-		if @lastDispSent.nil? || @lastDispSent == slotLabel2Param
-			if @reSendData.nil?
-				@reSendData = GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}#{lotID}",slotLabel2Param)
-			end
-			return @reSendData;
-		else
-			@lastDispSent = slotLabel2Param
-			@reSendData = 
-		end
-
-=end
 		return GetSlotDisplaySub("#{slotLabel2Param}/BIB#-#{SharedLib.getBibID(slotLabel2Param)}#{lotID}",slotLabel2Param)
 	end
 	
-	def GetSlotDisplaySub(slotLabelParam,slotLabel2Param)
+	def GetSlotDisplaySub(slotLabelParam,slotLabel2Param)		
 		setSlotOwner(slotLabel2Param)
 		getSlotDisplay_ToBeReturned = ""
 		getSlotDisplay_ToBeReturned += 	
-		"<table style=\"border-collapse : collapse; border : 1px solid black;\"  bgcolor=\"#000000\">"
+		"<table style=\"height:20%; border-collapse : collapse; border : 1px solid black;\"  bgcolor=\"#000000\">"
 		getSlotDisplay_ToBeReturned += 	"<tr>"
 		getSlotDisplay_ToBeReturned += 	
 		"<td style=\"border-collapse : collapse; border : 1px solid black;\">"+DutCell(slotLabel2Param,"S20","20")+"</td>"
@@ -1109,7 +1103,24 @@ class UserInterface
 					
 					# See if the log file is over 10 meg.
 					directory = SharedMemory::StepsLogRecordsPath
-					# File.size("Compressed/#{project}.tar.bz2")
+					generalFileName = SharedLib.getLogFileName(@sharedMem.GetDispConfigDateUpload(slotLabel2Param),SharedLib.getBibID(slotLabel2Param),@sharedMem.GetDispLotID(slotLabel2Param))
+					dBaseFileName = generalFileName+".log"		
+					# puts "dBaseFileName = '#{dBaseFileName}' #{__LINE__}-#{__FILE__}"
+					fileitem = `ls -l #{directory}| grep #{dBaseFileName}`.strip
+					# puts "fileitem = #{fileitem}"
+					fileItemParts = fileitem.split(" ")					
+=begin					
+					puts "fileItemParts[0] = '#{fileItemParts[0]}' #{__LINE__}-#{__FILE__}"
+					puts "fileItemParts[1] = '#{fileItemParts[1]}' #{__LINE__}-#{__FILE__}"
+					puts "fileItemParts[2] = '#{fileItemParts[2]}' #{__LINE__}-#{__FILE__}"
+					puts "fileItemParts[3] = '#{fileItemParts[3]}' #{__LINE__}-#{__FILE__}"
+					puts "fileItemParts[4] = '#{fileItemParts[4]}' #{__LINE__}-#{__FILE__}"
+					puts "fileItemParts[5] = '#{fileItemParts[5]}' #{__LINE__}-#{__FILE__}"					
+					puts "fileItemParts[6] = '#{fileItemParts[6]}' #{__LINE__}-#{__FILE__}"
+=end					
+					if fileItemParts[4].to_i > 10000
+						`cd #{directory}; split -b 10000000 #{dBaseFileName} #{generalFileName}_Part`
+					end
 				end
 			topTable += "
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>ALL STEPS COMPLETE</td></tr>
@@ -1377,119 +1388,8 @@ end
 	
 	def display
 		# Get a fresh data...
-		@sharedMem.processRecDataFromPC(@sharedMemService.getSharedMem().getDataFromBoardToPc())
-		displayForm =  "	
-	<style>	 
-	.myButton {
-		-moz-box-shadow:inset 1px 2px 3px 0px #91b8b3;
-		-webkit-box-shadow:inset 1px 2px 3px 0px #91b8b3;
-		box-shadow:inset 1px 2px 3px 0px #91b8b3;
-		background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #768d87), color-stop(1, #6c7c7c));
-		background:-moz-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
-		background:-webkit-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
-		background:-o-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
-		background:-ms-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
-		background:linear-gradient(to bottom, #768d87 5%, #6c7c7c 100%);
-		filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#768d87', endColorstr='#6c7c7c',GradientType=0);
-		background-color:#768d87;
-		-moz-border-radius:2px;
-		-webkit-border-radius:2px;
-		border-radius:2px;
-		border:1px solid #566963;
-		display:inline-block;
-		cursor:pointer;
-		color:#ffffff;
-		font-family:arial;
-		font-size:10px;
-		font-weight:bold;
-		padding:0px 3px;
-		text-decoration:none;
-		text-shadow:0px -1px 0px #2b665e;
-	}
-	.myButton:hover {
-		background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #6c7c7c), color-stop(1, #768d87));
-		background:-moz-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
-		background:-webkit-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
-		background:-o-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
-		background:-ms-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
-		background:linear-gradient(to bottom, #6c7c7c 5%, #768d87 100%);
-		filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#6c7c7c', endColorstr='#768d87',GradientType=0);
-		background-color:#6c7c7c;
-	}
-	.myButton:active {
-		position:relative;
-		top:1px;
-	}
-
-	#slotA
-	{
-	border:1px solid black;
-	border-collapse:collapse;
-	}
-	</style>
-	
-	<script type=\"text/javascript\">
-
-	ct = 0;
-	function updateBtnColor(SlotParam,ct) {
-		var btn = document.getElementById(\"btn_\"+SlotParam);
-		if (ct == 0)
-			btn.style=\"background: #ffaa77 no-repeat left;\"
-		if (ct == 1)
-			btn.style=\"background: #ffaa00 no-repeat left;\"			
-		if (ct == 2)
-			btn.style=\"background: #ff0077 no-repeat left;\"			
-		if (ct == 3)
-			btn.style=\"background: #00aa77 no-repeat left;\"
-	}
-		
-	function loadXMLDoc()
-	{
-		var xmlhttp;
-		if (window.XMLHttpRequest)
-		{
-			// code for IE7+, Firefox, Chrome, Opera, Safari
-			xmlhttp=new XMLHttpRequest();
-		}
-		else
-		{
-			// code for IE6, IE5
-			xmlhttp=new ActiveXObject(\"Microsoft.XMLHTTP\");
-		}
-
-		xmlhttp.onreadystatechange=function()
-		{
-			if (xmlhttp.readyState==4 && xmlhttp.status==200)
-			{
-				document.getElementById(\"myDiv\").innerHTML=xmlhttp.responseText;
-			}
-		}	
-		xmlhttp.open(\"POST\",\"../\",true);
-		xmlhttp.send();
-	}
-	
-	setInterval(function(){loadXMLDoc()},1000);  /*1000 msec = 1sec*/
-	
-	function isKeyPressed(event) {
-		  if (event.ctrlKey) {
-		  	ctrlButtonPressed = true;
-		      /*alert(\"The CTRL key was pressed!\");*/
-		  } else {
-		  	ctrlButtonPressed = false;
-		  		/*alert(\"The CTRL key was NOT pressed!\");*/		      
-		  }
-	}
-	</script>
-	<body onmousedown=\"isKeyPressed(event)\">
-		<div id=\"myDiv\">
-		<table width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
-			<tr><td><center>"+getSystemID()+"</center></td></tr>
-			<tr><td><center>"+GetSlotDisplay("SLOT1")+"</center></td></tr>
-			<tr><td><center>"+GetSlotDisplay("SLOT2")+"</center></td></tr>
-			<tr><td><center>"+GetSlotDisplay("SLOT3")+"</center></td></tr>
-		</table>
-		</div>
-	</body>"
+		@sharedMem = @sharedMemService.getSharedMem() # .processRecDataFromPC(.getDataFromBoardToPc())
+		displayForm =  ""	
 		return displayForm
 		# end of 'def display'
 	end
@@ -1748,7 +1648,7 @@ end
 								// http://www.mtu.edu/umc/services/web/cms/characters-avoid/
 								alert (\"Entered Lot ID: '\"+lotID+\"'\\n\\nThe following chacters cannot be used for Lot ID: '/', '\\\\', '?', '%', '*', ':', '|', '\\\"', '<', '>', '#', '$', '+', '!', '`', '&', '‘', '{', '=', '}', ' ' (blank spaces), '@'..\\n\\nRe-select step config file and provide Lot ID to continue.\");
 							else
-								window.location=\"../TopBtnPressed?slot=\"+slotOwnerParam+\"&BtnState=\"+btnStateParam+\"&File=\"+encodeURIComponent(fileParam)+\"&LotID=\"+encodeURIComponent(lotID)+\"\";
+								window.location=\"../TopBtnPressed?slot=\"+slotOwnerParam+\"&BtnState=\"+btnStateParam+\"&File=\"+encodeURIComponent(fileParam)+\"&LotID=\"+lotID+\"\";
 						}
 						else
 						{
@@ -2778,7 +2678,7 @@ end
 
 get '/ViewFile' do
 	config = Array.new
-	File.open("#{settings.ui.dirFileRepository}/#{SharedLib.uriToStr(params[:File])}", "r") do |f|
+	File.open("#{settings.ui.dirFileRepository}/#{SharedMemory.uriToStr(params[:File])}", "r") do |f|
 		f.each_line do |line|
 			config.push(line)
 		end
@@ -2786,7 +2686,7 @@ get '/ViewFile' do
 	tbr = ""; # tbr - to be returned
 	tbr += "
 	<FORM>"
-	tbr += "File content of '#{SharedLib.uriToStr(params[:File])}'&nbsp;
+	tbr += "File content of '#{SharedMemory.uriToStr(params[:File])}'&nbsp;
 		<INPUT Type=\"button\" VALUE=\"Back\" onClick=\"history.go(-1);return true;\"><br>
 	"	
 	# 
@@ -2800,7 +2700,7 @@ get '/ViewFile' do
 end
 
 get '/TopBtnPressed' do
-	settings.ui.setSlotOwner("#{SharedLib.uriToStr(params[:slot])}")
+	settings.ui.setSlotOwner("#{SharedMemory.uriToStr(params[:slot])}")
 	if params[:File].nil? == false
 		#
 		# Setup the string for error
@@ -2814,90 +2714,90 @@ get '/TopBtnPressed' do
 		end
 		redirect "../"
 	else
-		if (SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && SharedLib.uriToStr(params[:ErrGeneral]) != "")
-			if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, *.mincurr_config, or *.temp_config"
-			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Board PcListener is down."
-			elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', No file selected for upload."
-			elsif SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && 
-						SharedLib.uriToStr(params[:ErrGeneral]).length >0
-				settings.ui.upLoadConfigErrorGeneral = "#{SharedLib.uriToStr(params[:ErrGeneral])}"
+		if (SharedMemory.uriToStr(params[:ErrGeneral]).nil? == false && SharedMemory.uriToStr(params[:ErrGeneral]) != "")
+			if SharedMemory.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, *.mincurr_config, or *.temp_config"
+			elsif SharedMemory.uriToStr(params[:ErrGeneral]) == "bbbDown"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Board PcListener is down."
+			elsif SharedMemory.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', No file selected for upload."
+			elsif SharedMemory.uriToStr(params[:ErrGeneral]).nil? == false && 
+						SharedMemory.uriToStr(params[:ErrGeneral]).length >0
+				settings.ui.upLoadConfigErrorGeneral = "#{SharedMemory.uriToStr(params[:ErrGeneral])}"
 				return settings.ui.loadFile
 			end
 		end		
-		if SharedLib.uriToStr(params[:BtnState]) == settings.ui.Load	
+		if SharedMemory.uriToStr(params[:BtnState]) == settings.ui.Load	
 			#
 			# The Load button got pressed.
 			#		
-			settings.ui.setFileInError("#{SharedLib.uriToStr(params[:ErrInFile])}")
-			if SharedLib.uriToStr(params[:ErrStepTempNotFound]).nil? == false && 
-			SharedLib.uriToStr(params[:ErrStepTempNotFound]) != ""
+			settings.ui.setFileInError("#{SharedMemory.uriToStr(params[:ErrInFile])}")
+			if SharedMemory.uriToStr(params[:ErrStepTempNotFound]).nil? == false && 
+			SharedMemory.uriToStr(params[:ErrStepTempNotFound]) != ""
 				calledFrom = "#{__LINE__}-#{__FILE__}"
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
-				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', "
+				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedMemory.uriToStr(params[:ErrInStep])}'"
 				settings.ui.upLoadConfigErrorGeneral += " Step Name, Temperature configuration file"
-				settings.ui.upLoadConfigErrorGeneral += " '#{SharedLib.uriToStr(params[:ErrStepTempNotFound])}' is not found."
-			elsif SharedLib.uriToStr(params[:ErrStepPsNotFound]).nil? == false && 
-			SharedLib.uriToStr(params[:ErrStepPsNotFound]) != ""
+				settings.ui.upLoadConfigErrorGeneral += " '#{SharedMemory.uriToStr(params[:ErrStepTempNotFound])}' is not found."
+			elsif SharedMemory.uriToStr(params[:ErrStepPsNotFound]).nil? == false && 
+			SharedMemory.uriToStr(params[:ErrStepPsNotFound]) != ""
 				calledFrom = "#{__LINE__}-#{__FILE__}"
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
-				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}'"
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', "
+				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedMemory.uriToStr(params[:ErrInStep])}'"
 				settings.ui.upLoadConfigErrorGeneral += " Step Name, Power Supply configuration"
-				settings.ui.upLoadConfigErrorGeneral += " '#{SharedLib.uriToStr(params[:ErrStepPsNotFound])}' is not found."
-			elsif SharedLib.uriToStr(params[:ErrTempFileNotGiven]).nil? == false && 
-			SharedLib.uriToStr(params[:ErrTempFileNotGiven]) != ""
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
-				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "
+				settings.ui.upLoadConfigErrorGeneral += " '#{SharedMemory.uriToStr(params[:ErrStepPsNotFound])}' is not found."
+			elsif SharedMemory.uriToStr(params[:ErrTempFileNotGiven]).nil? == false && 
+			SharedMemory.uriToStr(params[:ErrTempFileNotGiven]) != ""
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', "
+				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedMemory.uriToStr(params[:ErrInStep])}' "
 				settings.ui.upLoadConfigErrorGeneral += "Step Name, Temperature configuration file is not given."
-			elsif SharedLib.uriToStr(params[:ErrPsFileNotGiven]).nil? == false && 
-			SharedLib.uriToStr(params[:ErrPsFileNotGiven]) != ""
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', "
-				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedLib.uriToStr(params[:ErrInStep])}' "
+			elsif SharedMemory.uriToStr(params[:ErrPsFileNotGiven]).nil? == false && 
+			SharedMemory.uriToStr(params[:ErrPsFileNotGiven]) != ""
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', "
+				settings.ui.upLoadConfigErrorGeneral += "Under '#{SharedMemory.uriToStr(params[:ErrInStep])}' "
 				settings.ui.upLoadConfigErrorGeneral += "Step Name, Power Supply configuration file is not given."
-			elsif SharedLib.uriToStr(params[:ErrStepNameNotGiven]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameNotGiven]) != ""
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Row '#{SharedLib.uriToStr(params[:ErrRow])}' on step file requires a filename.."
-			elsif SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]).nil? == false && SharedLib.uriToStr(params[:ErrStepNameAlreadyFound]) != ""
-				fileName = SharedLib.uriToStr(params[:ErrStepNameAlreadyFound])
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Duplicate filename '#{fileName}' in the step file list."
-			elsif SharedLib.uriToStr(params[:ErrStepFormat]).nil? == false && SharedLib.uriToStr(params[:ErrStepFormat]) != ""
-				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  Column labels must start on column A, row 1."
-			elsif (SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && SharedLib.uriToStr(params[:ErrGeneral]) != "")
-				if SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
-					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, *.mincurr_config, or *.temp_config"
-				elsif SharedLib.uriToStr(params[:ErrGeneral]) == "bbbDown"
-					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', Board PcListener is down."
-				elsif SharedLib.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
-					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedLib.uriToStr(params[:ErrInFile])}', No file selected for upload."
-				elsif SharedLib.uriToStr(params[:ErrGeneral]).nil? == false && 
-							SharedLib.uriToStr(params[:ErrGeneral]).length >0
-					settings.ui.upLoadConfigErrorGeneral = "#{SharedLib.uriToStr(params[:ErrGeneral])}"
+			elsif SharedMemory.uriToStr(params[:ErrStepNameNotGiven]).nil? == false && SharedMemory.uriToStr(params[:ErrStepNameNotGiven]) != ""
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Row '#{SharedMemory.uriToStr(params[:ErrRow])}' on step file requires a filename.."
+			elsif SharedMemory.uriToStr(params[:ErrStepNameAlreadyFound]).nil? == false && SharedMemory.uriToStr(params[:ErrStepNameAlreadyFound]) != ""
+				fileName = SharedMemory.uriToStr(params[:ErrStepNameAlreadyFound])
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Duplicate filename '#{fileName}' in the step file list."
+			elsif SharedMemory.uriToStr(params[:ErrStepFormat]).nil? == false && SharedMemory.uriToStr(params[:ErrStepFormat]) != ""
+				settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Step file format is incorrect.  Column labels must start on column A, row 1."
+			elsif (SharedMemory.uriToStr(params[:ErrGeneral]).nil? == false && SharedMemory.uriToStr(params[:ErrGeneral]) != "")
+				if SharedMemory.uriToStr(params[:ErrGeneral]) == "FileNotKnown"	
+					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Unknown file extension.  Must be one of these: *.step, *.ps_config, *.mincurr_config, or *.temp_config"
+				elsif SharedMemory.uriToStr(params[:ErrGeneral]) == "bbbDown"
+					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', Board PcListener is down."
+				elsif SharedMemory.uriToStr(params[:ErrGeneral]) == "FileNotSelected"
+					settings.ui.upLoadConfigErrorGeneral = "File '#{SharedMemory.uriToStr(params[:ErrInFile])}', No file selected for upload."
+				elsif SharedMemory.uriToStr(params[:ErrGeneral]).nil? == false && 
+							SharedMemory.uriToStr(params[:ErrGeneral]).length >0
+					settings.ui.upLoadConfigErrorGeneral = "#{SharedMemory.uriToStr(params[:ErrGeneral])}"
 				end
-			elsif (SharedLib.uriToStr(params[:ErrRow]).nil? == false && SharedLib.uriToStr(params[:ErrRow]) != "") || 
-				 (SharedLib.uriToStr(params[:ErrIndex]).nil? == false && SharedLib.uriToStr(params[:ErrIndex]) != "")
-				settings.ui.upLoadConfigErrorInFile = SharedLib.uriToStr(params[:ErrInFile])
-				settings.ui.upLoadConfigErrorIndex = SharedLib.uriToStr(params[:ErrIndex])
-				settings.ui.upLoadConfigErrorRow = SharedLib.uriToStr(params[:ErrRow])
-				settings.ui.upLoadConfigErrorCol = SharedLib.uriToStr(params[:ErrCol])
-				settings.ui.upLoadConfigErrorName = SharedLib.uriToStr(params[:ErrName])
-				settings.ui.upLoadConfigErrorColType = SharedLib.uriToStr(params[:ErrColType])
-				settings.ui.upLoadConfigErrorValue = SharedLib.uriToStr(params[:ErrValue])
-			elsif SharedLib.uriToStr(params[:MsgFileUpload]).nil? == false
-				settings.ui.upLoadConfigGoodUpload = "File '#{SharedLib.uriToStr(params[:MsgFileUpload])}' has been uploaded."
+			elsif (SharedMemory.uriToStr(params[:ErrRow]).nil? == false && SharedMemory.uriToStr(params[:ErrRow]) != "") || 
+				 (SharedMemory.uriToStr(params[:ErrIndex]).nil? == false && SharedMemory.uriToStr(params[:ErrIndex]) != "")
+				settings.ui.upLoadConfigErrorInFile = SharedMemory.uriToStr(params[:ErrInFile])
+				settings.ui.upLoadConfigErrorIndex = SharedMemory.uriToStr(params[:ErrIndex])
+				settings.ui.upLoadConfigErrorRow = SharedMemory.uriToStr(params[:ErrRow])
+				settings.ui.upLoadConfigErrorCol = SharedMemory.uriToStr(params[:ErrCol])
+				settings.ui.upLoadConfigErrorName = SharedMemory.uriToStr(params[:ErrName])
+				settings.ui.upLoadConfigErrorColType = SharedMemory.uriToStr(params[:ErrColType])
+				settings.ui.upLoadConfigErrorValue = SharedMemory.uriToStr(params[:ErrValue])
+			elsif SharedMemory.uriToStr(params[:MsgFileUpload]).nil? == false
+				settings.ui.upLoadConfigGoodUpload = "File '#{SharedMemory.uriToStr(params[:MsgFileUpload])}' has been uploaded."
 				settings.ui.upLoadConfigErrorName = ""
 			else
 				settings.ui.clearError
 			end
 		
 			return settings.ui.loadFile
-		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Run
+		elsif SharedMemory.uriToStr(params[:BtnState]) == settings.ui.Run
 			#
 			# The Run button got pressed.
 			#
 			settings.ui.setToRunMode(params[:slot])
 			redirect "../"
-		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Stop
+		elsif SharedMemory.uriToStr(params[:BtnState]) == settings.ui.Stop
 			#
 			# The Stop button got pressed.
 			#
@@ -2908,13 +2808,13 @@ get '/TopBtnPressed' do
 			# Formula : Time now - Time of run, then convert to hours, mins, sec.
 			#
 			redirect "../"
-		elsif SharedLib.uriToStr(params[:BtnState]) == settings.ui.Clear
+		elsif SharedMemory.uriToStr(params[:BtnState]) == settings.ui.Clear
 			#
 			# The Clear button got pressed.
 			#
 			settings.ui.setToLoadMode(params[:slot])
 			redirect "../"
-		elsif SharedLib.uriToStr(params[:BtnState]) == "ClearError"
+		elsif SharedMemory.uriToStr(params[:BtnState]) == "ClearError"
 			#
 			# The clear error button got pressed.
 			#
@@ -2924,12 +2824,32 @@ get '/TopBtnPressed' do
 	end
 end
 
+post '/dataDisplay' do
+	settings.ui.updatedSharedMemory()
+	tbr = "
+		<table height=\"60%\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
+			<tr><td><center>"
+	tbr += settings.ui.GetSlotDisplay("SLOT1")
+	tbr += "</center></td></tr>
+			<tr><td><center>"
+	tbr += settings.ui.GetSlotDisplay("SLOT2")
+	tbr += "</center></td></tr>
+			<tr><td><center>"
+	tbr += settings.ui.GetSlotDisplay("SLOT3")
+	tbr += "</center></td></tr>
+		</table>		
+	"				
+	return tbr
+end
+
 get '/' do 
-	return settings.ui.display
+	# return settings.ui.display
+	erb :home
 end
 
 post '/' do	
-	return settings.ui.display
+	# return settings.ui.display
+	erb :home
 end
 
 
@@ -3031,4 +2951,128 @@ get '/AckError' do
 	redirect "../"
 end
 
-# at 1480
+__END__
+@@home
+<html lang="en">
+	<head>
+ 		<title><%= settings.ui.getSystemID() %></title>
+	<style>
+	html, body {
+    height: 100%;
+	}
+	
+	.myButton {
+		-moz-box-shadow:inset 1px 2px 3px 0px #91b8b3;
+		-webkit-box-shadow:inset 1px 2px 3px 0px #91b8b3;
+		box-shadow:inset 1px 2px 3px 0px #91b8b3;
+		background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #768d87), color-stop(1, #6c7c7c));
+		background:-moz-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
+		background:-webkit-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
+		background:-o-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
+		background:-ms-linear-gradient(top, #768d87 5%, #6c7c7c 100%);
+		background:linear-gradient(to bottom, #768d87 5%, #6c7c7c 100%);
+		filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#768d87', endColorstr='#6c7c7c',GradientType=0);
+		background-color:#768d87;
+		-moz-border-radius:2px;
+		-webkit-border-radius:2px;
+		border-radius:2px;
+		border:1px solid #566963;
+		display:inline-block;
+		cursor:pointer;
+		color:#ffffff;
+		font-family:arial;
+		font-size:10px;
+		font-weight:bold;
+		padding:0px 3px;
+		text-decoration:none;
+		text-shadow:0px -1px 0px #2b665e;
+	}
+	.myButton:hover {
+		background:-webkit-gradient(linear, left top, left bottom, color-stop(0.05, #6c7c7c), color-stop(1, #768d87));
+		background:-moz-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+		background:-webkit-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+		background:-o-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+		background:-ms-linear-gradient(top, #6c7c7c 5%, #768d87 100%);
+		background:linear-gradient(to bottom, #6c7c7c 5%, #768d87 100%);
+		filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#6c7c7c', endColorstr='#768d87',GradientType=0);
+		background-color:#6c7c7c;
+	}
+	.myButton:active {
+		position:relative;
+		top:1px;
+	}
+
+	#slotA
+	{
+	border:1px solid black;
+	border-collapse:collapse;
+	}
+	</style>
+	
+	<script type="text/javascript">
+
+	ct = 0;
+	function updateBtnColor(SlotParam,ct) {
+		var btn = document.getElementById("btn_"+SlotParam);
+		if (ct == 0)
+			btn.style="background: #ffaa77 no-repeat left;"
+		if (ct == 1)
+			btn.style="background: #ffaa00 no-repeat left;"			
+		if (ct == 2)
+			btn.style="background: #ff0077 no-repeat left;"			
+		if (ct == 3)
+			btn.style="background: #00aa77 no-repeat left;"
+	}
+		
+	function loadXMLDoc()
+	{
+		var xmlhttp;
+		if (window.XMLHttpRequest)
+		{
+			// code for IE7+, Firefox, Chrome, Opera, Safari
+			xmlhttp=new XMLHttpRequest();
+		}
+		else
+		{
+			// code for IE6, IE5
+			xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+		}
+
+		xmlhttp.onreadystatechange=function()
+		{
+			if (xmlhttp.readyState==4 && xmlhttp.status==200)
+			{
+				document.getElementById("myDiv").innerHTML=xmlhttp.responseText;
+			}
+		}	
+		xmlhttp.open("POST","../dataDisplay",true);
+		xmlhttp.send();
+	}
+	
+	setInterval(function(){loadXMLDoc()},1000);  /*1000 msec = 1sec*/
+	
+	function isKeyPressed(event) {
+		  if (event.ctrlKey) {
+		  	ctrlButtonPressed = true;
+		      /*alert("The CTRL key was pressed!");*/
+		  } else {
+		  	ctrlButtonPressed = false;
+		  		/*alert("The CTRL key was NOT pressed!");*/		      
+		  }
+	}
+	</script>
+		<meta charset="utf-8">
+	</head>
+	<body onmousedown="isKeyPressed(event)">
+		<table>
+			<tr>
+				<td align="left"><img src="../ICE_logo_small.bmp" style="width:<%= 388/1.5 %>px;height:<%= 105/1.5%>px"></td>
+				<td width="100%"></td>
+				<td align="center" nowrap><font size="5"><%= settings.ui.getSystemID() %>&nbsp;&nbsp;&nbsp;</font></td>
+				<td></td>
+			</tf>
+		</table>		
+		<div style="height: 300px;" id="myDiv">
+		</div>
+	</body>
+</html>
