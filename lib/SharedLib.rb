@@ -168,18 +168,6 @@ class SharedLib
         s.to_s.match(/\A[+-]?\d+?(\.\d+)?\Z/) == nil ? false : true
     end
 
-  def uriToStr(stringParam)
-  	# puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
-  	# pause "Checking stringParam value.","#{__LINE__}-#{__FILE__}"
-  	if stringParam.nil? == false && stringParam.length>0
-	  	tbr =  URI.unescape(stringParam)
-  	else
-  		tbr = ""
-  	end	
-  	# puts "uriToStr - tbr = '#{tbr}' #{__LINE__}-#{__FILE__}"
-  	return tbr
-  end
-  
 	def getKnownRowNamesFor(fileTypeParam)
 		if fileTypeParam == PsConfig				
 			configTemplateRows = psConfigFileTemplate.split("\n")
@@ -325,18 +313,9 @@ class SharedLib
 		return newStr
 	end
   
-  def getLogFileName(fileName,configDateUpload,slotOwnerParam,lotIDParam)
+  def getLogFileName(configDateUpload,slotOwnerParam,lotIDParam)
   	configDateUpload = Time.at(configDateUpload.to_i)
 		ct = 0
-		tbsubmitted = ""
-		while ct<fileName.length
-			if fileName[ct] == "(" || fileName[ct] == ")" || fileName[ct] == "+" || fileName[ct] == " "
-				tbsubmitted += "_"
-			else
-				tbsubmitted += fileName[ct]
-			end
-			ct += 1
-		end
 		return "iceLog_brd#{slotOwnerParam}_time#{configDateUpload.strftime("%Y%m%d_%H%M%S")}_lot#{lotIDParam}"
 	end
   
