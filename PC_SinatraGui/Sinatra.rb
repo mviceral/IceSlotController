@@ -2954,7 +2954,6 @@ end
 
 __END__
 @@home
-<!doctype html>
 <html lang="en">
 	<head>
  		<title><%= settings.ui.getSystemID() %></title>
