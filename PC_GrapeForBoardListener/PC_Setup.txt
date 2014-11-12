@@ -16,6 +16,7 @@ ruby extconf.rb
 make
 popd
 gem install sinatra
+gem install sinatra-contrib
 gem install rest-client
 
 # To turn off the firewall on CentOS, do the following commands.
