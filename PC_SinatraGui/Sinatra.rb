@@ -1401,7 +1401,7 @@ end
 	end
 	
 	def getListOfFiles(path, extentionParam)
-		puts "cd '#{path}'; ls -lt #{extentionParam} #{__LINE__}-#{__FILE__}"
+		# puts "cd '#{path}'; ls -lt #{extentionParam} #{__LINE__}-#{__FILE__}"
 		listOfFiles = `cd "#{path}"; ls -lt #{extentionParam}`
 		fileRow = listOfFiles.split("\n")
 		ct = 0
