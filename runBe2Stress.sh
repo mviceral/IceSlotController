@@ -6,9 +6,14 @@ bash scripts/pcSideRun.sh 2>/dev/null &
 ssh root@192.168.1.211 'bash -s' < scripts/sshScriptRunBoard.sh 2>/dev/null & 
 ssh root@192.168.1.212 'bash -s' < scripts/sshScriptRunBoard.sh 2>/dev/null & 
 #sleep 60  
-sleep 3 # wait for the noise from the top processes to show then clear the screen.
+sleep 5 # wait for the noise from the top processes to show then clear the screen.
 clear
 echo "BE2 start-up script complete.  BE2 application can be accessed through a browser at 'http://localhost:4569'."
 echo "Once the the display values on the slots are active, they're ready for commands."
-sleep 3
-xdg-open http://localhost:4569 &
+read -n1 -r -p "Press any to continue..." key
+
+#if [ "$key" = ' ' ]; then
+#    # Space pressed, do something
+#fi
+xdg-open http://localhost:4569 2>/dev/null &
+clear
