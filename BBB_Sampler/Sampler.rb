@@ -2806,9 +2806,7 @@ class TCUSampler
             		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
             		    
             		    # Turn off the fans of the TCUs
-                        ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,0.0)
                         ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,0.0)
-                        setTcuToRunMode()                        
         		    when SharedLib::LoadConfigFromPc
         		        checkDeadTcus(uart1)
 
