@@ -2818,6 +2818,7 @@ get '/TopBtnPressed' do
 			#
 			# The Clear button got pressed.
 			#
+			# puts "\n\n\nClear button got called. #{__LINE__}-#{__FILE__}"
 			settings.ui.setToLoadMode(params[:slot])
 			redirect "../"
 		elsif SharedMemory.uriToStr(params[:BtnState]) == "ClearError"
