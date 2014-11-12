@@ -743,16 +743,12 @@ class SharedMemory
 
 
   def self.uriToStr(stringParam)
-  	puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
   	# pause "Checking stringParam value.","#{__LINE__}-#{__FILE__}"
   	if stringParam.nil? == false && stringParam.length>0
-  	puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
 	  	tbr =  URI.unescape(stringParam)
-  	puts "uriToStr - stringParam='#{stringParam}' #{__LINE__}-#{__FILE__}"
   	else
   		tbr = ""
   	end	
-  	puts "uriToStr - tbr = '#{tbr}' #{__LINE__}-#{__FILE__}"
   	return tbr
   end
   
