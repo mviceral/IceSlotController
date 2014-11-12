@@ -229,17 +229,9 @@ class SharedMemory
 					# There were some errors from the board.
 					# Write the error into a log file
 					errorLogPath = "../\"error logs\""
-=begin
 					while errMsgParam.length>0
 						errItem = errMsgParam.shift
-						File.open(newErrLogFileName, "a") { 
-							|file| file.write("#{errItem.to_json}\n") 
-						}
-					end
-=end
-					while errMsgParam.length>0
-						errItem = errMsgParam.shift
-						puts "Got a message from the board: '#{errItem}'"
+						# puts "Got a message from the board: '#{errItem}'"
 						str = "#{errItem.to_json}"
 						ct = 0
 						newStr = ""
@@ -251,12 +243,8 @@ class SharedMemory
 							end
 							ct += 1
 						end
-						`cd #{errorLogPath}; echo \"#{newStr}\" >> NewErrors_#{slotOwnerParam}.log`
-=begin						  
-						File.open(newErrLogFileName, "a") { 
-							|file| file.write("#{errItem.to_json}\n") 
-						}
-=end						
+						generalFileName = SharedLib.getLogFileName(GetDispConfigDateUpload(slotOwnerParam),SharedLib.getBibID(slotOwnerParam),GetDispLotID(slotOwnerParam))
+						`cd #{SharedMemory::StepsLogRecordsPath}; echo \"#{newStr}\" >> #{generalFileName}.ErrorLog`
 					end
 				end
 				rescue
@@ -853,33 +841,6 @@ class SharedMemory
     def CheckInit(slotOwnerParam)
     	return getDispErrorMsg(slotOwnerParam)
     end
-=begin
-	def GetDispErrorMsg(slotOwnerParam)
-		begin
-			# Display what ever un-acknowledged errors are in the record.
-			pcShared = getPCShared()
-			slotOwner = slotOwnerParam
-			if pcShared[slotOwner].nil? == false && pcShared[slotOwner][SharedLib::ErrorMsg].nil?
-				newErrLogFileName = "../\"error logs\"/NewErrors_#{slotOwner}.log"
-				# newErrLogFileName = "../NewErrors_#{slotOwner}.log"
-				errorItem = `head -1 #{newErrLogFileName}`
-				#puts "errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
-				if errorItem.length > 0
-					ds = lockMemory("#{__LINE__}-#{__FILE__}")
-					ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(errorItem)
-					writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-				end
-			end
-
-			if pcShared[slotOwner].nil? || pcShared[slotOwner][SharedLib::ErrorMsg].nil?
-				return ""
-			end
-			errItem = pcShared[slotOwner][SharedLib::ErrorMsg]
-			return "&nbsp;&nbsp;#{Time.at(errItem[1]).inspect} - #{errItem[0]}"
-			rescue  Exception => e
-		end
-	end
-=end
     
     def initialize()
     end 
@@ -1298,4 +1259,4 @@ class SharedMemory
     end
 =end    
 end
-# 642
+# 246

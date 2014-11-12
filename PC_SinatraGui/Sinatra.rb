@@ -1,6 +1,6 @@
 # Code to look at:
 # "BBB PcListener is down.  Need to handle this in production code level."
-# @519
+# @3073
 require 'rubygems'
 require 'sinatra'
 development = true
@@ -79,6 +79,7 @@ class UserInterface
 	attr_accessor :redirectWithError
 	attr_accessor :stepName
 	attr_accessor :redirectErrorFaultyPsConfig	
+	attr_accessor :sharedMem
 	
 	def clearErrorSlot(slotOwnerParam)
 		# puts "clearErrorSlot(slotOwnerParam) got called. slotOwnerParam='#{slotOwnerParam}' SharedLib::ErrorMsg='#{SharedLib::ErrorMsg}'"
@@ -298,7 +299,10 @@ class UserInterface
 	def upLoadConfigErrorGeneral
 		@upLoadConfigErrorGeneral
 	end
-	
+
+	def sharedMem
+		@sharedMem
+	end
 	def stepName
 		@stepName
 	end
@@ -587,7 +591,6 @@ class UserInterface
 		DRb.start_service
 		@sharedMemService = DRbObject.new_with_uri(SERVER_URI)
 		@sharedMem = SharedMemory.new
-		@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.0")
 		# end of 'def initialize'
 	end
 
@@ -911,6 +914,9 @@ class UserInterface
 	end
 	def updatedSharedMemory
 			@sharedMem = @sharedMemService.getSharedMem() # .processRecDataFromPC(.getDataFromBoardToPc())
+			if @sharedMem.getCodeVersion(SharedMemory::PcVer).nil? || @sharedMem.getCodeVersion(SharedMemory::PcVer).length == 0
+				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.0")
+			end
 	end
 	def GetSlotDisplay(slotLabel2Param)
 		lotID = @sharedMem.GetDispLotID(slotLabel2Param)
@@ -2828,15 +2834,15 @@ post '/dataDisplay' do
 	settings.ui.updatedSharedMemory()
 	tbr = "
 		<table height=\"60%\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
-			<tr><td><center>"
+			<tr><td align=\"left\">"
 	tbr += settings.ui.GetSlotDisplay("SLOT1")
-	tbr += "</center></td></tr>
-			<tr><td><center>"
+	tbr += "</td></tr>
+			<tr><td align=\"left\">"
 	tbr += settings.ui.GetSlotDisplay("SLOT2")
-	tbr += "</center></td></tr>
-			<tr><td><center>"
+	tbr += "</td></tr>
+			<tr><td align=\"left\">"
 	tbr += settings.ui.GetSlotDisplay("SLOT3")
-	tbr += "</center></td></tr>
+	tbr += "</td></tr>
 		</table>		
 	"				
 	return tbr
@@ -3064,12 +3070,37 @@ __END__
 		<meta charset="utf-8">
 	</head>
 	<body onmousedown="isKeyPressed(event)">
+		<%
+			# Get the PC version, and Slot Ctrl version
+			pcVer = ""
+			slotCtrlVer = ""
+			slotNum = 1
+			while pcVer.nil? || pcVer.length == 0 || slotCtrlVer.nil? || slotCtrlVer.length == 0
+				pcVer = settings.ui.sharedMem.getCodeVersion(SharedMemory::PcVer)
+				puts "SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
+
+				settings.ui.updatedSharedMemory()
+				slotCtrlVer = settings.ui.sharedMem.GetDispCodeVersion("SLOT#{slotNum}",SharedMemory::SlotCtrlVer)
+				puts "SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
+				if slotCtrlVer.nil? || slotCtrlVer.length == 0
+					slotNum += 1
+					if slotNum >= 4
+						slotNum = 1
+					end
+				end
+			end
+
+		%>
 		<table>
 			<tr>
 				<td align="left"><img src="../ICE_logo_small.bmp" style="width:<%= 388/1.5 %>px;height:<%= 105/1.5%>px"></td>
-				<td width="100%"></td>
-				<td align="center" nowrap><font size="5"><%= settings.ui.getSystemID() %>&nbsp;&nbsp;&nbsp;</font></td>
-				<td></td>
+				<td width="100%" align="center" colspan="3"><font size="5"><%= settings.ui.getSystemID() %></font></td>
+				<td width="<%=388/1.5%>px">
+					<table>
+						<tr><td align="right" valign="bottom" nowrap><font size="1">PC ver:<%= pcVer %></font></td></tr>
+						<tr><td align="right" valign="top" nowrap><font size="1">Slot Ctrl ver:<%= slotCtrlVer %></font></td></tr>
+					</table>
+				</td>
 			</tf>
 		</table>		
 		<div style="height: 300px;" id="myDiv">

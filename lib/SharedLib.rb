@@ -425,7 +425,9 @@ class SharedLib
     end
 
 	def setBibID(colContent,slotOwnerParam)
+puts "SharedLib.rb #{__LINE__}-#{__FILE__}"
 			if colContent[0] == "#{slotOwnerParam} BIB#"
+puts "SharedLib.rb #{__LINE__}-#{__FILE__}"
 				bibID = colContent[1].chomp
 				bibID = bibID.strip
 				@bibId[slotOwnerParam] = bibID
@@ -433,10 +435,11 @@ class SharedLib
 	end
 	
 	def getBibID(slotOwnerParam)
-		if @bibId.nil?
+		if @bibId.nil? || @bibId.length == 0
 			@bibId = Hash.new
 			config = Array.new
-			File.open("../#{Pc_SlotCtrlIps}", "r") do |f|
+			pathD = `cd ~; pwd`.strip
+			File.open("#{pathD}/slot-controller/#{Pc_SlotCtrlIps}", "r") do |f|
 				f.each_line do |line|
 					config.push(line)
 				end			
