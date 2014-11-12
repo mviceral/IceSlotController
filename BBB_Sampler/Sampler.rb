@@ -1,4 +1,4 @@
-# @1249
+# @2800
 require 'timeout'
 require 'beaglebone'
 require_relative 'DutObj'
@@ -18,7 +18,7 @@ SERVER_URI="druby://localhost:8787"
 include Beaglebone
 
 TOTAL_DUTS_TO_LOOK_AT  = 24
-SetupAtHome = true # So we can do some work at home
+SetupAtHome = false # So we can do some work at home
 
 class TCUSampler
     SlotBibNum = "SLOT BIB#"
@@ -847,12 +847,7 @@ class TCUSampler
         # @samplerData.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
     end
     
-    def runMachine()
-        @waitTempStartTime = Time.now.to_f
-        
-        @dutTempTolReached = Hash.new
-        @allDutTempTolReached = false
-                				
+    def setTcuToRunMode()
         # Turn on the control for TCUs that are not disabled.
         SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
         ct = 0
@@ -872,6 +867,16 @@ class TCUSampler
             end
             ct += 1
         end
+    end    
+    
+    def runMachine()
+        @waitTempStartTime = Time.now.to_f
+        
+        @dutTempTolReached = Hash.new
+        @allDutTempTolReached = false
+                				
+        # Turn on the control for TCUs that are not disabled.
+        setTcuToRunMode()
     end
     
     def setErrorColorFlagBase(key2)
@@ -2771,7 +2776,6 @@ class TCUSampler
                     @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    case pcCmd
         		    when SharedLib::RunFromPc
-        		        checkDeadTcus(uart1)
                         @samplerData.setDontSendErrorColor(false)
     		            setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
                         @samplerData.clearStopMessage()
@@ -2790,8 +2794,14 @@ class TCUSampler
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
         		        setBoardStateForCurrentStep(uart1)
             		    @samplerData.SetConfigurationFileName("")
+            		    
+            		    # Turn off the following bits
             		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
-                        
+            		    
+            		    # Turn off the fans of the TCUs
+                        ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,0.0)
+                        ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,0.0)
+                        setTcuToRunMode()                        
         		    when SharedLib::LoadConfigFromPc
         		        checkDeadTcus(uart1)
 
