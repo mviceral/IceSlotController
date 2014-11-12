@@ -1,11 +1,13 @@
+pushd scripts
 ruby killRubyCodes.rb
-pushd ../lib/DRbSharedMemory/
+popd
+sleep 2
+pushd ./lib/DRbSharedMemory/
 bash runPcSharedMemory.sh &
 popd
-sleep 1m
-pushd ../PC_GrapeForBoardListener/
+pushd ./PC_GrapeForBoardListener/
 rackup 2>/dev/null & 
 popd
-pushd ../PC_SinatraGui/
+pushd ./PC_SinatraGui/
 bash runSinatra.sh &
 popd

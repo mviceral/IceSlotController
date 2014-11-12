@@ -295,7 +295,6 @@ class SharedMemory
 	end
 
 	def setDataFromBoardToPc(hash)
-puts "setDataFromBoardToPc got called. #{__LINE__}-#{__FILE__}"
 		processRecDataFromPC(hash)
 		# @dataFromBoardToPc = hash
 	end
@@ -305,22 +304,17 @@ puts "setDataFromBoardToPc got called. #{__LINE__}-#{__FILE__}"
 	end
 	
 	def processRecDataFromPC(hash)
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		if hash.nil? == false 
 			if ((hash[SharedLib::SlotOwner].nil? == false &&
 			       (hash[SharedLib::SlotOwner] != SharedLib::SLOT1 &&
 				hash[SharedLib::SlotOwner] != SharedLib::SLOT2 &&
 				hash[SharedLib::SlotOwner] != SharedLib::SLOT3) == true) || hash[SharedLib::SlotOwner].nil?)
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 				# Flush out the  memory...
 				# @data.WriteDataV1("","")
 			else
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 				# See if we can alternate the update of the shared memory item.
 				SetDataBoardToPc(hash)
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 				SetDispSlotOwner(hash[SharedLib::SlotOwner])
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 
 				# printDataContent(hash[SharedLib::SlotOwner])
 				# puts "Error color check #{__LINE__}-#{__FILE__}"
@@ -694,67 +688,38 @@ puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
     end
 
 	def SetDataBoardToPc(hash)
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds = lockMemory("#{__LINE__}-#{__FILE__}")
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		if ds[SharedLib::PC].nil?
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			ds[SharedLib::PC] = Hash.new
 		end
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		
 		if hash[SharedLib::ButtonDisplay].nil? == false
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			if ds[SharedLib::PC][hash[SharedLib::SlotOwner]].nil?
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 				ds[SharedLib::PC][hash[SharedLib::SlotOwner]] = Hash.new
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			end
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			
 			ds[SharedLib::PC][hash[SharedLib::SlotOwner]][SharedLib::ButtonDisplay] = hash[SharedLib::ButtonDisplay]
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		end
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 
 		if ds[SharedLib::PC].nil?
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			ds[SharedLib::PC] = Hash.new
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		end
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 
 		slotOwnerParam = hash[SharedLib::SlotOwner]
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		if slotOwnerParam.nil? == false && slotOwnerParam.length > 0
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			if ds[SharedLib::PC][slotOwnerParam].nil?
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 				ds[SharedLib::PC][slotOwnerParam] = Hash.new
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			end
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		end
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 
 		ds[SharedLib::PC][slotOwnerParam][SharedMemory::SlotCtrlVer] = hash[SharedMemory::SlotCtrlVer]
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = hash[SharedMemory::WaitTempMsg]
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
-puts "hash[LotID]='#{hash[LotID]}'. #{__LINE__}-#{__FILE__}"
-puts "hash[LotID]='#{hash[LotID]}'. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][LotID] = hash[LotID]
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][PsToolTip] = hash[PsToolTip]
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][DutToolTip] = hash[DutToolTip]
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][ErrorColor] = hash[ErrorColor]
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 		ds[SharedLib::PC][slotOwnerParam][StopMessage] = hash[StopMessage]
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 
 		SetDispBoardData(
 			hash[SharedLib::ConfigurationFileName],
@@ -774,7 +739,6 @@ puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 			hash[SharedLib::Eips],
 			hash[SharedLib::ErrorMsg],
 			hash[SharedLib::TotalTimeOfStepsInQueue])
-puts "processRecDataFromPC got called. #{__LINE__}-#{__FILE__}"
 	end
 
 
