@@ -1720,15 +1720,15 @@ end
 	end
 
 	def setDataSetup(
-					nameParam,unitParam,nomSetParam,tripMinParam,tripMaxParam,flagTolPParam,flagTolNParam,enableBitParam,
+					nameParam,unitParam,nomSetParam,tripMinParam,tripMaxParam,flagTolNParam,flagTolPParam,enableBitParam,
 					idleStateParam,loadStateParam,startStateParam,runStateParam,stopStateParam,clearStateParam
 				)
 		setItemParameter(nameParam,Unit,unitParam)
 		setItemParameter(nameParam,NomSet,nomSetParam)
 		setItemParameter(nameParam,TripMin,tripMinParam)
 		setItemParameter(nameParam,TripMax,tripMaxParam)
-		setItemParameter(nameParam,FlagTolP,flagTolPParam)
 		setItemParameter(nameParam,FlagTolN,flagTolNParam)
+		setItemParameter(nameParam,FlagTolP,flagTolPParam)
 		setItemParameter(nameParam,EnableBit,enableBitParam)
 		setItemParameter(nameParam,IdleState,idleStateParam)
 		setItemParameter(nameParam,LoadState,loadStateParam)
@@ -2245,8 +2245,8 @@ end
 				nomSet = config[ct].split(",")[3].upcase
 				tripMin = config[ct].split(",")[4].upcase
 				tripMax = config[ct].split(",")[5].upcase
-				flagTolP = config[ct].split(",")[6].upcase
-				flagTolN = config[ct].split(",")[7].upcase
+				flagTolN = config[ct].split(",")[6].upcase
+				flagTolP = config[ct].split(",")[7].upcase
 				enableBit = nil
 				idleState = nil
 				loadState = nil
@@ -2255,7 +2255,7 @@ end
 				stopState = nil
 				clearState = nil				
 				setDataSetup(
-					name,unit,nomSet,tripMin,tripMax,flagTolP,flagTolN,enableBit,idleState,
+					name,unit,nomSet,tripMin,tripMax,flagTolN,flagTolP,enableBit,idleState,
 					loadState,startState,runState,stopState,clearState
 				)
 			else
