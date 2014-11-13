@@ -129,7 +129,7 @@ class DutObj
                 ""
             end
 =end            
-            sleep(0.01)
+            sleep(0.03)
             # puts "getTcuStatus(#{dutNumParam})='#{tbr}' #{__LINE__}-#{__FILE__}"
             return tbr
         #end
