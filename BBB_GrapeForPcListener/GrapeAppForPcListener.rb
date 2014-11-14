@@ -69,17 +69,12 @@ module PcListenerModule
 			# you will get the record with that id.
 			#
 			post "/" do
-puts "Got something from PC #{__LINE__}-#{__FILE__}"
 				if params["#{SharedLib::PcToBbbCmd}"].nil? == false
-puts "Got something from PC #{__LINE__}-#{__FILE__}"
 					# We got a new command from the PC
 					# See of the 'Sampler' is running
 					ct = 0
-puts "Got something from PC #{__LINE__}-#{__FILE__}"
 					processNum = ""
-puts "Got something from PC #{__LINE__}-#{__FILE__}"
 					while ct < 5
-puts "Got something from PC #{__LINE__}-#{__FILE__}"
 						filePath = '/tmp/bbbTcuSamplerLock.txt'
 						if File.exist?(filePath)
 							ct = 5 # The file exists.  Close the loop.
@@ -98,9 +93,7 @@ puts "Got something from PC #{__LINE__}-#{__FILE__}"
 					#
 					# Parse out the data sent from BBB
 					#
-puts "Got something from PC #{__LINE__}-#{__FILE__}"
 					hash = Hash.new
-puts "Got something from PC #{__LINE__}-#{__FILE__}"
 					hash["Cmd"] = params["#{SharedLib::PcToBbbCmd}"]
 					puts "\n\n\n"
 					

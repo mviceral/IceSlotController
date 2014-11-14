@@ -7,6 +7,92 @@ class ThermalSiteDevices
     
     attr_accessor :dBase_
     
+	attr_accessor :SlotCtrlMode
+	def SlotCtrlMode
+	    @slotCtrlMode
+	end
+	
+	attr_accessor :LastValueT
+    def LastValueT
+		@lastValueT
+	end
+
+	attr_accessor :LastValueH
+    def LastValueH
+		@lastValueH
+	end
+
+	attr_accessor :LastValueC
+    def LastValueC
+		@lastValueC
+	end
+
+	attr_accessor :LastValueP
+    def LastValueP
+		@lastValueP
+	end
+
+	attr_accessor :LastValueI
+    def LastValueI
+		@lastValueI
+	end
+
+	attr_accessor :LastValueD
+    def LastValueD
+		@lastValueD
+	end
+
+    def etsEnaBit(ct)
+        if 8<= ct && ct <= 15
+            ct -= 8
+        elsif 16 <= ct && ct <= 23
+            ct -= 16
+        end
+
+        if 0<=ct && ct <=7
+            case ct
+            when 7
+                return GPIO2::X9_ETS7
+            when 6
+                return GPIO2::X9_ETS6
+            when 5
+                return GPIO2::X9_ETS5
+            when 4 
+                return GPIO2::X9_ETS4
+            when 3
+                return GPIO2::X9_ETS3
+            when 2
+                return GPIO2::X9_ETS2
+            when 1
+                return GPIO2::X9_ETS1
+            when 0
+                return GPIO2::X9_ETS0
+            end
+        end
+    end
+    
+    def setTcuToRunMode(tcusToSkipParam,gPIO2Param)
+        # Turn on the control for TCUs that are not disabled.
+        SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
+        ct = 0
+        while ct<24 do
+            if tcusToSkipParam[ct].nil? == true
+                bitToUse = etsEnaBit(ct)
+                if 0<=ct && ct <=7  
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    gPIO2Param.etsEna1SetOn(bitToUse)
+                elsif 8<=ct && ct <=15
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna2Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    gPIO2Param.etsEna2SetOn(bitToUse)
+                elsif 16<=ct && ct <=23
+                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna3Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
+                    gPIO2Param.etsEna3SetOn(bitToUse)
+                end
+            end
+            ct += 1
+        end
+    end    
+    
     def dBase
         if @dBase_.nil?
             # puts "ThermalSiteDevices.dBase accessor got called" # from #{file} - #{line}"
@@ -23,6 +109,7 @@ class ThermalSiteDevices
     end
     
     def setTHCPID(uart1Param,keyParam,tcusToSkip,temParam)
+        puts "setTHCPID '#{keyParam}' = '#{temParam}'"
         dutNum = 0;
         while  dutNum<TOTAL_DUTS_TO_LOOK_AT do
             if  tcusToSkip[dutNum].nil?  
@@ -33,14 +120,14 @@ class ThermalSiteDevices
         end            
     end
     
-    def pollDevices(uart1,gPIO2,tcusToSkip)
+    def pollDevices(uart1,gPIO2,tcusToSkip,tsdParam)
         # puts "A - "+Time.now.inspect+" - ThermalSiteDevices.pollDevices function got called."
         # puts "tcusToSkip='#{tcusToSkip}' TOTAL_DUTS_TO_LOOK_AT='#{TOTAL_DUTS_TO_LOOK_AT}'"
         dutNum = 0;
         while  dutNum<TOTAL_DUTS_TO_LOOK_AT do
             if  tcusToSkip[dutNum].nil?  
                 # puts "B - dutNum='#{dutNum}' #{__LINE__}-#{__FILE__}"
-                dBase.poll(dutNum,uart1,gPIO2)
+                dBase.poll(dutNum,uart1,gPIO2,tcusToSkip,tsdParam)
             end
             dutNum +=1;
         end            

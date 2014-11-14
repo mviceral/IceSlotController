@@ -35,13 +35,19 @@ class DutObj
     def self.getTcuStatus(dutNumParam,uart1Param,gPIO2,singleCharParam)
         # puts "SetupAtHome='#{SetupAtHome}' #{__LINE__}-#{__FILE__}"
         if SetupAtHome
-            heating = "0"
-            rValue = Random.rand(100)+1
-            if (rValue) > 50
-                heating = "1"
+            if singleCharParam == "V"
+                tbr = "@25.000,RTD100,p6.00 i0.60 d0.15,mpo255, cso101, V2.2"
+            else
+                heating = "0"
+                rValue = Random.rand(100)+1
+                if (rValue) > 50
+                    heating = "1"
+                end
+                # puts "rValue='#{rValue}', heating='#{heating}' #{__LINE__}-#{__FILE__}"
+                tbr = "@#{Random.rand(2)},#{30+Random.rand(3)}.#{Random.rand(1000)},#{70+Random.rand(3)}.#{Random.rand(1000)},#{heating},#{Random.rand(256)},Ok"
             end
-            # puts "rValue='#{rValue}', heating='#{heating}' #{__LINE__}-#{__FILE__}"
-            return "@1,33.156,#{70+Random.rand(3)}.#{Random.rand(1000)},#{heating},#{Random.rand(256)},Ok"
+            
+            return tbr
         end
         gPIO2.etsRxSel(dutNumParam)
         tbr = "" # tbr - to be returned
@@ -134,9 +140,21 @@ class DutObj
             return tbr
         #end
     end
-    
-    def poll(dutNumParam, uart1Param,gPIO2)
+
+    def poll(dutNumParam, uart1Param,gPIO2,tcusToSkip,tsdParam)
         @statusResponse[dutNumParam] = DutObj::getTcuStatusS(dutNumParam, uart1Param,gPIO2)
+        if ThermalSiteDevices.SlotCtrlMode == SharedLib::InRunMode
+            if @statusResponse[dutNumParam][1] == "0"
+                `\"#{Time.new.inspect} dut='#{dutNumParam}' is getting re-blasted. #{__LINE__}-#{__FILE__}\" >> /mnt/card/ErrorLog.txt`
+                ThermalSiteDevices.setTHCPID(uart1Param,"T",tcusToSkip,tsdParam["T"])
+                ThermalSiteDevices.setTHCPID(uart1Param,"H",tcusToSkip,tsdParam["H"])
+                ThermalSiteDevices.setTHCPID(uart1Param,"C",tcusToSkip,tsdParam["C"])
+                ThermalSiteDevices.setTHCPID(uart1Param,"P",tcusToSkip,tsdParam["P"])
+                ThermalSiteDevices.setTHCPID(uart1Param,"I",tcusToSkip,tsdParam["I"])
+                ThermalSiteDevices.setTHCPID(uart1Param,"D",tcusToSkip,tsdParam["D"])
+            end
+        else
+        end
         # puts "poll @statusResponse[#{dutNumParam}] = '#{@statusResponse[dutNumParam]}'"
     end
 
