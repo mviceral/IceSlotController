@@ -2661,7 +2661,7 @@ class TCUSampler
         loadConfigurationFromHoldingTank(uart1)
         # ThermalSiteDevices.pollDevices(uart1,@gPIO2,@tcusToSkip,@thermalSiteDevices)
         # ThermalSiteDevices.logData(@samplerData)
-        setToMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
+        # setToMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
         # setBoardStateForCurrentStep(uart1)
 
         
