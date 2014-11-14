@@ -319,6 +319,7 @@ class SharedLib
   	configDateUpload = Time.at(configDateUpload.to_i)
 		ct = 0
 		return "iceLog_brd#{slotOwnerParam}_lot#{lotIDParam}_time#{configDateUpload.strftime("%Y%m%d_%H%M%S")}"
+		
 	end
   
   def makeUriFriendly(stringParam)  
