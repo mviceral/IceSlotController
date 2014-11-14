@@ -976,7 +976,6 @@ class TCUSampler
 # puts "#{boardDataParam} #{__LINE__}-#{__FILE__}"
 # SharedLib.pause "Checking here","#{__LINE__}-#{__FILE__}"
         if getConfiguration().nil? == false
-# puts "#{__LINE__}-#{__FILE__}"             
             setBoardStateForCurrentStep(uart1)
         end
     end
@@ -2662,31 +2661,25 @@ class TCUSampler
         loadConfigurationFromHoldingTank(uart1)
         # ThermalSiteDevices.pollDevices(uart1,@gPIO2,@tcusToSkip,@thermalSiteDevices)
         # ThermalSiteDevices.logData(@samplerData)
-        # setToMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
+        setToMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
         # setBoardStateForCurrentStep(uart1)
 
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration][FileName].nil? == false
-puts "#{__LINE__}-#{__FILE__}"             
 	        @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
 	    else
-puts "#{__LINE__}-#{__FILE__}"             
 	        @samplerData.SetConfigurationFileName("")
         end
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration]["ConfigDateUpload"].nil? == false
-puts "#{__LINE__}-#{__FILE__}"             
     	    @samplerData.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
     	else
-puts "#{__LINE__}-#{__FILE__}"             
     	    @samplerData.SetConfigDateUpload("")
         end
 
         if @boardData[SharedLib::AllStepsDone_YesNo].nil? == false
-puts "#{__LINE__}-#{__FILE__}"             
             @samplerData.SetAllStepsDone_YesNo(@boardData[SharedLib::AllStepsDone_YesNo],"#{__LINE__}-#{__FILE__}")
         else
-puts "#{__LINE__}-#{__FILE__}"             
             @samplerData.SetAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # so it will not run
         end
         
@@ -2694,7 +2687,6 @@ puts "#{__LINE__}-#{__FILE__}"
         
 	    initStepToWorkOnVar(uart1)
         if @stepToWorkOn.nil? == false
-puts "#{__LINE__}-#{__FILE__}"             
             # PP.pp(@stepToWorkOn)
             # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
             limboCheck(@stepToWorkOn[StepNum],uart1)
