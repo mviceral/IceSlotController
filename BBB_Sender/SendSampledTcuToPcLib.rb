@@ -265,7 +265,7 @@ Temperature Setting: <temp>
             if sentData == false
                 puts "Completely failed to send.  Saving data to PcDown.BackLog file."
                 slotInfoJson = SharedLib.ChangeDQuoteToSQuoteForDbFormat(slotInfoJson)
-                `echo "#{slotInfoJson}" >> PcDown.BackLog`
+                `echo "#{slotInfoJson}" >> /mnt/card/PcDown.BackLog`
             end
         end
     end

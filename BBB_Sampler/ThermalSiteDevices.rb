@@ -7,41 +7,6 @@ class ThermalSiteDevices
     
     attr_accessor :dBase_
     
-	attr_accessor :SlotCtrlMode
-	def SlotCtrlMode
-	    @slotCtrlMode
-	end
-	
-	attr_accessor :LastValueT
-    def LastValueT
-		@lastValueT
-	end
-
-	attr_accessor :LastValueH
-    def LastValueH
-		@lastValueH
-	end
-
-	attr_accessor :LastValueC
-    def LastValueC
-		@lastValueC
-	end
-
-	attr_accessor :LastValueP
-    def LastValueP
-		@lastValueP
-	end
-
-	attr_accessor :LastValueI
-    def LastValueI
-		@lastValueI
-	end
-
-	attr_accessor :LastValueD
-    def LastValueD
-		@lastValueD
-	end
-
     def etsEnaBit(ct)
         if 8<= ct && ct <= 15
             ct -= 8
