@@ -148,7 +148,11 @@ class TCUSampler
         @samplerData.SetBbbMode(modeParam,"called from #{calledFrom} #{__LINE__}-#{__FILE__}")
         @boardData[BbbMode] = modeParam
         @boardMode = modeParam
-        ThermalSiteDevices.SlotCtrlMode = modeParam
+        
+        if @thermalSiteDevices.nil?
+            @thermalSiteDevices = Hash.new
+        end
+        @thermalSiteDevices["SlotMode"] = modeParam
 
         
         #
@@ -586,7 +590,9 @@ class TCUSampler
                                         @loggingTime = 60*getConfiguration()[Steps][key]["Log Int"].to_i
                                         # puts "@loggingTime='#{@loggingTime}' #{__LINE__}-#{__FILE__}"
                                         
-                                        @thermalSiteDevices = Hash.new
+                                        if @thermalSiteDevices.nil?
+                                            @thermalSiteDevices = Hash.new
+                                        end
                                         @thermalSiteDevices["T"] = getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"]
                                         @thermalSiteDevices["H"] = getConfiguration()[Steps][key]["TempConfig"]["H"][0..-2].to_f/100.0*255
                                         @thermalSiteDevices["C"] = getConfiguration()[Steps][key]["TempConfig"]["C"][0..-2].to_f/100.0*255
@@ -967,7 +973,10 @@ class TCUSampler
         # if the system is in idle mode, make sure to run the sequence down on power supplies.
         # The file in the hard drive only stores two states of the system: running or in idle.
         @boardData = boardDataParam
+# puts "#{boardDataParam} #{__LINE__}-#{__FILE__}"
+# SharedLib.pause "Checking here","#{__LINE__}-#{__FILE__}"
         if getConfiguration().nil? == false
+# puts "#{__LINE__}-#{__FILE__}"             
             setBoardStateForCurrentStep(uart1)
         end
     end
@@ -1054,7 +1063,7 @@ class TCUSampler
 			end
 			# puts fileRead
 			setBoardData(JSON.parse(fileRead),uart1)
-			# @boardData[SharedLib::AllStepsDone_YesNo] = SharedLib::No
+			# @boardData[SharedLib::AllStepsDone_Yes9No] = SharedLib::No
 			
 			# puts "Checking content of getConfiguration() function"
 			# puts "getConfiguration().nil?='#{getConfiguration().nil?}'"
@@ -2651,22 +2660,33 @@ class TCUSampler
         #
         SharedLib.bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
         loadConfigurationFromHoldingTank(uart1)
+        # ThermalSiteDevices.pollDevices(uart1,@gPIO2,@tcusToSkip,@thermalSiteDevices)
+        # ThermalSiteDevices.logData(@samplerData)
+        # setToMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
+        # setBoardStateForCurrentStep(uart1)
+
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration][FileName].nil? == false
+puts "#{__LINE__}-#{__FILE__}"             
 	        @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
 	    else
+puts "#{__LINE__}-#{__FILE__}"             
 	        @samplerData.SetConfigurationFileName("")
         end
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration]["ConfigDateUpload"].nil? == false
+puts "#{__LINE__}-#{__FILE__}"             
     	    @samplerData.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
     	else
+puts "#{__LINE__}-#{__FILE__}"             
     	    @samplerData.SetConfigDateUpload("")
         end
 
         if @boardData[SharedLib::AllStepsDone_YesNo].nil? == false
+puts "#{__LINE__}-#{__FILE__}"             
             @samplerData.SetAllStepsDone_YesNo(@boardData[SharedLib::AllStepsDone_YesNo],"#{__LINE__}-#{__FILE__}")
         else
+puts "#{__LINE__}-#{__FILE__}"             
             @samplerData.SetAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # so it will not run
         end
         
@@ -2674,6 +2694,7 @@ class TCUSampler
         
 	    initStepToWorkOnVar(uart1)
         if @stepToWorkOn.nil? == false
+puts "#{__LINE__}-#{__FILE__}"             
             # PP.pp(@stepToWorkOn)
             # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
             limboCheck(@stepToWorkOn[StepNum],uart1)
@@ -2776,6 +2797,9 @@ class TCUSampler
                         @samplerData.setDontSendErrorColor(false)
     		            setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
                         @samplerData.clearStopMessage()
+                        
+                        # Code below is for test purposes only
+                        # @thermalSiteDevices["RanAt"] = Time.now.to_i+60 # +60 seconds
                     when SharedLib::ClearErrFromPc
                         @boardData[SharedMemory::ErrorColor] = nil
                         @samplerData.setDontSendErrorColor(true)
@@ -2784,7 +2808,7 @@ class TCUSampler
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                         
         		    when SharedLib::ClearConfigFromPc
-                    		@samplerData.clearStopMessage()
+                    	@samplerData.clearStopMessage()
         		        @samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
                         @samplerData.setErrorColor(nil,"#{__LINE__}-#{__FILE__}")
             		    setBoardData(Hash.new,uart1)

@@ -135,7 +135,7 @@ class DutObj
                 ""
             end
 =end            
-            sleep(0.02)
+            sleep(0.01)
             # puts "getTcuStatus(#{dutNumParam})='#{tbr}' #{__LINE__}-#{__FILE__}"
             return tbr
         #end
@@ -143,15 +143,24 @@ class DutObj
 
     def poll(dutNumParam, uart1Param,gPIO2,tcusToSkip,tsdParam)
         @statusResponse[dutNumParam] = DutObj::getTcuStatusS(dutNumParam, uart1Param,gPIO2)
-        if ThermalSiteDevices.SlotCtrlMode == SharedLib::InRunMode
+        if tsdParam["SlotMode"] == SharedLib::InRunMode
+            #if tsdParam["RanAt"]<=Time.now.to_i
+            #    puts "\n\n\n\nRunning the TEST. #{__LINE__}-#{__FILE__}"
+            #    @statusResponse[dutNumParam][1] = "0"
+            #    tsdParam["RanAt"] += 60 # do it again for another minute.
+            #end
+            #puts "(#{tsdParam["RanAt"]-Time.now.to_i}) dutNumParam='#{dutNumParam}' @statusResponse[dutNumParam]='#{@statusResponse[dutNumParam]}' #{__LINE__}-#{__FILE__}"
+            
             if @statusResponse[dutNumParam][1] == "0"
                 `\"#{Time.new.inspect} dut='#{dutNumParam}' is getting re-blasted. #{__LINE__}-#{__FILE__}\" >> /mnt/card/ErrorLog.txt`
+                # puts "\n\n\n\nExecuted the re-blast. #{__LINE__}-#{__FILE__}"
                 ThermalSiteDevices.setTHCPID(uart1Param,"T",tcusToSkip,tsdParam["T"])
                 ThermalSiteDevices.setTHCPID(uart1Param,"H",tcusToSkip,tsdParam["H"])
                 ThermalSiteDevices.setTHCPID(uart1Param,"C",tcusToSkip,tsdParam["C"])
                 ThermalSiteDevices.setTHCPID(uart1Param,"P",tcusToSkip,tsdParam["P"])
                 ThermalSiteDevices.setTHCPID(uart1Param,"I",tcusToSkip,tsdParam["I"])
                 ThermalSiteDevices.setTHCPID(uart1Param,"D",tcusToSkip,tsdParam["D"])
+                ThermalSiteDevices.setTcuToRunMode(tcusToSkip,gPIO2)
             end
         else
         end
