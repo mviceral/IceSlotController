@@ -2,7 +2,7 @@ require 'singleton'
 require 'forwardable'
 require 'uri'
 
-SetupAtHome = true # So we can do some work at home
+SetupAtHome = false # So we can do some work at home
 
 class SharedLib
 	include Singleton
@@ -439,8 +439,7 @@ class SharedLib
 			@bibId = Hash.new
 			config = Array.new
 			if SetupAtHome
-				# pathD = "/cygdrive/c/work/" # Windows laptop setup
-				pathD = `cd ~; pwd`.strip # Linux PC work setup.
+				pathD = "/cygdrive/c/work/slot-controller"
 			else
 				pathD = `cd ~; pwd`.strip
 			end
@@ -491,6 +490,4 @@ class SharedLib
     end
 
   # End of 'class Constants'
-end
-    
-
+end    

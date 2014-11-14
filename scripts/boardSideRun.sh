@@ -1,10 +1,10 @@
 ruby killRubyCodes.rb
-pushd ./lib/DRbSharedMemory/
+pushd ../lib/DRbSharedMemory/
 bash runSharedMemory.sh &
 popd
-pushd ./BBB_GrapeForPcListener/
+pushd ../BBB_GrapeForPcListener/
 bash runBoardGrape.sh &
 popd
-pushd ./BBB_Sampler/
+pushd ../BBB_Sampler/
 bash runSampler.sh & 
 popd
