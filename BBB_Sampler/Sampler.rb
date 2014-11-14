@@ -1,4 +1,3 @@
-# @2800
 require 'timeout'
 require 'beaglebone'
 require_relative 'DutObj'
@@ -18,8 +17,6 @@ SERVER_URI="druby://localhost:8787"
 include Beaglebone
 
 TOTAL_DUTS_TO_LOOK_AT  = 24
-SetupAtHome = false # So we can do some work at home
-
 class TCUSampler
     SlotBibNum = "SLOT BIB#"
     LastStepNumOfSentLog = "LastStepNumOfSentLog"
@@ -33,7 +30,7 @@ class TCUSampler
     StepNum = "Step Num"
     ForPowerSupply = "ForPowerSupply"
     PollIntervalInSeconds = "PollIntervalInSeconds"   
-    HoldingTankFilename = "MachineState_DoNotDeleteNorModify.json"
+    HoldingTankFilename = "/mnt/card/MachineState_DoNotDeleteNorModify.json"
     FaultyTcuList_SkipPolling = "../TcuDisabledSites.txt"
     BbbMode = "BbbMode"
     SDDlyms = "SDDlyms"
@@ -151,6 +148,7 @@ class TCUSampler
         @samplerData.SetBbbMode(modeParam,"called from #{calledFrom} #{__LINE__}-#{__FILE__}")
         @boardData[BbbMode] = modeParam
         @boardMode = modeParam
+        ThermalSiteDevices.SlotCtrlMode = modeParam
 
         
         #
@@ -587,16 +585,24 @@ class TCUSampler
                                         @tempSetPoint = getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"]
                                         @loggingTime = 60*getConfiguration()[Steps][key]["Log Int"].to_i
                                         # puts "@loggingTime='#{@loggingTime}' #{__LINE__}-#{__FILE__}"
-                                        dutToolTip = "Tnom:#{@tempSetPoint}C&#10;"
-                                        dutToolTipB = "H:#{getConfiguration()[Steps][key]["TempConfig"]["H"][0..-2]}%,&nbsp;C:#{getConfiguration()[Steps][key]["TempConfig"]["C"][0..-2]}\%&#10;"
-                                        dutToolTipB += "P:#{getConfiguration()[Steps][key]["TempConfig"]["P"]},&nbsp;I:#{getConfiguration()[Steps][key]["TempConfig"]["I"]},&#10;D:#{getConfiguration()[Steps][key]["TempConfig"]["D"]}&#10;"
-                                        ThermalSiteDevices.setTHCPID(uart1,"T",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"])
-                                        ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["H"][0..-2].to_f/100.0*255)
-                                        ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["C"][0..-2].to_f/100.0*255)
-                                        ThermalSiteDevices.setTHCPID(uart1,"P",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["P"])
-                                        ThermalSiteDevices.setTHCPID(uart1,"I",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["I"])
-                                        ThermalSiteDevices.setTHCPID(uart1,"D",@tcusToSkip,getConfiguration()[Steps][key]["TempConfig"]["D"])
-
+                                        
+                                        @thermalSiteDevices = Hash.new
+                                        @thermalSiteDevices["T"] = getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"]
+                                        @thermalSiteDevices["H"] = getConfiguration()[Steps][key]["TempConfig"]["H"][0..-2].to_f/100.0*255
+                                        @thermalSiteDevices["C"] = getConfiguration()[Steps][key]["TempConfig"]["C"][0..-2].to_f/100.0*255
+                                        @thermalSiteDevices["P"] = getConfiguration()[Steps][key]["TempConfig"]["P"]
+                                        @thermalSiteDevices["I"] = getConfiguration()[Steps][key]["TempConfig"]["I"]
+                                        @thermalSiteDevices["D"] = getConfiguration()[Steps][key]["TempConfig"]["D"]
+                                        
+                                        
+                                        # puts "T='#{ThermalSiteDevices.LastValueT}', H='#{ThermalSiteDevices.LastValueH}', C='#{ThermalSiteDevices.LastValueC}', P='#{ThermalSiteDevices.LastValueP}', I='#{ThermalSiteDevices.LastValueI}', D='#{ThermalSiteDevices.LastValueD}' #{__LINE__}-#{__FILE__}"
+                                        
+                                        ThermalSiteDevices.setTHCPID(uart1,"T",@tcusToSkip,@thermalSiteDevices["T"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,@thermalSiteDevices["H"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,@thermalSiteDevices["C"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"P",@tcusToSkip,@thermalSiteDevices["P"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"I",@tcusToSkip,@thermalSiteDevices["I"])
+                                        ThermalSiteDevices.setTHCPID(uart1,"D",@tcusToSkip,@thermalSiteDevices["D"])
 
                                         # puts "P = '#{getConfiguration()[Steps][key]["TempConfig"]["P"]}'"
                                         # puts "I = '#{getConfiguration()[Steps][key]["TempConfig"]["I"]}'" 
@@ -604,22 +610,49 @@ class TCUSampler
                                         
                                         # Make sure all the duts have the settings PIDTH we sent.
                                         SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
+                                        
+                                        # Get the most count of VStatus, and that's what's set throught the TCUs
+                                        hashVStatus = Hash.new
                                         ct = 0
                                         while ct<24 do
                                             if @tcusToSkip[ct].nil? == true
+                                                # vStatus='@25.000,RTD100,p6.00 i0.60 d0.15,mpo255, cso101, V2.2'
                                                 vStatus = DutObj::getTcuStatusV(ct, uart1,@gPIO2)
-                                                SharedLib.bbbLog("Code not done.  Make sure that the vStatus are what was set to be.  Try to set for 5 times.  If failed, add to @tcusToSkip list, and report an error. #{__LINE__}-#{__FILE__}")
+                                                if hashVStatus[vStatus].nil?
+                                                    hashVStatus[vStatus] = 1
+                                                else
+                                                    hashVStatus[vStatus] += 1
+                                                end
+                                                SharedLib.bbbLog("vStatus='#{vStatus}' #{__LINE__}-#{__FILE__}")
                                             end
                                             ct += 1
                                         end
                                         
+                                        # Determine the most count of vStatus found from the query
+                                        mostCt = 0
+                                        vStatus = ""
+                                        hashVStatus.each do |vStatusKey, count|
+                                            if mostCt < count
+                                                vStatus = vStatusKey
+                                            end
+                                        end
+                                        
+                                        # Parse out the V data of the TCU
+                                        # @25.000,RTD100,p6.00 i0.60 d0.15,mpo255, cso101, V2.2
+                                        piecesOfV = vStatus.split(",")
+                                        dutToolTip = "Tnom:#{piecesOfV[0][1..-1]}C&#10;"
+                                        dutToolTipB = "H:#{piecesOfV[3][3..-1]},&nbsp;C:#{piecesOfV[4].strip[3..-1]}&#10;"
+                                        pidData = piecesOfV[2].split(" ")
+                                        dutToolTipB += "P:#{pidData[0][1..-1]},&nbsp;I:#{pidData[1][1..-1]},&nbsp;D:#{pidData[2][1..-1]}&#10;"
+                                        dutToolTipB += "ver:#{piecesOfV[5].strip}&#10;"
+                                                                 
                                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
                                         @stepToWorkOn = getConfiguration()[Steps][key]
                                         
                                         @dutTempTripMin = @stepToWorkOn["TempConfig"]["TDUT"]["TripMin"]
                                         @dutTempTripMax = @stepToWorkOn["TempConfig"]["TDUT"]["TripMax"]
                                         dutToolTip += "Tmin:#{@dutTempTripMin}C,&nbsp;Tmax:#{@dutTempTripMax}C&#10;"
-                                        dutToolTip += "Ttol+:#{@stepToWorkOn["TempConfig"]["TDUT"]["FlagTolP"]}C,&nbsp;Ttol-:#{@stepToWorkOn["TempConfig"]["TDUT"]["FlagTolN"]}C&#10;"
+                                        dutToolTip += "Ttol-:#{@stepToWorkOn["TempConfig"]["TDUT"]["FlagTolN"]}C,&nbsp;Ttol+:#{@stepToWorkOn["TempConfig"]["TDUT"]["FlagTolP"]}C&#10;"
 
                                         @stepToWorkOn["PsConfig"].each do |key, array|
                                             if key == "IDUT"
@@ -847,26 +880,8 @@ class TCUSampler
         # @samplerData.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
     end
     
-    def setTcuToRunMode()
-        # Turn on the control for TCUs that are not disabled.
-        SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
-        ct = 0
-        while ct<24 do
-            if @tcusToSkip[ct].nil? == true
-                bitToUse = etsEnaBit(ct)
-                if 0<=ct && ct <=7  
-                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
-                    @gPIO2.etsEna1SetOn(bitToUse)
-                elsif 8<=ct && ct <=15
-                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna2Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
-                    @gPIO2.etsEna2SetOn(bitToUse)
-                elsif 16<=ct && ct <=23
-                    # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna3Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
-                    @gPIO2.etsEna3SetOn(bitToUse)
-                end
-            end
-            ct += 1
-        end
+    def setTcuToRunMode(tcusToSkipParam,gPIO2Param)
+        ThermalSiteDevices.setTcuToRunMode(tcusToSkipParam,gPIO2Param)
     end    
     
     def runMachine()
@@ -876,7 +891,7 @@ class TCUSampler
         @allDutTempTolReached = false
                 				
         # Turn on the control for TCUs that are not disabled.
-        setTcuToRunMode()
+        setTcuToRunMode(@tcusToSkip,@gPIO2)
     end
     
     def setErrorColorFlagBase(key2)
@@ -1212,35 +1227,6 @@ class TCUSampler
     	@multiplier[SharedLib::SlotTemp2] = 100.0*MeasErr
     end
 
-    def etsEnaBit(ct)
-        if 8<= ct && ct <= 15
-            ct -= 8
-        elsif 16 <= ct && ct <= 23
-            ct -= 16
-        end
-
-        if 0<=ct && ct <=7
-            case ct
-            when 7
-                return GPIO2::X9_ETS7
-            when 6
-                return GPIO2::X9_ETS6
-            when 5
-                return GPIO2::X9_ETS5
-            when 4 
-                return GPIO2::X9_ETS4
-            when 3
-                return GPIO2::X9_ETS3
-            when 2
-                return GPIO2::X9_ETS2
-            when 1
-                return GPIO2::X9_ETS1
-            when 0
-                return GPIO2::X9_ETS0
-            end
-        end
-    end
-    
     def readInEthernetScheme
         # Read in the EthernetScheme.csv file
 		ethernetScheme = Array.new
@@ -2481,8 +2467,8 @@ class TCUSampler
                 SharedLib.bbbLog("UART not responding to TCU#{ct} (zero based index), adding item to be skipped when polling. #{__LINE__}-#{__FILE__}")
             else
                 # puts "Sent 'S?' - responded :'#{uartResponse}' #{__LINE__}-#{__FILE__}"
-                uart1.write("V?\n");
-                x = uart1.readline
+                # uart1.write("V?\n");
+                # x = uart1.readline
                 # puts "Sent 'V?' - responded :'#{x}' #{__LINE__}-#{__FILE__}"
             end
             ct += 1
@@ -2590,7 +2576,7 @@ class TCUSampler
     	readInBbbDefaultsFile()
     	readInEthernetScheme()
 
-        # runThreadForSavingSlotStateEvery10Mins()
+        runThreadForSavingSlotStateEvery10Mins()
         # runThreadForPcCmdInput()
 
 		# DRb are the two lines below
@@ -2654,7 +2640,11 @@ class TCUSampler
         end
 =end
 
-        # Make sure that the UART is functional again.        
+        
+        # Mount the SD card for access
+        # Blindly create a /mnt/card, and mount the SD card to it.
+        # All persistant data access must be done in the sd card.
+        `mkdir /mnt/card; mount /dev/mmcblk0p1  /mnt/card`
 
         #
         # Get the board configuration
@@ -2702,6 +2692,12 @@ class TCUSampler
         
         # @samplerData.ReportError("Error test. #{__LINE__}-#{__FILE__}")
         @timeOfLog = Time.now
+
+	    # Turn off the fans of the TCUs since we just booted up.
+        ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,0.0)
+        ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,0.0)
+        setTcuToRunMode(@tcusToSkip,@gPIO2)
+
         while true
             stepNum = ""
             if @stepToWorkOn.nil? == false
@@ -2775,7 +2771,8 @@ class TCUSampler
         		    puts "\n\n\nNew command from PC - '#{pcCmd}' @samplerData.GetPcCmd().length='#{pcCmdObj.length}'  #{__LINE__}-#{__FILE__}"
                     @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    case pcCmd
-        		    when SharedLib::RunFromPc
+        	        when SharedLib::RunFromPc
+        		        checkDeadTcus(uart1)
                         @samplerData.setDontSendErrorColor(false)
     		            setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
                         @samplerData.clearStopMessage()
@@ -2787,7 +2784,7 @@ class TCUSampler
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                         
         		    when SharedLib::ClearConfigFromPc
-                        @samplerData.clearStopMessage()
+                    		@samplerData.clearStopMessage()
         		        @samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
                         @samplerData.setErrorColor(nil,"#{__LINE__}-#{__FILE__}")
             		    setBoardData(Hash.new,uart1)
@@ -2799,9 +2796,10 @@ class TCUSampler
             		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
             		    
             		    # Turn off the fans of the TCUs
-                        ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,0.0)
                         ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,0.0)
-                        setTcuToRunMode()                        
+                        
+                        # Delete the Machine state file
+                        `rm -rf #{HoldingTankFilename}`
         		    when SharedLib::LoadConfigFromPc
         		        checkDeadTcus(uart1)
 
@@ -2869,7 +2867,7 @@ class TCUSampler
             #
             pollAdcInput()
             pollMuxValues()
-            ThermalSiteDevices.pollDevices(uart1,@gPIO2,@tcusToSkip)
+            ThermalSiteDevices.pollDevices(uart1,@gPIO2,@tcusToSkip,@thermalSiteDevices)
             ThermalSiteDevices.logData(@samplerData)
             getEthernetPsCurrent()
             backFansHandler()
@@ -2897,6 +2895,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-#############################################################################################
-# SlotCtrl code version: 1.0.0
-# - First version.
+# 2867

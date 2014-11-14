@@ -2,6 +2,8 @@ require 'singleton'
 require 'forwardable'
 require 'uri'
 
+SetupAtHome = false # So we can do some work at home
+
 class SharedLib
 	include Singleton
 	#
@@ -433,10 +435,15 @@ class SharedLib
 	end
 	
 	def getBibID(slotOwnerParam)
-		if @bibId.nil?
+		if @bibId.nil? || @bibId.length == 0
 			@bibId = Hash.new
 			config = Array.new
-			File.open("../#{Pc_SlotCtrlIps}", "r") do |f|
+			if SetupAtHome
+				pathD = "/cygdrive/c/work/slot-controller"
+			else
+				pathD = `cd ~; pwd`.strip
+			end
+			File.open("#{pathD}/slot-controller/#{Pc_SlotCtrlIps}", "r") do |f|
 				f.each_line do |line|
 					config.push(line)
 				end			
@@ -483,6 +490,4 @@ class SharedLib
     end
 
   # End of 'class Constants'
-end
-    
-
+end    

@@ -1,6 +1,6 @@
 # Code to look at:
 # "BBB PcListener is down.  Need to handle this in production code level."
-# @519
+# @3073
 require 'rubygems'
 require 'sinatra'
 development = true
@@ -79,6 +79,7 @@ class UserInterface
 	attr_accessor :redirectWithError
 	attr_accessor :stepName
 	attr_accessor :redirectErrorFaultyPsConfig	
+	attr_accessor :sharedMem
 	
 	def clearErrorSlot(slotOwnerParam)
 		# puts "clearErrorSlot(slotOwnerParam) got called. slotOwnerParam='#{slotOwnerParam}' SharedLib::ErrorMsg='#{SharedLib::ErrorMsg}'"
@@ -107,8 +108,8 @@ class UserInterface
   		end
 =begin  		
   		@slotToIp.each do |key, array|
-				puts "#{key}-----"
-				puts array
+				# puts "#{key}-----"
+				# puts array
 			end
 			SharedLib.pause "Checking values of @slotToIp","#{__LINE__}-#{__FILE__}"
 =end			
@@ -170,7 +171,7 @@ class UserInterface
 		# returns true if the 
 		#
 		indexOfStepName = ctParam - RowOfStepName 
-		# puts "ctParam='#{ctParam}', RowOfStepName='#{RowOfStepName}', indexOfStepName='#{indexOfStepName}'"
+		#  "ctParam='#{ctParam}', RowOfStepName='#{RowOfStepName}', indexOfStepName='#{indexOfStepName}'"
 		ct = ctParam
 		while ct < config.length && (ct-indexOfStepName) < config.length do
 			# puts "ct='#{ct}', indexOfStepName='#{indexOfStepName}', ct-indexOfStepName='#{ct-indexOfStepName}', config.length='#{config.length}'"
@@ -192,9 +193,9 @@ class UserInterface
 					@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 					error = "Step File '#{configFileName}' - '#{itemNameParam}' '#{stepTime}' on line "
 					error += "'#{ct+1}' must be a number."
-					puts "A error =>#{error}<= @#{__LINE__}-#{__FILE__}"
+					# puts "A error =>#{error}<= @#{__LINE__}-#{__FILE__}"
 					@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
-					puts "B @redirectWithError =>#{@redirectWithError}<= @#{__LINE__}-#{__FILE__}"
+					# puts "B @redirectWithError =>#{@redirectWithError}<= @#{__LINE__}-#{__FILE__}"
 					return false
 				else				
 					slotConfigStep = getSlotConfigStep(stepName)
@@ -298,7 +299,10 @@ class UserInterface
 	def upLoadConfigErrorGeneral
 		@upLoadConfigErrorGeneral
 	end
-	
+
+	def sharedMem
+		@sharedMem
+	end
 	def stepName
 		@stepName
 	end
@@ -442,7 +446,7 @@ class UserInterface
 	
 	def setToLoadMode(slotOwnerParam)
 		begin
-			puts "Clearing board IP=#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")} #{__LINE__}-#{__FILE__}"
+			# puts "Clearing board IP=#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")} #{__LINE__}-#{__FILE__}"
 			hash = Hash.new
 			hash[SharedLib::SlotOwner] = slotOwnerParam
 			slotData = hash.to_json
@@ -521,46 +525,15 @@ class UserInterface
 		writeToSettingsLog("PC Software Ver: #{@sharedMem.getCodeVersion(SharedMemory::PcVer)}",settingsFileName)
 		writeToSettingsLog("",settingsFileName)
 
-=begin
-		psItems = ["VPS0","IPS0","VPS1","IPS1","VPS2","IPS2","VPS3","IPS3","VPS4","IPS4","VPS5","IPS5","VPS6","IPS6","VPS7","IPS7","VPS8","IPS8","VPS9","IPS9","VPS10","IPS10","IDUT"]
-		ct = 0
-		getSlotProperties()["LastPrintedStepNum"] = 0
-		getSlotProperties()["LastPrintedStepName"] = ""
-		getSlotProperties().each do |key, array|
-			puts "key='#{key}' array=#{array}\n\n\n"			
-			if ct == 1
-				# This is the first step.
-			end
-			if key == "Steps"
-				ct = 0
-				array.each do |key2, array2|
-					if ct == 0
-						# We're working on the pretest.
-						array2.each do  |key3, array3|
-							array3.each do |key4, array4|
-								if psItems.include? key4
-									if key4 == "VPS0"
-									end
-								end
-							end
-						end
-					end
-					ct += 1
-				end
-			end
-			ct += 1
-		end
-=end
-
 		# PP.pp(getSlotProperties())
 		# puts "About to send to the Board. #{__LINE__}-#{__FILE__}"
 		# exit
 		begin
-			puts "LoadConfig on IP='#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}'"
+			# puts "LoadConfig on IP='#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}'"
 			
 			@response = 
 		    RestClient.post "#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
-			puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
+			# puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
 			@sharedMem.SetDispButton(slotOwnerParam,"Loading")			
 			# hash1 = JSON.parse(@response)
 			# puts "check A #{__LINE__}-#{__FILE__}"
@@ -570,7 +543,7 @@ class UserInterface
 			# puts "check C #{__LINE__}-#{__FILE__}"
 			return true
 			rescue
-			puts "No response.#{__LINE__}-#{__FILE__} @response=#{@response}"
+			# puts "No response.#{__LINE__}-#{__FILE__} @response=#{@response}"
 			@redirectWithError = "/TopBtnPressed?slot=#{slotOwnerParam}&BtnState=#{Load}"
 			@redirectWithError += "&ErrGeneral=bbbDown"
 			#@redirectWithError += "&ErrGeneral=EFGH"
@@ -587,7 +560,6 @@ class UserInterface
 		DRb.start_service
 		@sharedMemService = DRbObject.new_with_uri(SERVER_URI)
 		@sharedMem = SharedMemory.new
-		@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.0")
 		# end of 'def initialize'
 	end
 
@@ -800,6 +772,13 @@ class UserInterface
 					toDisplay += "C@"+splittedData[4]
 				end
 				toDisplay += "&#10;#{@sharedMem.GetDispDutToolTip(slotLabel2Param)}"
+				toDisplay += "AmbT:#{splittedData[1]}C"
+				# puts "splittedData=#{splittedData}"
+				if splittedData[0] == "1"
+					toDisplay += "&#10;Running"
+				else
+					toDisplay += "&#10;Stopped"
+				end
 				# puts "slotLabel2Param='#{slotLabel2Param}' splittedData=#{splittedData}, tcuData='#{tcuData}' #{__LINE__}-#{__FILE__}"
 			else
 				toDisplay = ""
@@ -911,6 +890,9 @@ class UserInterface
 	end
 	def updatedSharedMemory
 			@sharedMem = @sharedMemService.getSharedMem() # .processRecDataFromPC(.getDataFromBoardToPc())
+			if @sharedMem.getCodeVersion(SharedMemory::PcVer).nil? || @sharedMem.getCodeVersion(SharedMemory::PcVer).length == 0
+				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.0")
+			end
 	end
 	def GetSlotDisplay(slotLabel2Param)
 		lotID = @sharedMem.GetDispLotID(slotLabel2Param)
@@ -1020,8 +1002,6 @@ class UserInterface
 		errMsg = @sharedMem.getDispErrorMsg(slotLabel2Param)
 		topTable = "
 			<table>
-				<tr><td></td><td/></tr>
-				<tr><td></td><td/></tr>
 				<tr>
 					<td>
 						<table>
@@ -1109,15 +1089,6 @@ class UserInterface
 					fileitem = `ls -l #{directory}| grep #{dBaseFileName}`.strip
 					# puts "fileitem = #{fileitem}"
 					fileItemParts = fileitem.split(" ")					
-=begin					
-					puts "fileItemParts[0] = '#{fileItemParts[0]}' #{__LINE__}-#{__FILE__}"
-					puts "fileItemParts[1] = '#{fileItemParts[1]}' #{__LINE__}-#{__FILE__}"
-					puts "fileItemParts[2] = '#{fileItemParts[2]}' #{__LINE__}-#{__FILE__}"
-					puts "fileItemParts[3] = '#{fileItemParts[3]}' #{__LINE__}-#{__FILE__}"
-					puts "fileItemParts[4] = '#{fileItemParts[4]}' #{__LINE__}-#{__FILE__}"
-					puts "fileItemParts[5] = '#{fileItemParts[5]}' #{__LINE__}-#{__FILE__}"					
-					puts "fileItemParts[6] = '#{fileItemParts[6]}' #{__LINE__}-#{__FILE__}"
-=end					
 					if fileItemParts[4].to_i > 10000
 						`cd #{directory}; split -b 10000000 #{dBaseFileName} #{generalFileName}_Part`
 					end
@@ -1395,7 +1366,7 @@ end
 	end
 	
 	def getListOfFiles(path, extentionParam)
-		puts "cd '#{path}'; ls -lt #{extentionParam} #{__LINE__}-#{__FILE__}"
+		# puts "cd '#{path}'; ls -lt #{extentionParam} #{__LINE__}-#{__FILE__}"
 		listOfFiles = `cd "#{path}"; ls -lt #{extentionParam}`
 		fileRow = listOfFiles.split("\n")
 		ct = 0
@@ -1756,15 +1727,15 @@ end
 	end
 
 	def setDataSetup(
-					nameParam,unitParam,nomSetParam,tripMinParam,tripMaxParam,flagTolPParam,flagTolNParam,enableBitParam,
+					nameParam,unitParam,nomSetParam,tripMinParam,tripMaxParam,flagTolNParam,flagTolPParam,enableBitParam,
 					idleStateParam,loadStateParam,startStateParam,runStateParam,stopStateParam,clearStateParam
 				)
 		setItemParameter(nameParam,Unit,unitParam)
 		setItemParameter(nameParam,NomSet,nomSetParam)
 		setItemParameter(nameParam,TripMin,tripMinParam)
 		setItemParameter(nameParam,TripMax,tripMaxParam)
-		setItemParameter(nameParam,FlagTolP,flagTolPParam)
 		setItemParameter(nameParam,FlagTolN,flagTolNParam)
+		setItemParameter(nameParam,FlagTolP,flagTolPParam)
 		setItemParameter(nameParam,EnableBit,enableBitParam)
 		setItemParameter(nameParam,IdleState,idleStateParam)
 		setItemParameter(nameParam,LoadState,loadStateParam)
@@ -1813,8 +1784,8 @@ end
 	end	
 
 	def checkFaultyDutSiteActivationMinCurrentConfig(fileNameParam, fromParam)
-		puts "Within checkFaultyDutSiteActivationMinCurrentConfig function."
-		puts "Starting with function 'checkFaultyDutSiteActivationMinCurrentConfig' @redirectWithError='#{@redirectWithError}' #{__LINE__}-#{__FILE__}"
+		# puts "Within checkFaultyDutSiteActivationMinCurrentConfig function."
+		# puts "Starting with function 'checkFaultyDutSiteActivationMinCurrentConfig' @redirectWithError='#{@redirectWithError}' #{__LINE__}-#{__FILE__}"
 		# Returns true if no fault, false if there is error
 		#
 		clearError()
@@ -2015,7 +1986,7 @@ end
 				if colName == "Step Name"
 					# The section of the read file is still working on a step.
 					@stepName = config[ct].split(",")[4].strip # Get the row data for file name.
-			puts "@stepName = '#{@stepName}'"
+			# puts "@stepName = '#{@stepName}'"
 			SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 					valueColumnOrStepNameRow = config[ct].split(",")[4].strip
 					#
@@ -2281,8 +2252,8 @@ end
 				nomSet = config[ct].split(",")[3].upcase
 				tripMin = config[ct].split(",")[4].upcase
 				tripMax = config[ct].split(",")[5].upcase
-				flagTolP = config[ct].split(",")[6].upcase
-				flagTolN = config[ct].split(",")[7].upcase
+				flagTolN = config[ct].split(",")[6].upcase
+				flagTolP = config[ct].split(",")[7].upcase
 				enableBit = nil
 				idleState = nil
 				loadState = nil
@@ -2291,7 +2262,7 @@ end
 				stopState = nil
 				clearState = nil				
 				setDataSetup(
-					name,unit,nomSet,tripMin,tripMax,flagTolP,flagTolN,enableBit,idleState,
+					name,unit,nomSet,tripMin,tripMax,flagTolN,flagTolP,enableBit,idleState,
 					loadState,startState,runState,stopState,clearState
 				)
 			else
@@ -2308,10 +2279,10 @@ end
 
 	def checkFaultyPsConfig(fileNameParam,fromParam)
 =begin	
-		puts "checkFaultyPsConfig got called. #{__LINE__}-#{__FILE__}"
-		puts "fileNameParam=#{fileNameParam} #{__LINE__}-#{__FILE__}"
-		puts "fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
-		puts "configFileType=#{configFileType} #{__LINE__}-#{__FILE__}"
+		# puts "checkFaultyPsConfig got called. #{__LINE__}-#{__FILE__}"
+		# puts "fileNameParam=#{fileNameParam} #{__LINE__}-#{__FILE__}"
+		# puts "fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
+		# puts "configFileType=#{configFileType} #{__LINE__}-#{__FILE__}"
 =end		
 		#
 		# Returns true if no fault, false if there is error
@@ -2504,7 +2475,7 @@ end
 						error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', sequence number"
 						error += " '#{columns[seqDownCol]}' on index '#{columns[indexCol]}' is already accounted for"
 						error += " sequence down."
-						puts "error @#{__LINE__}-#{__FILE__}"
+						# puts "error @#{__LINE__}-#{__FILE__}"
 						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 						return false
 					end
@@ -2517,7 +2488,7 @@ end
 						error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', sequence number"
 						error += " '#{columns[seqUpCol]}' on index '#{columns[indexCol]}' is already accounted for" 
 						error += " sequence up."
-						puts "error @#{__LINE__}-#{__FILE__}"
+						# puts "error @#{__LINE__}-#{__FILE__}"
 						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 						return false
 					end
@@ -2531,7 +2502,7 @@ end
 					error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}' on"
 					error += " index '#{columns[indexCol]}', if PS is turned off on "
 					error += "power sequence (sequence order = 0), it must have a sequence = 0 for both SEQ UP and SEQ DN."
-						puts "error @#{__LINE__}-#{__FILE__}"
+						# puts "error @#{__LINE__}-#{__FILE__}"
 					@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 					return false
 				end
@@ -2618,15 +2589,15 @@ end
 			#
 			error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', #{colNameParam} column"
 			error += " on index '#{columns[indexCol]}' must be an integer."
-						puts "error @#{__LINE__}-#{__FILE__}"
+						# puts "error @#{__LINE__}-#{__FILE__}"
 			@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 			return false
 		end
 	end
 
 	def pause(paramA,paramLocation)
-		puts "Paused at #{paramLocation} - #{paramA}"
-		gets
+		# puts "Paused at #{paramLocation} - #{paramA}"
+		# gets
 	end
 	
 	def setConfigFileType(uploadedFileName)
@@ -2652,7 +2623,7 @@ end
 		elsif minCurrFile == minCurrFileExtension
 			@configFileType = SharedLib::MinCurrConfig
 		else
-			puts "error @#{__LINE__}-#{__FILE__}"
+			# puts "error @#{__LINE__}-#{__FILE__}"
 			@redirectWithError += "&ErrGeneral=FileNotKnown&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 			return false
 		end
@@ -2812,6 +2783,7 @@ get '/TopBtnPressed' do
 			#
 			# The Clear button got pressed.
 			#
+			# puts "\n\n\nClear button got called. #{__LINE__}-#{__FILE__}"
 			settings.ui.setToLoadMode(params[:slot])
 			redirect "../"
 		elsif SharedMemory.uriToStr(params[:BtnState]) == "ClearError"
@@ -2828,15 +2800,15 @@ post '/dataDisplay' do
 	settings.ui.updatedSharedMemory()
 	tbr = "
 		<table height=\"60%\" width=\"100%\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">
-			<tr><td><center>"
+			<tr><td align=\"left\">"
 	tbr += settings.ui.GetSlotDisplay("SLOT1")
-	tbr += "</center></td></tr>
-			<tr><td><center>"
+	tbr += "</td></tr>
+			<tr><td align=\"left\">"
 	tbr += settings.ui.GetSlotDisplay("SLOT2")
-	tbr += "</center></td></tr>
-			<tr><td><center>"
+	tbr += "</td></tr>
+			<tr><td align=\"left\">"
 	tbr += settings.ui.GetSlotDisplay("SLOT3")
-	tbr += "</center></td></tr>
+	tbr += "</td></tr>
 		</table>		
 	"				
 	return tbr
@@ -2904,7 +2876,7 @@ post '/TopBtnPressed' do
 end
 
 post '/AckError' do
-	puts "post AckError"
+	# puts "post AckError"
 end
  
 get '/AckError' do
@@ -2912,35 +2884,25 @@ get '/AckError' do
 	errLogFileName = "../\"error logs\"/ErrorLog_#{params[:slot]}.log"
 	errorItem = `head -1 #{newErrLogFileName}`
 	errorItem = errorItem.chomp
-	puts "errorItem='#{errorItem}' errorItem.length=#{errorItem.length} #{__FILE__}-#{__LINE__}"
+	# puts "errorItem='#{errorItem}' errorItem.length=#{errorItem.length} #{__FILE__}-#{__LINE__}"
 	if errorItem.length>0
-		puts "at errLogFileName='#{errLogFileName}' #{__FILE__}-#{__LINE__}"
+		# puts "at errLogFileName='#{errLogFileName}' #{__FILE__}-#{__LINE__}"
 		newStr = SharedLib::MakeShellFriendly(errorItem)
 		`echo \"#{newStr}\" >> #{errLogFileName}`	
-	puts "at #{__FILE__}-#{__LINE__}"
 =begin
 	File.open(errLogFileName, "a") { 
 		|file| file.write("#{errorItem}") 
 	}
 =end	
-	puts "at #{__FILE__}-#{__LINE__}"
 
 		trimmed = `sed -e '1,1d' < #{newErrLogFileName}`
-	puts "at #{__FILE__}-#{__LINE__}"
 		trimmed = trimmed.chomp
-	puts "at #{__FILE__}-#{__LINE__}"
 		if trimmed.length > 0
-	puts "at #{__FILE__}-#{__LINE__}"
-	puts "newErrLogFileName='#{newErrLogFileName}' #{__FILE__}-#{__LINE__}"
 			trimmed = SharedLib::MakeShellFriendly(trimmed)
 			`echo \"#{trimmed}\" > #{newErrLogFileName}`
-	puts "at #{__FILE__}-#{__LINE__}"
 		else
-	puts "at #{__FILE__}-#{__LINE__}"
 			`rm #{newErrLogFileName}`
-	puts "at #{__FILE__}-#{__LINE__}"
 		end
-	puts "at #{__FILE__}-#{__LINE__}"
 =begin	
 	File.open(newErrLogFileName, "w") { 
 		|file| file.write(trimmed) 
@@ -3064,12 +3026,38 @@ __END__
 		<meta charset="utf-8">
 	</head>
 	<body onmousedown="isKeyPressed(event)">
+		<%
+			# Get the PC version, and Slot Ctrl version
+			pcVer = ""
+			slotCtrlVer = ""
+			slotNum = 1
+			while pcVer.nil? || pcVer.length == 0 || slotCtrlVer.nil? || slotCtrlVer.length == 0
+				sleep(1)
+				pcVer = settings.ui.sharedMem.getCodeVersion(SharedMemory::PcVer)
+				# puts "SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
+
+				settings.ui.updatedSharedMemory()
+				slotCtrlVer = settings.ui.sharedMem.GetDispCodeVersion("SLOT#{slotNum}",SharedMemory::SlotCtrlVer)
+				# puts "SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
+				if slotCtrlVer.nil? || slotCtrlVer.length == 0
+					slotNum += 1
+					if slotNum >= 4
+						slotNum = 1
+					end
+				end
+			end
+
+		%>
 		<table>
 			<tr>
 				<td align="left"><img src="../ICE_logo_small.bmp" style="width:<%= 388/1.5 %>px;height:<%= 105/1.5%>px"></td>
 				<td width="100%"></td>
-				<td align="center" nowrap><font size="5"><%= settings.ui.getSystemID() %>&nbsp;&nbsp;&nbsp;</font></td>
-				<td></td>
+				<td  align="right" >
+					<table>
+						<tr><td align="center" valign="bottom" nowrap colspan="2"><font size="5"><%= settings.ui.getSystemID() %></font></td></tr>
+						<tr><td align="right" valign="top" nowrap><font size="1">PC ver:<%= pcVer %>,</font></td><td align="left" valign="top" nowrap><font size="1">Slot Ctrl ver:<%= slotCtrlVer %></font></td></tr>
+					</table>
+				</td>
 			</tf>
 		</table>		
 		<div style="height: 300px;" id="myDiv">

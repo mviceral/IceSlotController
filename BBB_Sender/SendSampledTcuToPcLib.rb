@@ -257,7 +257,7 @@ Temperature Setting: <temp>
                         puts "Failed to send to '#{@pcIpAddr}'.  Attempting again."
                         puts e.message  
                         # puts e.backtrace.inspect
-                        # `echo "#{slotInfoJson}" >> PcDown.BackLog`
+                        # `echo "#{slotInfoJson}" >> /mnt/card/PcDown.BackLog`
                 end
                 ct += 1
             end
