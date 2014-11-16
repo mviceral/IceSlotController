@@ -2342,6 +2342,7 @@ class TCUSampler
             
             setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
             setBoardStateForCurrentStep(uart1)
+            sleep(1)
             if @stepToWorkOn.nil? == false
                 # There's more step to process
     		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
