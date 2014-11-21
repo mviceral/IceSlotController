@@ -1089,7 +1089,7 @@ class UserInterface
 					fileitem = `ls -l #{directory}| grep #{dBaseFileName}`.strip
 					# puts "fileitem = #{fileitem}"
 					fileItemParts = fileitem.split(" ")					
-					if fileItemParts[4].to_i > 10000
+					if fileItemParts[4].to_i > 10000000
 						`cd #{directory}; split -b 10000000 #{dBaseFileName} #{generalFileName}_Part`
 					end
 				end
