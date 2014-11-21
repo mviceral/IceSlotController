@@ -1931,7 +1931,7 @@ class TCUSampler
         @samplerData.setErrorColor(@boardData[SharedMemory::ErrorColor],"#{__LINE__}-#{__FILE__}")
     end
 
-    def evaluatedDevices(pollIntervalInSeconds, pollingTime, uart1, twtimeleft)
+    def evaluateDevices(pollIntervalInSeconds, pollingTime, uart1, twtimeleft)
         # puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
 	    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
 	        # We're still running.
@@ -2341,6 +2341,7 @@ class TCUSampler
             end
             
             setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            sleep(1)
             setBoardStateForCurrentStep(uart1)
             if @stepToWorkOn.nil? == false
                 # There's more step to process
@@ -2762,7 +2763,7 @@ class TCUSampler
     			        setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
     			    else
     			        @samplerData.setDontSendErrorColor(false)
-    			        evaluatedDevices(pollIntervalInSeconds, pollingTime, uart1, twtimeleft)
+    			        evaluateDevices(pollIntervalInSeconds, pollingTime, uart1, twtimeleft)
     			    end
     			elsif @boardMode == SharedLib::InRunMode
     			    # Setting to stop mode because all steps are done already and the boardMode is still in run mode.
