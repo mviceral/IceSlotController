@@ -1,10 +1,14 @@
 # This script will run the processes for the BE2STRESS.
-# clear
-# echo "A browser will open a page 'http://localhost:4569' to view the BE2 application." 
-#echo "Processing. Please wait ~1 min."
+# Provide the three IP addresses of the slot controllers to SLOT1, SLOT2, and SLOT3 variables.
+
+SLOT1=192.168.1.209
+SLOT2=192.168.1.211
+SLOT3=192.168.1.212
+
 bash scripts/pcSideRun.sh 2>/dev/null &
-ssh root@192.168.1.211 'bash -s' < scripts/sshScriptRunBoard.sh 2>/dev/null & 
-ssh root@192.168.1.212 'bash -s' < scripts/sshScriptRunBoard.sh 2>/dev/null & 
+ssh root@$SLOT1 'bash -s' < scripts/sshScriptRunBoard.sh 2>/dev/null & 
+ssh root@$SLOT2 'bash -s' < scripts/sshScriptRunBoard.sh 2>/dev/null & 
+ssh root@$SLOT3 'bash -s' < scripts/sshScriptRunBoard.sh 2>/dev/null & 
 #sleep 60  
 sleep 3 # wait for the noise from the top processes to show then clear the screen.
 clear
