@@ -3,13 +3,8 @@
 Device,IP address
 
 # Work PC IP address
-#PC,192.168.1.210
+PC,192.168.1.210
 
-# Home PC IP address
-PC,192.168.1.59
-
-# BBB IP Address
-#SlotCtrlr IP,192.168.1.211
 SlotCtrlr ID, SLOT1
 
 # PS IP addresses
