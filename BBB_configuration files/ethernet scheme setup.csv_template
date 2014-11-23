@@ -2,10 +2,7 @@
 # To enable entry, remove comment marker '#' in front of line
 Device,IP address
 
-# Work PC IP address
 PC,192.168.1.210
-
-SlotCtrlr ID, SLOT1
 
 # PS IP addresses
 PS0,0.168.1.213
@@ -15,3 +12,7 @@ PS3,0.168.1.216
 PS4,-
 PS5,-
 PS7,0.168.1.217
+
+# Item below expects the slot number identifier of the slot controller (i.e. SLOT1, SLOT2, or SLOT3)
+SlotCtrlr ID, SLOT1
+
