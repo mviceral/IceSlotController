@@ -33,7 +33,7 @@ class DutObj
     end
     
     def self.getTcuStatus(dutNumParam,uart1Param,gPIO2,singleCharParam)
-        # puts "SetupAtHome='#{SetupAtHome}' #{__LINE__}-#{__FILE__}"
+        puts "dutNumParam='#{dutNumParam}' SetupAtHome='#{SetupAtHome}' singleCharParam='#{singleCharParam}' #{__LINE__}-#{__FILE__}"
         if SetupAtHome
             if singleCharParam == "V"
                 tbr = "@25.000,RTD100,p6.00 i0.60 d0.15,mpo255, cso101, V2.2"
@@ -96,6 +96,7 @@ class DutObj
                 end
                 rescue Timeout::Error
                     puts "\n\n\n\nTimed out Error. dutNumParam=#{dutNumParam}"
+SharedLib.pause "Whacked out","#{__LINE__}-#{__FILE__}"
                     uart1Param.disable   # uart1Param variable is now dead cuz it timed out.
                     uart1Param = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
                     tbr = FaultyTcu
@@ -135,7 +136,7 @@ class DutObj
                 ""
             end
 =end            
-            sleep(0.01)
+            sleep(0.5)
             # puts "getTcuStatus(#{dutNumParam})='#{tbr}' #{__LINE__}-#{__FILE__}"
             return tbr
         #end

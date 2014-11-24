@@ -1043,7 +1043,7 @@ unsigned long int TimeOut::ElapsedTime_ms()
 int main(int argc, char *argv[])
 {
     int baudRate;
-    int diagnosticMode = 0;
+    int diagnosticMode = 1;
     /*
     if (diagnosticMode == 0) {
         if ( argc != 2 ) / * argc should be 2 for correct execution * /

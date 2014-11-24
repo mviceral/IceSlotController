@@ -1,4 +1,4 @@
-require 'sqlite3'
+# require 'sqlite3'
 require 'beaglebone'
 include Beaglebone
 
@@ -25,7 +25,7 @@ uart1 = UARTDevice.new(:UART1, baudrateToUse)
 
 
 puts "Check 7 of 7 - uart1.each_line"
-puts "Code is waiting for any responses from the ThermalSite."
+puts "Code is waiting for a response from the ThermalSite."
 uart1.each_line { 
     |line| 
     puts line
