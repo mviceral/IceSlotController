@@ -33,7 +33,7 @@ class DutObj
     end
     
     def self.getTcuStatus(dutNumParam,uart1Param,gPIO2,singleCharParam)
-        puts "dutNumParam='#{dutNumParam}' SetupAtHome='#{SetupAtHome}' singleCharParam='#{singleCharParam}' #{__LINE__}-#{__FILE__}"
+        # puts "dutNumParam='#{dutNumParam}' SetupAtHome='#{SetupAtHome}' singleCharParam='#{singleCharParam}' #{__LINE__}-#{__FILE__}"
         if SetupAtHome
             if singleCharParam == "V"
                 tbr = "@25.000,RTD100,p6.00 i0.60 d0.15,mpo255, cso101, V2.2"
