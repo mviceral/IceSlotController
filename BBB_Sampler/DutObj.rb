@@ -96,7 +96,7 @@ class DutObj
                 end
                 rescue Timeout::Error
                     puts "\n\n\n\nTimed out Error. dutNumParam=#{dutNumParam}"
-SharedLib.pause "Whacked out","#{__LINE__}-#{__FILE__}"
+# SharedLib.pause "Whacked out","#{__LINE__}-#{__FILE__}"
                     uart1Param.disable   # uart1Param variable is now dead cuz it timed out.
                     uart1Param = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
                     tbr = FaultyTcu
@@ -136,7 +136,7 @@ SharedLib.pause "Whacked out","#{__LINE__}-#{__FILE__}"
                 ""
             end
 =end            
-            sleep(0.5)
+            sleep(0.01)
             # puts "getTcuStatus(#{dutNumParam})='#{tbr}' #{__LINE__}-#{__FILE__}"
             return tbr
         #end

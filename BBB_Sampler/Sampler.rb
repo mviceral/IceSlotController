@@ -2463,7 +2463,7 @@ class TCUSampler
     def checkDeadTcus(uart1)
         @tcusToSkip = Hash.new
         puts "SetupAtHome='#{SetupAtHome}'"
-SharedLib.pause "Checking SetupAtHome value","#{__LINE__}-#{__FILE__}"
+# SharedLib.pause "Checking SetupAtHome value","#{__LINE__}-#{__FILE__}"
         if SetupAtHome
             return # Don't check for Tcu status if we're running code at home.
         end
@@ -2471,15 +2471,15 @@ SharedLib.pause "Checking SetupAtHome value","#{__LINE__}-#{__FILE__}"
         ct = 0
         while ct<24 && @tcusToSkip[ct].nil? do 
             uartResponse = DutObj::getTcuStatusS(ct,uart1,@gPIO2)
-SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
+#SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
             if uartResponse == DutObj::FaultyTcu
-SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
+#SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
                 @tcusToSkip[ct] = ct
                 SharedLib.bbbLog("UART not responding to TCU#{ct} (zero based index), adding item to be skipped when polling. #{__LINE__}-#{__FILE__}")
-                uart1Param.disable   # uart1Param variable is now dead cuz it timed out.
-                uart1Param = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
+                uart1.disable   # uart1Param variable is now dead cuz it timed out.
+                uart1 = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
             else
-SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
+#SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
                 # puts "Sent 'S?' - responded :'#{uartResponse}' #{__LINE__}-#{__FILE__}"
                 # uart1.write("V?\n");
                 # x = uart1.readline
@@ -2487,7 +2487,7 @@ SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FIL
             end
             ct += 1
         end
-SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
+#SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
     end
 
     def setBoardPsVolts(psParam,voltsParam)
@@ -2607,8 +2607,7 @@ SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FIL
     	system("./openTtyO1Port_115200.exe")
         uart1 = UARTDevice.new(:UART1, baudrateToUse)
         SharedLib.bbbLog("Initializing machine using system's time. #{__LINE__}-#{__FILE__}")
-        sleep(30)
-        
+
 =begin        
         # Read the file that lists the dead TCUs.
         lineNum = 0

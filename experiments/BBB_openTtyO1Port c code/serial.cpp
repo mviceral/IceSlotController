@@ -1072,9 +1072,10 @@ int main(int argc, char *argv[])
     char Buffer[128];
 
     // Open serial port
-    Ret=LS.Open(DEVICE_PORT,115200);                                    // Open serial link at 115200 bauds
-    // Ret=LS.Open(DEVICE_PORT,19200);                                      // Open serial link at 19200 bauds
-    // Ret=LS.Open(DEVICE_PORT,9600);                                       // Open serial link at 9600 bauds
+    //Ret=LS.Open(DEVICE_PORT,115200);                                    // Open serial link at 115200 bauds
+    //Ret=LS.Open(DEVICE_PORT,19200);                                      // Open serial link at 19200 bauds
+    Ret=LS.Open(DEVICE_PORT,9600);                                       // Open serial link at 9600 bauds
+    printf ("Ret='%d'\n",Ret);        // ... display a message ...
     if (Ret!=1) {                                                           // If an error occured...
         printf ("Error while opening port. Permission problem ?\n");        // ... display a message ...
         return Ret;                                                         // ... quit the application
