@@ -2823,8 +2823,10 @@ class TCUSampler
                         # Delete the Machine state file
                         `rm -rf #{HoldingTankFilename}`
                         
-                        # Delete the PcDown.BackLog file in /mnt/card
+                        # Delete the PcDown.BackLog, and ErrorLog.txt file in /mnt/card
                         `rm -rf /mnt/card/PcDown.BackLog`
+                        `rm -rf /mnt/card/ErrorLog.txt`
+                        
         		    when SharedLib::LoadConfigFromPc
         		        checkDeadTcus(uart1)
 
