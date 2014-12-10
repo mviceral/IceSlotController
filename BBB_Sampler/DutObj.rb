@@ -62,7 +62,7 @@ class DutObj
         line = ""
         # while keepLooping
             begin
-                complete_results = Timeout.timeout(0.1) do      
+                complete_results = Timeout.timeout(1) do      
                     keepLooping = true
                     while keepLooping
                         c = uart1Param.readchar

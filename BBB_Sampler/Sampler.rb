@@ -58,14 +58,26 @@ class TCUSampler
     SDDlyms = "SDDlyms"
     SUDlyms = "SUDlyms"
     VMeas = "VMeas"
+    VMin  = " VMin"
+    VMax  = " VMax"
     IMeas = "IMeas"
-    Temp1 = " Temp1"
-    Temp2 = " Temp2"
+    IMin  = " IMin"
+    IMax  = " IMax"
+    Temp1 =    " Temp1"
+    Temp1Min = " T1Min"
+    Temp1Max = " T1Max"
+    Temp2    = " Temp2"
+    Temp2Min = " T2Min"
+    Temp2Max = " T2Max"
     
     DutNum= " DUT#"
     DutStatus = "        DUT status"
-    DutTemp = "  Temp"
-    DutCurrent = "Current"
+    DutTemp    = "  Temp"
+    DutTempMin = "TempMin"
+    DutTempMax = "TempMax"
+    DutCurrent =    "Current"
+    DutCurrentMin = "   IMin"
+    DutCurrentMax = "   IMax"
     DutHeatDuty = "HEAT duty%"
     DutCoolDuty = "COOL duty%"
     DutControllerTemp = "Controller temp"
@@ -676,7 +688,7 @@ class TCUSampler
                                                 toolTip += "Vmin:#{array["TripMin"]}V,&nbsp;Vmax:#{array["TripMax"]}V&#10;"
                                                 toolTip += "Vtol-:#{array["FlagTolN"]}V,&nbsp;Vtol+:#{array["FlagTolP"]}V&#10;"
                                                 keyName = "I#{key[1..-1]}"
-                                                toolTip += "Itol+:#{@stepToWorkOn["PsConfig"][keyName]["FlagTolN"]}A,&nbsp;Imax:#{@stepToWorkOn["PsConfig"][keyName]["TripMax"]}A&#10;"
+                                                toolTip += "Itol+:#{@stepToWorkOn["PsConfig"][keyName]["FlagTolP"]}A,&nbsp;Imax:#{@stepToWorkOn["PsConfig"][keyName]["TripMax"]}A&#10;"
                                                 toolTip += "SeqU#:#{@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqUp"]},&nbsp;#{@stepToWorkOn["PsConfig"]["S"+key[1..-1]][PsSeqItem::SUDlyms]}ms&#10;"
                                                 toolTip += "SeqD#:#{@stepToWorkOn["PsConfig"]["S"+key[1..-1]]["SeqDown"]},&nbsp;#{@stepToWorkOn["PsConfig"]["S"+key[1..-1]][PsSeqItem::SDDlyms]}ms"
                                                 @samplerData.setPsToolTip(key[1..-1],toolTip)
@@ -825,7 +837,7 @@ class TCUSampler
                             tbs += "#{makeItFitMeas(array["FlagTolN"],6,FlagTolNLogger)}|"
     
                             keyName = "I#{key[1..-1]}"
-                            maxTolI = @stepToWorkOn["PsConfig"][keyName]["FlagTolN"]
+                            maxTolI = @stepToWorkOn["PsConfig"][keyName]["FlagTolP"]
                             tbs += "#{makeItFitMeas(maxTolI,6,MaxTolI)}|"
                             
                             maxTripI = @stepToWorkOn["PsConfig"][keyName]["TripMax"]
@@ -1471,13 +1483,33 @@ class TCUSampler
         
         if @logRptAvg[psName]["V"].nil?
             @logRptAvg[psName]["V"] = 0
+            @logRptAvg[psName]["VMin"] = 100000000
+            @logRptAvg[psName]["VMax"] = 0
         end
         @logRptAvg[psName]["V"] += voltParam
         
+        if @logRptAvg[psName]["VMin"] >  voltParam
+            @logRptAvg[psName]["VMin"] =  voltParam
+        end
+        
+        if @logRptAvg[psName]["VMax"] < voltParam
+            @logRptAvg[psName]["VMax"] = voltParam
+        end
+        
         if @logRptAvg[psName]["I"].nil?
             @logRptAvg[psName]["I"] = 0
+            @logRptAvg[psName]["IMin"] = 100000000
+            @logRptAvg[psName]["IMax"] = 0
         end
         @logRptAvg[psName]["I"] += currentParam.to_f
+        
+        if @logRptAvg[psName]["IMin"] > currentParam.to_f
+            @logRptAvg[psName]["IMin"] = currentParam.to_f
+        end
+        
+        if @logRptAvg[psName]["IMax"] <  currentParam.to_f
+            @logRptAvg[psName]["IMax"] =  currentParam.to_f
+        end
     end
 
     def doTheAveragingOfMesurements()
@@ -1511,16 +1543,38 @@ class TCUSampler
                 # The DUT temperature
                 if @logRptAvg["#{dutCt}"]["temperature"].nil?
                     @logRptAvg["#{dutCt}"]["temperature"] = 0
+                    
+                    # Set the temp min/max to non-sense values since they've been used now.
+                    @logRptAvg["#{dutCt}"]["temperatureMin"] = 10000.0
+                    @logRptAvg["#{dutCt}"]["temperatureMax"] = 0
                 end
+                
                 @logRptAvg["#{dutCt}"]["temperature"] += splitted[2].to_f
+                if @logRptAvg["#{dutCt}"]["temperatureMin"] > splitted[2].to_f
+                    @logRptAvg["#{dutCt}"]["temperatureMin"] = splitted[2].to_f
+                end
+                if @logRptAvg["#{dutCt}"]["temperatureMax"] < splitted[2].to_f
+                    @logRptAvg["#{dutCt}"]["temperatureMax"] = splitted[2].to_f
+                end
                 
                 # The DUT current
                 if @logRptAvg["#{dutCt}"]["current"].nil?
                     @logRptAvg["#{dutCt}"]["current"] = 0
+                    
+                    # Set the current min/max to non-sense values since they've been used now.
+                    @logRptAvg["#{dutCt}"]["currentMin"] = 10000.0
+                    @logRptAvg["#{dutCt}"]["currentMax"] = 0
                 end
+                
                 current = SharedLib.getCurrentDutDisplay(muxData,"#{dutCt}")
                 if current != SharedLib::DashLines
                     @logRptAvg["#{dutCt}"]["current"] += current.to_f
+                    if @logRptAvg["#{dutCt}"]["currentMin"] > current.to_f
+                        @logRptAvg["#{dutCt}"]["currentMin"] = current.to_f
+                    end
+                    if @logRptAvg["#{dutCt}"]["currentMax"] < current.to_f
+                        @logRptAvg["#{dutCt}"]["currentMax"] = current.to_f
+                    end
                 else
                     @logRptAvg["#{dutCt}"]["current"] = SharedLib::DashLines
                 end
@@ -1564,13 +1618,29 @@ class TCUSampler
 
     	if @logRptAvg["#{Temp1}"].nil?
     	    @logRptAvg["#{Temp1}"] = 0
+        	@logRptAvg["#{Temp1Min}"] = 100000000
+    	    @logRptAvg["#{Temp1Max}"] = 0
     	end
     	@logRptAvg["#{Temp1}"] += adcData[SharedLib::SlotTemp1.to_s].to_f/1000.0
+    	if @logRptAvg["#{Temp1Min}"] > adcData[SharedLib::SlotTemp1.to_s].to_f/1000.0
+        	@logRptAvg["#{Temp1Min}"] = adcData[SharedLib::SlotTemp1.to_s].to_f/1000.0
+    	end
+    	if @logRptAvg["#{Temp1Max}"] < adcData[SharedLib::SlotTemp1.to_s].to_f/1000.0
+    	    @logRptAvg["#{Temp1Max}"] = adcData[SharedLib::SlotTemp1.to_s].to_f/1000.0
+    	end
 
     	if @logRptAvg["#{Temp2}"].nil?
     	    @logRptAvg["#{Temp2}"] = 0
+    	    @logRptAvg["#{Temp2Min}"] = 100000000
+    	    @logRptAvg["#{Temp2Max}"] = 0
     	end
     	@logRptAvg["#{Temp2}"] += adcData[SharedLib::SlotTemp2.to_s].to_f/1000.0
+    	if @logRptAvg["#{Temp2Min}"] > adcData[SharedLib::SlotTemp2.to_s].to_f/1000.0
+    	    @logRptAvg["#{Temp2Min}"] = adcData[SharedLib::SlotTemp2.to_s].to_f/1000.0
+    	end
+    	if @logRptAvg["#{Temp2Max}"] < adcData[SharedLib::SlotTemp2.to_s].to_f/1000.0
+    	    @logRptAvg["#{Temp2Max}"] = adcData[SharedLib::SlotTemp2.to_s].to_f/1000.0
+    	end
 
         # puts "-------------------------------------------"
         # puts "@logRptAvgCt=#{@logRptAvgCt}"
@@ -1583,7 +1653,8 @@ class TCUSampler
         tbs = ""
         # tbs += "Log Time Left: #{SharedLib::makeTime2colon2Format(mins,secs)} (mm:ss)\n"
         tbs += "Interval Log: system time - #{Time.new.inspect}\n"
-        tbs += "#{DutNum}|#{DutStatus}|#{DutTemp}|#{DutCurrent}|#{DutHeatDuty}|#{DutCoolDuty}|#{DutControllerTemp}|\n"
+        tbs += "#{DutNum}|#{DutTemp}|#{DutTempMin}|#{DutTempMax}|#{DutCurrent}|#{DutCurrentMin}|#{DutCurrentMax}|#{DutHeatDuty}|#{DutCoolDuty}|#{DutControllerTemp}|\n"
+
         dutCt = 0
         # tbs += "eiPs=#{eiPs}\n"
 		while dutCt<24
@@ -1596,9 +1667,16 @@ class TCUSampler
             			if @tcuData.nil? == false && @tcuData["#{dutCt}"].nil? == false 
                             splitted = @tcuData["#{dutCt}"].split(',')
                             tbs += "#{makeItFit(dutIndex,DutNum)}|"
-                            tbs += "#{makeItFit("#{key}[#{data}/#{@logRptAvgCt}]",DutStatus)}|"
+                            #tbs += "#{makeItFit("#{key}[#{data}/#{@logRptAvgCt}]",DutStatus)}|"
                             tbs += "#{makeItFit(@logRptAvg["#{dutCt}"]["temperature"]/@logRptAvgCt,DutTemp)}|"
+                            tbs += "#{makeItFit(@logRptAvg["#{dutCt}"]["temperatureMin"],DutTempMin)}|"
+                            tbs += "#{makeItFit(@logRptAvg["#{dutCt}"]["temperatureMax"],DutTempMax)}|"
+                            
+                                                        
                             tbs += "#{makeItFitMeas(@logRptAvg["#{dutCt}"]["current"]/@logRptAvgCt,5,DutCurrent)}|"
+                            tbs += "#{makeItFitMeas(@logRptAvg["#{dutCt}"]["currentMin"],5,DutCurrentMin)}|"
+                            tbs += "#{makeItFitMeas(@logRptAvg["#{dutCt}"]["currentMax"],5,DutCurrentMax)}|"
+                            
                             if @logRptAvg["#{dutCt}"]["cool"].nil?
                 				coolDuty = 0
                             else
@@ -1618,9 +1696,13 @@ class TCUSampler
             			if @tcuData.nil? == false && @tcuData["#{dutCt}"].nil? == false 
                             splitted = @tcuData["#{dutCt}"].split(',')
                             tbs += "#{makeItFit(" ",DutNum)}|"
-                            tbs += "#{makeItFit("#{key}[#{data}/#{@logRptAvgCt}]",DutStatus)}|"
+                            #tbs += "#{makeItFit("#{key}[#{data}/#{@logRptAvgCt}]",DutStatus)}|"
                             tbs += "#{makeItFit(" ",DutTemp)}|"
+                            tbs += "#{makeItFit(" ",DutTempMin)}|"
+                            tbs += "#{makeItFit(" ",DutTempMax)}|"
                             tbs += "#{makeItFit(" ",DutCurrent)}|"
+                            tbs += "#{makeItFit(" ",DutCurrentMin)}|"
+                            tbs += "#{makeItFit(" ",DutCurrentMax)}|"
                             tbs += "#{makeItFit(" ",DutHeatDuty)}|"
                             tbs += "#{makeItFit(" ",DutCoolDuty)}|"
                             tbs += "#{makeItFit(" ",DutControllerTemp)}|\n"
@@ -1632,52 +1714,95 @@ class TCUSampler
     		dutCt += 1
 		end # of 'while dutCt<24'
         # Supply 0 <V set> <V measured> <I measured>
-        tbs += "#{PSNameLogger}|#{VMeas}|#{IMeas}\n"
+        tbs += "#{PSNameLogger}|#{VMeas}|#{VMin}|#{VMax}|#{IMeas}|#{IMin}|#{IMax}\n"
+
         tbs += "#{makeItFit("VPS0",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@logRptAvg["VPS0"]["V"]/@logRptAvgCt,5,VMeas)}|"
-        tbs += "#{makeItFitMeas(@logRptAvg["VPS0"]["I"]/@logRptAvgCt,5,IMeas)}\n"
-        
-        
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS0"]["VMin"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS0"]["VMax"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS0"]["I"]/@logRptAvgCt,5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS0"]["IMin"],5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS0"]["IMax"],5,IMeas)}\n"
 
         tbs += "#{makeItFit("VPS1",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@logRptAvg["VPS1"]["V"]/@logRptAvgCt,5,VMeas)}|"
-        tbs += "#{makeItFitMeas(@logRptAvg["VPS1"]["I"]/@logRptAvgCt,5,IMeas)}\n"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS1"]["VMin"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS1"]["VMax"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS1"]["I"]/@logRptAvgCt,5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS1"]["IMin"],5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS1"]["IMax"],5,IMeas)}\n"
 
         tbs += "#{makeItFit("VPS2",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@logRptAvg["VPS2"]["V"]/@logRptAvgCt,5,VMeas)}|"
-        tbs += "#{makeItFitMeas(@logRptAvg["VPS2"]["I"]/@logRptAvgCt,5,IMeas)}\n"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS2"]["VMin"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS2"]["VMax"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS2"]["I"]/@logRptAvgCt,5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS2"]["IMin"],5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS2"]["IMax"],5,IMeas)}\n"
 
         tbs += "#{makeItFit("VPS3",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@logRptAvg["VPS3"]["V"]/@logRptAvgCt,5,VMeas)}|"
-        tbs += "#{makeItFitMeas(@logRptAvg["VPS3"]["I"]/@logRptAvgCt,5,IMeas)}\n"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS3"]["VMin"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS3"]["VMax"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS3"]["I"]/@logRptAvgCt,5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS3"]["IMin"],5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS3"]["IMax"],5,IMeas)}\n"
 
         tbs += "#{makeItFit("VPS4",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@logRptAvg["VPS4"]["V"]/@logRptAvgCt,5,VMeas)}|"
-        tbs += "#{makeItFitMeas(@logRptAvg["VPS4"]["I"]/@logRptAvgCt,5,IMeas)}\n"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS4"]["VMin"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS4"]["VMax"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS4"]["I"]/@logRptAvgCt,5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS4"]["IMin"],5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS4"]["IMax"],5,IMeas)}\n"
 
         tbs += "#{makeItFit("VPS5",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@logRptAvg["VPS5"]["V"]/@logRptAvgCt,5,VMeas)}|"
-        tbs += "#{makeItFitMeas(@logRptAvg["VPS5"]["I"]/@logRptAvgCt,5,IMeas)}\n"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS5"]["VMin"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS5"]["VMax"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS5"]["I"]/@logRptAvgCt,5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS5"]["IMin"],5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS5"]["IMax"],5,IMeas)}\n"
 
         tbs += "#{makeItFit("VPS6",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@logRptAvg["VPS6"]["V"]/@logRptAvgCt,5,VMeas)}|"
-        tbs += "#{makeItFitMeas(@logRptAvg["VPS6"]["I"]/@logRptAvgCt,5,IMeas)}\n"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS6"]["VMin"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS6"]["VMax"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS6"]["I"]/@logRptAvgCt,5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS6"]["IMin"],5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS6"]["IMax"],5,IMeas)}\n"
 
         tbs += "#{makeItFit("VPS7",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@logRptAvg["VPS7"]["V"]/@logRptAvgCt,5,VMeas)}|"
-        tbs += "#{makeItFitMeas(@logRptAvg["VPS7"]["I"]/@logRptAvgCt,5,IMeas)}\n"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS7"]["VMin"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS7"]["VMax"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS7"]["I"]/@logRptAvgCt,5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS7"]["IMin"],5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS7"]["IMax"],5,IMeas)}\n"
 
         tbs += "#{makeItFit("VPS8",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@logRptAvg["VPS8"]["V"]/@logRptAvgCt,5,VMeas)}|"
-        tbs += "#{makeItFitMeas(@logRptAvg["VPS8"]["I"]/@logRptAvgCt,5,IMeas)}\n"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS8"]["VMin"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS8"]["VMax"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS8"]["I"]/@logRptAvgCt,5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS8"]["IMin"],5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS8"]["IMax"],5,IMeas)}\n"
 
         tbs += "#{makeItFit("VPS9",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@logRptAvg["VPS9"]["V"]/@logRptAvgCt,5,VMeas)}|"
-        tbs += "#{makeItFitMeas(@logRptAvg["VPS9"]["I"]/@logRptAvgCt,5,IMeas)}\n"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS9"]["VMin"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS9"]["VMax"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS9"]["I"]/@logRptAvgCt,5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS9"]["IMin"],5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS9"]["IMax"],5,IMeas)}\n"
 
         tbs += "#{makeItFit("VPS10",PSNameLogger)}|"
         tbs += "#{makeItFitMeas(@logRptAvg["VPS10"]["V"]/@logRptAvgCt,5,VMeas)}|"
-        tbs += "#{makeItFitMeas(@logRptAvg["VPS10"]["I"]/@logRptAvgCt,5,IMeas)}\n"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS10"]["VMin"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS10"]["VMax"],5,VMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS10"]["I"]/@logRptAvgCt,5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS10"]["IMin"],5,IMeas)}|"
+        tbs += "#{makeItFitMeas(@logRptAvg["VPS10"]["IMax"],5,IMeas)}\n"
         tbs += "#{Temp1}|#{Temp2}\n"
 
         tbs += "#{makeItFitMeas((@logRptAvg["#{Temp1}"]/@logRptAvgCt).round(3),6,Temp1)}|"
@@ -1691,7 +1816,7 @@ class TCUSampler
             mins =  (@samplerData.GetStepTimeLeft()/60.0).to_i
             secs =  (@samplerData.GetStepTimeLeft()-mins*60.0).to_i
             tbs += "\nSystem state snapshot:  step time left - #{SharedLib.makeTime2colon2Format(mins,secs)} (mm:ss)\n"
-            tbs += "#{DutNum}|#{DutStatus}|#{DutTemp}|#{DutCurrent}|#{DutHeatDuty}|#{DutCoolDuty}|#{DutControllerTemp}\n"
+            tbs += "#{DutNum}|#{DutTemp}|#{DutCurrent}|#{DutHeatDuty}|#{DutCoolDuty}|#{DutControllerTemp}\n"
             dutCt = 0
             muxData = @samplerData.GetDataMuxData("#{__LINE__}-#{__FILE__}")
             adcData = @samplerData.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
@@ -1702,7 +1827,7 @@ class TCUSampler
     			if @tcuData.nil? == false && @tcuData["#{dutCt}"].nil? == false 
                     splitted = @tcuData["#{dutCt}"].split(',')
                     tbs += "#{makeItFit(dutIndex,DutNum)}|"
-                    tbs += "#{makeItFit(splitted[5],DutStatus)}|"
+                    # tbs += "#{makeItFit(splitted[5],DutStatus)}|"
     				temperature = SharedLib::make5point2Format(splitted[2])
                     tbs += "#{makeItFit(temperature,DutTemp)}|"
                     tbs += "#{makeItFit(SharedLib.getCurrentDutDisplay(muxData,"#{dutCt}"),DutCurrent)}|"
@@ -2584,7 +2709,12 @@ class TCUSampler
     	@samplerData.SetupData()
     	@samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
     	
-        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.0")
+        # version 1.0.0 - 18 Nov 2014
+        #   first release.
+        # version 1.0.1 - 10 Dec 2014 
+        #   Added min max on dut temp and current, PS volt, and PS current.
+        #   Changed the wait time out response on TCU from 0.1 to 0.5 second.
+        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.1")
         turnOffHeaters()
     	initMuxValueFunc()
     	initpollAdcInputFunc()
@@ -2822,11 +2952,6 @@ class TCUSampler
                         
                         # Delete the Machine state file
                         `rm -rf #{HoldingTankFilename}`
-                        
-                        # Delete the PcDown.BackLog, and ErrorLog.txt file in /mnt/card
-                        `rm -rf /mnt/card/PcDown.BackLog`
-                        `rm -rf /mnt/card/ErrorLog.txt`
-                        
         		    when SharedLib::LoadConfigFromPc
         		        checkDeadTcus(uart1)
 
@@ -2922,4 +3047,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 2867
+# 1808
