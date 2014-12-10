@@ -54,8 +54,8 @@ class UserInterface
 	NomSet = "NomSet"
 	TripMin = "TripMin"
 	TripMax = "TripMax"
-	FlagTolP = "FlagTolP"
 	FlagTolN = "FlagTolN"
+	FlagTolP = "FlagTolP"
 	EnableBit = "EnableBit"
 	IdleState = "IdleState"
 	LoadState = "LoadState"
@@ -499,6 +499,7 @@ class UserInterface
 	def setBbbConfigUpload(slotOwnerParam)
 		slotProperties[slotOwnerParam][SharedLib::ConfigDateUpload] = Time.now.to_f
 		slotProperties[slotOwnerParam][SharedLib::SlotOwner] = slotOwnerParam
+		slotProperties[slotOwnerParam][SharedLib::EmailAddrList] = @emailAddrList		
 		slotData = slotProperties[slotOwnerParam].to_json
 
 		fileName = getSlotProperties()["FileName"]
@@ -525,9 +526,9 @@ class UserInterface
 		writeToSettingsLog("PC Software Ver: #{@sharedMem.getCodeVersion(SharedMemory::PcVer)}",settingsFileName)
 		writeToSettingsLog("",settingsFileName)
 
-		# PP.pp(getSlotProperties())
-		# puts "About to send to the Board. #{__LINE__}-#{__FILE__}"
-		# exit
+		#PP.pp(getSlotProperties())
+		#puts "About to send to the Board. #{__LINE__}-#{__FILE__}"
+		#exit
 		begin
 			# puts "LoadConfig on IP='#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}'"
 			
@@ -888,6 +889,7 @@ class UserInterface
 	def removeWhiteSpace(slotLabelParam)
 		return slotLabelParam.delete(' ')
 	end
+	
 	def updatedSharedMemory
 			@sharedMem = @sharedMemService.getSharedMem() # .processRecDataFromPC(.getDataFromBoardToPc())
 			if @sharedMem.getCodeVersion(SharedMemory::PcVer).nil? || @sharedMem.getCodeVersion(SharedMemory::PcVer).length == 0
@@ -1651,6 +1653,13 @@ end
 		return SharedLib.getKnownRowNamesFor(fileTypeParam)
 	end
 	
+	def emailAddrList
+		if @emailAddrList.nil?
+			@emailAddrList = Array.new
+		end
+		return @emailAddrList
+	end	
+
 	def hashUniqueIndex
 		if @hashUniqueIndex.nil?
 			@hashUniqueIndex = Hash.new
@@ -1716,7 +1725,7 @@ end
 		if slotConfigStep[configFileType][nameParam].nil?
 			slotConfigStep[configFileType][nameParam] = Hash.new
 		end
-		# pause "stepName=#{stepName},configFileType=#{configFileType},nameParam=#{nameParam},param=#{param},valueParam=#{valueParam}"
+		#pause "stepName=#{stepName},configFileType=#{configFileType},nameParam=#{nameParam},param=#{param},valueParam=#{valueParam}","#{__LINE__}-#{__FILE__}"
 		slotConfigStep[configFileType][nameParam][param] = valueParam.to_f
 		# PP.pp(getSlotProperties()["Steps"])
 		# pause("checking the new \"Steps\" value","#{__LINE__}-#{__FILE__}")
@@ -1987,7 +1996,7 @@ end
 					# The section of the read file is still working on a step.
 					@stepName = config[ct].split(",")[4].strip # Get the row data for file name.
 			# puts "@stepName = '#{@stepName}'"
-			SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
+			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 					valueColumnOrStepNameRow = config[ct].split(",")[4].strip
 					#
 					# Must be a number test.
@@ -2325,8 +2334,8 @@ end
 		nomSetCol = 4 # 5
 		tripMinCol = 5# 6
 		tripMaxCol = 6#7
-		flagTolPCol = 7#8 # Flag Tolerance Positive
-		flagTolNCol = 8#9 # Flag Tolerance Negative
+		flagTolNCol = 7#8 # Flag Tolerance Positive
+		flagTolPCol = 8#9 # Flag Tolerance Negative
 		enableBitCol = 9#10 # Flag indicating that software can turn it on or off
 		idleStateCol = 10#11 # Flag indicating that software can turn it on or off
 		loadStateCol = 11#12 # Flag indicating that software can turn it on or off
@@ -2428,7 +2437,7 @@ end
 					# Get the data for processing
 					#
 					setDataSetup(
-						name,unit,nomSet,tripMin,tripMax,flagTolP,flagTolN,enableBit,idleState,
+						name,unit,nomSet,tripMin,tripMax,flagTolN,flagTolP,enableBit,idleState,
 						loadState,startState,runState,stopState,clearState
 					)
 				end
@@ -2596,8 +2605,8 @@ end
 	end
 
 	def pause(paramA,paramLocation)
-		# puts "Paused at #{paramLocation} - #{paramA}"
-		# gets
+		puts "Paused at #{paramLocation} - #{paramA}"
+		gets
 	end
 	
 	def setConfigFileType(uploadedFileName)
@@ -3046,6 +3055,28 @@ __END__
 					end
 				end
 			end
+
+			# Get the list of emails so the the recipients will be notified if the system had shutdown.
+			getEmailAddr = false
+			emailFlagFound = false
+			emailAddrListHolder = Array.new
+  		File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
+  			f.each_line do |line|
+					if line == "<emailList>"
+						getEmailAddr = true
+						emailFlagFound = true
+					elsif line == "</emailList>"
+						getEmailAddr = false
+					elsif getEmailAddr == true
+						emailAddrListHolder.push(line)
+			    end
+  			end
+  		end
+  		
+  		SharedLib.pause "emailFlagFound='#{emailFlagFound}'","#{__LINE__}-#{__FILE__}"
+  		if emailFlagFound == true && getEmailAddr == false
+  			settings.ui.emailAddrList = emailAddrListHolder
+  		end
 
 		%>
 		<table>
