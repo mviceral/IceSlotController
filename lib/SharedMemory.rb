@@ -53,6 +53,7 @@ class SharedMemory
 	
 	LogInfo = "LogInfo"
 	LotID = "LotID"
+	ShutDownInfo = "ShutDownInfo"
     def writeAndFreeLocked(strParam, fromParam)
 =begin
         if @lockedAt == ""
@@ -796,6 +797,8 @@ class SharedMemory
         configDataUpload = dataParam["ConfigDateUpload"]
         configurationFileName = dataParam["FileName"]
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
+        
+        # Get the email address.
         ds[TimeOfPcUpload] = Time.new.to_i
         hold = dataParam
         #

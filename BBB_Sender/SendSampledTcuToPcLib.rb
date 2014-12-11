@@ -152,6 +152,18 @@ Temperature Setting: <temp>
 		return @packageInfo
 	end
 	
+	def sendShutDownInfo(infoParam)
+        if @packageInfo.nil?
+            @packageInfo = Hash.new
+        end
+        
+        if @packageInfo[SharedMemory::ShutDownInfo].nil?
+            @packageInfo[SharedMemory::ShutDownInfo] = Array.new
+        end
+        
+        @packageInfo[SharedMemory::ShutDownInfo].push(infoParam)
+	end
+	
 	def sendLoggerPart(loggerData)
         if @packageInfo.nil?
             @packageInfo = Hash.new

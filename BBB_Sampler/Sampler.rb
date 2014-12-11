@@ -963,10 +963,12 @@ class TCUSampler
                         setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                         # Turn on red light and buzzer and make it blink due to shutdown
                         setToAlarmMode()
-                        reportToLogFile("ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE (in step##{@boardData[LastStepNumOfSentLog]}).")
+                        shutdowninfo = "ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE (in step##{@boardData[LastStepNumOfSentLog]})." 
+                        reportToLogFile(shutdowninfo)
+                        sendShutdownEmail(shutdowninfo)
                         @samplerData.setStopMessage("Trip Point Error. Stopped.")
                         setErrorColorFlag(key2,SharedMemory::RedFlag,"#{__LINE__}-#{__FILE__}")
-
+                        @boardData[SharedLib::EmailAddrList]
                         return true                
                     end
                 end
@@ -2285,7 +2287,9 @@ class TCUSampler
                                             if is2ndFaultDut("#{key2}#{ct}",ct,unit,tripMin,actualValue,tripMax)
                                                 setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
                                                 setToAlarmMode()
-                                                reportToLogFile("ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE (in step##{@boardData[LastStepNumOfSentLog]}).")
+                                                shutdowninfo = "ERROR - IDUT#{ct} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE (in step##{@boardData[LastStepNumOfSentLog]})."
+                                                sendShutdownEmail(shutdowninfo)
+                                                reportToLogFile(shutdowninfo)
                                                 @samplerData.setStopMessage("Trip Point Error. Stopped.")
                                                 setDutErrorColorFlag(key2,ct,SharedMemory::RedFlag)
                                                 # ct = 24 # break out of the loop.
@@ -2396,7 +2400,9 @@ class TCUSampler
     
                                                         # Turn on red light and buzzer and make it blink due to shutdown
                                                         setToAlarmMode()
-                                                        reportToLogFile("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE (in step##{@boardData[LastStepNumOfSentLog]}).") # tbs - to be sent
+                                                        shutDownInfo = "ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE (in step##{@boardData[LastStepNumOfSentLog]})."
+                                                        reportToLogFile(shutDownInfo) # tbs - to be sent
+                                                        sendShutdownEmail(shutDownInfo)
                                                         @samplerData.setStopMessage("Trip Point Error. Stopped.")
                                                         setDutErrorColorFlag(key2,dutCt,SharedMemory::RedFlag)
                                                         return
@@ -2484,6 +2490,13 @@ class TCUSampler
         end
     end
     
+    def sendShutdownEmail(shutDownInfo)
+        shutdownHash = Hash.new
+        shutdownHash["message"] = shutDownInfo
+        shutdownHash["slotowner"] = @samplerData.GetSlotOwner()
+        SendSampledTcuToPCLib::sendShutDownInfo(shutdownHash)
+    end
+    
     def runAwayTempHandler() # Need to verify this code.
         # Handle run away temperatures
         if @samplerData.GetBbbMode() != SharedLib::InRunMode && @heatersTurnedOff == false
@@ -2503,7 +2516,9 @@ class TCUSampler
                                 setToAlarmMode()
                                 @samplerData.setStopMessage("Trip Point Error. Stopped.")
                                 setDutErrorColorFlag("TDUT",dutCt,SharedMemory::RedFlag)
-                                @samplerData.ReportError("ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{@dutTempTripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{@dutTempTripMax}'#{unit} FAILED.  ALREADY IN STOP MODE, SHUTTING DOWN HEATERS.",Time.new)
+                                shutdowninfo = "ERROR - DUT##{dutCt} OUT OF BOUND TRIP POINTS!  '#{@dutTempTripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{@dutTempTripMax}'#{unit} FAILED.  ALREADY IN STOP MODE, SHUTTING DOWN HEATERS."
+                                sendShutdownEmail(shutdowninfo)
+                                @samplerData.ReportError(shutdowninfo,Time.new)
                                 return
                             end
                         else
@@ -3047,4 +3062,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 1808
+# 2403
