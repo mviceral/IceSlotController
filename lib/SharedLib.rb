@@ -2,7 +2,7 @@ require 'singleton'
 require 'forwardable'
 require 'uri'
 
-SetupAtHome = true # So we can do some work at home
+SetupAtHome = false # So we can do some work at home
 
 class SharedLib
 	include Singleton
@@ -145,10 +145,33 @@ class SharedLib
 
 	Pc_SlotCtrlIps = "Pc_SlotCtrlIps.config"
     
-    #
-    # Functions
-    #
-    def isInteger(paramStr)  	
+  #
+  # Functions
+  #
+	def getSystemID()
+		if @systemID.nil?
+			config = Array.new
+			File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
+				f.each_line do |line|
+					config.push(line)
+				end			
+			end
+	
+			# Parse each lines and mind the information we need for the report.
+			ct = 0
+			while ct < config.length 
+				colContent = config[ct].split(":")
+				if colContent[0] == "System ID"
+					@systemID = colContent[1].chomp
+					@systemID = @systemID.strip
+				end
+				ct += 1
+			end
+		end
+		return @systemID
+	end
+  
+	def isInteger(paramStr)  	
   	# returns true is the parameter is an integer
   	if paramStr.length > 0
 			ct = 0

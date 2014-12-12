@@ -80,7 +80,7 @@ class UserInterface
 	attr_accessor :stepName
 	attr_accessor :redirectErrorFaultyPsConfig	
 	attr_accessor :sharedMem
-	
+		
 	def clearErrorSlot(slotOwnerParam)
 		# puts "clearErrorSlot(slotOwnerParam) got called. slotOwnerParam='#{slotOwnerParam}' SharedLib::ErrorMsg='#{SharedLib::ErrorMsg}'"
 		ds = @sharedMem.lockMemory("#{__LINE__}-#{__FILE__}")
@@ -473,33 +473,9 @@ class UserInterface
 		`cd #{SharedMemory::StepsLogRecordsPath}; echo \"#{toBeWritten}\" >> #{settingsFileName}`
 	end
 
-	def getSystemID()
-		if @systemID.nil?
-			config = Array.new
-			File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
-				f.each_line do |line|
-					config.push(line)
-				end			
-			end
-	
-			# Parse each lines and mind the information we need for the report.
-			ct = 0
-			while ct < config.length 
-				colContent = config[ct].split(":")
-				if colContent[0] == "System ID"
-					@systemID = colContent[1].chomp
-					@systemID = @systemID.strip
-				end
-				ct += 1
-			end
-		end
-		return @systemID
-	end
-
 	def setBbbConfigUpload(slotOwnerParam)
 		slotProperties[slotOwnerParam][SharedLib::ConfigDateUpload] = Time.now.to_f
 		slotProperties[slotOwnerParam][SharedLib::SlotOwner] = slotOwnerParam
-		slotProperties[slotOwnerParam][SharedLib::EmailAddrList] = @emailAddrList		
 		slotData = slotProperties[slotOwnerParam].to_json
 
 		fileName = getSlotProperties()["FileName"]
@@ -513,7 +489,7 @@ class UserInterface
 		
 		# Get the oven ID
 		# Read the content of the file "#{SharedLib::Pc_SlotCtrlIps}" file to get the needed information...
-		systemID = getSystemID()
+		systemID = SharedLib.getSystemID()
 		bibID = SharedLib.getBibID(slotOwnerParam)
 		# writeToSettingsLog("System: #{systemID}, Slot: #{slotOwnerParam}",settingsFileName)
 		hostName = `hostname -A`
@@ -893,7 +869,11 @@ class UserInterface
 	def updatedSharedMemory
 			@sharedMem = @sharedMemService.getSharedMem() # .processRecDataFromPC(.getDataFromBoardToPc())
 			if @sharedMem.getCodeVersion(SharedMemory::PcVer).nil? || @sharedMem.getCodeVersion(SharedMemory::PcVer).length == 0
-				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.0")
+				# ver 1.0.0 ~15 Nov 2014
+				# - Initial release
+				# ver 1.0.1 ~10 Dec 2014
+				# - Sends out mail message upon shutdown.
+				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.1")
 			end
 	end
 	def GetSlotDisplay(slotLabel2Param)
@@ -1653,13 +1633,6 @@ end
 		return SharedLib.getKnownRowNamesFor(fileTypeParam)
 	end
 	
-	def emailAddrList
-		if @emailAddrList.nil?
-			@emailAddrList = Array.new
-		end
-		return @emailAddrList
-	end	
-
 	def hashUniqueIndex
 		if @hashUniqueIndex.nil?
 			@hashUniqueIndex = Hash.new
@@ -2926,7 +2899,7 @@ __END__
 @@home
 <html lang="en">
 	<head>
- 		<title><%= settings.ui.getSystemID() %></title>
+ 		<title><%= SharedLib.getSystemID() %></title>
 	<style>
 	html, body {
     height: 100%;
@@ -3055,29 +3028,6 @@ __END__
 					end
 				end
 			end
-
-			# Get the list of emails so the the recipients will be notified if the system had shutdown.
-			getEmailAddr = false
-			emailFlagFound = false
-			emailAddrListHolder = Array.new
-  		File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
-  			f.each_line do |line|
-					if line == "<emailList>"
-						getEmailAddr = true
-						emailFlagFound = true
-					elsif line == "</emailList>"
-						getEmailAddr = false
-					elsif getEmailAddr == true
-						emailAddrListHolder.push(line)
-			    end
-  			end
-  		end
-  		
-  		SharedLib.pause "emailFlagFound='#{emailFlagFound}'","#{__LINE__}-#{__FILE__}"
-  		if emailFlagFound == true && getEmailAddr == false
-  			settings.ui.emailAddrList = emailAddrListHolder
-  		end
-
 		%>
 		<table>
 			<tr>
@@ -3085,7 +3035,7 @@ __END__
 				<td width="100%"></td>
 				<td  align="right" >
 					<table>
-						<tr><td align="center" valign="bottom" nowrap colspan="2"><font size="5"><%= settings.ui.getSystemID() %></font></td></tr>
+						<tr><td align="center" valign="bottom" nowrap colspan="2"><font size="5"><%= SharedLib.getSystemID() %></font></td></tr>
 						<tr><td align="right" valign="top" nowrap><font size="1">PC ver:<%= pcVer %>,</font></td><td align="left" valign="top" nowrap><font size="1">Slot Ctrl ver:<%= slotCtrlVer %></font></td></tr>
 					</table>
 				</td>

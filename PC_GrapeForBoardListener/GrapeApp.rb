@@ -42,7 +42,7 @@ module MigrationCount
 	class API < Grape::API
 		DRb.start_service			
 		@@sharedMemService =  DRbObject.new_with_uri(SERVER_URI)
-		
+		@@lastMessageSent = ""
 		directory = SharedMemory::StepsLogRecordsPath
 		asdf = `[ -d #{directory} ] && echo "yes" || echo "no"`
 		if asdf.chomp == "no"
@@ -76,6 +76,55 @@ module MigrationCount
 
 						receivedData = params['Duts']
 						data = JSON.parse(receivedData)
+						
+						if data[SharedMemory::ShutDownInfo].nil? == false
+							# The system had shutdown
+							puts "Checking data[SharedMemory::ShutDownInfo]='#{data[SharedMemory::ShutDownInfo]}' #{__LINE__}-#{__FILE__}"							
+							if @@lastMessageSent != "#{data[SharedMemory::ShutDownInfo]}"
+								@@lastMessageSent = "#{data[SharedMemory::ShutDownInfo]}"
+								puts "Sending data[SharedMemory::ShutDownInfo]='#{data[SharedMemory::ShutDownInfo]}' #{__LINE__}-#{__FILE__}"							
+								shutdownEmailSubject = "BE2/MoSys Shutdown Notification"
+								systemID = SharedLib.getSystemID()						
+								shutdownEmailMessage = ""
+								shutdownEmailMessage += "System: #{systemID}\n"
+								data[SharedMemory::ShutDownInfo].each { 
+									|a| 
+									shutdownEmailMessage += "---#{a["slotowner"]}---\n"
+									shutdownEmailMessage += "Message:\n"
+									shutdownEmailMessage += "#{a["message"]}\n"
+								}
+
+								# Get the list of emails so the the recipients will be notified if the system had shutdown.
+								getEmailAddr = false
+								emailFlagFound = false
+								emailAddrListHolder = Array.new
+								File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
+									f.each_line do |line|
+										line = line.strip
+										if line == "<emailList>"
+											getEmailAddr = true
+											emailFlagFound = true
+										elsif line == "</emailList>"
+											getEmailAddr = false
+										elsif getEmailAddr == true
+											emailAddrListHolder.push(line)
+										end
+									end
+								end
+								emailFolks = ""
+								if emailFlagFound == true && getEmailAddr == false
+									emailAddrListHolder.each {
+										|emailAddr|
+										if emailFolks.length > 0
+											emailFolks += ","
+										end
+										emailFolks += emailAddr
+									}
+									puts "Sending shutdown message to '#{emailFolks}'."
+									`echo \"#{shutdownEmailMessage}\" | mail -s \"BE2/MoSys Slot Process Shutdown\" \"#{emailFolks}\"`
+								end
+							end
+						end
 						
 						if data[SharedMemory::LogInfo].nil? == false
 							# Handle the logging information first.
