@@ -133,6 +133,7 @@ Temperature Setting: <temp>
         slotInfo[SharedLib::ErrorMsg] = sharedMemParam.GetErrors()
         slotInfo[SharedMemory::StopMessage] = sharedMemParam.getStopMessage()
         slotInfo[SharedLib::TotalTimeOfStepsInQueue] = sharedMemParam.GetTotalTimeOfStepsInQueue()
+        # puts "A slotInfo[SharedLib::TotalTimeOfStepsInQueue] = '#{slotInfo[SharedLib::TotalTimeOfStepsInQueue]}' #{__LINE__}-#{__FILE__}"
         
         if sharedMemParam.GetButtonDisplayToNormal() != nil
             if @timesSent.nil? 

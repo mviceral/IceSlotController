@@ -74,7 +74,7 @@ class ThermalSiteDevices
     end
     
     def setTHCPID(uart1Param,keyParam,tcusToSkip,temParam)
-        puts "setTHCPID '#{keyParam}' = '#{temParam}'"
+        #puts "setTHCPID '#{keyParam}' = '#{temParam}'"
         dutNum = 0;
         while  dutNum<TOTAL_DUTS_TO_LOOK_AT do
             if  tcusToSkip[dutNum].nil?  

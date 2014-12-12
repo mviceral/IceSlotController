@@ -157,6 +157,7 @@ class TCUSampler
     end
     
     def setToMode(modeParam, calledFrom)
+        puts "modeParam='#{modeParam}' #{calledFrom}"
         @samplerData.SetBbbMode(modeParam,"called from #{calledFrom} #{__LINE__}-#{__FILE__}")
         @boardData[BbbMode] = modeParam
         @boardMode = modeParam
@@ -369,12 +370,9 @@ class TCUSampler
     def saveBoardStateToHoldingTank()
 	    # Write configuartion to holding tank case there's a power outage.
 	    if @stepToWorkOn.nil? == false
-SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
 	        # PP.pp(@stepToWorkOn)
-	        @boardData["StepData"] = @stepToWorkOn
-	        @boardData["tcusToSkip"] = @tcusToSkip
-	        @boardData["DataTcu"] = @samplerData.GetDataTcu("#{__LINE__}-#{__FILE__}")
-	        @boardData["disabledPS"] = @disabledPS
+	        @boardData["stepToWorkOn"] = @stepToWorkOn
+	        @boardData[StepTimeLeft] = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun())
             # @samplerData.SetStepNumber(@stepToWorkOn["Step Num"])
             # @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
         else
@@ -382,6 +380,7 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
 	    end
 
         # PP.pp(@boardData)
+        puts "Saving board state. #{__LINE__}-#{__FILE__}"
 	    File.open(HoldingTankFilename, "w") { 
 	        |file| file.write(@boardData.to_json) 
         }
@@ -542,17 +541,18 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
     
     def checkOkToLog
 # puts "@boardData[LastStepNumOfSentLog].nil? == false '#{@boardData[LastStepNumOfSentLog]}' &&  @boardData[HighestStepNumber].nil? == false '#{@boardData[HighestStepNumber]}' #{__LINE__}-#{__FILE__}"
+        @boardData["isOkToLog"] =  false
         if @boardData[LastStepNumOfSentLog].nil? == false &&  @boardData[HighestStepNumber].nil? == false
             lastStepNumOfSentLog = @boardData[LastStepNumOfSentLog].to_i
             if  (1 <= lastStepNumOfSentLog && lastStepNumOfSentLog <= @boardData[HighestStepNumber])
-                return true
+                @boardData["isOkToLog"] =  true
             end
         else
             puts "Programming error!!! #{__LINE__}-#{__FILE__}"
             puts "@boardData[HighestStepNumber] must have set value!!!!  See comment above line '@boardData[HighestStepNumber] = -1'"
             exit
         end
-        return false
+        return @boardData["isOkToLog"]
     end
 
     def initStepToWorkOnVar(uart1)
@@ -801,6 +801,12 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
 	        stepNumber += 1
 	    end
 	    
+	    if @boardData["TotalTimeOfStepsInQueue"].nil?
+	        @boardData["TotalTimeOfStepsInQueue"] = @samplerData.GetTotalTimeOfStepsInQueue()
+	    else
+	        @samplerData.SetTotalTimeOfStepsInQueue(@boardData["TotalTimeOfStepsInQueue"])
+        end
+        
         if @stepToWorkOn.nil? == false
 	        @stepToWorkOn["Key"] = holdKey
             @stepToWorkOn["TIMERRUFP"] = timerRUFP
@@ -889,32 +895,21 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
     end
 
     def setBoardStateForCurrentStep(uart1)
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
         @boardData[SeqDownPsArr] = nil
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
         @boardData[SeqUpPsArr] = nil
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
         initStepToWorkOnVar(uart1)
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
         getSeqDownPsArr()
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
         getSeqUpPsArr()
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
 
         if @boardData[BbbMode] == SharedLib::InStopMode
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
             # Run the sequence down process on the system
             psSeqDown("#{__LINE__}-#{__FILE__}")
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
             # setPollIntervalInSeconds(IntervalSecInStopMode,"#{__LINE__}-#{__FILE__}")
         else
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
             # Run the sequence up process on the system
             psSeqUp()
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
             # setPollIntervalInSeconds(IntervalSecInRunMode,"#{__LINE__}-#{__FILE__}")
         end
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
         # @samplerData.SetBbbMode(@boardData[BbbMode],"#{__LINE__}-#{__FILE__}")
     end
     
@@ -1006,69 +1001,13 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
         # The file in the hard drive only stores two states of the system: running or in idle.
         @boardData = boardDataParam
 
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
         if getConfiguration().nil? == false
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
-            @tcusToSkip = @boardData["tcusToSkip"]
-	        @samplerData.WriteDataTcu(@boardData["DataTcu"],"#{__LINE__}-#{__FILE__}")
-	        @disabledPS = @boardData["disabledPS"]
-
-            setToMode(@boardData[BbbMode], "#{__LINE__}-#{__FILE__}")
+            # There is valid data in the system.
+            # setToMode(@boardData[BbbMode], "#{__LINE__}-#{__FILE__}")
+            @stepToWorkOn = @boardData["stepToWorkOn"]
             setBoardStateForCurrentStep(uart1)
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
         end
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
     end
-
-=begin    
-    def runThreadForPcCmdInput()
-        # puts "A Running 'runThreadForPcCmdInput()'"
-        pcCmdInput = Thread.new do
-            # puts "B Running 'runThreadForPcCmdInput()'"
-            server = TCPServer.open(2000)  # Socket to listen on port 2000
-            loop {                         # Servers run forever
-                # puts "C Running 'runThreadForPcCmdInput()'"
-                client = server.accept       # Wait for a client to connect
-                @mutex.synchronize do
-                    puts "D Running 'runThreadForPcCmdInput()'"
-                    clientStr = client.gets.chomp
-                    puts "E uritostr = '#{clientStr}'"
-                    hashSocket = JSON.parse(clientStr)
-                    puts "f uritostr = '#{clientStr}'"
-                    mode = hashSocket["Cmd"]
-                    hash = hashSocket["Data"]
-					@samplerData.SetSlotOwner(hash["SlotOwner"])
-                    puts "mode='#{mode}'"
-					case mode
-					when SharedLib::ClearConfigFromPc
-						@samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
-						# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
-					when SharedLib::RunFromPc
-					when SharedLib::StopFromPc
-					when SharedLib::LoadConfigFromPc
-						puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
-						# puts "hash=#{hash}"
-						puts "SlotOwner=#{hash["SlotOwner"]}"
-						date = Time.at(hash[SharedLib::ConfigDateUpload])
-						#puts "PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
-						# Sync the board time with the pc time
-						`echo "date before setting:";date`
-						`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}"`
-						`echo "date after setting:";date`
-						@samplerData.SetConfiguration(hash,"#{__LINE__}-#{__FILE__}")
-						# return {bbbResponding:"#{SendSampledTcuToPCLib.GetDataToSendPc(sharedMem)}"}						
-					else
-						`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
-					end
-					@samplerData.SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
-                    puts "User input @pcCmdNew='#{@pcCmdNew}'"
-                end
-                client.close                 # Disconnect from the client
-            }
-        end
-        
-    end
-=end
 
     def runThreadForSavingSlotStateEvery10Mins()
         waitTime = Time.now
@@ -1103,16 +1042,13 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
 				end
 			end
 			# puts fileRead
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
 			setBoardData(JSON.parse(fileRead),uart1)
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
 			# @boardData[SharedLib::AllStepsDone_Yes9No] = SharedLib::No
 			
 			# puts "Checking content of getConfiguration() function"
 			# puts "getConfiguration().nil?='#{getConfiguration().nil?}'"
 			# PP.pp(getConfiguration())
 			rescue Exception => e  
- SharedLib.pause "Check","#{__LINE__}-#{__FILE__}"
                 puts "e.message=#{e.message }"
                 puts "e.backtrace.inspect=#{e.backtrace.inspect}" 
         		SharedLib.bbbLog("There's no data in the holding tank.  New machine starting up. #{__LINE__}-#{__FILE__}")
@@ -1847,7 +1783,7 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
 
     def logSystemStateSnapShot(strParam, timeParam)
         tbs = "#{timeParam.inspect} - #{strParam}"
-        if @isOkToLog
+        if @isOkToLog && @allDutTempTolReached
             mins =  (@samplerData.GetStepTimeLeft()/60.0).to_i
             secs =  (@samplerData.GetStepTimeLeft()-mins*60.0).to_i
             tbs += "\nSystem state snapshot:  step time left - #{SharedLib.makeTime2colon2Format(mins,secs)} (mm:ss)\n"
@@ -2400,11 +2336,13 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
             				end
 
             				if @totDutTempReached == @totDutsAvailable
-            				    if @allDutTempTolReached == false 
+            				    if @allDutTempTolReached == false
+            				        @isOkToLog = @boardData["isOkToLog"]
             				        @allDutTempTolReached = true
             				        @samplerData.setWaitTempMsg("")
             				        @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
             				        setTimeOfRun()
+            				        @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
             				    end
             				end
             				
@@ -2479,6 +2417,7 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
                 pollIntervalInSeconds = @loggingTime
             end
             
+            # puts "@isOkToLog='#{@isOkToLog}', @boardData[\"isOkToLog\"]='#{@boardData["isOkToLog"]}' @allDutTempTolReached='#{@allDutTempTolReached}'  #{__LINE__}-#{__FILE__}"
             if @isOkToLog && @allDutTempTolReached
                 doTheAveragingOfMesurements()
                 if @timeOfLog.to_i <= Time.now.to_i
@@ -2487,7 +2426,6 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
                     @logRptAvgCt = 0
                     @logRptAvg = nil
                 end
-                
                 @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
             else
                 @samplerData.setWaitTempMsg("#{tempTolP}C/#{tempTolN}C, +#{@totDutTempReached}/#{@totDutsAvailable} duts, -#{twtimeleft} sec")
@@ -2738,6 +2676,13 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
         # spi.disable
     end
 
+    def runFunctionGroup(uart1)
+        checkDeadTcus(uart1)
+        @samplerData.setDontSendErrorColor(false)
+        setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
+        @samplerData.clearStopMessage()
+    end
+    
     def runTCUSampler
         puts "Running Sampler.rb"
         setBoardPsDefaultSettings()
@@ -2788,53 +2733,9 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
         # Get the board configuration
         #
         SharedLib.bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
+        checkDeadTcus(uart1)
         loadConfigurationFromHoldingTank(uart1)
         runThreadForSavingSlotStateEvery10Mins()
-=begin        
-        # Read the file that lists the dead TCUs.
-        lineNum = 0
-        SharedLib.bbbLog("Processing '#{FaultyTcuList_SkipPolling}' file. #{__LINE__}-#{__FILE__}")
-	    begin
-    		File.open(FaultyTcuList_SkipPolling, "r") do |f|
-    			f.each_line do |line|
-    			    # puts "Puts line read = #{line}.  #{__LINE__}-#{__FILE__}"
-    			    if lineNum>0
-    			        # puts "Processing '#{line}'.  #{__LINE__}-#{__FILE__}"
-    			        readLine = line.chomp
-        			    if SharedLib.is_a_number?(readLine)
-        			        intVal = readLine.to_i
-        			        @tcusToSkip[intVal] = intVal
-        			        # puts "Skipping TCU(#{intVal}) based on file list. #{__LINE__}-#{__FILE__}"
-        			    else
-        			        SharedLib.bbbLog("Not processing line# '#{lineNum+1}' on file '#{FaultyTcuList_SkipPolling}' because it's not a number. #{__LINE__}-#{__FILE__}")
-        			    end
-    			    end
-    				lineNum += 1
-        		end
-    		end
-		    rescue Exception => e
-		        SharedLib.bbbLog("Error: #{e.message}  #{__LINE__}-#{__FILE__}")
-	    end
-=end        
-        checkDeadTcus(uart1)
-=begin        
-        if newDeadTcu
-            # Write the new FaultyTcuList file
-            SharedLib.bbbLog "Updating #{FaultyTcuList_SkipPolling} file due to new faulty TCU.  See log."
-    	    File.open(FaultyTcuList_SkipPolling, "w") { 
-    	        |file| 
-    	        file.write("This file lists the TCUs that are to be skipped when running the system.  Items not listed during initial boot might be added in this list by the system if UART don't reply properly.\n")
-    	        ct = 0
-    	        while ct<24 do
-    	            if @tcusToSkip[ct].nil? == false
-    	                file.write("#{ct}\n") 
-    	                puts "Wrote #{ct} into file. #{__LINE__}-#{__FILE__}"
-    	            end
-    	            ct += 1
-    	        end
-            }
-        end
-=end
 
         
         # Mount the SD card for access
@@ -2862,7 +2763,6 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
         end
         
         setTcuToStopMode() # turnOffDuts(@tcusToSkip)
-        
 	    initStepToWorkOnVar(uart1)
         if @stepToWorkOn.nil? == false
             # PP.pp(@stepToWorkOn)
@@ -2888,6 +2788,16 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
         ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,0.0)
         ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,0.0)
         setTcuToRunMode(@tcusToSkip,@gPIO2)
+        
+        # This is the data that was loaded from the state of machine.
+        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+        if @boardData[BbbMode] == SharedLib::InRunMode
+            @stepToWorkOn[StepTimeLeft] = @boardData[StepTimeLeft]
+            @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
+            runFunctionGroup(uart1)
+	        # @stepToWorkOn = @boardData["stepToWorkOn"]
+	        @samplerData.SetTotalTimeOfStepsInQueue(@boardData["TotalTimeOfStepsInQueue"])
+        end
 
         while true
             stepNum = ""
@@ -2922,7 +2832,35 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
             else
                 waitTimeInspect = "temp time wait left ='#{twtimeleft}'"
             end
-            puts "Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} #{waitTimeInspect} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+            puts "@boardData[\"TotalTimeOfStepsInQueue\"]='#{@boardData["TotalTimeOfStepsInQueue"]}', @samplerData.GetTotalTimeOfStepsInQueue()='#{@samplerData.GetTotalTimeOfStepsInQueue()}'  #{__LINE__}-#{__FILE__}"
+=begin            
+    	    stepNumber = 0
+    	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
+    	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
+    	    	stepNumber<getConfiguration()["Steps"].length 
+    	    	# puts "A0 #{__LINE__}-#{__FILE__}"
+                # puts "A1 #{__LINE__}-#{__FILE__}"
+                getConfiguration()[Steps].each do |key, array|
+                    getConfiguration()[Steps][key].each do |key2, array2|
+                        # Get the total time of Steps in queue
+                        if key2 == StepNum 
+                            if @stepToWorkOn != getConfiguration()[Steps][key]
+                                if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0 && hash[key].nil?
+                                    puts "Add time #{getConfiguration()[Steps][key][StepTimeLeft]} key='#{key}' @samplerData.GetTotalTimeOfStepsInQueue()='#{@samplerData.GetTotalTimeOfStepsInQueue()}'"
+                                    hash[key] = key
+                                    @samplerData.SetTotalTimeOfStepsInQueue(getConfiguration()[Steps][key][StepTimeLeft].to_f+@samplerData.GetTotalTimeOfStepsInQueue().to_f)
+                                    puts "New total @samplerData.GetTotalTimeOfStepsInQueue()='#{@samplerData.GetTotalTimeOfStepsInQueue()}'"
+                                end
+                            end
+                        end
+                    end
+    	            # puts "E #{__LINE__}-#{__FILE__}"
+                end
+    	        # puts "G #{__LINE__}-#{__FILE__}"
+    	        stepNumber += 1
+    	    end
+=end            
+            # Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} #{waitTimeInspect} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
             @samplerData.SetSlotTime(Time.now.to_i)
             if skipLimboStateCheck
                 skipLimboStateCheck = false
@@ -2963,13 +2901,7 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
                     @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
         		    case pcCmd
         	        when SharedLib::RunFromPc
-        		        checkDeadTcus(uart1)
-                        @samplerData.setDontSendErrorColor(false)
-    		            setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
-                        @samplerData.clearStopMessage()
-                        
-                        # Code below is for test purposes only
-                        # @thermalSiteDevices["RanAt"] = Time.now.to_i+60 # +60 seconds
+        	            runFunctionGroup(uart1)
                     when SharedLib::ClearErrFromPc
                         @boardData[SharedMemory::ErrorColor] = nil
                         @samplerData.setDontSendErrorColor(true)
@@ -3094,4 +3026,4 @@ SharedLib.pause "Saving data","#{__LINE__}-#{__FILE__}"
 end
 
 TCUSampler.runTCUSampler
-# 373
+# 1779
