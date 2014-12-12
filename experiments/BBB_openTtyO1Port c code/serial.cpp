@@ -1043,7 +1043,7 @@ unsigned long int TimeOut::ElapsedTime_ms()
 int main(int argc, char *argv[])
 {
     int baudRate;
-    int diagnosticMode = 1;
+    int diagnosticMode = 0;
     /*
     if (diagnosticMode == 0) {
         if ( argc != 2 ) / * argc should be 2 for correct execution * /
@@ -1072,9 +1072,9 @@ int main(int argc, char *argv[])
     char Buffer[128];
 
     // Open serial port
-    //Ret=LS.Open(DEVICE_PORT,115200);                                    // Open serial link at 115200 bauds
+    Ret=LS.Open(DEVICE_PORT,115200);                                    // Open serial link at 115200 bauds
     //Ret=LS.Open(DEVICE_PORT,19200);                                      // Open serial link at 19200 bauds
-    Ret=LS.Open(DEVICE_PORT,9600);                                       // Open serial link at 9600 bauds
+    // Ret=LS.Open(DEVICE_PORT,9600);                                       // Open serial link at 9600 bauds
     printf ("Ret='%d'\n",Ret);        // ... display a message ...
     if (Ret!=1) {                                                           // If an error occured...
         printf ("Error while opening port. Permission problem ?\n");        // ... display a message ...
@@ -1090,7 +1090,7 @@ int main(int argc, char *argv[])
         char userInput[80];
         int send;
         while (true) {
-            puts("Send string options");
+            puts("Send string options (a-f):");
             puts("a) V? - for Version.");
             puts("b) S? - for Status.");
             puts("c) L! - for displaying status ever interval.");
