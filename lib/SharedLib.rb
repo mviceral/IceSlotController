@@ -2,7 +2,7 @@ require 'singleton'
 require 'forwardable'
 require 'uri'
 
-SetupAtHome = true # So we can do some work at home
+SetupAtHome = false # So we can do some work at home
 
 class SharedLib
 	include Singleton

@@ -153,6 +153,9 @@ Temperature Setting: <temp>
 	end
 	
 	def sendShutDownInfo(infoParam)
+	    # puts caller # Kernel#caller returns an array of strings
+	    # puts "#{__LINE__}-#{__FILE__}"
+	    # SharedLib.pause "infoParam='#{infoParam}'. Send shutdown info.","#{__LINE__}-#{__FILE__}"
         if @packageInfo.nil?
             @packageInfo = Hash.new
         end
@@ -179,7 +182,6 @@ Temperature Setting: <temp>
     def SendDataToPC(sharedMemParam,fromParam)
     	# puts "called from #{fromParam}"
     	slotInfoJson = GetDataToSendPc(sharedMemParam)
-    	
     	# Clear any error listed in the memomry
         sharedMemParam.ClearErrors() # This frees up some bytes in the shared memory.
         
@@ -221,7 +223,8 @@ Temperature Setting: <temp>
     	
 
         # puts "#{__LINE__}-#{__FILE__} slotInfoJson=#{slotInfoJson}"
-        sendSlotInfoToPc(slotInfoJson.to_json)
+        json = slotInfoJson.to_json
+        sendSlotInfoToPc(json)
     end    
     
     def sendSlotInfoToPc(newSlotInfoJson)

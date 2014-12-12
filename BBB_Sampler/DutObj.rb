@@ -153,7 +153,7 @@ class DutObj
             #puts "(#{tsdParam["RanAt"]-Time.now.to_i}) dutNumParam='#{dutNumParam}' @statusResponse[dutNumParam]='#{@statusResponse[dutNumParam]}' #{__LINE__}-#{__FILE__}"
             
             if @statusResponse[dutNumParam][1] == "0"
-                `\"#{Time.new.inspect} dut='#{dutNumParam}' is getting re-blasted. #{__LINE__}-#{__FILE__}\" >> /mnt/card/ErrorLog.txt`
+                `echo \"#{Time.new.inspect} dut='#{dutNumParam}' is getting re-blasted. #{__LINE__}-#{__FILE__}\" >> /mnt/card/ErrorLog.txt`
                 # puts "\n\n\n\nExecuted the re-blast. #{__LINE__}-#{__FILE__}"
                 ThermalSiteDevices.setTHCPID(uart1Param,"T",tcusToSkip,tsdParam["T"])
                 ThermalSiteDevices.setTHCPID(uart1Param,"H",tcusToSkip,tsdParam["H"])
