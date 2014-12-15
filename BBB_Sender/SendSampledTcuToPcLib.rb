@@ -258,34 +258,126 @@ Temperature Setting: <temp>
             @xCountPassedThenSendAgain = 0
         end
         @xCountPassedThenSendAgain += 1
-        
+puts "#{__LINE__}-#{__FILE__}"
         while @arrOfDataToSend.length > 0
+puts "#{__LINE__}-#{__FILE__}"
             slotInfoJson = @arrOfDataToSend.shift
             ct = 0
             sentData = false
+puts "#{__LINE__}-#{__FILE__}"
             while sentData == false && ct < 5
+puts "#{__LINE__}-#{__FILE__}"
                 begin
-                    resp = 
-                        RestClient.post "#{@pcIpAddr}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
-                    sentData = true
-                    @packageInfo = nil
-                    rescue Exception => e  
-                        puts "Failed to send to '#{@pcIpAddr}'.  Attempting again."
-                        puts e.message  
-                        # puts e.backtrace.inspect
-                        # `echo "#{slotInfoJson}" >> /mnt/card/PcDown.BackLog`
+puts "#{__LINE__}-#{__FILE__}"
+                    if @firstBackLog.nil?
+puts "#{__LINE__}-#{__FILE__}"
+                        begin
+puts "#{__LINE__}-#{__FILE__}"
+                            resp = 
+                                RestClient.post "#{@pcIpAddr}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
+puts "Sent was good!#{__LINE__}-#{__FILE__}"
+                            sentData = true
+puts "#{__LINE__}-#{__FILE__}"
+                            @packageInfo = nil
+puts "#{__LINE__}-#{__FILE__}"
+                            rescue Exception => e  
+puts "#{__LINE__}-#{__FILE__}"
+                                puts "Failed to send to '#{@pcIpAddr}'.  Attempting again."
+                                puts e.message  
+                                # puts e.backtrace.inspect
+                                @firstBackLog = slotInfoJson
+                                `echo \"#{fixQuotes(slotInfoJson)}\" >> /mnt/card/PcDown.BackLog`
+                        end
+puts "#{__LINE__}-#{__FILE__}"
+                    else
+puts "@firstBackLog not null #{__LINE__}-#{__FILE__}"
+                        begin
+puts "#{__LINE__}-#{__FILE__}"
+                            resp = 
+                                RestClient.post "#{@pcIpAddr}:9292/v1/migrations/Duts", {Duts:"#{@firstBackLog}" }.to_json, :content_type => :json, :accept => :json
+puts "Sent @firstBackLog#{__LINE__}-#{__FILE__}"
+    
+                            # it was a good send.  Get all the backlog and send it to the pc for consumption
+                            file = File.new("/mnt/card/PcDown.BackLog", "r")
+puts "Reading all of backlog#{__LINE__}-#{__FILE__}"
+                            arr = Array.new
+puts "#{__LINE__}-#{__FILE__}"
+                            while (line = file.gets)
+puts "Line Read #{line} #{__LINE__}-#{__FILE__}"
+                                arr.push(line) 
+puts "#{__LINE__}-#{__FILE__}"
+                            end
+puts "#{__LINE__}-#{__FILE__}"
+                            file.close
+puts "#{__LINE__}-#{__FILE__}"
+                            arr.push(slotInfoJson) 
+puts "#{__LINE__}-#{__FILE__}"
+                            @packageInfo = Hash.new
+puts "#{__LINE__}-#{__FILE__}"
+                            @packageInfo["BackLogData"] = arr
+puts "#{__LINE__}-#{__FILE__}"
+                            begin
+puts "Sending all of backlog.#{__LINE__}-#{__FILE__}"
+                                resp = 
+                                    RestClient.post "#{@pcIpAddr}:9292/v1/migrations/Duts", {Duts:"#{@packageInfo.to_json}" }.to_json, :content_type => :json, :accept => :json
+puts "Backlog sent OK.#{__LINE__}-#{__FILE__}"
+                                @packageInfo = nil
+puts "#{__LINE__}-#{__FILE__}"
+                                sentData = true
+puts "Deteting backlog file.#{__LINE__}-#{__FILE__}"
+                                `rm -rf /mnt/card/PcDown.BackLog`
+puts "Clearing backlog file#{__LINE__}-#{__FILE__}"
+                                @firstBackLog = nil
+                                rescue Exception => e  
+puts "Failed to send backlog getting the next item to be save from backlog.#{__LINE__}-#{__FILE__}"
+                                    @firstBackLog = arr[0]
+                                    @packageInfo = nil
+puts "#{__LINE__}-#{__FILE__}"
+                            end
+puts "#{__LINE__}-#{__FILE__}"
+                            rescue Exception => e  
+                                puts "Failed to send to '#{@pcIpAddr}'.  Attempting again."
+puts "#{__LINE__}-#{__FILE__}"
+                                puts e.message  
+puts "#{__LINE__}-#{__FILE__}"
+                                # puts e.backtrace.inspect
+                                `echo \"#{fixQuotes(slotInfoJson)}\" >> /mnt/card/PcDown.BackLog`
+puts "#{__LINE__}-#{__FILE__}"
+                        end
+                    end
                 end
+puts "#{__LINE__}-#{__FILE__}"
                 ct += 1
+puts "#{__LINE__}-#{__FILE__}"
             end
             
             if sentData == false
+puts "#{__LINE__}-#{__FILE__}"
                 puts "Completely failed to send.  Saving data to PcDown.BackLog file."
                 slotInfoJson = SharedLib.ChangeDQuoteToSQuoteForDbFormat(slotInfoJson)
-                `echo "#{slotInfoJson}" >> /mnt/card/PcDown.BackLog`
+puts "#{__LINE__}-#{__FILE__}"
+                `echo \"#{fixQuotes(slotInfoJson)}\" >> /mnt/card/PcDown.BackLog`
+puts "#{__LINE__}-#{__FILE__}"
             end
+puts "#{__LINE__}-#{__FILE__}"
         end
+puts "OUT!!!#{__LINE__}-#{__FILE__}\n\n\n"
     end
-
+    
+    def fixQuotes(slotInfoJson)
+        toBeReturned = ""
+        i=0
+        while i<slotInfoJson.length
+            if slotInfoJson[i] == "\""
+                toBeReturned += "\\\""
+            else
+                toBeReturned += slotInfoJson[i]
+            end
+            i += 1
+        end
+        return toBeReturned
+    end
+    
     def nextLogCreation
         # puts "Within 'nextLogCreation' - @logCompletedAt = #{@logCompletedAt.inspect}  #{__FILE__} - #{__LINE__}"
         if @nextLogCreation.nil? && logCompletedAt != nil

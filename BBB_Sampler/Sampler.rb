@@ -194,13 +194,15 @@ class TCUSampler
                 #
                 # Calculate the total time left before sequencing down.
                 #
-                if @stepToWorkOn.nil? == false
-                    @stepToWorkOn[StepTimeLeft] = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun())
+                if @dataGotLoaded
+                    @dataGotLoaded = false
+                else
+                    if @stepToWorkOn.nil? == false
+                        @stepToWorkOn[StepTimeLeft] = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun())
+                    end
                 end
                 psSeqDown("#{__LINE__}-#{__FILE__}")
             end
-            
-            saveBoardStateToHoldingTank()
         else
             SharedLib.bbbLog("Don't recognize modeParam=#{modeParam}, calledFrom=#{calledFrom}")
             SharedLib.bbbLog("Exiting code.")
@@ -373,6 +375,9 @@ class TCUSampler
 	        # PP.pp(@stepToWorkOn)
 	        @boardData["stepToWorkOn"] = @stepToWorkOn
 	        @boardData[StepTimeLeft] = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun())
+            puts caller # Kernel#caller returns an array of strings
+            puts "saving StepTimeLeft @boardData[StepTimeLeft]='#{@boardData[StepTimeLeft]}'"
+	        puts "step number saved '#{@stepToWorkOn[StepNum]}'"
             # @samplerData.SetStepNumber(@stepToWorkOn["Step Num"])
             # @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
         else
@@ -800,13 +805,13 @@ class TCUSampler
 	        # puts "G #{__LINE__}-#{__FILE__}"
 	        stepNumber += 1
 	    end
-	    
+=begin
 	    if @boardData["TotalTimeOfStepsInQueue"].nil?
 	        @boardData["TotalTimeOfStepsInQueue"] = @samplerData.GetTotalTimeOfStepsInQueue()
 	    else
 	        @samplerData.SetTotalTimeOfStepsInQueue(@boardData["TotalTimeOfStepsInQueue"])
         end
-        
+=end        
         if @stepToWorkOn.nil? == false
 	        @stepToWorkOn["Key"] = holdKey
             @stepToWorkOn["TIMERRUFP"] = timerRUFP
@@ -1000,24 +1005,29 @@ class TCUSampler
         # if the system is in idle mode, make sure to run the sequence down on power supplies.
         # The file in the hard drive only stores two states of the system: running or in idle.
         @boardData = boardDataParam
+        if @boardData[BbbMode] == SharedLib::InStopMode
+            @SavedMode = SharedLib::InStopMode
+        else
+            @SavedMode = SharedLib::InRunMode
+        end
 
         if getConfiguration().nil? == false
             # There is valid data in the system.
             # setToMode(@boardData[BbbMode], "#{__LINE__}-#{__FILE__}")
             @stepToWorkOn = @boardData["stepToWorkOn"]
+            @dataGotLoaded = true
             setBoardStateForCurrentStep(uart1)
         end
     end
 
     def runThreadForSavingSlotStateEvery10Mins()
         waitTime = Time.now
-        asfd = 60*10 # 60 seconds per minute x 10 minute
-        asfd = 10 # X seconds interval
-        waitTime += asfd
+        waitTimeConst = 60*5 # 60 seconds per minute x 10 minute
+        waitTime += waitTimeConst
         saveStateOfBoard = Thread.new do
         	while true
                 sleep(waitTime.to_f-Time.now.to_f)
-                waitTime += asfd
+                waitTime += waitTimeConst
                 if @samplerData.GetBbbMode() == SharedLib::InRunMode && @samplerData.GetAllStepsDone_YesNo() == SharedLib::No
                     saveBoardStateToHoldingTank()
                 end
@@ -2444,21 +2454,23 @@ class TCUSampler
             end
             
             setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-            sleep(1)
+            sleep(1) # Per customer request
             setBoardStateForCurrentStep(uart1)
-            sleep(1)
+            sleep(1) # Per customer request
             if @stepToWorkOn.nil? == false
                 # There's more step to process
     		    setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
             else
+                # We're done processing all the steps.
                 @boardData[SharedLib::AllStepsCompletedAt] = Time.new.to_i
                 setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
-
-                # Done processing all steps listed in configuration.step file
-                saveBoardStateToHoldingTank()
                 
-                # We're done processing all the steps.
+                # Automatically repair the damaged disk sectors
+                `fsck -a /dev/mmcblk0p1`
             end
+
+            # Done processing all steps listed in configuration.step file
+            saveBoardStateToHoldingTank()
         end
     end
     
@@ -2679,8 +2691,8 @@ class TCUSampler
     def runFunctionGroup(uart1)
         checkDeadTcus(uart1)
         @samplerData.setDontSendErrorColor(false)
-        setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
         @samplerData.clearStopMessage()
+        setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
     end
     
     def runTCUSampler
@@ -2708,7 +2720,12 @@ class TCUSampler
         # version 1.0.1 - 10 Dec 2014 
         #   Added min max on dut temp and current, PS volt, and PS current.
         #   Changed the wait time out response on TCU from 0.1 to 0.5 second.
-        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.1")
+        # version 1.0.2 - 14 Dec 2014
+        #  Managed to revive state of machine to where it lost its power.
+        #  Added code to recover BackLog
+        #  Added code to handle backlog data in PC
+        #  Added code to "Automatically Repair the Damaged" sd drive portion after processing
+        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.2")
         turnOffHeaters()
     	initMuxValueFunc()
     	initpollAdcInputFunc()
@@ -2732,8 +2749,8 @@ class TCUSampler
         #
         # Get the board configuration
         #
-        SharedLib.bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
         checkDeadTcus(uart1)
+        SharedLib.bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
         loadConfigurationFromHoldingTank(uart1)
         runThreadForSavingSlotStateEvery10Mins()
 
@@ -2761,13 +2778,15 @@ class TCUSampler
         else
             @samplerData.SetAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # so it will not run
         end
-        
+
         setTcuToStopMode() # turnOffDuts(@tcusToSkip)
-	    initStepToWorkOnVar(uart1)
+
         if @stepToWorkOn.nil? == false
             # PP.pp(@stepToWorkOn)
             # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
             limboCheck(@stepToWorkOn[StepNum],uart1)
+        else
+    	    initStepToWorkOnVar(uart1)
         end
         
         @totDutTempReached = 0
@@ -2780,7 +2799,7 @@ class TCUSampler
         
         turnBuzzerOnAt = Time.now
         buzzerBackOn = true
-        
+
         # @samplerData.ReportError("Error test. #{__LINE__}-#{__FILE__}")
         @timeOfLog = Time.now
 
@@ -2790,15 +2809,35 @@ class TCUSampler
         setTcuToRunMode(@tcusToSkip,@gPIO2)
         
         # This is the data that was loaded from the state of machine.
-        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-        if @boardData[BbbMode] == SharedLib::InRunMode
+        @stepToWorkOn = @boardData["stepToWorkOn"]
+        puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
+        puts "@stepToWorkOn.nil? == false=#{@stepToWorkOn.nil? == false} #{__LINE__}-#{__FILE__}"
+        if @stepToWorkOn.nil? == false
+=begin            
+            puts "Loaded StepTimeLeft @boardData[StepTimeLeft]='#{@boardData[StepTimeLeft]}'"
+            puts "Loaded number saved '#{@stepToWorkOn[StepNum]}'"
+            if getConfiguration() != nil
+                getConfiguration()[Steps].each do |key, array|
+                    getConfiguration()[Steps][key].each do |key2, array2|
+                        # Get the total time of Steps in queue
+                        if key2 == StepNum 
+                            puts "Step# '#{array2}' StepTimeLeft='#{getConfiguration()[Steps][key][StepTimeLeft]}' #{__LINE__}-#{__LINE__}"
+                        end
+                    end
+    	            # puts "E #{__LINE__}-#{__FILE__}"
+                end
+            end
+=end
+            # SharedLib.pause "Checking loaded data","#{__LINE__}-#{__FILE__}"
+            # @stepToWorkOn = @boardData["stepToWorkOn"]
+            checkDeadTcus(uart1)
+            @samplerData.setDontSendErrorColor(false)
+            @samplerData.clearStopMessage()
             @stepToWorkOn[StepTimeLeft] = @boardData[StepTimeLeft]
-            @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun()))
-            runFunctionGroup(uart1)
-	        # @stepToWorkOn = @boardData["stepToWorkOn"]
-	        @samplerData.SetTotalTimeOfStepsInQueue(@boardData["TotalTimeOfStepsInQueue"])
+            @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
+            @samplerData.SetTotalStepDuration(@boardData[SharedLib::TotalStepDuration])
         end
-
+        
         while true
             stepNum = ""
             if @stepToWorkOn.nil? == false
@@ -2832,35 +2871,25 @@ class TCUSampler
             else
                 waitTimeInspect = "temp time wait left ='#{twtimeleft}'"
             end
-            puts "@boardData[\"TotalTimeOfStepsInQueue\"]='#{@boardData["TotalTimeOfStepsInQueue"]}', @samplerData.GetTotalTimeOfStepsInQueue()='#{@samplerData.GetTotalTimeOfStepsInQueue()}'  #{__LINE__}-#{__FILE__}"
-=begin            
-    	    stepNumber = 0
-    	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
-    	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
-    	    	stepNumber<getConfiguration()["Steps"].length 
-    	    	# puts "A0 #{__LINE__}-#{__FILE__}"
-                # puts "A1 #{__LINE__}-#{__FILE__}"
+            puts "Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} #{waitTimeInspect} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+=begin
+            if getConfiguration() != nil
                 getConfiguration()[Steps].each do |key, array|
                     getConfiguration()[Steps][key].each do |key2, array2|
                         # Get the total time of Steps in queue
                         if key2 == StepNum 
-                            if @stepToWorkOn != getConfiguration()[Steps][key]
-                                if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0 && hash[key].nil?
-                                    puts "Add time #{getConfiguration()[Steps][key][StepTimeLeft]} key='#{key}' @samplerData.GetTotalTimeOfStepsInQueue()='#{@samplerData.GetTotalTimeOfStepsInQueue()}'"
-                                    hash[key] = key
-                                    @samplerData.SetTotalTimeOfStepsInQueue(getConfiguration()[Steps][key][StepTimeLeft].to_f+@samplerData.GetTotalTimeOfStepsInQueue().to_f)
-                                    puts "New total @samplerData.GetTotalTimeOfStepsInQueue()='#{@samplerData.GetTotalTimeOfStepsInQueue()}'"
-                                end
-                            end
+                            puts "Step# '#{array2}' StepTimeLeft='#{getConfiguration()[Steps][key][StepTimeLeft]}' #{__LINE__}-#{__LINE__}"
                         end
                     end
     	            # puts "E #{__LINE__}-#{__FILE__}"
                 end
-    	        # puts "G #{__LINE__}-#{__FILE__}"
-    	        stepNumber += 1
-    	    end
+            end
 =end            
-            # Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} #{waitTimeInspect} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+            if @stepToWorkOn.nil? == false
+                puts "StepNum = #{@stepToWorkOn[StepNum]} @stepToWorkOn[StepTimeLeft]='#{@stepToWorkOn[StepTimeLeft]}' timeleft='#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}'"
+                # SharedLib.pause "status","#{__LINE__}-#{__FILE__}"
+            end
+            
             @samplerData.SetSlotTime(Time.now.to_i)
             if skipLimboStateCheck
                 skipLimboStateCheck = false
@@ -2955,6 +2984,7 @@ class TCUSampler
             		    setBoardData(Hash.new,uart1)
             		    
             		    @boardData[Configuration] = @samplerData.GetConfiguration()
+            		    @boardData[SharedLib::TotalStepDuration] = @samplerData.GetTotalStepDuration()
                         @samplerData.setErrorColor(nil,"#{__LINE__}-#{__FILE__}")
             		    @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
             		    @samplerData.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
@@ -3011,6 +3041,15 @@ class TCUSampler
             # What if there was a hiccup and waitTime-Time.now becomes negative
             #
             sleep(0.01) # Get some sleep time so the Grape app will be a bit more responsive.
+            if @SavedMode == SharedLib::InRunMode || @SavedMode == SharedLib::InStopMode
+                if @SavedMode == SharedLib::InRunMode
+                    skipLimboStateCheck = false
+                    runFunctionGroup(uart1)
+                else
+                    setToMode(SharedLib::InStopMode,"#{__LINE__}-#{__FILE__}")
+                end
+                @SavedMode = "Done Processing"
+            end
         end
 
         # End of 'def runTCUSampler'
@@ -3026,4 +3065,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 1779
+# ds["Configuration"][SharedLib::TotalStepDuration] = totalStepDuration

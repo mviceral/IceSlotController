@@ -767,6 +767,15 @@ class SharedMemory
         puts "Done 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
     end
     
+    def SetTotalStepDuration(totalStepDurationParam)
+        ds = getMemory()
+        if ds["Configuration"].nil?
+            ds["Configuration"] = Hash.new
+        end
+        ds["Configuration"][SharedLib::TotalStepDuration] = totalStepDurationParam
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+    end
+    
     def GetTotalStepDuration()
         ds = getMemory()
         if ds["Configuration"].nil?
