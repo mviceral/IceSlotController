@@ -2,7 +2,7 @@ require 'singleton'
 require 'forwardable'
 require 'uri'
 
-SetupAtHome = true # So we can do some work at home
+SetupAtHome = false # So we can do some work at home
 
 class SharedLib
 	include Singleton
@@ -43,6 +43,9 @@ class SharedLib
 	SLOT1 = "SLOT1"
 	SLOT2 = "SLOT2"
 	SLOT3 = "SLOT3"
+	
+	# PathFiles
+	PathFile_BbbBackLog = "/mnt/card/PcDown.BackLog"
 
 	# Board State.
 	InRunMode = "InRunMode"

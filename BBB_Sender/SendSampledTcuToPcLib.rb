@@ -229,6 +229,21 @@ Temperature Setting: <temp>
     end    
     
     def sendSlotInfoToPc(newSlotInfoJson)
+        # SharedLib.pause "Function got called.  Checking value @firstBackLog='#{@firstBackLog}'","#{__LINE__}-#{__FILE__}"
+        if File.exist?(SharedLib::PathFile_BbbBackLog)
+puts "#{__LINE__}-#{__FILE__}"
+            file = File.new(SharedLib::PathFile_BbbBackLog, "r")
+puts "#{__LINE__}-#{__FILE__}"
+            while (line = file.gets)
+puts "#{__LINE__}-#{__FILE__}"
+                @firstBackLog = line
+            end
+puts "#{__LINE__}-#{__FILE__}"
+            file.close
+puts "#{__LINE__}-#{__FILE__}"
+        end
+        # SharedLib.pause "Checking if backlog file was opened.","#{__LINE__}-#{__FILE__}"
+
         if @pcIpAddr.nil?
     		File.open("../BBB_configuration files/ethernet scheme setup.csv", "r") do |f|
     			f.each_line do |line|
@@ -298,18 +313,24 @@ puts "#{__LINE__}-#{__FILE__}"
 puts "Sent @firstBackLog#{__LINE__}-#{__FILE__}"
     
                             # it was a good send.  Get all the backlog and send it to the pc for consumption
-                            file = File.new("/mnt/card/PcDown.BackLog", "r")
+                            file = File.new(SharedLib::PathFile_BbbBackLog, "r")
 puts "Reading all of backlog#{__LINE__}-#{__FILE__}"
                             arr = Array.new
 puts "#{__LINE__}-#{__FILE__}"
+                            ct = 0
                             while (line = file.gets)
 puts "Line Read #{line} #{__LINE__}-#{__FILE__}"
-                                arr.push(line) 
+                                if ct != 0
+                                    # Skip the first entry because it just got sent.
+                                    arr.push(line) 
+                                end
+                                ct += 1
 puts "#{__LINE__}-#{__FILE__}"
                             end
 puts "#{__LINE__}-#{__FILE__}"
                             file.close
 puts "#{__LINE__}-#{__FILE__}"
+                            # Add the latest data into the array
                             arr.push(slotInfoJson) 
 puts "#{__LINE__}-#{__FILE__}"
                             @packageInfo = Hash.new
@@ -326,6 +347,7 @@ puts "#{__LINE__}-#{__FILE__}"
                                 sentData = true
 puts "Deteting backlog file.#{__LINE__}-#{__FILE__}"
                                 `rm -rf /mnt/card/PcDown.BackLog`
+                                SharedLib.pause "PcDown.BackLog got deleted.","#{__LINE__}-#{__FILE__}"
 puts "Clearing backlog file#{__LINE__}-#{__FILE__}"
                                 @firstBackLog = nil
                                 rescue Exception => e  
