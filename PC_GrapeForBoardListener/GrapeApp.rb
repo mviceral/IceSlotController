@@ -4,6 +4,8 @@ require 'singleton'
 require 'forwardable'
 require 'pp'
 require 'drb/drb'
+require 'singleton'
+require 'forwardable'
 # require 'sqlite3'
 require_relative '../lib/SharedMemory'
 require_relative '../lib/DRbSharedMemory/LibServer'
@@ -37,7 +39,95 @@ module MigrationCount
 			def_delegators :instance, *Migrations.instance_methods(false)
 		end # end of 'class << self'
 	end # End of 'class Migrations'
+	
+	class Func
+    include Singleton
 
+		def subFunc(sharedMemServiceParam,lastMessageSentParam,data)
+			if data[SharedMemory::ShutDownInfo].nil? == false
+				# The system had shutdown
+				puts "Checking data[SharedMemory::ShutDownInfo]='#{data[SharedMemory::ShutDownInfo]}' #{__LINE__}-#{__FILE__}"							
+				if lastMessageSentParam != "#{data[SharedMemory::ShutDownInfo]}"
+					lastMessageSentParam = "#{data[SharedMemory::ShutDownInfo]}"
+					puts "Sending data[SharedMemory::ShutDownInfo]='#{data[SharedMemory::ShutDownInfo]}' #{__LINE__}-#{__FILE__}"							
+					shutdownEmailSubject = "BE2/MoSys Shutdown Notification"
+					systemID = SharedLib.getSystemID()						
+					shutdownEmailMessage = ""
+					shutdownEmailMessage += "System: #{systemID}\n"
+					data[SharedMemory::ShutDownInfo].each { 
+						|a| 
+						shutdownEmailMessage += "---#{a["slotowner"]}---\n"
+						shutdownEmailMessage += "Message:\n"
+						shutdownEmailMessage += "#{a["message"]}\n"
+					}
+
+					# Get the list of emails so the the recipients will be notified if the system had shutdown.
+					getEmailAddr = false
+					emailFlagFound = false
+					emailAddrListHolder = Array.new
+					File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
+						f.each_line do |line|
+							line = line.strip
+							if line == "<emailList>"
+								getEmailAddr = true
+								emailFlagFound = true
+							elsif line == "</emailList>"
+								getEmailAddr = false
+							elsif getEmailAddr == true
+								emailAddrListHolder.push(line)
+							end
+						end
+					end
+					emailFolks = ""
+					if emailFlagFound == true && getEmailAddr == false
+						emailAddrListHolder.each {
+							|emailAddr|
+							if emailFolks.length > 0
+								emailFolks += ","
+							end
+							emailFolks += emailAddr
+						}
+						puts "Sending shutdown message to '#{emailFolks}'."
+						`echo \"#{shutdownEmailMessage}\" | mail -s \"BE2/MoSys Slot Process Shutdown\" \"#{emailFolks}\"`
+					end
+				end
+			end
+			
+			if data[SharedMemory::LogInfo].nil? == false
+				# Handle the logging information first.
+				arrData = data[SharedMemory::LogInfo]							
+				# puts "arrData.class = #{arrData.class}, arrData.length='#{arrData.length}' #{__LINE__}-#{__FILE__}"
+				arrData.each {
+					|hashX|
+					# puts "x hash=#{hash} #{__LINE__}-#{__FILE__}"
+					hash = JSON.parse(hashX)
+					# The sent data is a log data.  Write it to file							
+					configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
+					# puts "hash[SharedLib::ConfigDateUpload]='#{hash[SharedLib::ConfigDateUpload]}'. #{__LINE__}-#{__FILE__}"
+					fileName = hash[SharedLib::ConfigurationFileName]
+					# puts "hash[SharedLib::ConfigurationFileName]='#{hash[SharedLib::ConfigurationFileName]}' #{__LINE__}-#{__FILE__}"
+					slotOwnerParam = hash[SharedLib::SlotOwner]
+					# puts "hash[SharedLib::SlotOwner]='#{hash[SharedLib::SlotOwner]}' #{__LINE__}-#{__FILE__}"
+					hashForLotId = JSON.parse(data[SharedMemory::SystemInfo])
+					lotID = hashForLotId[SharedMemory::LotID]
+					dBaseFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),lotID)+".log"		
+					# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
+					# puts "dBaseFileName = #{dBaseFileName} #{__LINE__}-#{__FILE__}"
+					# puts "hash[SharedLib::DataLog]: #{__LINE__}-#{__FILE__}/n#{hash[SharedLib::DataLog]}"
+					`cd #{directory}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
+				}							
+			end
+			
+			hash = JSON.parse(data[SharedMemory::SystemInfo])
+			sharedMem = sharedMemServiceParam.getSharedMem()		 
+			sharedMem.processRecDataFromPC(hash)
+		end
+		
+    class << self
+      extend Forwardable
+      def_delegators :instance, *Func.instance_methods(false)
+    end
+	end
 	# This is the Grape REST API implementation
 	class API < Grape::API
 		DRb.start_service			
@@ -56,6 +146,9 @@ module MigrationCount
 		# Specifies that we're going to accept / send json
 		format :json
 
+		def subfunctions(data)
+		end
+		
 		# We don't really need Namespaces in a simple example but this
 		# shows how. You'll need them soon enough for something real
 		# The namespace becomes the resource name and is in the path after
@@ -77,91 +170,15 @@ module MigrationCount
 						receivedData = params['Duts']
 						data = JSON.parse(receivedData)
 						
-						if data[SharedMemory::ShutDownInfo].nil? == false
-							# The system had shutdown
-							puts "Checking data[SharedMemory::ShutDownInfo]='#{data[SharedMemory::ShutDownInfo]}' #{__LINE__}-#{__FILE__}"							
-							if @@lastMessageSent != "#{data[SharedMemory::ShutDownInfo]}"
-								@@lastMessageSent = "#{data[SharedMemory::ShutDownInfo]}"
-								puts "Sending data[SharedMemory::ShutDownInfo]='#{data[SharedMemory::ShutDownInfo]}' #{__LINE__}-#{__FILE__}"							
-								shutdownEmailSubject = "BE2/MoSys Shutdown Notification"
-								systemID = SharedLib.getSystemID()						
-								shutdownEmailMessage = ""
-								shutdownEmailMessage += "System: #{systemID}\n"
-								data[SharedMemory::ShutDownInfo].each { 
-									|a| 
-									shutdownEmailMessage += "---#{a["slotowner"]}---\n"
-									shutdownEmailMessage += "Message:\n"
-									shutdownEmailMessage += "#{a["message"]}\n"
-								}
-
-								# Get the list of emails so the the recipients will be notified if the system had shutdown.
-								getEmailAddr = false
-								emailFlagFound = false
-								emailAddrListHolder = Array.new
-								File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
-									f.each_line do |line|
-										line = line.strip
-										if line == "<emailList>"
-											getEmailAddr = true
-											emailFlagFound = true
-										elsif line == "</emailList>"
-											getEmailAddr = false
-										elsif getEmailAddr == true
-											emailAddrListHolder.push(line)
-										end
-									end
-								end
-								emailFolks = ""
-								if emailFlagFound == true && getEmailAddr == false
-									emailAddrListHolder.each {
-										|emailAddr|
-										if emailFolks.length > 0
-											emailFolks += ","
-										end
-										emailFolks += emailAddr
-									}
-									puts "Sending shutdown message to '#{emailFolks}'."
-									`echo \"#{shutdownEmailMessage}\" | mail -s \"BE2/MoSys Slot Process Shutdown\" \"#{emailFolks}\"`
-								end
+						if data["BackLogData"].nil? == false
+							ct =0
+							while ct>data["BackLogData"].length
+								Func.subFunc(@@sharedMemService,@@lastMessageSent,data["BackLogData"][ct])
+								ct += 1
 							end
 						end
 						
-						if data[SharedMemory::LogInfo].nil? == false
-							# Handle the logging information first.
-							arrData = data[SharedMemory::LogInfo]							
-							# puts "arrData.class = #{arrData.class}, arrData.length='#{arrData.length}' #{__LINE__}-#{__FILE__}"
-							arrData.each {
-								|hashX|
-								# puts "x hash=#{hash} #{__LINE__}-#{__FILE__}"
-								hash = JSON.parse(hashX)
-								# The sent data is a log data.  Write it to file							
-								configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
-								# puts "hash[SharedLib::ConfigDateUpload]='#{hash[SharedLib::ConfigDateUpload]}'. #{__LINE__}-#{__FILE__}"
-								fileName = hash[SharedLib::ConfigurationFileName]
-								# puts "hash[SharedLib::ConfigurationFileName]='#{hash[SharedLib::ConfigurationFileName]}' #{__LINE__}-#{__FILE__}"
-								slotOwnerParam = hash[SharedLib::SlotOwner]
-								# puts "hash[SharedLib::SlotOwner]='#{hash[SharedLib::SlotOwner]}' #{__LINE__}-#{__FILE__}"
-								hashForLotId = JSON.parse(data[SharedMemory::SystemInfo])
-								lotID = hashForLotId[SharedMemory::LotID]
-								dBaseFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),lotID)+".log"		
-								# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
-								# puts "dBaseFileName = #{dBaseFileName} #{__LINE__}-#{__FILE__}"
-								# puts "hash[SharedLib::DataLog]: #{__LINE__}-#{__FILE__}/n#{hash[SharedLib::DataLog]}"
-								`cd #{directory}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
-							}							
-						end
-						
-						hash = JSON.parse(data[SharedMemory::SystemInfo])
-						sharedMem = @@sharedMemService.getSharedMem()		 
-						sharedMem.processRecDataFromPC(hash)
-=begin						
-						if @lastSlotCtlrUpdated != hash[SharedLib::SlotOwner]
-							@lastSlotCtlrUpdated = hash[SharedLib::SlotOwner]
-							sharedMem = @@sharedMemService.getSharedMem()		 
-							sharedMem.processRecDataFromPC(hash)
-							puts "Time=#{Time.now.inspect} IP='#{@lastSlotCtlrUpdated}' #{__LINE__}-#{__FILE__}"
-						end
-=end						
+						Func.subFunc(@@sharedMemService,@@lastMessageSent,data)
 =begin						
 						# puts "dBaseFileName='#{dBaseFileName}'"
 						# logging code.
