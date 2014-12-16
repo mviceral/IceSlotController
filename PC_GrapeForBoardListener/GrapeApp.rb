@@ -43,7 +43,7 @@ module MigrationCount
 	class Func
     include Singleton
 
-		def subFunc(sharedMemServiceParam,lastMessageSentParam,data)
+		def subFunc(sharedMemServiceParam,lastMessageSentParam,data, parseJson)							
 			if data[SharedMemory::ShutDownInfo].nil? == false
 				# The system had shutdown
 				puts "Checking data[SharedMemory::ShutDownInfo]='#{data[SharedMemory::ShutDownInfo]}' #{__LINE__}-#{__FILE__}"							
@@ -96,11 +96,10 @@ module MigrationCount
 			if data[SharedMemory::LogInfo].nil? == false
 				# Handle the logging information first.
 				arrData = data[SharedMemory::LogInfo]							
-				# puts "arrData.class = #{arrData.class}, arrData.length='#{arrData.length}' #{__LINE__}-#{__FILE__}"
 				arrData.each {
 					|hashX|
-					# puts "x hash=#{hash} #{__LINE__}-#{__FILE__}"
 					hash = JSON.parse(hashX)
+					# puts "x hash=#{hash[SharedLib::DataLog]} #{__LINE__}-#{__FILE__}"
 					# The sent data is a log data.  Write it to file							
 					configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
 					# puts "hash[SharedLib::ConfigDateUpload]='#{hash[SharedLib::ConfigDateUpload]}'. #{__LINE__}-#{__FILE__}"
@@ -114,11 +113,18 @@ module MigrationCount
 					# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
 					# puts "dBaseFileName = #{dBaseFileName} #{__LINE__}-#{__FILE__}"
 					# puts "hash[SharedLib::DataLog]: #{__LINE__}-#{__FILE__}/n#{hash[SharedLib::DataLog]}"
-					`cd #{directory}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
+					`cd #{SharedMemory::StepsLogRecordsPath}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
+				if parseJson == false
+					# SharedLib.pause "Check log.","#{__LINE__}-#{__FILE__}"
+				end
 				}							
 			end
-			
-			hash = JSON.parse(data[SharedMemory::SystemInfo])
+
+			if parseJson
+				hash = JSON.parse(data[SharedMemory::SystemInfo])
+			else
+				hash = data[SharedMemory::SystemInfo]
+			end
 			sharedMem = sharedMemServiceParam.getSharedMem()		 
 			sharedMem.processRecDataFromPC(hash)
 		end
@@ -145,9 +151,6 @@ module MigrationCount
 
 		# Specifies that we're going to accept / send json
 		format :json
-
-		def subfunctions(data)
-		end
 		
 		# We don't really need Namespaces in a simple example but this
 		# shows how. You'll need them soon enough for something real
@@ -172,13 +175,15 @@ module MigrationCount
 						
 						if data["BackLogData"].nil? == false
 							ct =0
-							while ct>data["BackLogData"].length
-								Func.subFunc(@@sharedMemService,@@lastMessageSent,data["BackLogData"][ct])
+							while ct<data["BackLogData"].length
+								# puts "sending ct='#{ct}' #{__LINE__}-#{__FILE__}"
+								Func.subFunc(@@sharedMemService,@@lastMessageSent,JSON.parse(data["BackLogData"][ct]),false)
 								ct += 1
 							end
+						else
+							puts data
+							Func.subFunc(@@sharedMemService,@@lastMessageSent,data,true)
 						end
-						
-						Func.subFunc(@@sharedMemService,@@lastMessageSent,data)
 =begin						
 						# puts "dBaseFileName='#{dBaseFileName}'"
 						# logging code.
