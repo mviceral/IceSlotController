@@ -1,5 +1,6 @@
 # require_relative 'AllDuts'
 require_relative '../lib/SharedMemory'
+require_relative '../lib/SharedLib'
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
 class DutObj
     FaultyTcu = "Faulty Tcu"        
@@ -33,8 +34,8 @@ class DutObj
     end
     
     def self.getTcuStatus(dutNumParam,uart1Param,gPIO2,singleCharParam)
-        # puts "dutNumParam='#{dutNumParam}' SetupAtHome='#{SetupAtHome}' singleCharParam='#{singleCharParam}' #{__LINE__}-#{__FILE__}"
-        if SetupAtHome
+        if SharedLib::SetupAtHome
+            # puts "dutNumParam='#{dutNumParam}' SetupAtHome='#{SetupAtHome}' singleCharParam='#{singleCharParam}' #{__LINE__}-#{__FILE__}"
             if singleCharParam == "V"
                 tbr = "@25.000,RTD100,p6.00 i0.60 d0.15,mpo255, cso101, V2.2"
             else
@@ -45,6 +46,7 @@ class DutObj
                 end
                 # puts "rValue='#{rValue}', heating='#{heating}' #{__LINE__}-#{__FILE__}"
                 tbr = "@#{Random.rand(2)},#{30+Random.rand(3)}.#{Random.rand(1000)},#{70+Random.rand(3)}.#{Random.rand(1000)},#{heating},#{Random.rand(256)},Ok"
+                #tbr = "@0,30.376,71.840,1,250,Ok"
             end
             
             return tbr
@@ -151,6 +153,10 @@ class DutObj
             #    tsdParam["RanAt"] += 60 # do it again for another minute.
             #end
             #puts "(#{tsdParam["RanAt"]-Time.now.to_i}) dutNumParam='#{dutNumParam}' @statusResponse[dutNumParam]='#{@statusResponse[dutNumParam]}' #{__LINE__}-#{__FILE__}"
+            
+            if SharedLib::SetupAtHome
+                return
+            end
             
             if @statusResponse[dutNumParam][1] == "0"
                 `echo \"#{Time.new.inspect} dut='#{dutNumParam}' is getting re-blasted. #{__LINE__}-#{__FILE__}\" >> /mnt/card/ErrorLog.txt`

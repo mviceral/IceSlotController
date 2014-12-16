@@ -62,14 +62,14 @@ class SendSampledTcuToPCLib
                     lastStepNumOfSentLog = sharedMem.GetStepNumber()
                     puts "Sending log data.  #{Time.now.inspect}. #{__LINE__}-#{__FILE__}"
 
-# tbs - to be sent                    
-tbs  = "Test Step: step# #{sharedMem.GetStepNumber()}-#{sharedMem.GetStepName()}/n"
-tbs += "Power Supply Setting:/n"
-stepToWorkOn = sharedMem.getStepToWorkOn()
-stepToWorkOn["PsConfig"].each do |key, array|
-tbs += "key = #{key}/n"
-tbs += "array = #{array}/n"
-end
+                    # tbs - to be sent                    
+                    tbs  = "Test Step: step# #{sharedMem.GetStepNumber()}-#{sharedMem.GetStepName()}/n"
+                    tbs += "Power Supply Setting:/n"
+                    stepToWorkOn = sharedMem.getStepToWorkOn()
+                    stepToWorkOn["PsConfig"].each do |key, array|
+                        tbs += "key = #{key}/n"
+                        tbs += "array = #{array}/n"
+                    end
 =begin
 PS0 Setting: <voltage setting> <compliance limit> <sequence #>
 <one line each for other power supplies>
@@ -230,18 +230,20 @@ Temperature Setting: <temp>
     
     def sendSlotInfoToPc(newSlotInfoJson)
         # SharedLib.pause "Function got called.  Checking value @firstBackLog='#{@firstBackLog}'","#{__LINE__}-#{__FILE__}"
+        puts "@firstBackLog check"
+        puts @firstBackLog
         if File.exist?(SharedLib::PathFile_BbbBackLog)
-puts "#{__LINE__}-#{__FILE__}"
-            file = File.new(SharedLib::PathFile_BbbBackLog, "r")
-puts "#{__LINE__}-#{__FILE__}"
-            while (line = file.gets)
-puts "#{__LINE__}-#{__FILE__}"
-                @firstBackLog = line
-            end
-puts "#{__LINE__}-#{__FILE__}"
-            file.close
-puts "#{__LINE__}-#{__FILE__}"
+			File.open(SharedLib::PathFile_BbbBackLog, "r") do |f|
+				f.each_line do |line|
+				    if @firstBackLog.nil?
+    					@firstBackLog = line
+    					break
+    				end
+				end
+			end
         end
+        puts "@firstBackLog check 2"
+        puts @firstBackLog
         # SharedLib.pause "Checking if backlog file was opened.","#{__LINE__}-#{__FILE__}"
 
         if @pcIpAddr.nil?
@@ -273,133 +275,97 @@ puts "#{__LINE__}-#{__FILE__}"
             @xCountPassedThenSendAgain = 0
         end
         @xCountPassedThenSendAgain += 1
-puts "#{__LINE__}-#{__FILE__}"
         while @arrOfDataToSend.length > 0
-puts "#{__LINE__}-#{__FILE__}"
             slotInfoJson = @arrOfDataToSend.shift
             ct = 0
             sentData = false
-puts "#{__LINE__}-#{__FILE__}"
-            while sentData == false && ct < 5
-puts "#{__LINE__}-#{__FILE__}"
+            while sentData == false && ct < 1
                 begin
-puts "#{__LINE__}-#{__FILE__}"
                     if @firstBackLog.nil?
-puts "#{__LINE__}-#{__FILE__}"
                         begin
-puts "#{__LINE__}-#{__FILE__}"
+                            puts "Sending slotInfoJson"
+                            puts slotInfoJson
                             resp = 
                                 RestClient.post "#{@pcIpAddr}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
-puts "Sent was good!#{__LINE__}-#{__FILE__}"
                             sentData = true
-puts "#{__LINE__}-#{__FILE__}"
                             @packageInfo = nil
-puts "#{__LINE__}-#{__FILE__}"
                             rescue Exception => e  
-puts "#{__LINE__}-#{__FILE__}"
                                 puts "Failed to send to '#{@pcIpAddr}'.  Attempting again."
+=begin                                
                                 puts e.message  
-                                # puts e.backtrace.inspect
                                 @firstBackLog = slotInfoJson
-                                `echo \"#{fixQuotes(slotInfoJson)}\" >> /mnt/card/PcDown.BackLog`
+                        	    File.open(SharedLib::PathFile_BbbBackLog, "a") { 
+                        	        |file| file.write(slotInfoJson)
+                        	        file.write "\n"
+                                }
+=end                                
                         end
-puts "#{__LINE__}-#{__FILE__}"
                     else
-puts "@firstBackLog not null #{__LINE__}-#{__FILE__}"
                         begin
-puts "#{__LINE__}-#{__FILE__}"
+                            puts "Sending @firstBackLog"
+                            puts @firstBackLog
                             resp = 
                                 RestClient.post "#{@pcIpAddr}:9292/v1/migrations/Duts", {Duts:"#{@firstBackLog}" }.to_json, :content_type => :json, :accept => :json
-puts "Sent @firstBackLog#{__LINE__}-#{__FILE__}"
-    
+
                             # it was a good send.  Get all the backlog and send it to the pc for consumption
-                            file = File.new(SharedLib::PathFile_BbbBackLog, "r")
-puts "Reading all of backlog#{__LINE__}-#{__FILE__}"
                             arr = Array.new
-puts "#{__LINE__}-#{__FILE__}"
                             ct = 0
-                            while (line = file.gets)
-puts "Line Read #{line} #{__LINE__}-#{__FILE__}"
-                                if ct != 0
-                                    # Skip the first entry because it just got sent.
+                			File.open(SharedLib::PathFile_BbbBackLog, "r") do |f|
+                				f.each_line do |line|
                                     arr.push(line) 
-                                end
-                                ct += 1
-puts "#{__LINE__}-#{__FILE__}"
-                            end
-puts "#{__LINE__}-#{__FILE__}"
-                            file.close
-puts "#{__LINE__}-#{__FILE__}"
+                                    #puts "derived line=#{line}"
+                                    ct += 1
+                				end
+                			end
+                			# SharedLib.pause "ct='#{ct}' Checking saved data.","#{__LINE__}-#{__FILE__}"
                             # Add the latest data into the array
                             arr.push(slotInfoJson) 
-puts "#{__LINE__}-#{__FILE__}"
                             @packageInfo = Hash.new
-puts "#{__LINE__}-#{__FILE__}"
                             @packageInfo["BackLogData"] = arr
-puts "#{__LINE__}-#{__FILE__}"
                             begin
-puts "Sending all of backlog.#{__LINE__}-#{__FILE__}"
                                 resp = 
                                     RestClient.post "#{@pcIpAddr}:9292/v1/migrations/Duts", {Duts:"#{@packageInfo.to_json}" }.to_json, :content_type => :json, :accept => :json
-puts "Backlog sent OK.#{__LINE__}-#{__FILE__}"
+                                # SharedLib.pause "asdf","#{__LINE__}-#{__FILE__}"
                                 @packageInfo = nil
-puts "#{__LINE__}-#{__FILE__}"
+                                # SharedLib.pause "asdf","#{__LINE__}-#{__FILE__}"
                                 sentData = true
-puts "Deteting backlog file.#{__LINE__}-#{__FILE__}"
+                                # SharedLib.pause "asdf","#{__LINE__}-#{__FILE__}"
                                 `rm -rf /mnt/card/PcDown.BackLog`
-                                SharedLib.pause "PcDown.BackLog got deleted.","#{__LINE__}-#{__FILE__}"
-puts "Clearing backlog file#{__LINE__}-#{__FILE__}"
+                                # SharedLib.pause "Finally deleted the backlog file.","#{__LINE__}-#{__FILE__}"
+                                # SharedLib.pause "PcDown.BackLog got deleted.","#{__LINE__}-#{__FILE__}"
                                 @firstBackLog = nil
                                 rescue Exception => e  
-puts "Failed to send backlog getting the next item to be save from backlog.#{__LINE__}-#{__FILE__}"
                                     @firstBackLog = arr[0]
                                     @packageInfo = nil
-puts "#{__LINE__}-#{__FILE__}"
                             end
-puts "#{__LINE__}-#{__FILE__}"
                             rescue Exception => e  
                                 puts "Failed to send to '#{@pcIpAddr}'.  Attempting again."
-puts "#{__LINE__}-#{__FILE__}"
                                 puts e.message  
-puts "#{__LINE__}-#{__FILE__}"
                                 # puts e.backtrace.inspect
-                                `echo \"#{fixQuotes(slotInfoJson)}\" >> /mnt/card/PcDown.BackLog`
-puts "#{__LINE__}-#{__FILE__}"
+=begin                                
+                        	    File.open(SharedLib::PathFile_BbbBackLog, "a") { 
+                        	        |file| file.write(slotInfoJson)
+                        	        file.write "\n"
+                                }
+=end                                
                         end
                     end
                 end
-puts "#{__LINE__}-#{__FILE__}"
                 ct += 1
-puts "#{__LINE__}-#{__FILE__}"
             end
             
             if sentData == false
-puts "#{__LINE__}-#{__FILE__}"
                 puts "Completely failed to send.  Saving data to PcDown.BackLog file."
-                slotInfoJson = SharedLib.ChangeDQuoteToSQuoteForDbFormat(slotInfoJson)
-puts "#{__LINE__}-#{__FILE__}"
-                `echo \"#{fixQuotes(slotInfoJson)}\" >> /mnt/card/PcDown.BackLog`
-puts "#{__LINE__}-#{__FILE__}"
+                @firstBackLog = slotInfoJson
+                @packageInfo = nil
+        	    File.open(SharedLib::PathFile_BbbBackLog, "a") { 
+        	        |file| file.write(slotInfoJson) 
+        	        file.write "\n"
+                }
             end
-puts "#{__LINE__}-#{__FILE__}"
         end
-puts "OUT!!!#{__LINE__}-#{__FILE__}\n\n\n"
     end
-    
-    def fixQuotes(slotInfoJson)
-        toBeReturned = ""
-        i=0
-        while i<slotInfoJson.length
-            if slotInfoJson[i] == "\""
-                toBeReturned += "\\\""
-            else
-                toBeReturned += slotInfoJson[i]
-            end
-            i += 1
-        end
-        return toBeReturned
-    end
-    
+
     def nextLogCreation
         # puts "Within 'nextLogCreation' - @logCompletedAt = #{@logCompletedAt.inspect}  #{__FILE__} - #{__LINE__}"
         if @nextLogCreation.nil? && logCompletedAt != nil

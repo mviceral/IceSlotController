@@ -72,6 +72,7 @@ module PcListenerModule
 				if params["#{SharedLib::PcToBbbCmd}"].nil? == false
 					# We got a new command from the PC
 					# See of the 'Sampler' is running
+=begin					
 					ct = 0
 					processNum = ""
 					while ct < 5
@@ -89,7 +90,7 @@ module PcListenerModule
 						end
 						ct += 1
 					end
-					
+=end					
 					#
 					# Parse out the data sent from BBB
 					#
