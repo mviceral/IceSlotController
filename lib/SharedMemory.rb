@@ -27,7 +27,8 @@ class SharedMemory
 	
 	TimeOfPcUpload = "TimeOfPcUpload"
 	SlotOwner = "SlotOwner"
-	StepsLogRecordsPath = "~/slot-controller/steps\\ log\\ records"
+	StepsLogRecordsPathRoot = "~/slot-controller_data"	
+	StepsLogRecordsPath = "~/slot-controller_data/steps\\ log\\ records"
 	
 	WaitTempMsg = "WaitTempMsg"
 	TempWait = "TEMP WAIT"

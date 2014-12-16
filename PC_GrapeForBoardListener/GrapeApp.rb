@@ -134,6 +134,13 @@ module MigrationCount
 		DRb.start_service			
 		@@sharedMemService =  DRbObject.new_with_uri(SERVER_URI)
 		@@lastMessageSent = ""
+		# Make sure the log record paths are present
+		directory = SharedMemory::StepsLogRecordsPathRoot
+		asdf = `[ -d #{directory} ] && echo "yes" || echo "no"`
+		if asdf.chomp == "no"
+			`mkdir #{directory}`
+		end
+
 		directory = SharedMemory::StepsLogRecordsPath
 		asdf = `[ -d #{directory} ] && echo "yes" || echo "no"`
 		if asdf.chomp == "no"

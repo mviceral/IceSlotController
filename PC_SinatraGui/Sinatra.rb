@@ -21,7 +21,7 @@ class UserInterface
 	# Template flags
 	#
 	PretestSiteIdentification = "Pretest (site identification)"	
-	StepConfigFileFolder = "../steps\ config\ file\ repository"
+	StepConfigFileFolder = "../../slot-controller_data/steps\ config\ file\ repository"
 
 	#
 	# Settings file constants
@@ -482,7 +482,7 @@ class UserInterface
 		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
 		genFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),slotProperties[slotOwnerParam][SharedMemory::LotID])
 		settingsFileName =  genFileName+".log"
-		recipeStepFile = "../steps config file repository/#{fileName}"
+		recipeStepFile = "../../slot-controller_data/steps config file repository/#{fileName}"
 		recipeLastModified = File.mtime(recipeStepFile)
 		
 		writeToSettingsLog("Program: #{fileName}, Last modified: #{recipeLastModified}",settingsFileName)
@@ -873,7 +873,10 @@ class UserInterface
 				# - Initial release
 				# ver 1.0.1 ~10 Dec 2014
 				# - Sends out mail message upon shutdown.
-				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.1")
+				# ver 1.0.2 ~16 Dec 2014
+				# - Moved out data folder out of source code folder.
+				# - Added code to handle BBB back log, case PC is down and BBB is still running.
+				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.2")
 			end
 	end
 	def GetSlotDisplay(slotLabel2Param)
