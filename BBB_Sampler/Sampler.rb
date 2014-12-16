@@ -1235,7 +1235,7 @@ class TCUSampler
         # Read in the EthernetScheme.csv file
 		ethernetScheme = Array.new
 		@ethernetScheme = Hash.new
-		File.open("../BBB_configuration files/ethernet scheme setup.csv", "r") do |f|
+		File.open("../../slot-controller_data/BBB_configuration files/ethernet scheme setup.csv", "r") do |f|
 			f.each_line do |line| 
 				ethernetScheme.push(line)
 			end
@@ -1278,7 +1278,7 @@ class TCUSampler
         # Read the BBB-Defaults file.csv file
 		bbbDefaultFile = Array.new
 		@bbbDefaultFile = Hash.new
-		File.open("../BBB_configuration files/board default setup.csv", "r") do |f|
+		File.open("../../slot-controller_data/BBB_configuration files/board default setup.csv", "r") do |f|
 			f.each_line do |line|
 				bbbDefaultFile.push(line)
 			end

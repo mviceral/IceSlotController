@@ -247,7 +247,7 @@ Temperature Setting: <temp>
         # SharedLib.pause "Checking if backlog file was opened.","#{__LINE__}-#{__FILE__}"
 
         if @pcIpAddr.nil?
-    		File.open("../BBB_configuration files/ethernet scheme setup.csv", "r") do |f|
+    		File.open("../../slot-controller_data/BBB_configuration files/ethernet scheme setup.csv", "r") do |f|
     			f.each_line do |line|
     			    if line[0..1] == "PC"
     			        @pcIpAddr = line[3..-1].chomp
