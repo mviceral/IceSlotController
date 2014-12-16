@@ -24,7 +24,6 @@ class SharedMemory
 	Mode = "Mode"
 	Cmd = "Cmd"
 	CmdProcessed = "CmdProcessed"
-	
 	TimeOfPcUpload = "TimeOfPcUpload"
 	SlotOwner = "SlotOwner"
 	StepsLogRecordsPathRoot = "~/slot-controller_data"	
@@ -111,6 +110,17 @@ class SharedMemory
 		ds[ErrorColor] = errorColorParam
 		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");
 	end
+	
+	def SetLotID(lotIDParam)
+        ds = getMemory()
+        if ds["Configuration"].nil?
+            ds["Configuration"] = Hash.new
+        end
+        ds["Configuration"][SharedMemory::LotID] = lotIDParam
+        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+	end
+	
+
 
     def getMemory()
         while @lockedAt.nil? == false && @lockedAt != ""
@@ -640,7 +650,7 @@ class SharedMemory
     def GetConfiguration()
         return getMemory()["Configuration"]
     end
-    
+
     def pause(paramA,fromParam)
         puts "Paused - '#{paramA}' '#{fromParam}'"
         gets
