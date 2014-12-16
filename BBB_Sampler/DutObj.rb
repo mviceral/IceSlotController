@@ -45,7 +45,8 @@ class DutObj
                     heating = "1"
                 end
                 # puts "rValue='#{rValue}', heating='#{heating}' #{__LINE__}-#{__FILE__}"
-                tbr = "@#{Random.rand(2)},#{30+Random.rand(3)}.#{Random.rand(1000)},#{70+Random.rand(3)}.#{Random.rand(1000)},#{heating},#{Random.rand(256)},Ok"
+                # tbr = "@#{Random.rand(2)},#{30+Random.rand(3)}.#{Random.rand(1000)},#{70+Random.rand(3)}.#{Random.rand(1000)},#{heating},#{Random.rand(256)},Ok"
+                tbr = "@1,#{30+Random.rand(3)}.#{Random.rand(1000)},#{70+Random.rand(3)}.#{Random.rand(1000)},#{heating},#{Random.rand(256)},Ok"
                 #tbr = "@0,30.376,71.840,1,250,Ok"
             end
             
@@ -153,10 +154,6 @@ class DutObj
             #    tsdParam["RanAt"] += 60 # do it again for another minute.
             #end
             #puts "(#{tsdParam["RanAt"]-Time.now.to_i}) dutNumParam='#{dutNumParam}' @statusResponse[dutNumParam]='#{@statusResponse[dutNumParam]}' #{__LINE__}-#{__FILE__}"
-            
-            if SharedLib::SetupAtHome
-                return
-            end
             
             if @statusResponse[dutNumParam][1] == "0"
                 `echo \"#{Time.new.inspect} dut='#{dutNumParam}' is getting re-blasted. #{__LINE__}-#{__FILE__}\" >> /mnt/card/ErrorLog.txt`

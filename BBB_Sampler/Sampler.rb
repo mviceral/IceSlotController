@@ -2736,7 +2736,7 @@ class TCUSampler
         #  Added code to "Automatically Repair the Damaged" sd drive portion after processing
         #  Had to figure out why when the recipe is loaded, it runs automatically.
         #  Had to check the code for backlog is actually increasing.
-        #  Had to make sure my set logger interval is working.
+        #  Had to make sure set logger interval is working.
         #  Trying to figure out why all the backlog data is not getting registered into the log file.
         #  Had to figure out why the slot controller is slowed down to 2 sec interval.
         #  Had to replace the BBB on the actual machine.
@@ -3053,7 +3053,7 @@ class TCUSampler
 
         	# This line of code makes the 'Sender' process useless.  This gives the fastest time of data update to the display.
         	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
-puts "#{Time.now.inspect} #{__LINE__}-#{__FILE__}"            
+            # puts "#{Time.now.inspect} #{__LINE__}-#{__FILE__}"            
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
             #
