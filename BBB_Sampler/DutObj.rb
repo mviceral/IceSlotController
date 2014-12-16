@@ -34,6 +34,7 @@ class DutObj
     end
     
     def self.getTcuStatus(dutNumParam,uart1Param,gPIO2,singleCharParam)
+        # puts "Checking dutNumParam='#{dutNumParam}' #{__LINE__}-#{__FILE__}"
         if SharedLib::SetupAtHome
             # puts "dutNumParam='#{dutNumParam}' SetupAtHome='#{SetupAtHome}' singleCharParam='#{singleCharParam}' #{__LINE__}-#{__FILE__}"
             if singleCharParam == "V"

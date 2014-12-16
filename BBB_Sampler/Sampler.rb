@@ -2851,6 +2851,7 @@ class TCUSampler
             @stepToWorkOn[StepTimeLeft] = @boardData[StepTimeLeft]
             @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
             @samplerData.SetTotalStepDuration(@boardData[SharedLib::TotalStepDuration])
+            @samplerData.SetLotID(@boardData[SharedMemory::LotID])
         end
         
         while true
@@ -3001,6 +3002,7 @@ class TCUSampler
             		    
             		    @boardData[Configuration] = @samplerData.GetConfiguration()
             		    @boardData[SharedLib::TotalStepDuration] = @samplerData.GetTotalStepDuration()
+            		    @boardData[SharedMemory::LotID] = @samplerData.GetConfiguration()[SharedMemory::LotID]
                         @samplerData.setErrorColor(nil,"#{__LINE__}-#{__FILE__}")
             		    @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
             		    @samplerData.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
