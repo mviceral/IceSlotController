@@ -230,8 +230,8 @@ Temperature Setting: <temp>
     
     def sendSlotInfoToPc(newSlotInfoJson)
         # SharedLib.pause "Function got called.  Checking value @firstBackLog='#{@firstBackLog}'","#{__LINE__}-#{__FILE__}"
-        puts "@firstBackLog check"
-        puts @firstBackLog
+        # puts "@firstBackLog check"
+        # puts @firstBackLog
         if File.exist?(SharedLib::PathFile_BbbBackLog)
 			File.open(SharedLib::PathFile_BbbBackLog, "r") do |f|
 				f.each_line do |line|
@@ -242,8 +242,8 @@ Temperature Setting: <temp>
 				end
 			end
         end
-        puts "@firstBackLog check 2"
-        puts @firstBackLog
+        # puts "@firstBackLog check 2"
+        # puts @firstBackLog
         # SharedLib.pause "Checking if backlog file was opened.","#{__LINE__}-#{__FILE__}"
 
         if @pcIpAddr.nil?
@@ -283,8 +283,8 @@ Temperature Setting: <temp>
                 begin
                     if @firstBackLog.nil?
                         begin
-                            puts "Sending slotInfoJson"
-                            puts slotInfoJson
+                            # puts "Sending slotInfoJson"
+                            # puts slotInfoJson
                             resp = 
                                 RestClient.post "#{@pcIpAddr}:9292/v1/migrations/Duts", {Duts:"#{slotInfoJson}" }.to_json, :content_type => :json, :accept => :json
                             sentData = true
@@ -302,8 +302,8 @@ Temperature Setting: <temp>
                         end
                     else
                         begin
-                            puts "Sending @firstBackLog"
-                            puts @firstBackLog
+                            # puts "Sending @firstBackLog"
+                            # puts @firstBackLog
                             resp = 
                                 RestClient.post "#{@pcIpAddr}:9292/v1/migrations/Duts", {Duts:"#{@firstBackLog}" }.to_json, :content_type => :json, :accept => :json
 
@@ -312,7 +312,9 @@ Temperature Setting: <temp>
                             ct = 0
                 			File.open(SharedLib::PathFile_BbbBackLog, "r") do |f|
                 				f.each_line do |line|
-                                    arr.push(line) 
+                				    if ct>0
+                                        arr.push(line) 
+                                    end
                                     #puts "derived line=#{line}"
                                     ct += 1
                 				end
@@ -356,7 +358,9 @@ Temperature Setting: <temp>
             
             if sentData == false
                 puts "Completely failed to send.  Saving data to PcDown.BackLog file."
-                @firstBackLog = slotInfoJson
+                if @firstBackLog.nil?
+                    @firstBackLog = slotInfoJson
+                end
                 @packageInfo = nil
         	    File.open(SharedLib::PathFile_BbbBackLog, "a") { 
         	        |file| file.write(slotInfoJson) 
