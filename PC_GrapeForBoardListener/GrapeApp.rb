@@ -111,12 +111,7 @@ module MigrationCount
 					lotID = hashForLotId[SharedMemory::LotID]
 					dBaseFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),lotID)+".log"		
 					# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
-					# puts "dBaseFileName = #{dBaseFileName} #{__LINE__}-#{__FILE__}"
-					# puts "hash[SharedLib::DataLog]: #{__LINE__}-#{__FILE__}/n#{hash[SharedLib::DataLog]}"
 					`cd #{SharedMemory::StepsLogRecordsPath}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
-				if parseJson == false
-					# SharedLib.pause "Check log.","#{__LINE__}-#{__FILE__}"
-				end
 				}							
 			end
 
@@ -176,14 +171,13 @@ module MigrationCount
 						if data["BackLogData"].nil? == false
 							ct =0
 							while ct<data["BackLogData"].length
-								# puts "sending ct='#{ct}' #{__LINE__}-#{__FILE__}"
 								Func.subFunc(@@sharedMemService,@@lastMessageSent,JSON.parse(data["BackLogData"][ct]),false)
 								ct += 1
 							end
 						else
-							puts data
 							Func.subFunc(@@sharedMemService,@@lastMessageSent,data,true)
 						end
+					
 =begin						
 						# puts "dBaseFileName='#{dBaseFileName}'"
 						# logging code.
