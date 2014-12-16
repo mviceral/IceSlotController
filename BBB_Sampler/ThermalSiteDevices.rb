@@ -91,7 +91,7 @@ class ThermalSiteDevices
         dutNum = 0;
         while  dutNum<TOTAL_DUTS_TO_LOOK_AT do
             if  tcusToSkip[dutNum].nil?  
-                # puts "B - dutNum='#{dutNum}' #{__LINE__}-#{__FILE__}"
+                # puts "Polling dutNum='#{dutNum}' #{__LINE__}-#{__FILE__}"
                 dBase.poll(dutNum,uart1,gPIO2,tcusToSkip,tsdParam)
             end
             dutNum +=1;

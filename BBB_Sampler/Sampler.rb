@@ -371,16 +371,19 @@ class TCUSampler
 
     def saveBoardStateToHoldingTank()
 	    # Write configuartion to holding tank case there's a power outage.
-	    if @stepToWorkOn.nil? == false
-	        # PP.pp(@stepToWorkOn)
-	        @boardData["stepToWorkOn"] = @stepToWorkOn
-	        @boardData[StepTimeLeft] = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun())
-            puts caller # Kernel#caller returns an array of strings
-            puts "saving StepTimeLeft @boardData[StepTimeLeft]='#{@boardData[StepTimeLeft]}'"
-	        puts "step number saved '#{@stepToWorkOn[StepNum]}'"
-            # @samplerData.SetStepNumber(@stepToWorkOn["Step Num"])
-            # @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
+        # PP.pp(@stepToWorkOn)
+        @boardData["stepToWorkOn"] = @stepToWorkOn
+        if @stepToWorkOn.nil?
+            @boardData[StepTimeLeft] = 0
         else
+            @boardData[StepTimeLeft] = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun())
+        end
+        Thread.current.backtrace.join("\n")
+        puts "saving StepTimeLeft @boardData[StepTimeLeft]='#{@boardData[StepTimeLeft]}'"
+        puts "step number saved '#{@boardData[StepTimeLeft]}'"
+        # @samplerData.SetStepNumber(@stepToWorkOn["Step Num"])
+        # @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
+	    if @stepToWorkOn.nil?
             @samplerData.SetAllStepsCompletedAt(@boardData[SharedLib::AllStepsCompletedAt])
 	    end
 
@@ -611,8 +614,8 @@ class TCUSampler
                                         # PP.pp(getConfiguration()[Steps][key])
                                         # SharedLib.pause "Checking content of 'TempConfig'","#{__LINE__}-#{__FILE__}"
                                         @tempSetPoint = getConfiguration()[Steps][key]["TempConfig"]["TDUT"]["NomSet"]
-                                        @loggingTime = 60*getConfiguration()[Steps][key]["Log Int"].to_i
-                                        # puts "@loggingTime='#{@loggingTime}' #{__LINE__}-#{__FILE__}"
+                                        @loggingTime = 60*(getConfiguration()[Steps][key]["Log Int"]).to_f
+                                        # SharedLib.pause "@loggingTime='#{@loggingTime}', getConfiguration()[Steps][key][\c"Log Int\"]='#{getConfiguration()[Steps][key]["Log Int"]}'","#{__LINE__}-#{__FILE__}"
                                         
                                         if @thermalSiteDevices.nil?
                                             @thermalSiteDevices = Hash.new
@@ -998,7 +1001,8 @@ class TCUSampler
         return false
     end
     
-    def setBoardData(boardDataParam,uart1)
+    def setBoardData(boardDataParam,uart1, calledFrom)
+        puts "calledFrom=#{calledFrom} @#{__LINE__}-#{__FILE__}"
         # The configuration was just loaded from file.  We must setup the system to be in a given state.
         # For example, if the system is in runmode, when starting the system over, the PS must sequence up
         # properly then set the system to run mode.
@@ -1006,9 +1010,9 @@ class TCUSampler
         # The file in the hard drive only stores two states of the system: running or in idle.
         @boardData = boardDataParam
         if @boardData[BbbMode] == SharedLib::InStopMode
-            @SavedMode = SharedLib::InStopMode
+            setSavedMode(SharedLib::InStopMode,"#{__LINE__}-#{__FILE__}")
         else
-            @SavedMode = SharedLib::InRunMode
+            setSavedMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
         end
 
         if getConfiguration().nil? == false
@@ -1023,6 +1027,7 @@ class TCUSampler
     def runThreadForSavingSlotStateEvery10Mins()
         waitTime = Time.now
         waitTimeConst = 60*5 # 60 seconds per minute x 10 minute
+        waitTimeConst = 6 # just make it 6 seconds.
         waitTime += waitTimeConst
         saveStateOfBoard = Thread.new do
         	while true
@@ -1052,7 +1057,7 @@ class TCUSampler
 				end
 			end
 			# puts fileRead
-			setBoardData(JSON.parse(fileRead),uart1)
+			setBoardData(JSON.parse(fileRead),uart1,"#{__LINE__}-#{__FILE__}")
 			# @boardData[SharedLib::AllStepsDone_Yes9No] = SharedLib::No
 			
 			# puts "Checking content of getConfiguration() function"
@@ -1062,7 +1067,7 @@ class TCUSampler
                 puts "e.message=#{e.message }"
                 puts "e.backtrace.inspect=#{e.backtrace.inspect}" 
         		SharedLib.bbbLog("There's no data in the holding tank.  New machine starting up. #{__LINE__}-#{__FILE__}")
-        		setBoardData(Hash.new,uart1)
+        		setBoardData(Hash.new,uart1,"#{__LINE__}-#{__FILE__}")
         		setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
 	    end
     end
@@ -1342,6 +1347,7 @@ class TCUSampler
              @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::Yes ) == false) ||
              (configName.nil? == false && configName.length>0 && (stepNum.nil? || (stepNum.nil? ==false && stepNum.length==0)) && @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No)
             loadConfigurationFromHoldingTank(uart1)
+
             setBoardStateForCurrentStep(uart1)
             if @stepToWorkOn.nil?
                 setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
@@ -1349,6 +1355,7 @@ class TCUSampler
                 setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}") # Set it to run, and it'll set it up by itself.
             end
         end
+        
         if (@samplerData.GetBbbMode() == SharedLib::InRunMode || @samplerData.GetBbbMode() == SharedLib::InStopMode) == false  
             #
             # We're in limbo for some reason
@@ -1370,6 +1377,8 @@ class TCUSampler
     		end
             setBoardStateForCurrentStep(uart1)
         end
+        
+        setSavedMode("Done Processing","#{__LINE__}-#{__FILE__}")
     end
     
     
@@ -2587,7 +2596,6 @@ class TCUSampler
     def checkDeadTcus(uart1)
         @tcusToSkip = Hash.new
         puts "SetupAtHome='#{SetupAtHome}'"
-# SharedLib.pause "Checking SetupAtHome value","#{__LINE__}-#{__FILE__}"
         if SetupAtHome
             return # Don't check for Tcu status if we're running code at home.
         end
@@ -2692,6 +2700,7 @@ class TCUSampler
         checkDeadTcus(uart1)
         @samplerData.setDontSendErrorColor(false)
         @samplerData.clearStopMessage()
+        puts caller # Kernel#caller returns an array of strings
         setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
     end
     
@@ -2725,6 +2734,12 @@ class TCUSampler
         #  Added code to recover BackLog
         #  Added code to handle backlog data in PC
         #  Added code to "Automatically Repair the Damaged" sd drive portion after processing
+        #  Had to figure out why when the recipe is loaded, it runs automatically.
+        #  Had to check the code for backlog is actually increasing.
+        #  Had to make sure my set logger interval is working.
+        #  Trying to figure out why all the backlog data is not getting registered into the log file.
+        #  Had to figure out why the slot controller is slowed down to 2 sec interval.
+        #  Had to replace the BBB on the actual machine.
         @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.2")
         turnOffHeaters()
     	initMuxValueFunc()
@@ -2889,14 +2904,14 @@ class TCUSampler
                 puts "StepNum = #{@stepToWorkOn[StepNum]} @stepToWorkOn[StepTimeLeft]='#{@stepToWorkOn[StepTimeLeft]}' timeleft='#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}'"
                 # SharedLib.pause "status","#{__LINE__}-#{__FILE__}"
             end
-            
+
             @samplerData.SetSlotTime(Time.now.to_i)
             if skipLimboStateCheck
                 skipLimboStateCheck = false
             else
                 limboCheck(stepNum,uart1)
             end
-    
+
 			case @samplerData.GetBbbMode()
 			when SharedLib::InRunMode
 			    if @boardData[SharedLib::AllStepsDone_YesNo] == SharedLib::No
@@ -2914,7 +2929,7 @@ class TCUSampler
     			    setToMode(SharedLib::InStopMode,"#{__LINE__}-#{__FILE__}")
 			    end
             end
-            
+
             memFromService = @sharedMemService.getSharedMem()
     		pcCmdObj = memFromService.GetPcCmd()
     		if pcCmdObj.nil? == false && pcCmdObj.length > 0
@@ -2942,7 +2957,7 @@ class TCUSampler
                     	@samplerData.clearStopMessage()
         		        @samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
                         @samplerData.setErrorColor(nil,"#{__LINE__}-#{__FILE__}")
-            		    setBoardData(Hash.new,uart1)
+            		    setBoardData(Hash.new,uart1,"#{__LINE__}-#{__FILE__}")
         		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
         		        setBoardStateForCurrentStep(uart1)
             		    @samplerData.SetConfigurationFileName("")
@@ -2961,6 +2976,7 @@ class TCUSampler
                         `rm -rf /mnt/card/ErrorLog.txt`
 
         		    when SharedLib::LoadConfigFromPc
+                        `rm -rf #{HoldingTankFilename}`
         		        checkDeadTcus(uart1)
 
         		        @fault = nil
@@ -2981,16 +2997,15 @@ class TCUSampler
         		        
                         #SharedLib.bbbLog("New configuration step file uploaded.")
                         @samplerData.SetConfiguration(memFromService.getHashConfigFromPC(),"#{__LINE__}-#{__FILE__}")
-            		    setBoardData(Hash.new,uart1)
+            		    setBoardData(Hash.new,uart1,"#{__LINE__}-#{__FILE__}")
             		    
             		    @boardData[Configuration] = @samplerData.GetConfiguration()
             		    @boardData[SharedLib::TotalStepDuration] = @samplerData.GetTotalStepDuration()
                         @samplerData.setErrorColor(nil,"#{__LINE__}-#{__FILE__}")
             		    @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
             		    @samplerData.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
-            		    
+
                         setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
-        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
             		    # Get the highest number of step.  This function must get called first before the function 
             		    # setBoardStateForCurrentStep
             		    @isOkToLog = false
@@ -3010,9 +3025,11 @@ class TCUSampler
 
             		    # Enable these bits.
             		    @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
-            		    
+
             		    saveBoardStateToHoldingTank()
             		    skipLimboStateCheck = true
+        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+        		        @SavedMode = SharedLib::InStopMode # Since we just got loaded.
             		else
             		    SharedLib.bbbLog("Unknown PC command @samplerData.GetPcCmd()='#{@samplerData.GetPcCmd()}'.")
             		end
@@ -3021,7 +3038,6 @@ class TCUSampler
 
                 end
     		end
-
 
             #
             # Gather data regardless of whether it's in run mode or not...
@@ -3034,27 +3050,35 @@ class TCUSampler
             backFansHandler()
             runAwayTempHandler() # Need to verify this code.
             lightsAndBuzzerHandler(cfgName)
-            
+
         	# This line of code makes the 'Sender' process useless.  This gives the fastest time of data update to the display.
         	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
+puts "#{Time.now.inspect} #{__LINE__}-#{__FILE__}"            
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
             #
             sleep(0.01) # Get some sleep time so the Grape app will be a bit more responsive.
-            if @SavedMode == SharedLib::InRunMode || @SavedMode == SharedLib::InStopMode
-                if @SavedMode == SharedLib::InRunMode
+            if getSavedMode() == SharedLib::InRunMode || getSavedMode() == SharedLib::InStopMode
+                if getSavedMode() == SharedLib::InRunMode 
                     skipLimboStateCheck = false
                     runFunctionGroup(uart1)
                 else
                     setToMode(SharedLib::InStopMode,"#{__LINE__}-#{__FILE__}")
                 end
-                @SavedMode = "Done Processing"
+                setSavedMode("Done Processing","#{__LINE__}-#{__FILE__}")
             end
         end
 
         # End of 'def runTCUSampler'
     end
     
+    def getSavedMode()
+        return @SavedMode
+    end
+    
+    def setSavedMode(savedModeParam, fromParam)
+        @SavedMode = savedModeParam
+    end
         
     class << self
       extend Forwardable
