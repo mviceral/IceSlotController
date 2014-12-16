@@ -256,7 +256,8 @@ class SharedMemory
 							ct += 1
 						end
 						generalFileName = SharedLib.getLogFileName(GetDispConfigDateUpload(slotOwnerParam),SharedLib.getBibID(slotOwnerParam),GetDispLotID(slotOwnerParam))
-						`cd #{SharedMemory::StepsLogRecordsPath}; echo \"#{newStr}\" >> #{generalFileName}.ErrorLog`
+						# Can't get it to dump to '_data' folder.
+						`echo \"#{newStr}\" >> #{SharedMemory::StepsLogRecordsPath}/#{generalFileName}.ErrorLog`
 					end
 				end
 				rescue
