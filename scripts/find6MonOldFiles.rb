@@ -5,7 +5,7 @@ require_relative '../lib/SharedLib'
 # 365.25/2*24*60 (mins)
 # 365.25/2*24*60*60 (sec)
 timeSpan = 365.25/2*24*60*60
-timeSpan = 13*24*60*60 # 43 hour old
+#timeSpan = 13*24*60*60 # 43 hour old
 timeNow = Time.now.to_i
 # puts "timeSpan=#{timeSpan}" 
 # puts "timeNow=#{timeNow}" 
