@@ -1027,7 +1027,6 @@ class TCUSampler
     def runThreadForSavingSlotStateEvery10Mins()
         waitTime = Time.now
         waitTimeConst = 60*5 # 60 seconds per minute x 10 minute
-        waitTimeConst = 6 # just make it 6 seconds.
         waitTime += waitTimeConst
         saveStateOfBoard = Thread.new do
         	while true
