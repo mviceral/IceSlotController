@@ -2487,6 +2487,29 @@ class TCUSampler
         shutdownHash = Hash.new
         shutdownHash["message"] = "#{Time.now.inspect} "+shutDownInfo
         shutdownHash["slotowner"] = @samplerData.GetSlotOwner()
+        
+        # Calculate the left over time
+        leftOverTime = 0
+        if getConfiguration() != nil
+            getConfiguration()[Steps].each do |key, array|
+                getConfiguration()[Steps][key].each do |key2, array2|
+                    # Get the total time of Steps in queue
+                    if key2 == StepNum
+                        if getConfiguration()[Steps][key][StepTimeLeft]>0
+                            puts "Step# '#{array2}' StepTimeLeft='#{getConfiguration()[Steps][key][StepTimeLeft]}' #{__LINE__}-#{__LINE__}"
+                            leftOverTime += getConfiguration()[Steps][key][StepTimeLeft]
+                        end
+                    end
+                end
+	            # puts "E #{__LINE__}-#{__FILE__}"
+            end
+        end
+        
+        shutdownHash["message"] += "\n"
+        shutdownHash["message"] += "Total Time Step: #{(@boardData[SharedLib::TotalStepDuration]/60.0).round(2)} mins\n"
+        shutdownHash["message"] += "Elapsed time: #{((@boardData[SharedLib::TotalStepDuration]-leftOverTime)/60.0).round(2)} mins\n"
+        shutdownHash["message"] += "Time Left: #{(leftOverTime/60.0).round(2)} mins\n"
+        
         SendSampledTcuToPCLib::sendShutDownInfo(shutdownHash)
     end
     
@@ -3091,4 +3114,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# ds["Configuration"][SharedLib::TotalStepDuration] = totalStepDuration
+# SendSampledTcuToPCLib::sendShutDownInfo(shutdownHash)
