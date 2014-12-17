@@ -2796,7 +2796,7 @@ class TCUSampler
         # Mount the SD card for access
         # Blindly create a /mnt/card, and mount the SD card to it.
         # All persistant data access must be done in the sd card.
-        `mkdir /mnt/card; umount /mnt/card; mount /dev/mmcblk0p1  /mnt/card`
+        `mkdir /mnt/card; umount /mnt/card; mount /dev/mmcblk0p1  /mnt/card; rm -rf /mnt/card/PcDown.BackLog`
 
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration][FileName].nil? == false
