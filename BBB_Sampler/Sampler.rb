@@ -2725,10 +2725,10 @@ class TCUSampler
     end
     
     def runTCUSampler
-        sentBackLogData = "#{Time.now.inspect} - Starting BBB. #{__LINE__}-#{__FILE__}"
         
         # Just keep setting the time zone every time you run the board to make sure it's right.
         `ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime`
+        sentBackLogData = "#{Time.now.inspect} - Starting BBB. #{__LINE__}-#{__FILE__}"
         `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
 
         # Mount the SD card for access
