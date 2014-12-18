@@ -23,6 +23,12 @@ gem install rest-client
 sudo service iptables stop
 sudo chkconfig iptables off
 
+# CentOS reset default Firewall settings
+# 1. Issue the commands below.
+#    ~$ sudo iptables -F
+#    ~$ sudo service iptables save
+#    ~$ sudo service iptables restart
+
 # Setup the firewall in Centos by running 
 'firewall-config' and enabling the 'HTTP' option.
 
