@@ -2725,7 +2725,11 @@ class TCUSampler
     end
     
     def runTCUSampler
-        puts "Running Sampler.rb"
+        sentBackLogData = "#{Time.now.inspect} - Starting BBB."
+        
+        # Just keep setting the time zone every time you run the board to make sure it's right.
+        `ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime`
+        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
 
         # Mount the SD card for access
         # Blindly create a /mnt/card, and mount the SD card to it.
@@ -3010,7 +3014,9 @@ class TCUSampler
                             # Delete the PcDown.BackLog and ErrorLog.txt file in /mnt/card
                             `rm -rf /mnt/card/PcDown.BackLog`
                             `rm -rf /mnt/card/ErrorLog.txt`
-    
+                            
+                            # Commented out for now since we need to see the activity
+                            # `rm -rf /mnt/card/Activity.log`
             		    when SharedLib::LoadConfigFromPc
                             `rm -rf #{HoldingTankFilename}`
             		        checkDeadTcus(uart1)

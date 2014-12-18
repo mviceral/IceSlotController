@@ -333,6 +333,8 @@ Temperature Setting: <temp>
                                 sentData = true
                                 # SharedLib.pause "asdf","#{__LINE__}-#{__FILE__}"
                                 `rm -rf /mnt/card/PcDown.BackLog`
+                                sentBackLogData = "#{Time.now.inspect} - Sent backlog data."
+                                `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                                 # SharedLib.pause "Finally deleted the backlog file.","#{__LINE__}-#{__FILE__}"
                                 # SharedLib.pause "PcDown.BackLog got deleted.","#{__LINE__}-#{__FILE__}"
                                 @firstBackLog = nil
@@ -367,6 +369,8 @@ Temperature Setting: <temp>
         	        file.write "\n"
                 }
                 
+                failedToSend = "#{Time.now.inspect} Failed to at PC."
+                `echo \"#{failedToSend}\" >> /mnt/card/Activity.log`
                 # See if restarting the ruby scripts will solve the problem
                 # `cd ../scripts; ruby killRubyCodes.rb`
             end
