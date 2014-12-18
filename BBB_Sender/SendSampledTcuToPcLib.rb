@@ -366,6 +366,9 @@ Temperature Setting: <temp>
         	        |file| file.write(slotInfoJson) 
         	        file.write "\n"
                 }
+                
+                # See if restarting the ruby scripts will solve the problem
+                # `cd ../scripts; ruby killRubyCodes.rb`
             end
         end
     end

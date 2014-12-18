@@ -2086,6 +2086,7 @@ class TCUSampler
                         case key2
                         when "VPS0"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"32").to_f
+                            # actualValue = 1000*@samplerData.getPsVolts(muxData,adcData,"32").to_f
                             if SetupAtHome
                                 actualValue = 1.095
                             end
@@ -2472,9 +2473,6 @@ class TCUSampler
                 # We're done processing all the steps.
                 @boardData[SharedLib::AllStepsCompletedAt] = Time.new.to_i
                 setAllStepsDone_YesNo(SharedLib::Yes,"#{__LINE__}-#{__FILE__}")
-                
-                # Automatically repair the damaged disk sectors
-                `fsck -a /dev/mmcblk0p1`
             end
 
             # Done processing all steps listed in configuration.step file
@@ -2728,6 +2726,26 @@ class TCUSampler
     
     def runTCUSampler
         puts "Running Sampler.rb"
+
+        # Mount the SD card for access
+        # Blindly create a /mnt/card, and mount the SD card to it.
+        # All persistant data access must be done in the sd card.
+        if File.directory?("/mnt/card") == false
+            `mkdir /mnt/card`
+        end
+
+        #puts "Check 1 on/mnt/card #{__LINE__}-#{__FILE__}"
+        `umount /mnt/card`
+        
+        #puts "Check 2 on/mnt/card #{__LINE__}-#{__FILE__}"
+        #`fsck -a /dev/mmcblk0p1`
+
+        #puts "Check 3 on/mnt/card #{__LINE__}-#{__FILE__}"
+        `mount /dev/mmcblk0p1  /mnt/card`
+
+        #puts "Check 4  on/mnt/card #{__LINE__}-#{__FILE__}"
+        `rm -rf /mnt/card/PcDown.BackLog`
+
         setBoardPsDefaultSettings()
 
         @gPIO2 = GPIO2.new
@@ -2790,12 +2808,6 @@ class TCUSampler
         SharedLib.bbbLog("Get board configuration from holding tank. #{__LINE__}-#{__FILE__}")
         loadConfigurationFromHoldingTank(uart1)
         runThreadForSavingSlotStateEvery10Mins()
-
-        
-        # Mount the SD card for access
-        # Blindly create a /mnt/card, and mount the SD card to it.
-        # All persistant data access must be done in the sd card.
-        `mkdir /mnt/card; umount /mnt/card; mount /dev/mmcblk0p1  /mnt/card; rm -rf /mnt/card/PcDown.BackLog`
 
         
         if @boardData[Configuration].nil? == false && @boardData[Configuration][FileName].nil? == false
@@ -2952,116 +2964,123 @@ class TCUSampler
     			    setToMode(SharedLib::InStopMode,"#{__LINE__}-#{__FILE__}")
 			    end
             end
-
-            memFromService = @sharedMemService.getSharedMem()
-    		pcCmdObj = memFromService.GetPcCmd()
-    		if pcCmdObj.nil? == false && pcCmdObj.length > 0
-	            @samplerData.SetSlotOwner(memFromService.dataFromPCGetSlotOwner())
-    		    pcCmd = pcCmdObj[0]
-    		    timeOfCmd = pcCmdObj[1]
-    		    if @lastTimeOfCmd != timeOfCmd # @lastPcCmd != pcCmd && 
-    		        puts "new pc command. #{pcCmdObj}"
-                    @lastPcCmd = pcCmd 
-                    @lastTimeOfCmd = timeOfCmd
-                    @lastSettings = -1
-        		    puts "\n\n\nNew command from PC - '#{pcCmd}' @samplerData.GetPcCmd().length='#{pcCmdObj.length}'  #{__LINE__}-#{__FILE__}"
-                    @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
-        		    case pcCmd
-        	        when SharedLib::RunFromPc
-        	            runFunctionGroup(uart1)
-                    when SharedLib::ClearErrFromPc
-                        @boardData[SharedMemory::ErrorColor] = nil
-                        @samplerData.setDontSendErrorColor(true)
-                        
-        		    when SharedLib::StopFromPc
-        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-                        
-        		    when SharedLib::ClearConfigFromPc
-                    	@samplerData.clearStopMessage()
-        		        @samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
-                        @samplerData.setErrorColor(nil,"#{__LINE__}-#{__FILE__}")
-            		    setBoardData(Hash.new,uart1,"#{__LINE__}-#{__FILE__}")
-        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-        		        setBoardStateForCurrentStep(uart1)
-            		    @samplerData.SetConfigurationFileName("")
-            		    
-            		    # Turn off the following bits
-            		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
-            		    
-            		    # Turn off the fans of the TCUs
-                        ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,0.0)
-                        
-                        # Delete the Machine state file
-                        `rm -rf #{HoldingTankFilename}`
-                        
-                        # Delete the PcDown.BackLog and ErrorLog.txt file in /mnt/card
-                        `rm -rf /mnt/card/PcDown.BackLog`
-                        `rm -rf /mnt/card/ErrorLog.txt`
-
-        		    when SharedLib::LoadConfigFromPc
-                        `rm -rf #{HoldingTankFilename}`
-        		        checkDeadTcus(uart1)
-
-        		        @fault = nil
-                        @samplerData.clearStopMessage()
-        		        @lotStartedAlready = false
-        		        @boardData[LastStepNumOfSentLog] = -1 # initial value
-        		        
-        		        # close the sockets of the Ethernet PS if they're on.
-        		        @ethernetPS = nil # Reset the check for new configuration.
-        		        if @socketIp.nil? == false
-                            @socketIp.each do |key, array|
-                                if @socketIp[key].nil? == false
-                                    @socketIp[key].close
-                                end
-                            end                		    
-        		        end
-        		        @socketIp = nil
-        		        
-                        #SharedLib.bbbLog("New configuration step file uploaded.")
-                        @samplerData.SetConfiguration(memFromService.getHashConfigFromPC(),"#{__LINE__}-#{__FILE__}")
-            		    setBoardData(Hash.new,uart1,"#{__LINE__}-#{__FILE__}")
-            		    
-            		    @boardData[Configuration] = @samplerData.GetConfiguration()
-            		    @boardData[SharedLib::TotalStepDuration] = @samplerData.GetTotalStepDuration()
-            		    @boardData[SharedMemory::LotID] = @samplerData.GetConfiguration()[SharedMemory::LotID]
-                        @samplerData.setErrorColor(nil,"#{__LINE__}-#{__FILE__}")
-            		    @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
-            		    @samplerData.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
-
-                        setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
-            		    # Get the highest number of step.  This function must get called first before the function 
-            		    # setBoardStateForCurrentStep
-            		    @isOkToLog = false
-            		    @boardData[HighestStepNumber] = -1
-                        getConfiguration()[Steps].each do |key, array|
-                            getConfiguration()[Steps][key].each do |key2, array2|
-                                # Get which step to work on and setup the power supply settings.
-                                if key2 == StepNum 
-                                    if @boardData[HighestStepNumber] < getConfiguration()[Steps][key][key2].to_i
-                                        @boardData[HighestStepNumber] = getConfiguration()[Steps][key][key2].to_i
+            
+            begin
+                memFromService = @sharedMemService.getSharedMem()
+        		pcCmdObj = memFromService.GetPcCmd()
+        		if pcCmdObj.nil? == false && pcCmdObj.length > 0
+    	            @samplerData.SetSlotOwner(memFromService.dataFromPCGetSlotOwner())
+        		    pcCmd = pcCmdObj[0]
+        		    timeOfCmd = pcCmdObj[1]
+        		    if @lastTimeOfCmd != timeOfCmd # @lastPcCmd != pcCmd && 
+        		        puts "new pc command. #{pcCmdObj}"
+                        @lastPcCmd = pcCmd 
+                        @lastTimeOfCmd = timeOfCmd
+                        @lastSettings = -1
+            		    puts "\n\n\nNew command from PC - '#{pcCmd}' @samplerData.GetPcCmd().length='#{pcCmdObj.length}'  #{__LINE__}-#{__FILE__}"
+                        @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
+            		    case pcCmd
+            	        when SharedLib::RunFromPc
+            	            runFunctionGroup(uart1)
+                        when SharedLib::ClearErrFromPc
+                            @boardData[SharedMemory::ErrorColor] = nil
+                            @samplerData.setDontSendErrorColor(true)
+                            
+            		    when SharedLib::StopFromPc
+            		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+                            
+            		    when SharedLib::ClearConfigFromPc
+                        	@samplerData.clearStopMessage()
+            		        @samplerData.ClearConfiguration("#{__LINE__}-#{__FILE__}")
+                            @samplerData.setErrorColor(nil,"#{__LINE__}-#{__FILE__}")
+                		    setBoardData(Hash.new,uart1,"#{__LINE__}-#{__FILE__}")
+            		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		        setBoardStateForCurrentStep(uart1)
+                		    @samplerData.SetConfigurationFileName("")
+                		    
+                		    # Turn off the following bits
+                		    @gPIO2.setBitOff(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+                		    
+                		    # Turn off the fans of the TCUs
+                            ThermalSiteDevices.setTHCPID(uart1,"C",@tcusToSkip,0.0)
+                            
+                            # Delete the Machine state file
+                            `rm -rf #{HoldingTankFilename}`
+                            
+                            # Delete the PcDown.BackLog and ErrorLog.txt file in /mnt/card
+                            `rm -rf /mnt/card/PcDown.BackLog`
+                            `rm -rf /mnt/card/ErrorLog.txt`
+    
+            		    when SharedLib::LoadConfigFromPc
+                            `rm -rf #{HoldingTankFilename}`
+            		        checkDeadTcus(uart1)
+    
+            		        @fault = nil
+                            @samplerData.clearStopMessage()
+            		        @lotStartedAlready = false
+            		        @boardData[LastStepNumOfSentLog] = -1 # initial value
+            		        
+            		        # close the sockets of the Ethernet PS if they're on.
+            		        @ethernetPS = nil # Reset the check for new configuration.
+            		        if @socketIp.nil? == false
+                                @socketIp.each do |key, array|
+                                    if @socketIp[key].nil? == false
+                                        @socketIp[key].close
+                                    end
+                                end                		    
+            		        end
+            		        @socketIp = nil
+            		        
+                            #SharedLib.bbbLog("New configuration step file uploaded.")
+                            @samplerData.SetConfiguration(memFromService.getHashConfigFromPC(),"#{__LINE__}-#{__FILE__}")
+                		    setBoardData(Hash.new,uart1,"#{__LINE__}-#{__FILE__}")
+                		    
+                		    @boardData[Configuration] = @samplerData.GetConfiguration()
+                		    @boardData[SharedLib::TotalStepDuration] = @samplerData.GetTotalStepDuration()
+                		    @boardData[SharedMemory::LotID] = @samplerData.GetConfiguration()[SharedMemory::LotID]
+                            @samplerData.setErrorColor(nil,"#{__LINE__}-#{__FILE__}")
+                		    @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
+                		    @samplerData.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
+    
+                            setAllStepsDone_YesNo(SharedLib::No,"#{__LINE__}-#{__FILE__}")
+                		    # Get the highest number of step.  This function must get called first before the function 
+                		    # setBoardStateForCurrentStep
+                		    @isOkToLog = false
+                		    @boardData[HighestStepNumber] = -1
+                            getConfiguration()[Steps].each do |key, array|
+                                getConfiguration()[Steps][key].each do |key2, array2|
+                                    # Get which step to work on and setup the power supply settings.
+                                    if key2 == StepNum 
+                                        if @boardData[HighestStepNumber] < getConfiguration()[Steps][key][key2].to_i
+                                            @boardData[HighestStepNumber] = getConfiguration()[Steps][key][key2].to_i
+                                        end
                                     end
                                 end
                             end
-                        end
+    
+            		        setBoardStateForCurrentStep(uart1)
+    
+                		    # Enable these bits.
+                		    @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
+    
+                		    saveBoardStateToHoldingTank()
+                		    skipLimboStateCheck = true
+            		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+            		        @SavedMode = SharedLib::InStopMode # Since we just got loaded.
+                		else
+                		    SharedLib.bbbLog("Unknown PC command @samplerData.GetPcCmd()='#{@samplerData.GetPcCmd()}'.")
+                		end
+                		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
+            		    # Code block below tells the PcListener that it got the message.
+    
+                    end
+        		end
+            
+                rescue Exception => e  
+                    SharedLib.bbbLog "e.message=#{e.message }"
+                    SharedLib.bbbLog "e.backtrace.inspect=#{e.backtrace.inspect}" 
+            end
 
-        		        setBoardStateForCurrentStep(uart1)
-
-            		    # Enable these bits.
-            		    @gPIO2.setBitOn(GPIO2::PS_ENABLE_x3,GPIO2::W3_P12V|GPIO2::W3_N5V|GPIO2::W3_P5V)
-
-            		    saveBoardStateToHoldingTank()
-            		    skipLimboStateCheck = true
-        		        setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
-        		        @SavedMode = SharedLib::InStopMode # Since we just got loaded.
-            		else
-            		    SharedLib.bbbLog("Unknown PC command @samplerData.GetPcCmd()='#{@samplerData.GetPcCmd()}'.")
-            		end
-            		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
-        		    # Code block below tells the PcListener that it got the message.
-
-                end
-    		end
 
             #
             # Gather data regardless of whether it's in run mode or not...
@@ -3113,4 +3132,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# SendSampledTcuToPCLib::sendShutDownInfo(shutdownHash)
+# 2968 SendSampledTcuToPCLib::sendShutDownInfo(shutdownHash)
