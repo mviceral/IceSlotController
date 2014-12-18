@@ -2725,7 +2725,7 @@ class TCUSampler
     end
     
     def runTCUSampler
-        sentBackLogData = "#{Time.now.inspect} - Starting BBB."
+        sentBackLogData = "#{Time.now.inspect} - Starting BBB. #{__LINE__}-#{__FILE__}"
         
         # Just keep setting the time zone every time you run the board to make sure it's right.
         `ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime`
@@ -2784,7 +2784,12 @@ class TCUSampler
         #  Trying to figure out why all the backlog data is not getting registered into the log file.
         #  Had to figure out why the slot controller is slowed down to 2 sec interval.
         #  Had to replace the BBB on the actual machine.
-        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.2")
+        # version 1.0.3 - 18 Dec 2014
+        #  Removed code that does the SD card cheking after lot runs.  It hangs up the BBB.
+        #  Due to firewall error in PC without knowing it was, had to move some code to handle exception codes to prevent 
+        #  from crashing.
+        #  Added some activity logs on start up, failed to send to PC, and sent backlog data due to lost PC connection.
+        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.3")
         turnOffHeaters()
     	initMuxValueFunc()
     	initpollAdcInputFunc()
