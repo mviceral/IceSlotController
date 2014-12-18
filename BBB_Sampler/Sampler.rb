@@ -982,14 +982,34 @@ class TCUSampler
                 setErrorColorFlag(key2,SharedMemory::OrangeFlag,"#{__LINE__}-#{__FILE__}")
                 if (tripMin <= actualValue && actualValue <= tripMax) == false
                     if is2ndFault(key2,unit,tripMin,actualValue,tripMax)
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+
                         # Turn on red light and buzzer and make it blink due to shutdown
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         setToAlarmMode()
+
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         shutdowninfo = "ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE (in step##{@boardData[LastStepNumOfSentLog]})." 
                         sendShutdownEmail(shutdowninfo)
+
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         @samplerData.setStopMessage("Trip Point Error. Stopped.")
+
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         setErrorColorFlag(key2,SharedMemory::RedFlag,"#{__LINE__}-#{__FILE__}")
+
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         reportToLogFile(shutdowninfo)
+
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         return true                
                     end
                 end
@@ -2086,7 +2106,9 @@ class TCUSampler
                         case key2
                         when "VPS0"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"32").to_f
-                            # actualValue = 1000*@samplerData.getPsVolts(muxData,adcData,"32").to_f
+                            
+                            # Cause a shutdown error by uncommenting code below.
+                            actualValue = 1000*@samplerData.getPsVolts(muxData,adcData,"32").to_f
                             if SetupAtHome
                                 actualValue = 1.095
                             end

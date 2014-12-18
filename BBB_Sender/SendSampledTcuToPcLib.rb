@@ -232,8 +232,14 @@ Temperature Setting: <temp>
         # SharedLib.pause "Function got called.  Checking value @firstBackLog='#{@firstBackLog}'","#{__LINE__}-#{__FILE__}"
         # puts "@firstBackLog check"
         # puts @firstBackLog
+        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
         if File.exist?(SharedLib::PathFile_BbbBackLog)
+            sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+            `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
 			File.open(SharedLib::PathFile_BbbBackLog, "r") do |f|
+                sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
 				f.each_line do |line|
 				    if @firstBackLog.nil?
     					@firstBackLog = line
@@ -270,18 +276,18 @@ Temperature Setting: <temp>
         
         @arrOfDataToSend.push(newSlotInfoJson)
 
-        if @xCountPassedThenSendAgain.nil? || @xCountPassedThenSendAgain >= 5
-            puts "Sending slotCtrl data to PC (#{@pcIpAddr}) #{__LINE__}-#{__FILE__}."
-            @xCountPassedThenSendAgain = 0
-        end
-        @xCountPassedThenSendAgain += 1
         while @arrOfDataToSend.length > 0
             slotInfoJson = @arrOfDataToSend.shift
             ct = 0
             sentData = false
             while sentData == false && ct < 1
                 begin
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                     if @firstBackLog.nil?
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        sentBackLogData = "slotInfoJson = -->#{slotInfoJson}<-- #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         begin
                             # puts "Sending slotInfoJson"
                             # puts slotInfoJson
@@ -301,7 +307,13 @@ Temperature Setting: <temp>
 =end                                
                         end
                     else
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
+                        sentBackLogData = "@firstBackLog='#{@firstBackLog}' #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         begin
+                            sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                            `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                             # puts "Sending @firstBackLog"
                             # puts @firstBackLog
                             resp = 
@@ -354,6 +366,9 @@ Temperature Setting: <temp>
 =end                                
                         end
                     end
+                    rescue Exception => e
+                        failedToSend = "Exception e=#{e} #{__LINE__}-#{__FILE__}"
+                        `echo \"#{failedToSend}\" >> /mnt/card/Activity.log`
                 end
                 ct += 1
             end
@@ -369,10 +384,17 @@ Temperature Setting: <temp>
         	        file.write "\n"
                 }
                 
-                failedToSend = "#{Time.now.inspect} Failed to at PC. #{__LINE__}-#{__FILE__}"
+                failedToSend = "#{Time.now.inspect} Failed to send to PC. #{__LINE__}-#{__FILE__}"
                 `echo \"#{failedToSend}\" >> /mnt/card/Activity.log`
+                
                 # See if restarting the ruby scripts will solve the problem
-                # `cd ../scripts; ruby killRubyCodes.rb`
+                if @xCountPassedThenSendAgain.nil? || @xCountPassedThenSendAgain >= 5
+                    failedToSend = "#{Time.now.inspect} Failed to send to PC for 5 times.  Restarting scripts. #{__LINE__}-#{__FILE__}"
+                    `echo \"#{failedToSend}\" >> /mnt/card/Activity.log`
+                    @xCountPassedThenSendAgain = 0
+                    `cd ../scripts; ruby killRubyCodes.rb`
+                end
+                @xCountPassedThenSendAgain += 1
             end
         end
     end
