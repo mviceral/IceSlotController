@@ -12,7 +12,7 @@ require 'json'
 
 # DRuby stuff
 require 'drb/drb'
-SERVER_URI="druby://localhost:8787"
+SERVER_URI ="druby://localhost:8787"
 
 include Beaglebone
 

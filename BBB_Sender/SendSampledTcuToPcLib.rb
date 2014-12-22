@@ -6,7 +6,7 @@ require_relative '../lib/SharedMemory'
 
 # DRuby stuff
 require 'drb/drb'
-SERVER_URI="druby://localhost:8787"
+SERVER_URI ="druby://localhost:8787"
 
 class SendSampledTcuToPCLib
     include Singleton

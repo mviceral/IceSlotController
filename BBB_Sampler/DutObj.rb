@@ -2,7 +2,7 @@
 require_relative '../lib/SharedMemory'
 require_relative '../lib/SharedLib'
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
-SetupAtHome_DutObj = true # So we can do some work at home
+SetupAtHome_DutObj  = true # So we can do some work at home
 
 class DutObj
     FaultyTcu = "Faulty Tcu"        
