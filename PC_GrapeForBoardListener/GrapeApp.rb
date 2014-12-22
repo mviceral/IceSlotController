@@ -44,75 +44,19 @@ module MigrationCount
     include Singleton
 
 		def subFunc(sharedMemServiceParam,lastMessageSentParam,data, parseJson)							
+			sharedMem = sharedMemServiceParam.getSharedMem()		 
 			if data[SharedMemory::ShutDownInfo].nil? == false
 				# The system had shutdown
-				puts "Checking data[SharedMemory::ShutDownInfo]='#{data[SharedMemory::ShutDownInfo]}' #{__LINE__}-#{__FILE__}"							
-				if lastMessageSentParam != "#{data[SharedMemory::ShutDownInfo]}"
-					lastMessageSentParam = "#{data[SharedMemory::ShutDownInfo]}"
-					puts "Sending data[SharedMemory::ShutDownInfo]='#{data[SharedMemory::ShutDownInfo]}' #{__LINE__}-#{__FILE__}"							
-					shutdownEmailSubject = "BE2/MoSys Shutdown Notification"
-					systemID = SharedLib.getSystemID()						
-					shutdownEmailMessage = ""
-					shutdownEmailMessage += "System: #{systemID}\n"
-					data[SharedMemory::ShutDownInfo].each { 
-						|a| 
-						shutdownEmailMessage += "---#{a["slotowner"]}---\n"
-						shutdownEmailMessage += "Message:\n"
-						shutdownEmailMessage += "#{a["message"]}\n"
-					}
-
-					# Get the list of emails so the the recipients will be notified if the system had shutdown.
-					getEmailAddr = false
-					emailFlagFound = false
-					emailAddrListHolder = Array.new
-					File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
-						f.each_line do |line|
-							line = line.strip
-							if line == "<emailList>"
-								getEmailAddr = true
-								emailFlagFound = true
-							elsif line == "</emailList>"
-								getEmailAddr = false
-							elsif getEmailAddr == true
-								emailAddrListHolder.push(line)
-							end
-						end
-					end
-					emailFolks = ""
-					if emailFlagFound == true && getEmailAddr == false
-						emailAddrListHolder.each {
-							|emailAddr|
-							if emailFolks.length > 0
-								emailFolks += ","
-							end
-							emailFolks += emailAddr
-						}
-						puts "Sending shutdown message to '#{emailFolks}'."
-						`echo \"#{shutdownEmailMessage}\" | mail -s \"BE2/MoSys Slot Process Shutdown\" \"#{emailFolks}\"`
-					end
-				end
+				# puts "Got a shutdown message! #{__LINE__}-#{__FILE__}"
+				sharedMemServiceParam.processShutDownInfoFromPC(data[SharedMemory::ShutDownInfo])
 			end
 			
 			if data[SharedMemory::LogInfo].nil? == false
+				logInfo = Hash.new
+				logInfo[SharedMemory::LogInfo] = data[SharedMemory::LogInfo]
+				logInfo[SharedMemory::SystemInfo] = data[SharedMemory::SystemInfo]
+				sharedMemServiceParam.processLogInfoFromPC(logInfo)
 				# Handle the logging information first.
-				arrData = data[SharedMemory::LogInfo]							
-				arrData.each {
-					|hashX|
-					hash = JSON.parse(hashX)
-					# puts "x hash=#{hash[SharedLib::DataLog]} #{__LINE__}-#{__FILE__}"
-					# The sent data is a log data.  Write it to file							
-					configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
-					# puts "hash[SharedLib::ConfigDateUpload]='#{hash[SharedLib::ConfigDateUpload]}'. #{__LINE__}-#{__FILE__}"
-					fileName = hash[SharedLib::ConfigurationFileName]
-					# puts "hash[SharedLib::ConfigurationFileName]='#{hash[SharedLib::ConfigurationFileName]}' #{__LINE__}-#{__FILE__}"
-					slotOwnerParam = hash[SharedLib::SlotOwner]
-					# puts "hash[SharedLib::SlotOwner]='#{hash[SharedLib::SlotOwner]}' #{__LINE__}-#{__FILE__}"
-					hashForLotId = JSON.parse(data[SharedMemory::SystemInfo])
-					lotID = hashForLotId[SharedMemory::LotID]
-					dBaseFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),lotID)+".log"		
-					# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
-					`cd #{SharedMemory::StepsLogRecordsPath}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
-				}							
 			end
 
 			if parseJson
