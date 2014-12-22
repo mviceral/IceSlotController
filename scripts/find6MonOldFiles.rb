@@ -34,7 +34,7 @@ if outdatedFiles.length>0
 	getEmailAddr = false
 	emailFlagFound = false
 	emailAddrListHolder = Array.new
-	File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
+	File.open("../../slot-controller_data/#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
 		f.each_line do |line|
 			line = line.strip
 			if line == "<emailList>"

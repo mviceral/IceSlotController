@@ -303,7 +303,6 @@ class SharedMemory
 	def getDataFromBoardToPc()
 		return @dataFromBoardToPc
 	end
-	
 	def processRecDataFromPC(hash)
 		if hash.nil? == false 
 			if ((hash[SharedLib::SlotOwner].nil? == false &&
@@ -1283,4 +1282,4 @@ class SharedMemory
     end
 =end    
 end
-# 246
+# 307
