@@ -12,9 +12,11 @@ require 'json'
 
 # DRuby stuff
 require 'drb/drb'
-SERVER_URI="druby://localhost:8787"
+SERVER_URI ="druby://localhost:8787"
 
 include Beaglebone
+
+SetupAtHome_Sampler = true # So we can do some work at home
 
 TOTAL_DUTS_TO_LOOK_AT  = 24
 class TCUSampler
@@ -533,6 +535,9 @@ class TCUSampler
                         rescue
                             SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
                             sleep(0.25)
+                            if SetupAtHome_Sampler == true
+                                tries = 5
+                            end
                     end
                     tries += 1
                 end
@@ -835,6 +840,7 @@ class TCUSampler
                 end
 =end
 
+                puts "@boardData[HighestStepNumber]='#{@boardData[HighestStepNumber]}' 1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]='#{1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]}'"
                 if @boardData[HighestStepNumber].nil? == false && 1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]
                     @timeOfLog = Time.new.to_i
                     if @loggingTime.nil?
@@ -2108,7 +2114,7 @@ class TCUSampler
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"32").to_f
                             
                             # Cause a shutdown error by uncommenting code below.
-                            actualValue = 1000*@samplerData.getPsVolts(muxData,adcData,"32").to_f
+                            # actualValue = 1000*@samplerData.getPsVolts(muxData,adcData,"32").to_f
                             if SetupAtHome
                                 actualValue = 1.095
                             end
@@ -2288,6 +2294,7 @@ class TCUSampler
                                 if @tcusToSkip[ct].nil? == true
             						# puts "dutI#{ct} :tripMin='#{tripMin}' flagTolP='#{flagTolP}' actualValue='#{actualValue}' flagTolN='#{flagTolN}' tripMax='#{tripMax}' #{__LINE__}-#{__FILE__}"
                                     actualValue = SharedLib.getCurrentDutDisplay(muxData,"#{ct}").to_f
+                                    
                                     if (flagTolP <= actualValue && actualValue <= flagTolN) == false
                                         reportToLogFile("NOTICE - IDUT#{ct} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed (in step##{@boardData[LastStepNumOfSentLog]}).")
                                         setDutErrorColorFlag(key2,ct,SharedMemory::OrangeFlag)
@@ -2357,6 +2364,7 @@ class TCUSampler
             					if @tcuData.nil? == false && @tcuData["#{dutCt}"].nil? == false 
 					                splitted = @tcuData["#{dutCt}"].split(',')
             						temperature = SharedLib::make5point2Format(splitted[2]).to_f
+            						
                                     # puts "dut##{dutCt} flagTolP='#{flagTolP}' <= temp='#{temperature}' <= #{flagTolN} : '#{flagTolP<=temperature && temperature<=flagTolN}'"
                 				    if flagTolP<=temperature && temperature<=flagTolN
                 				        if @dutTempTolReached[dutCt].nil?
@@ -2400,6 +2408,10 @@ class TCUSampler
                         			    if @tcuData["#{dutCt}"].nil? == false 
                         	                splitted = @tcuData["#{dutCt}"].split(',')
                         					actualValue = SharedLib::make5point2Format(splitted[2]).to_f
+                        					
+                                            # Un-comment code line below if you want a trip on a dut current
+                        					# actualValue = 1000*SharedLib::make5point2Format(splitted[2]).to_f
+                        					
                                             if (flagTolP <= actualValue && actualValue <= flagTolN) == false
                                                 reportToLogFile("NOTICE - DUT##{dutCt} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed (in step##{@boardData[LastStepNumOfSentLog]}).")
                                                 setDutErrorColorFlag(key2,dutCt,SharedMemory::OrangeFlag)
@@ -2458,7 +2470,7 @@ class TCUSampler
                 pollIntervalInSeconds = @loggingTime
             end
             
-            # puts "@isOkToLog='#{@isOkToLog}', @boardData[\"isOkToLog\"]='#{@boardData["isOkToLog"]}' @allDutTempTolReached='#{@allDutTempTolReached}'  #{__LINE__}-#{__FILE__}"
+            # puts "@isOkToLog='#{@isOkToLog}',  @allDutTempTolReached='#{@allDutTempTolReached}', @boardData[\"isOkToLog\"]='#{@boardData["isOkToLog"]}' #{__LINE__}-#{__FILE__}"
             if @isOkToLog && @allDutTempTolReached
                 doTheAveragingOfMesurements()
                 if @timeOfLog.to_i <= Time.now.to_i
@@ -2919,6 +2931,8 @@ class TCUSampler
             @samplerData.SetLotID(@boardData[SharedMemory::LotID])
         end
         
+        timeStamp = Time.now.to_f
+        
         while true
             stepNum = ""
             if @stepToWorkOn.nil? == false
@@ -3133,7 +3147,8 @@ class TCUSampler
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
             #
-            sleep(0.01) # Get some sleep time so the Grape app will be a bit more responsive.
+            sleep(timeStamp+0.9-Time.now.to_f) # Get some sleep time so the Grape app will be a bit more responsive.
+            timeStamp += 1.0
             if getSavedMode() == SharedLib::InRunMode || getSavedMode() == SharedLib::InStopMode
                 if getSavedMode() == SharedLib::InRunMode 
                     skipLimboStateCheck = false
@@ -3165,4 +3180,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 2968 SendSampledTcuToPCLib::sendShutDownInfo(shutdownHash)
+# 534
