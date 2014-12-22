@@ -609,10 +609,6 @@ class TCUSampler
                         getConfiguration()[Steps][key].each do |key2, array2|
                             # Get which step to work on and setup the power supply settings.
                             # puts "key='#{key}', key2='#{key2}', StepNum='#{StepNum}' #{__LINE__}-#{__FILE__}"
-                            # [***] O Lord, please give me the vision for sustainability of drive.  Molecular modeler, theoretical physics, be an energy producer.
-                            # [***] Notion - the only way I think I can do this is do my early routine, like working out, then continously work on your 
-                            # personal projects so fast all the time.cd B
-                            # * Work out every day, and you'll get your rest at night.  Your body will tell you to sleep.
                             # SharedLib.pause "Checking key, and key2 values.","#{__LINE__}-#{__FILE__}"
                             if key2 == StepNum 
                                 if getConfiguration()[Steps][key][key2].to_i == (stepNumber+1) 
