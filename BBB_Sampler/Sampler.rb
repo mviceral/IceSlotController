@@ -16,6 +16,8 @@ SERVER_URI="druby://localhost:8787"
 
 include Beaglebone
 
+SetupAtHome_Sampler = true # So we can do some work at home
+
 TOTAL_DUTS_TO_LOOK_AT  = 24
 class TCUSampler
     SlotBibNum = "SLOT BIB#"
@@ -533,6 +535,9 @@ class TCUSampler
                         rescue
                             SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
                             sleep(0.25)
+                            if SetupAtHome_Sampler == true
+                                tries = 5
+                            end
                     end
                     tries += 1
                 end
@@ -604,6 +609,10 @@ class TCUSampler
                         getConfiguration()[Steps][key].each do |key2, array2|
                             # Get which step to work on and setup the power supply settings.
                             # puts "key='#{key}', key2='#{key2}', StepNum='#{StepNum}' #{__LINE__}-#{__FILE__}"
+                            # [***] O Lord, please give me the vision for sustainability of drive.  Molecular modeler, theoretical physics, be an energy producer.
+                            # [***] Notion - the only way I think I can do this is do my early routine, like working out, then continously work on your 
+                            # personal projects so fast all the time.cd B
+                            # * Work out every day, and you'll get your rest at night.  Your body will tell you to sleep.
                             # SharedLib.pause "Checking key, and key2 values.","#{__LINE__}-#{__FILE__}"
                             if key2 == StepNum 
                                 if getConfiguration()[Steps][key][key2].to_i == (stepNumber+1) 
@@ -835,6 +844,7 @@ class TCUSampler
                 end
 =end
 
+                puts "@boardData[HighestStepNumber]='#{@boardData[HighestStepNumber]}' 1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]='#{1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]}'"
                 if @boardData[HighestStepNumber].nil? == false && 1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]
                     @timeOfLog = Time.new.to_i
                     if @loggingTime.nil?
@@ -2458,7 +2468,7 @@ class TCUSampler
                 pollIntervalInSeconds = @loggingTime
             end
             
-            # puts "@isOkToLog='#{@isOkToLog}', @boardData[\"isOkToLog\"]='#{@boardData["isOkToLog"]}' @allDutTempTolReached='#{@allDutTempTolReached}'  #{__LINE__}-#{__FILE__}"
+            puts "@isOkToLog='#{@isOkToLog}',  @allDutTempTolReached='#{@allDutTempTolReached}', @boardData[\"isOkToLog\"]='#{@boardData["isOkToLog"]}' #{__LINE__}-#{__FILE__}"
             if @isOkToLog && @allDutTempTolReached
                 doTheAveragingOfMesurements()
                 if @timeOfLog.to_i <= Time.now.to_i
@@ -3165,4 +3175,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 2968 SendSampledTcuToPCLib::sendShutDownInfo(shutdownHash)
+# 534

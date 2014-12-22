@@ -232,8 +232,8 @@ Temperature Setting: <temp>
         # SharedLib.pause "Function got called.  Checking value @firstBackLog='#{@firstBackLog}'","#{__LINE__}-#{__FILE__}"
         # puts "@firstBackLog check"
         # puts @firstBackLog
-        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
-        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
+        # sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+        # `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
         if File.exist?(SharedLib::PathFile_BbbBackLog)
             sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
             `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
@@ -282,12 +282,12 @@ Temperature Setting: <temp>
             sentData = false
             while sentData == false && ct < 1
                 begin
-                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
-                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
+                    # sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                    # `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                     if @firstBackLog.nil?
-                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
-                        sentBackLogData = "slotInfoJson = -->#{slotInfoJson}<-- #{__LINE__}-#{__FILE__}"
-                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
+                        # sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        # sentBackLogData = "slotInfoJson = -->#{slotInfoJson}<-- #{__LINE__}-#{__FILE__}"
+                        # `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         begin
                             # puts "Sending slotInfoJson"
                             # puts slotInfoJson
@@ -392,7 +392,7 @@ Temperature Setting: <temp>
                     failedToSend = "#{Time.now.inspect} Failed to send to PC for 5 times.  Restarting scripts. #{__LINE__}-#{__FILE__}"
                     `echo \"#{failedToSend}\" >> /mnt/card/Activity.log`
                     @xCountPassedThenSendAgain = 0
-                    `cd ../scripts; ruby killRubyCodes.rb`
+                    # `cd ../scripts; ruby killRubyCodes.rb`
                 end
                 @xCountPassedThenSendAgain += 1
             end

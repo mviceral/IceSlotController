@@ -2,6 +2,8 @@
 require_relative '../lib/SharedMemory'
 require_relative '../lib/SharedLib'
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
+SetupAtHome_DutObj = true # So we can do some work at home
+
 class DutObj
     FaultyTcu = "Faulty Tcu"        
 
@@ -35,7 +37,7 @@ class DutObj
     
     def self.getTcuStatus(dutNumParam,uart1Param,gPIO2,singleCharParam)
         # puts "Checking dutNumParam='#{dutNumParam}' #{__LINE__}-#{__FILE__}"
-        if SharedLib::SetupAtHome
+        if SetupAtHome_DutObj == true
             # puts "dutNumParam='#{dutNumParam}' SetupAtHome='#{SetupAtHome}' singleCharParam='#{singleCharParam}' #{__LINE__}-#{__FILE__}"
             if singleCharParam == "V"
                 tbr = "@25.000,RTD100,p6.00 i0.60 d0.15,mpo255, cso101, V2.2"
@@ -157,15 +159,17 @@ class DutObj
             #puts "(#{tsdParam["RanAt"]-Time.now.to_i}) dutNumParam='#{dutNumParam}' @statusResponse[dutNumParam]='#{@statusResponse[dutNumParam]}' #{__LINE__}-#{__FILE__}"
             
             if @statusResponse[dutNumParam][1] == "0"
-                `echo \"#{Time.new.inspect} dut='#{dutNumParam}' is getting re-blasted. #{__LINE__}-#{__FILE__}\" >> /mnt/card/ErrorLog.txt`
-                # puts "\n\n\n\nExecuted the re-blast. #{__LINE__}-#{__FILE__}"
-                ThermalSiteDevices.setTHCPID(uart1Param,"T",tcusToSkip,tsdParam["T"])
-                ThermalSiteDevices.setTHCPID(uart1Param,"H",tcusToSkip,tsdParam["H"])
-                ThermalSiteDevices.setTHCPID(uart1Param,"C",tcusToSkip,tsdParam["C"])
-                ThermalSiteDevices.setTHCPID(uart1Param,"P",tcusToSkip,tsdParam["P"])
-                ThermalSiteDevices.setTHCPID(uart1Param,"I",tcusToSkip,tsdParam["I"])
-                ThermalSiteDevices.setTHCPID(uart1Param,"D",tcusToSkip,tsdParam["D"])
-                ThermalSiteDevices.setTcuToRunMode(tcusToSkip,gPIO2)
+                if SetupAtHome_DutObj == false
+                    `echo \"#{Time.new.inspect} dut='#{dutNumParam}' is getting re-blasted. #{__LINE__}-#{__FILE__}\" >> /mnt/card/ErrorLog.txt`
+                    # puts "\n\n\n\nExecuted the re-blast. #{__LINE__}-#{__FILE__}"
+                    ThermalSiteDevices.setTHCPID(uart1Param,"T",tcusToSkip,tsdParam["T"])
+                    ThermalSiteDevices.setTHCPID(uart1Param,"H",tcusToSkip,tsdParam["H"])
+                    ThermalSiteDevices.setTHCPID(uart1Param,"C",tcusToSkip,tsdParam["C"])
+                    ThermalSiteDevices.setTHCPID(uart1Param,"P",tcusToSkip,tsdParam["P"])
+                    ThermalSiteDevices.setTHCPID(uart1Param,"I",tcusToSkip,tsdParam["I"])
+                    ThermalSiteDevices.setTHCPID(uart1Param,"D",tcusToSkip,tsdParam["D"])
+                    ThermalSiteDevices.setTcuToRunMode(tcusToSkip,gPIO2)
+                end
             end
         else
         end
@@ -210,3 +214,4 @@ class DutObj
     # End of 'class DutObj'
 end
 
+# 160
