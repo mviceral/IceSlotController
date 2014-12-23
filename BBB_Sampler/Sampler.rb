@@ -2932,6 +2932,7 @@ class TCUSampler
         end
         
         timeStamp = Time.now.to_f
+        timeStamp += 1.0
         
         while true
             stepNum = ""
@@ -3146,9 +3147,14 @@ class TCUSampler
             # puts "#{Time.now.inspect} #{__LINE__}-#{__FILE__}"            
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
-            #
-            sleep(timeStamp+0.9-Time.now.to_f) # Get some sleep time so the Grape app will be a bit more responsive.
-            timeStamp += 1.0
+            timeNow = Time.now.to_f
+            if (timeStamp-timeNow>0)
+                sleep(timeStamp-timeNow) # Get some sleep time so the Grape app will be a bit more responsive.
+            end
+            while (timeStamp-timeNow<0.0)
+                timeStamp += 1.0
+            end
+            
             if getSavedMode() == SharedLib::InRunMode || getSavedMode() == SharedLib::InStopMode
                 if getSavedMode() == SharedLib::InRunMode 
                     skipLimboStateCheck = false
