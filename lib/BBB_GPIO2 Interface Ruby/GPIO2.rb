@@ -191,8 +191,8 @@ class GPIO2
             GPIOPin.new(:P8_39, :IN) 
             GPIOPin.new(:P8_40, :IN) 
             rescue => e
-                puts e.message  
-			    puts e.backtrace.inspect 
+                # puts e.message  
+			    # puts e.backtrace.inspect 
         end
 
 #@Removed comment to run on real machine
@@ -245,11 +245,11 @@ class GPIO2
       hold = ~dataParam
 =begin      
       inBits = SharedLib.getBits(hold)
-      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bits after the tilde."
+      # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : bits after the tilde."
       inBits = SharedLib.getBits(@regValues[addrParam])
-      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value before of what to turn off."
+      # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value before of what to turn off."
       inBits = SharedLib.getBits(@regValues[addrParam])
-      puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value after turning off."
+      # puts "addr=0x#{addrParam.to_s(16)} - #{inBits} : value after turning off."
 =end      
       @regValues[addrParam] = @regValues[addrParam]&hold
       setGPIO2(addrParam, @regValues[addrParam])
@@ -306,7 +306,7 @@ class GPIO2
         begin
             s = TCPSocket.open(hostname, port)
             
-            s.puts parsed.to_json
+            s.# puts parsed.to_json
             s.close               # Close the socket when done
             rescue Exception => e  
                 # puts e.message  
@@ -384,20 +384,20 @@ class GPIO2
         parsed[ANA_MEAS4_SEL_xD.to_s] = @regValues[ANA_MEAS4_SEL_xD] 
         @sharedBbbGpio2.WriteDataGpio("BbbShared"+parsed.to_json,"#{__LINE__}-#{__FILE__}")
 =begin
-      puts "@regValues[SLOT_ADDR_x0] = 0x#{@regValues[SLOT_ADDR_x0].to_s(16)}"
-      puts "@regValues[LED_STAT_x1] = 0x#{@regValues[LED_STAT_x1].to_s(16)}"
-      puts "@regValues[EXT_INPUTS_x2] = 0x#{@regValues[EXT_INPUTS_x2].to_s(16)}"
-      puts "@regValues[PS_ENABLE_x3] = 0x#{@regValues[PS_ENABLE_x3].to_s(16)}"
-      puts "@regValues[EXT_SLOT_CTRL_x4] = 0x#{@regValues[EXT_SLOT_CTRL_x4].to_s(16)}"
-      puts "@regValues[SLOT_FAN_PWM_x5] = 0x#{@regValues[SLOT_FAN_PWM_x5].to_s(16)}"
-      puts "@regValues[ETS_ALM1_x6] = 0x#{@regValues[ETS_ALM1_x6].to_s(16)}"
-      puts "@regValues[ETS_ALM2_x7] = 0x#{@regValues[ETS_ALM2_x7].to_s(16)}"
-      puts "@regValues[ETS_ALM3_x8] = 0x#{@regValues[ETS_ALM3_x8].to_s(16)}"
-      puts "@regValues[ETS_ENA1_x9] = 0x#{@regValues[ETS_ENA1_x9].to_s(16)}"
-      puts "@regValues[ETS_ENA2_xA] = 0x#{@regValues[ETS_ENA2_xA].to_s(16)}"
-      puts "@regValues[ETS_ENA3_xB] = 0x#{@regValues[ETS_ENA3_xB].to_s(16)}"
-      puts "@regValues[ETS_RX_SEL_xC] = 0x#{@regValues[ETS_RX_SEL_xC].to_s(16)}"
-      puts "@regValues[ANA_MEAS4_SEL_xD] = 0x#{@regValues[ANA_MEAS4_SEL_xD].to_s(16)}"
+      # puts "@regValues[SLOT_ADDR_x0] = 0x#{@regValues[SLOT_ADDR_x0].to_s(16)}"
+      # puts "@regValues[LED_STAT_x1] = 0x#{@regValues[LED_STAT_x1].to_s(16)}"
+      # puts "@regValues[EXT_INPUTS_x2] = 0x#{@regValues[EXT_INPUTS_x2].to_s(16)}"
+      # puts "@regValues[PS_ENABLE_x3] = 0x#{@regValues[PS_ENABLE_x3].to_s(16)}"
+      # puts "@regValues[EXT_SLOT_CTRL_x4] = 0x#{@regValues[EXT_SLOT_CTRL_x4].to_s(16)}"
+      # puts "@regValues[SLOT_FAN_PWM_x5] = 0x#{@regValues[SLOT_FAN_PWM_x5].to_s(16)}"
+      # puts "@regValues[ETS_ALM1_x6] = 0x#{@regValues[ETS_ALM1_x6].to_s(16)}"
+      # puts "@regValues[ETS_ALM2_x7] = 0x#{@regValues[ETS_ALM2_x7].to_s(16)}"
+      # puts "@regValues[ETS_ALM3_x8] = 0x#{@regValues[ETS_ALM3_x8].to_s(16)}"
+      # puts "@regValues[ETS_ENA1_x9] = 0x#{@regValues[ETS_ENA1_x9].to_s(16)}"
+      # puts "@regValues[ETS_ENA2_xA] = 0x#{@regValues[ETS_ENA2_xA].to_s(16)}"
+      # puts "@regValues[ETS_ENA3_xB] = 0x#{@regValues[ETS_ENA3_xB].to_s(16)}"
+      # puts "@regValues[ETS_RX_SEL_xC] = 0x#{@regValues[ETS_RX_SEL_xC].to_s(16)}"
+      # puts "@regValues[ANA_MEAS4_SEL_xD] = 0x#{@regValues[ANA_MEAS4_SEL_xD].to_s(16)}"
 =end      
       # puts "<at a pause>"
       # gets
@@ -411,8 +411,8 @@ class GPIO2
   end
   
   def testWithScope
-      puts "Running function 'testWithScope'.  Make sure to plug in scope onto BBB that shows the signals on the"
-      puts "ADDR and DATA pins."
+      # puts "Running function 'testWithScope'.  Make sure to plug in scope onto BBB that shows the signals on the"
+      # puts "ADDR and DATA pins."
       initialize
       addr = 0
       data = 0
@@ -435,7 +435,7 @@ class GPIO2
     end
     
     def checkBits
-        puts "       - Paused for checking register value.  Press enter to continue."
+        # puts "       - Paused for checking register value.  Press enter to continue."
         gets # for pause so you could see the emulator value update.
     end
 
@@ -448,147 +448,147 @@ class GPIO2
         gets # for pause so you could see the emulator value update.
         inBits = getGPIO2(EXT_INPUTS_x2)
         inBits = SharedLib.getBits(inBits)
-        puts "addr=0x#{EXT_INPUTS_x2.to_s(16)} - #{inBits} : Get value of EXT_INPUTS_x2."
+        # puts "addr=0x#{EXT_INPUTS_x2.to_s(16)} - #{inBits} : Get value of EXT_INPUTS_x2."
         checkBits
         
-        puts "\nTesting slotAddrReset function.  Make sure register SLOT_ADDR_x0 bit W0_Reset is on."
+        # puts "\nTesting slotAddrReset function.  Make sure register SLOT_ADDR_x0 bit W0_Reset is on."
         slotAddrReset
         checkBits
 
-        puts "\nTesting slotAddrGet function.  Make sure the function returns the values given on register "
+        # puts "\nTesting slotAddrGet function.  Make sure the function returns the values given on register "
         print " SLOT_ADDR_x0."
-        puts "slotAddrGet = '0x#{slotAddrGet.to_s(16)}'"
+        # puts "slotAddrGet = '0x#{slotAddrGet.to_s(16)}'"
         checkBits
 
         onParam = 1
-        puts "\nTesting ledStatEnableSet(onParam) function."
-        puts "This function sets the LEDEN bit.  If ON, it will set the state of the LEDs on register LED_STAT_x1"
-        puts "ledStatEnableSet(#{onParam})"
+        # puts "\nTesting ledStatEnableSet(onParam) function."
+        # puts "This function sets the LEDEN bit.  If ON, it will set the state of the LEDs on register LED_STAT_x1"
+        # puts "ledStatEnableSet(#{onParam})"
         ledStatEnableSet(onParam)        
         checkBits
 
         ledState = 3
-        puts "\nTesting ledStatSet(ledState) function."
-        puts "This function sets the state of the LEDs, and only applies after the LEDEN bit has been enabled."
-        puts "Returns true if the GPIO was set."
-        puts "        false if the W1_LEDEN hasn't been set and GPIO setting was not called or if the ledState "
-        puts "        values don't fit the expected bit parameters."
-        puts "ledStatSet(#{ledState}) = #{ledStatSet(ledState)}"
+        # puts "\nTesting ledStatSet(ledState) function."
+        # puts "This function sets the state of the LEDs, and only applies after the LEDEN bit has been enabled."
+        # puts "Returns true if the GPIO was set."
+        # puts "        false if the W1_LEDEN hasn't been set and GPIO setting was not called or if the ledState "
+        # puts "        values don't fit the expected bit parameters."
+        # puts "ledStatSet(#{ledState}) = #{ledStatSet(ledState)}"
         checkBits
 
-        puts "\nTesting extInputsGet() function."
-        puts "Function definition:"
-        puts "Read External Inputs.  Inputs are latched to guarantee the bit status are high.  EXT_CLEAR_LATCH bit"
-        puts "must be set after every read to clear the register."
-        puts "extInputsGet()=#{extInputsGet().to_s(16)}"
+        # puts "\nTesting extIn# putsGet() function."
+        # puts "Function definition:"
+        # puts "Read External In# puts.  In# puts are latched to guarantee the bit status are high.  EXT_CLEAR_LATCH bit"
+        # puts "must be set after every read to clear the register."
+        # puts "extIn# putsGet()=#{extIn# putsGet().to_s(16)}"
         checkBits
         
 
         bitsParam = 3
-        puts "\nTesting PsEnable(bitsParam) function."
-        puts "Function definition:"
-        puts "Write bit-wise to enable or sequence up power/down power to the slot"
-        puts "  Expected parameters in bits, ie: W3_P12V+W3_PS8 to turn on W3_P12V and W3_PS8"
-        puts "  Below are the list of possible bits."
-        puts "      W3_P12V"
-        puts "      W3_N5V"
-        puts "      W3_P5V"
-        puts "      W3_PS6"
-        puts "      W3_PS8"
-        puts "      W3_PS9"
-        puts "      W3_PS10"
-        puts "psEnable(#{bitsParam})"
+        # puts "\nTesting PsEnable(bitsParam) function."
+        # puts "Function definition:"
+        # puts "Write bit-wise to enable or sequence up power/down power to the slot"
+        # puts "  Expected parameters in bits, ie: W3_P12V+W3_PS8 to turn on W3_P12V and W3_PS8"
+        # puts "  Below are the list of possible bits."
+        # puts "      W3_P12V"
+        # puts "      W3_N5V"
+        # puts "      W3_P5V"
+        # puts "      W3_PS6"
+        # puts "      W3_PS8"
+        # puts "      W3_PS9"
+        # puts "      W3_PS10"
+        # puts "psEnable(#{bitsParam})"
         psEnable(bitsParam)
         checkBits
 
         bitsParam = 3
-        puts "\nslotCntlExtSet(bitsParam) function."
-        puts "Function definition:"
-        puts " Sets the user panel interface indicating the status, or enabling items."
-        puts "   Expected parameters in bits."
-        puts "       X4_POWER"
-        puts "       _X4_FAN1 - *" 
-        puts "       _X4_FAN2 - *"
+        # puts "\nslotCntlExtSet(bitsParam) function."
+        # puts "Function definition:"
+        # puts " Sets the user panel interface indicating the status, or enabling items."
+        # puts "   Expected parameters in bits."
+        # puts "       X4_POWER"
+        # puts "       _X4_FAN1 - *" 
+        # puts "       _X4_FAN2 - *"
         print "           * - it was noted that these don't need to be turned on because their state is based on "
-        puts "the values"
+        # puts "the values"
         print "               provided in SLOT_FAN_PWM_x5 register.  If SLOT_FAN_PWM_x5 returns a value greater "
-        puts "than 0"
-        puts "               bit X4_FAN1 or _X4_FAN2 are high."
-        puts "       X4_BUZR"
-        puts "       X4_LEDRED"
-        puts "       X4_LEDYEL"
-        puts "       X4_LEDGRN"
-        puts ""
-        puts "   Returns true bits are called through, else false"
-        puts "slotCntlExtSet(#{bitsParam})=#{slotCntlExtSet(bitsParam)}"
+        # puts "than 0"
+        # puts "               bit X4_FAN1 or _X4_FAN2 are high."
+        # puts "       X4_BUZR"
+        # puts "       X4_LEDRED"
+        # puts "       X4_LEDYEL"
+        # puts "       X4_LEDGRN"
+        # puts ""
+        # puts "   Returns true bits are called through, else false"
+        # puts "slotCntlExtSet(#{bitsParam})=#{slotCntlExtSet(bitsParam)}"
         checkBits
 =end        
 
         bitsParam = 116
-        puts "\nslotFanPulseWidthModulator(#{bitsParam}) function."
-        puts "Function definition:"
-        puts ""
-        puts " Write to the fan speed control register 0x0=off, 0xff (255) = full speed."
-        puts ""
-        puts ""
-        puts " If the bitsParam>0, the fan bit on register EXT_SLOT_CTRL_x4 are set to on, else off."
-        puts ""
-        puts "   Returns true bits are called through, else false"
+        # puts "\nslotFanPulseWidthModulator(#{bitsParam}) function."
+        # puts "Function definition:"
+        # puts ""
+        # puts " Write to the fan speed control register 0x0=off, 0xff (255) = full speed."
+        # puts ""
+        # puts ""
+        # puts " If the bitsParam>0, the fan bit on register EXT_SLOT_CTRL_x4 are set to on, else off."
+        # puts ""
+        # puts "   Returns true bits are called through, else false"
         slotFanPulseWidthModulator(bitsParam)
         checkBits
 =begin
-        puts "\netsAlarm1Get function."
-        puts "Function definition:"
-        puts ""
+        # puts "\netsAlarm1Get function."
+        # puts "Function definition:"
+        # puts ""
         print " Reads temp controller alarm status bits for register ETS_ALM1_x6.  Alarm indication of an immediate"
-        puts " issue"
-        puts " with a thermal controller."
-        puts "etsAlarm1Get=#{etsAlarm1Get.to_s(16)}"
+        # puts " issue"
+        # puts " with a thermal controller."
+        # puts "etsAlarm1Get=#{etsAlarm1Get.to_s(16)}"
         checkBits
         
-        puts "\netsAlarm2Get function."
-        puts "Function definition:"
-        puts ""
+        # puts "\netsAlarm2Get function."
+        # puts "Function definition:"
+        # puts ""
         print " Reads temp controller alarm status bits for register ETS_ALM2_x7.  Alarm indication of an immediate "
-        puts "issue"
-        puts " with a thermal controller."
-        puts "etsAlarm2Get=#{etsAlarm2Get.to_s(16)}"
+        # puts "issue"
+        # puts " with a thermal controller."
+        # puts "etsAlarm2Get=#{etsAlarm2Get.to_s(16)}"
         checkBits
         
-        puts "\netsAlarm3Get function."
-        puts "Function definition:"
-        puts ""
+        # puts "\netsAlarm3Get function."
+        # puts "Function definition:"
+        # puts ""
         print " Reads temp controller alarm status bits for register ETS_ALM3_x8.  Alarm indication of an immediate"
-        puts " issue"
-        puts " with a thermal controller."
-        puts "etsAlarm3Get=#{etsAlarm3Get.to_s(16)}"
+        # puts " issue"
+        # puts " with a thermal controller."
+        # puts "etsAlarm3Get=#{etsAlarm3Get.to_s(16)}"
         checkBits
         
         byteParam = 4
-        puts "\netsEna1Set function."
-        puts "Function definition:"
-        puts ""
-        puts " Write bitwise to enabled or disable a temperature controller unit on register ETS_ENA1_x9."
-        puts ""
-        puts "etsEna1Set(#{byteParam.to_s(16)})"
+        # puts "\netsEna1Set function."
+        # puts "Function definition:"
+        # puts ""
+        # puts " Write bitwise to enabled or disable a temperature controller unit on register ETS_ENA1_x9."
+        # puts ""
+        # puts "etsEna1Set(#{byteParam.to_s(16)})"
         etsEna1Set(byteParam)
         checkBits
         
-        puts "\netsEna2Set function."
-        puts "Function definition:"
-        puts ""
-        puts " Write bitwise to enabled or disable a temperature controller unit on register ETS_ENA2_xA."
-        puts ""
-        puts "esEna2Set(#{byteParam.to_s(16)})"
+        # puts "\netsEna2Set function."
+        # puts "Function definition:"
+        # puts ""
+        # puts " Write bitwise to enabled or disable a temperature controller unit on register ETS_ENA2_xA."
+        # puts ""
+        # puts "esEna2Set(#{byteParam.to_s(16)})"
         etsEna2Set(byteParam)
         checkBits
         
-        puts "\etsEna3Set function."
-        puts "Function definition:"
-        puts ""
-        puts " Write bitwise to enabled or disable a temperature controller unit on register ETS_ENA3_xB."
-        puts ""
-        puts "etsEna3Set(#{byteParam.to_s(16)})"
+        # puts "\etsEna3Set function."
+        # puts "Function definition:"
+        # puts ""
+        # puts " Write bitwise to enabled or disable a temperature controller unit on register ETS_ENA3_xB."
+        # puts ""
+        # puts "etsEna3Set(#{byteParam.to_s(16)})"
         etsEna3Set(byteParam)
         checkBits
 =end        
@@ -619,12 +619,12 @@ class GPIO2
             setGPIO2(LED_STAT_x1, ledState)
             return true
         else
-            puts "failed on LedStatSet(0x#{ledState.to_s(16)}) #{__LINE__}-#{__FILE__}"
-            puts "    - @regValues[LED_STAT_x1]&W1_LEDEN='#{@regValues[LED_STAT_x1]&W1_LEDEN}'"
+            # puts "failed on LedStatSet(0x#{ledState.to_s(16)}) #{__LINE__}-#{__FILE__}"
+            # puts "    - @regValues[LED_STAT_x1]&W1_LEDEN='#{@regValues[LED_STAT_x1]&W1_LEDEN}'"
             print "    - ~(X1_LED3|X1_LED2|X1_LED1|X1_LED0)&ledState="
             # print "'#{SharedLib.getBits(~(X1_LED3|X1_LED2|X1_LED1|X1_LED0))}&#{SharedLib.getBits(ledState)}'="
             print "#{~(X1_LED3|X1_LED2|X1_LED1|X1_LED0)&ledState}"
-            puts
+            # puts
             return false
         end
     end
@@ -640,23 +640,23 @@ class GPIO2
         end
     end
     
-    def extInputsGet()
+    def extIn# putsGet()
         #
-        # Read External Inputs.  Inputs are latched to guarantee the bit status are high.  W2_CLEAR bit
+        # Read External In# puts.  In# puts are latched to guarantee the bit status are high.  W2_CLEAR bit
         # on EXT_INPUTS_x2 must be set after every read to clear the register.
         #
         
         #
-        # Gets the states of the External Inputs
+        # Gets the states of the External In# puts
         #
-        externalInputs = getGPIO2(EXT_INPUTS_x2)
+        externalIn# puts = getGPIO2(EXT_INPUTS_x2)
         
         #
         # Clears the latch
         #
         setBitOn(EXT_INPUTS_x2,W2_CLEAR)
         
-        return externalInputs
+        return externalIn# puts
     end
     
     def psEnable (bitsParam)
@@ -700,10 +700,10 @@ class GPIO2
             setGPIO2(EXT_SLOT_CTRL_x4, bitsParam)
             return true
         else
-            puts "failed on SlotCntlExtSet(#{bitsParam.to_s(16)}) #{__LINE__}-#{__FILE__}"
+            # puts "failed on SlotCntlExtSet(#{bitsParam.to_s(16)}) #{__LINE__}-#{__FILE__}"
             print "    ~(X4_POWER+X4_FAN1+X4_FAN2++X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN)&bitsParam = "
             # print "    #{SharedLib.getBits(~(X4_POWER+X4_BUZR+X4_LEDRED+X4_LEDYEL+X4_LEDGRN))}&#{SharedLib.getBits(bitsParam)}"
-            puts
+            # puts
             return false
         end
     end
