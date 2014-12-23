@@ -94,7 +94,7 @@ class UserInterface
 
 			# Read the IP addresses from the file.
 			lenOfStrToLookInto = "SLOT1 IP".length
-  		File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
+  		File.open("../../slot-controller_data/#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
   			f.each_line do |line|
 #  				puts "line='#{line}' #{__LINE__}-#{__FILE__}"
 					if line[0..(lenOfStrToLookInto-1)] == "SLOT1 IP"
@@ -868,6 +868,88 @@ class UserInterface
 	
 	def updatedSharedMemory
 			@sharedMem = @sharedMemService.getSharedMem() # .processRecDataFromPC(.getDataFromBoardToPc())
+			shutDownInfoParam = @sharedMemService.getShutDownInfoFromPC()
+			if shutDownInfoParam.nil? == false
+				while shutDownInfoParam.nil? == false
+					# puts "Checking shutDownInfoParam='#{shutDownInfoParam}' #{__LINE__}-#{__FILE__}"							
+					if @lastMessageSentParam != "#{shutDownInfoParam}"
+						@lastMessageSentParam = "#{shutDownInfoParam}"
+						# puts "Sending shutDownInfoParam='#{shutDownInfoParam}' #{__LINE__}-#{__FILE__}"							
+						shutdownEmailSubject = "BE2/MoSys Shutdown Notification"
+						systemID = SharedLib.getSystemID()						
+						shutdownEmailMessage = ""
+						shutdownEmailMessage += "System: #{systemID}\n"
+						shutDownInfoParam.each { 
+							|a| 
+							shutdownEmailMessage += "---#{a["slotowner"]}---\n"
+							shutdownEmailMessage += "Message:\n"
+							shutdownEmailMessage += "#{a["message"]}\n"
+						}
+
+						# Get the list of emails so the the recipients will be notified if the system had shutdown.
+						getEmailAddr = false
+						emailFlagFound = false
+						emailAddrListHolder = Array.new
+						File.open("../../slot-controller_data/#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
+							f.each_line do |line|
+								line = line.strip
+								if line == "<emailList>"
+									getEmailAddr = true
+									emailFlagFound = true
+								elsif line == "</emailList>"
+									getEmailAddr = false
+								elsif getEmailAddr == true
+									emailAddrListHolder.push(line)
+								end
+							end
+						end
+						emailFolks = ""
+						if emailFlagFound == true && getEmailAddr == false
+							emailAddrListHolder.each {
+								|emailAddr|
+								if emailFolks.length > 0
+									emailFolks += ","
+								end
+								emailFolks += emailAddr
+							}
+							puts "Sending shutdown message to '#{emailFolks}'."
+							`echo \"#{shutdownEmailMessage}\" | mail -s \"BE2/MoSys Slot Process Shutdown\" \"#{emailFolks}\"`
+						end
+					end
+					shutDownInfoParam = @sharedMemService.getShutDownInfoFromPC()
+					# End of 'while shutDownInfoParam.nil? == false'
+				end
+			end
+			
+			data = @sharedMemService.getLogInfoFromPC()
+			if data.nil? == false
+				# There are some back log info to process
+				while data.nil? == false
+					arrData = data[SharedMemory::LogInfo]							
+					arrData.each {
+						|hashX|
+						hash = JSON.parse(hashX)
+						# puts "x hash=#{hash[SharedLib::DataLog]} #{__LINE__}-#{__FILE__}"
+						# The sent data is a log data.  Write it to file							
+						configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
+						# puts "hash[SharedLib::ConfigDateUpload]='#{hash[SharedLib::ConfigDateUpload]}'. #{__LINE__}-#{__FILE__}"
+						fileName = hash[SharedLib::ConfigurationFileName]
+						# puts "hash[SharedLib::ConfigurationFileName]='#{hash[SharedLib::ConfigurationFileName]}' #{__LINE__}-#{__FILE__}"
+						slotOwnerParam = hash[SharedLib::SlotOwner]
+						# puts "hash[SharedLib::SlotOwner]='#{hash[SharedLib::SlotOwner]}' #{__LINE__}-#{__FILE__}"
+						hashForLotId = JSON.parse(data[SharedMemory::SystemInfo])
+						lotID = hashForLotId[SharedMemory::LotID]
+						# puts "data[SharedMemory::SystemInfo] = '#{data[SharedMemory::SystemInfo]}'  #{__LINE__}-#{__FILE__}"
+						# puts "lotID = '#{lotID}'  #{__LINE__}-#{__FILE__}"
+						dBaseFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),lotID)+".log"		
+						# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
+						`cd #{SharedMemory::StepsLogRecordsPath}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
+					}							
+					data = @sharedMemService.getLogInfoFromPC()
+					# End of 'while data.nil? == false'
+				end
+			end
+			
 			if @sharedMem.getCodeVersion(SharedMemory::PcVer).nil? || @sharedMem.getCodeVersion(SharedMemory::PcVer).length == 0
 				# ver 1.0.0 ~15 Nov 2014
 				# - Initial release
@@ -876,7 +958,13 @@ class UserInterface
 				# ver 1.0.2 ~16 Dec 2014
 				# - Moved out data folder out of source code folder.
 				# - Added code to handle BBB back log, case PC is down and BBB is still running.
-				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.2")
+				# ver 1.0.3 -22 Dec 2014
+				# - Moved Pc_SlotCtrlIp.config to ~/slot-controller_data so it will be easier to update the PC side ruby code by just copying the 
+				# code from github, and don't need to  update config files since they're in the separate folder.
+				# - Moved the code for processing for back-log data (accrued data from BBB case PC is down), and the sending of shutdown email vice 
+				# having the grape code do the sending of emails.  The BBB that tells the Grape to send out shutdown email gets its connection
+				# to fall out.  Hopefully, it'll work if the sending is done in Sinatra side - the completely separate process.
+				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.3")
 			end
 	end
 	def GetSlotDisplay(slotLabel2Param)

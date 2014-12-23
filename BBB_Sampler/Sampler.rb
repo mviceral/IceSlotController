@@ -12,9 +12,11 @@ require 'json'
 
 # DRuby stuff
 require 'drb/drb'
-SERVER_URI="druby://localhost:8787"
+SERVER_URI ="druby://localhost:8787"
 
 include Beaglebone
+
+SetupAtHome_Sampler = true # So we can do some work at home
 
 TOTAL_DUTS_TO_LOOK_AT  = 24
 class TCUSampler
@@ -533,6 +535,9 @@ class TCUSampler
                         rescue
                             SharedLib.bbbLog("Failed to connect on Ethernet power supply IP='#{host}'.  Attempt #{(tries+1)} of 5  #{__LINE__}-#{__FILE__}")
                             sleep(0.25)
+                            if SetupAtHome_Sampler == true
+                                tries = 5
+                            end
                     end
                     tries += 1
                 end
@@ -835,6 +840,7 @@ class TCUSampler
                 end
 =end
 
+                puts "@boardData[HighestStepNumber]='#{@boardData[HighestStepNumber]}' 1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]='#{1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]}'"
                 if @boardData[HighestStepNumber].nil? == false && 1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]
                     @timeOfLog = Time.new.to_i
                     if @loggingTime.nil?
@@ -982,14 +988,34 @@ class TCUSampler
                 setErrorColorFlag(key2,SharedMemory::OrangeFlag,"#{__LINE__}-#{__FILE__}")
                 if (tripMin <= actualValue && actualValue <= tripMax) == false
                     if is2ndFault(key2,unit,tripMin,actualValue,tripMax)
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
+
                         # Turn on red light and buzzer and make it blink due to shutdown
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         setToAlarmMode()
+
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         shutdowninfo = "ERROR - #{key2} OUT OF BOUND TRIP POINTS!  '#{tripMin}'#{unit} <= '#{actualValue}'#{unit} <= '#{tripMax}'#{unit} FAILED.  GOING TO STOP MODE (in step##{@boardData[LastStepNumOfSentLog]})." 
                         sendShutdownEmail(shutdowninfo)
+
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         @samplerData.setStopMessage("Trip Point Error. Stopped.")
+
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         setErrorColorFlag(key2,SharedMemory::RedFlag,"#{__LINE__}-#{__FILE__}")
+
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         reportToLogFile(shutdowninfo)
+
+                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
+                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         return true                
                     end
                 end
@@ -2086,6 +2112,8 @@ class TCUSampler
                         case key2
                         when "VPS0"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"32").to_f
+                            
+                            # Cause a shutdown error by uncommenting code below.
                             # actualValue = 1000*@samplerData.getPsVolts(muxData,adcData,"32").to_f
                             if SetupAtHome
                                 actualValue = 1.095
@@ -2266,6 +2294,7 @@ class TCUSampler
                                 if @tcusToSkip[ct].nil? == true
             						# puts "dutI#{ct} :tripMin='#{tripMin}' flagTolP='#{flagTolP}' actualValue='#{actualValue}' flagTolN='#{flagTolN}' tripMax='#{tripMax}' #{__LINE__}-#{__FILE__}"
                                     actualValue = SharedLib.getCurrentDutDisplay(muxData,"#{ct}").to_f
+                                    
                                     if (flagTolP <= actualValue && actualValue <= flagTolN) == false
                                         reportToLogFile("NOTICE - IDUT#{ct} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed (in step##{@boardData[LastStepNumOfSentLog]}).")
                                         setDutErrorColorFlag(key2,ct,SharedMemory::OrangeFlag)
@@ -2335,6 +2364,7 @@ class TCUSampler
             					if @tcuData.nil? == false && @tcuData["#{dutCt}"].nil? == false 
 					                splitted = @tcuData["#{dutCt}"].split(',')
             						temperature = SharedLib::make5point2Format(splitted[2]).to_f
+            						
                                     # puts "dut##{dutCt} flagTolP='#{flagTolP}' <= temp='#{temperature}' <= #{flagTolN} : '#{flagTolP<=temperature && temperature<=flagTolN}'"
                 				    if flagTolP<=temperature && temperature<=flagTolN
                 				        if @dutTempTolReached[dutCt].nil?
@@ -2378,6 +2408,10 @@ class TCUSampler
                         			    if @tcuData["#{dutCt}"].nil? == false 
                         	                splitted = @tcuData["#{dutCt}"].split(',')
                         					actualValue = SharedLib::make5point2Format(splitted[2]).to_f
+                        					
+                                            # Un-comment code line below if you want a trip on a dut current
+                        					# actualValue = 1000*SharedLib::make5point2Format(splitted[2]).to_f
+                        					
                                             if (flagTolP <= actualValue && actualValue <= flagTolN) == false
                                                 reportToLogFile("NOTICE - DUT##{dutCt} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed (in step##{@boardData[LastStepNumOfSentLog]}).")
                                                 setDutErrorColorFlag(key2,dutCt,SharedMemory::OrangeFlag)
@@ -2436,7 +2470,7 @@ class TCUSampler
                 pollIntervalInSeconds = @loggingTime
             end
             
-            # puts "@isOkToLog='#{@isOkToLog}', @boardData[\"isOkToLog\"]='#{@boardData["isOkToLog"]}' @allDutTempTolReached='#{@allDutTempTolReached}'  #{__LINE__}-#{__FILE__}"
+            # puts "@isOkToLog='#{@isOkToLog}',  @allDutTempTolReached='#{@allDutTempTolReached}', @boardData[\"isOkToLog\"]='#{@boardData["isOkToLog"]}' #{__LINE__}-#{__FILE__}"
             if @isOkToLog && @allDutTempTolReached
                 doTheAveragingOfMesurements()
                 if @timeOfLog.to_i <= Time.now.to_i
@@ -2725,7 +2759,11 @@ class TCUSampler
     end
     
     def runTCUSampler
-        puts "Running Sampler.rb"
+        
+        # Just keep setting the time zone every time you run the board to make sure it's right.
+        `ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime`
+        sentBackLogData = "#{Time.now.inspect} - Starting BBB. #{__LINE__}-#{__FILE__}"
+        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
 
         # Mount the SD card for access
         # Blindly create a /mnt/card, and mount the SD card to it.
@@ -2780,7 +2818,12 @@ class TCUSampler
         #  Trying to figure out why all the backlog data is not getting registered into the log file.
         #  Had to figure out why the slot controller is slowed down to 2 sec interval.
         #  Had to replace the BBB on the actual machine.
-        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.2")
+        # version 1.0.3 - 18 Dec 2014
+        #  Removed code that does the SD card cheking after lot runs.  It hangs up the BBB.
+        #  Due to firewall error in PC without knowing it was, had to move some code to handle exception codes to prevent 
+        #  from crashing.
+        #  Added some activity logs on start up, failed to send to PC, and sent backlog data due to lost PC connection.
+        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.3")
         turnOffHeaters()
     	initMuxValueFunc()
     	initpollAdcInputFunc()
@@ -2887,6 +2930,9 @@ class TCUSampler
             @samplerData.SetTotalStepDuration(@boardData[SharedLib::TotalStepDuration])
             @samplerData.SetLotID(@boardData[SharedMemory::LotID])
         end
+        
+        timeStamp = Time.now.to_f
+        timeStamp += 1.0
         
         while true
             stepNum = ""
@@ -3010,7 +3056,9 @@ class TCUSampler
                             # Delete the PcDown.BackLog and ErrorLog.txt file in /mnt/card
                             `rm -rf /mnt/card/PcDown.BackLog`
                             `rm -rf /mnt/card/ErrorLog.txt`
-    
+                            
+                            # Commented out for now since we need to see the activity
+                            # `rm -rf /mnt/card/Activity.log`
             		    when SharedLib::LoadConfigFromPc
                             `rm -rf #{HoldingTankFilename}`
             		        checkDeadTcus(uart1)
@@ -3099,8 +3147,14 @@ class TCUSampler
             # puts "#{Time.now.inspect} #{__LINE__}-#{__FILE__}"            
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
-            #
-            sleep(0.01) # Get some sleep time so the Grape app will be a bit more responsive.
+            timeNow = Time.now.to_f
+            if (timeStamp-timeNow>0)
+                sleep(timeStamp-timeNow) # Get some sleep time so the Grape app will be a bit more responsive.
+            end
+            while (timeStamp-timeNow<0.0)
+                timeStamp += 1.0
+            end
+            
             if getSavedMode() == SharedLib::InRunMode || getSavedMode() == SharedLib::InStopMode
                 if getSavedMode() == SharedLib::InRunMode 
                     skipLimboStateCheck = false
@@ -3132,4 +3186,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 2968 SendSampledTcuToPCLib::sendShutDownInfo(shutdownHash)
+# 534

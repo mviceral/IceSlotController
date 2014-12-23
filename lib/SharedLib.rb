@@ -2,7 +2,7 @@ require 'singleton'
 require 'forwardable'
 require 'uri'
 
-SetupAtHome = false # So we can do some work at home
+SetupAtHome  = false # So we can do some work at home
 
 class SharedLib
 	include Singleton
@@ -154,7 +154,7 @@ class SharedLib
 	def getSystemID()
 		if @systemID.nil?
 			config = Array.new
-			File.open("../#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
+			File.open("../../slot-controller_data/#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
 				f.each_line do |line|
 					config.push(line)
 				end			
@@ -468,9 +468,11 @@ class SharedLib
 			if SetupAtHome
 				pathD = "/cygdrive/c/work/slot-controller"
 			else
-				pathD = `cd ~; pwd`.strip
+				pathD = `cd ~/slot-controller_data; pwd`
 			end
-			File.open("#{pathD}/slot-controller/#{Pc_SlotCtrlIps}", "r") do |f|
+			pathD = pathD.strip # Remove the white spaces
+			puts "pathD=#{pathD} #{__LINE__}-#{__FILE__}"
+			File.open("#{pathD}/#{Pc_SlotCtrlIps}", "r") do |f|
 				f.each_line do |line|
 					config.push(line)
 				end			
