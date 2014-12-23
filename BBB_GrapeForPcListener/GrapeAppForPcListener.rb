@@ -96,7 +96,7 @@ module PcListenerModule
 					#
 					hash = Hash.new
 					hash["Cmd"] = params["#{SharedLib::PcToBbbCmd}"]
-					puts "\n\n\n"
+					# puts "\n\n\n"
 					
 					#
 					#	Tell sampler to Run if mode = run, Stop if mode = stop, etc.
@@ -106,7 +106,7 @@ module PcListenerModule
 					hash["Data"] = JSON.parse(params["#{SharedLib::PcToBbbData}"])
 					sharedMem = @@sharedMemService.getSharedMem()		 
 					sharedMem.setDataFromPcToBoard(hash)
-					puts "Got something from PC: #{hash["Cmd"]}"
+					# puts "Got something from PC: #{hash["Cmd"]}"
 =begin
 					return # dead code below
 					
@@ -122,10 +122,10 @@ module PcListenerModule
 			            s.puts "#{forEcho}"
 			            s.close               # Close the socket when done
 			            rescue Exception => e  
-			                puts e.message  
-			                puts e.backtrace.inspect  
+			                # puts e.message  
+			                # puts e.backtrace.inspect  
 			        end
-			        puts "Done sending."
+			        # puts "Done sending."
 					return
 					
 					sharedMem.SetSlotOwner(hash["SlotOwner"])
@@ -136,9 +136,9 @@ module PcListenerModule
 					when SharedLib::RunFromPc
 					when SharedLib::StopFromPc
 					when SharedLib::LoadConfigFromPc
-						puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
+						# puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
 						# puts "hash=#{hash}"
-						puts "SlotOwner=#{hash["SlotOwner"]}"
+						# puts "SlotOwner=#{hash["SlotOwner"]}"
 						date = Time.at(hash[SharedLib::ConfigDateUpload])
 						#puts "PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
 						# Sync the board time with the pc time

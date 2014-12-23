@@ -101,24 +101,24 @@ class DutObj
 =end                    
                 end
                 rescue Timeout::Error
-                    puts "\n\n\n\nTimed out Error. dutNumParam=#{dutNumParam}"
+                    # puts "\n\n\n\nTimed out Error. dutNumParam=#{dutNumParam}"
 # SharedLib.pause "Whacked out","#{__LINE__}-#{__FILE__}"
                     uart1Param.disable   # uart1Param variable is now dead cuz it timed out.
                     uart1Param = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
                     tbr = FaultyTcu
 =begin                
-                    puts "Flushing out ThermalSite uart."
+                    # puts "Flushing out ThermalSite uart."
                     keepLooping2 = true
                     while keepLooping2
                         begin
                             complete_results = Timeout.timeout(1) do      
                                 uart1Param.each_line { 
                                     |line| 
-                                    puts "' -- ${line}"
+                                    # puts "' -- ${line}"
                                 }
                         end
                         rescue Timeout::Error
-                            puts "Done flushing out ThermalSite uart."
+                            # puts "Done flushing out ThermalSite uart."
                             uart1Param.disable   # uart1Param variable is now dead cuz it timed out.
                             uart1Param = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
                             keepLooping2 = false     # loops out of the keepLooping loop.

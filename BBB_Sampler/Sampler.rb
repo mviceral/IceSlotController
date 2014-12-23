@@ -159,7 +159,7 @@ class TCUSampler
     end
     
     def setToMode(modeParam, calledFrom)
-        puts "modeParam='#{modeParam}' #{calledFrom}"
+        # puts"modeParam='#{modeParam}' #{calledFrom}"
         @samplerData.SetBbbMode(modeParam,"called from #{calledFrom} #{__LINE__}-#{__FILE__}")
         @boardData[BbbMode] = modeParam
         @boardMode = modeParam
@@ -217,7 +217,7 @@ class TCUSampler
     end
 
     def psSeqDown(fromParam)
-        # puts "psSeqDown fromParam = '#{fromParam}'"
+        # puts"psSeqDown fromParam = '#{fromParam}'"
         doPsSeqPower(false)
     end
     
@@ -233,14 +233,14 @@ class TCUSampler
         sortedUp = getSeqUpPsArr()
         if sortedUp.nil? == false
             sortedUp.each do |psItem|
-                # puts psItem
-                # puts "psItem.keyName=#{psItem.keyName}, psItem.seqOrder=#{psItem.seqOrder}"
+                # putspsItem
+                # puts"psItem.keyName=#{psItem.keyName}, psItem.seqOrder=#{psItem.seqOrder}"
                 if psItem.seqOrder != 0
                     if @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_Ethernent
                         #
                         # Do ethernet power supply enabling/disabling here.
                         #
-                        # puts "Ethernet PS key isolated = '#{psItem.keyName[1..-1]}' ip address of PS '#{@ethernetScheme[psItem.keyName[1..-1]]}'"
+                        # puts"Ethernet PS key isolated = '#{psItem.keyName[1..-1]}' ip address of PS '#{@ethernetScheme[psItem.keyName[1..-1]]}'"
                         if @socketIp.nil? == false
                             if @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].nil? == false
                                 begin
@@ -258,7 +258,7 @@ class TCUSampler
                                         SharedLib.bbbLog "Reconnect Ethernet PS at IP 'host'" 
                                         @socketIp[host] = TCPSocket.open(host,port)
                                 end
-                                # puts "measured I='#{tmp[0..-2]}' from IP='#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]}' #{__LINE__}-#{__FILE__}"
+                                # puts"measured I='#{tmp[0..-2]}' from IP='#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]}' #{__LINE__}-#{__FILE__}"
                             else
                                 # SharedLib.bbbLog "Socket on '#{psItem.keyName[1..-1]}' ip address '#{@ethernetScheme[psItem.keyName[1..-1]].chomp}' is not yet initialized.  Reload 'Steps' file."
                             end
@@ -274,7 +274,7 @@ class TCUSampler
     
     def doPsSeqPower(powerUpParam)
         # PS sequence gets called twice sometimes.
-        # puts "@boardData[\"LastPsSeqStateCall\"]=#{@boardData["LastPsSeqStateCall"]}, powerUpParam=#{powerUpParam} #{__LINE__}-#{__FILE__}" 
+        # puts"@boardData[\"LastPsSeqStateCall\"]=#{@boardData["LastPsSeqStateCall"]}, powerUpParam=#{powerUpParam} #{__LINE__}-#{__FILE__}" 
         if @boardData["LastPsSeqStateCall"] == powerUpParam
             return
         else
@@ -295,16 +295,16 @@ class TCUSampler
         end
 
         sortedUp.each do |psItem|
-            # puts psItem
-            # puts "psItem.keyName=#{psItem.keyName}, psItem.seqOrder=#{psItem.seqOrder}"
+            # putspsItem
+            # puts"psItem.keyName=#{psItem.keyName}, psItem.seqOrder=#{psItem.seqOrder}"
             if psItem.seqOrder != 0
-                puts "Turning '#{textDisp}' PS item '#{psItem.keyName}' #{@stepToWorkOn["PsConfig"][psItem.keyName]}"
+                # puts"Turning '#{textDisp}' PS item '#{psItem.keyName}' #{@stepToWorkOn["PsConfig"][psItem.keyName]}"
                 if @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_Ethernent
                     #
                     # Do ethernet power supply enabling/disabling here.
                     #
-                    # puts "Ethernet PS key isolated = '#{psItem.keyName[1..-1]}' ip address of PS '#{@ethernetScheme[psItem.keyName[1..-1]]}'"
-                    puts "checking IP of socket = '#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]}'"
+                    # puts"Ethernet PS key isolated = '#{psItem.keyName[1..-1]}' ip address of PS '#{@ethernetScheme[psItem.keyName[1..-1]]}'"
+                    # puts"checking IP of socket = '#{@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]}'"
                     if @socketIp.nil? == false
                         if @socketIp[@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SocketIp]].nil? == false
                             if powerUpParam
@@ -320,7 +320,7 @@ class TCUSampler
                     end
                 elsif @stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_SlotPcb
                     if SetupAtHome == false
-                        # puts "PS='#{psItem.keyName}' data='#{}'"
+                        # puts"PS='#{psItem.keyName}' data='#{}'"
                         case psItem.keyName
                         when PsSeqItem::SPS6
                         if powerUpParam
@@ -361,10 +361,10 @@ class TCUSampler
                 
                 if powerUpParam
                     sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SUDlyms].to_i)/1000)
-                    puts "sleep for '#{(@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SUDlyms].to_i)}'"
+                    # puts"sleep for '#{(@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SUDlyms].to_i)}'"
                 else
                     sleep((@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)/1000)
-                    puts "sleep for '#{(@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)}'"
+                    # puts"sleep for '#{(@stepToWorkOn["PsConfig"][psItem.keyName][PsSeqItem::SDDlyms].to_i)}'"
                 end
                 # sleep(3)
             end
@@ -381,8 +381,8 @@ class TCUSampler
             @boardData[StepTimeLeft] = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun())
         end
         Thread.current.backtrace.join("\n")
-        puts "saving StepTimeLeft @boardData[StepTimeLeft]='#{@boardData[StepTimeLeft]}'"
-        puts "step number saved '#{@boardData[StepTimeLeft]}'"
+        # puts"saving StepTimeLeft @boardData[StepTimeLeft]='#{@boardData[StepTimeLeft]}'"
+        # puts"step number saved '#{@boardData[StepTimeLeft]}'"
         # @samplerData.SetStepNumber(@stepToWorkOn["Step Num"])
         # @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
 	    if @stepToWorkOn.nil?
@@ -390,7 +390,7 @@ class TCUSampler
 	    end
 
         # PP.pp(@boardData)
-        puts "Saving board state. #{__LINE__}-#{__FILE__}"
+        # puts"Saving board state. #{__LINE__}-#{__FILE__}"
 	    File.open(HoldingTankFilename, "w") { 
 	        |file| file.write(@boardData.to_json) 
         }
@@ -400,13 +400,13 @@ class TCUSampler
         if @boardData[PollIntervalInSeconds].nil?
             @boardData[PollIntervalInSeconds] = 1
         end
-        # puts "getPollIntervalInSeconds=#{@boardData[PollIntervalInSeconds]} #{__LINE__}-#{__FILE__}"
+        # puts"getPollIntervalInSeconds=#{@boardData[PollIntervalInSeconds]} #{__LINE__}-#{__FILE__}"
         return @boardData[PollIntervalInSeconds]
     end
 
 =begin    
     def setPollIntervalInSeconds(timeInSecParam,fromParam)
-        # puts "setPollIntervalInSeconds=#{timeInSecParam} [#{fromParam}] #{__LINE__}-#{__FILE__}"
+        # puts"setPollIntervalInSeconds=#{timeInSecParam} [#{fromParam}] #{__LINE__}-#{__FILE__}"
         @boardData[PollIntervalInSeconds] = timeInSecParam
     end
 =end
@@ -433,22 +433,22 @@ class TCUSampler
         
 	    objWithSeq = Hash.new
 	    @stepToWorkOn["PsConfig"].each do |key, array|
-            # puts "#{key}-----"
+            # puts"#{key}-----"
 	        @stepToWorkOn["PsConfig"][key].each do |key2, array|
 	            if key2 == "SeqUp"
 	                objWithSeq[key] = @stepToWorkOn["PsConfig"][key]
 	            end
-	            # puts "  #{key2}-----"
+	            # puts"  #{key2}-----"
 	        end
         end
         
         largestSeqNum = 0
-        # puts "Checking isolated objects with sequences as sub parts."
+        # puts"Checking isolated objects with sequences as sub parts."
 	    objWithSeq.each do |key, array|
-            # puts "#{key}-----"
+            # puts"#{key}-----"
 	        objWithSeq[key].each do |key2, array2|
-	            # puts "   #{key2}-----"
-	            # puts "      #{array2}"
+	            # puts"   #{key2}-----"
+	            # puts"      #{array2}"
 	            if dirUpParam
     	            if key2 == "SeqUp"  && largestSeqNum < array2.to_i
     	                largestSeqNum = array2.to_i
@@ -469,18 +469,18 @@ class TCUSampler
             arrHolder = nil
 		    objWithSeq.each do |key, array|
 		        objWithSeq[key].each do |key2, array2|
-		            # puts "   #{key2}-----"
-		            # puts "      #{array2}"
+		            # puts"   #{key2}-----"
+		            # puts"      #{array2}"
 		            if dirUpParam
     		            if key2 == "SeqUp" && largeHolder>=array2.to_i
-                            # puts "          #{key2} array2.to_i=#{array2.to_i}"
+                            # puts"          #{key2} array2.to_i=#{array2.to_i}"
     		                largeHolder = array2.to_i
     		                keyHolder = key
     		                arrHolder = array2
     		            end
 		            else
     		            if key2 == "SeqDown" && largeHolder>=array2.to_i
-                            # puts "          #{key2} array2.to_i=#{array2.to_i}"
+                            # puts"          #{key2} array2.to_i=#{array2.to_i}"
     		                largeHolder = array2.to_i
     		                keyHolder = key
     		                arrHolder = array2
@@ -523,7 +523,7 @@ class TCUSampler
 
 
             if SetupAtHome
-                puts "Skipping PS host='#{host}' setup due to SetupAtHome == true."
+                # puts"Skipping PS host='#{host}' setup due to SetupAtHome == true."
                 @socketIp[host] = nil
             else
                 tries = 0
@@ -553,7 +553,7 @@ class TCUSampler
     end
     
     def checkOkToLog
-# puts "@boardData[LastStepNumOfSentLog].nil? == false '#{@boardData[LastStepNumOfSentLog]}' &&  @boardData[HighestStepNumber].nil? == false '#{@boardData[HighestStepNumber]}' #{__LINE__}-#{__FILE__}"
+# puts"@boardData[LastStepNumOfSentLog].nil? == false '#{@boardData[LastStepNumOfSentLog]}' &&  @boardData[HighestStepNumber].nil? == false '#{@boardData[HighestStepNumber]}' #{__LINE__}-#{__FILE__}"
         @boardData["isOkToLog"] =  false
         if @boardData[LastStepNumOfSentLog].nil? == false &&  @boardData[HighestStepNumber].nil? == false
             lastStepNumOfSentLog = @boardData[LastStepNumOfSentLog].to_i
@@ -561,8 +561,8 @@ class TCUSampler
                 @boardData["isOkToLog"] =  true
             end
         else
-            puts "Programming error!!! #{__LINE__}-#{__FILE__}"
-            puts "@boardData[HighestStepNumber] must have set value!!!!  See comment above line '@boardData[HighestStepNumber] = -1'"
+            # puts"Programming error!!! #{__LINE__}-#{__FILE__}"
+            # puts"@boardData[HighestStepNumber] must have set value!!!!  See comment above line '@boardData[HighestStepNumber] = -1'"
             exit
         end
         return @boardData["isOkToLog"]
@@ -583,8 +583,8 @@ class TCUSampler
         @samplerData.SetStepName("")
         @samplerData.SetStepNumber("")
         @samplerData.SetTotalTimeOfStepsInQueue(0.0)
-        # puts "\n\n\ninitStepToWorkOnVar got called."
-        # puts caller
+        # puts"\n\n\ninitStepToWorkOnVar got called."
+        # putscaller
         @stepToWorkOn = nil
 
         # Setup the @stepToWorkOn
@@ -594,26 +594,26 @@ class TCUSampler
 
         holdKey = -1
         
-	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
+	    # puts"getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
 	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
 	    	stepNumber<getConfiguration()["Steps"].length && 
 	    	@stepToWorkOn.nil?
-	    	# puts "stepNumber='#{stepNumber}''"
+	    	# puts"stepNumber='#{stepNumber}''"
 	    	# PP.pp (getConfiguration())
 	    	# SharedLib.pause "Checking content of 'TempConfig'","#{__LINE__}-#{__FILE__}"
-	    	# puts "A0 #{__LINE__}-#{__FILE__}"
+	    	# puts"A0 #{__LINE__}-#{__FILE__}"
 	        if @stepToWorkOn.nil?
-	            # puts "A1 #{__LINE__}-#{__FILE__}"
+	            # puts"A1 #{__LINE__}-#{__FILE__}"
                 getConfiguration()[Steps].each do |key, array|
 		            if @stepToWorkOn.nil?
                         getConfiguration()[Steps][key].each do |key2, array2|
                             # Get which step to work on and setup the power supply settings.
-                            # puts "key='#{key}', key2='#{key2}', StepNum='#{StepNum}' #{__LINE__}-#{__FILE__}"
+                            # puts"key='#{key}', key2='#{key2}', StepNum='#{StepNum}' #{__LINE__}-#{__FILE__}"
                             # SharedLib.pause "Checking key, and key2 values.","#{__LINE__}-#{__FILE__}"
                             if key2 == StepNum 
                                 if getConfiguration()[Steps][key][key2].to_i == (stepNumber+1) 
-                                    # puts "A3 getConfiguration()[Steps][key][key2].to_i=#{getConfiguration()[Steps][key][key2].to_i} (stepNumber+1) =#{(stepNumber+1) } #{__LINE__}-#{__FILE__}"
-                                    # puts "A4 getConfiguration()[Steps][key][StepTimeLeft].to_i=#{getConfiguration()[Steps][key][StepTimeLeft].to_i} #{__LINE__}-#{__FILE__}"
+                                    # puts"A3 getConfiguration()[Steps][key][key2].to_i=#{getConfiguration()[Steps][key][key2].to_i} (stepNumber+1) =#{(stepNumber+1) } #{__LINE__}-#{__FILE__}"
+                                    # puts"A4 getConfiguration()[Steps][key][StepTimeLeft].to_i=#{getConfiguration()[Steps][key][StepTimeLeft].to_i} #{__LINE__}-#{__FILE__}"
                                     if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0
                                         # This is the step we want to work on.  Set the temperature settings.
                                         # PP.pp(getConfiguration()[Steps][key])
@@ -633,7 +633,7 @@ class TCUSampler
                                         @thermalSiteDevices["D"] = getConfiguration()[Steps][key]["TempConfig"]["D"]
                                         
                                         
-                                        # puts "T='#{ThermalSiteDevices.LastValueT}', H='#{ThermalSiteDevices.LastValueH}', C='#{ThermalSiteDevices.LastValueC}', P='#{ThermalSiteDevices.LastValueP}', I='#{ThermalSiteDevices.LastValueI}', D='#{ThermalSiteDevices.LastValueD}' #{__LINE__}-#{__FILE__}"
+                                        # puts"T='#{ThermalSiteDevices.LastValueT}', H='#{ThermalSiteDevices.LastValueH}', C='#{ThermalSiteDevices.LastValueC}', P='#{ThermalSiteDevices.LastValueP}', I='#{ThermalSiteDevices.LastValueI}', D='#{ThermalSiteDevices.LastValueD}' #{__LINE__}-#{__FILE__}"
                                         
                                         ThermalSiteDevices.setTHCPID(uart1,"T",@tcusToSkip,@thermalSiteDevices["T"])
                                         ThermalSiteDevices.setTHCPID(uart1,"H",@tcusToSkip,@thermalSiteDevices["H"])
@@ -642,9 +642,9 @@ class TCUSampler
                                         ThermalSiteDevices.setTHCPID(uart1,"I",@tcusToSkip,@thermalSiteDevices["I"])
                                         ThermalSiteDevices.setTHCPID(uart1,"D",@tcusToSkip,@thermalSiteDevices["D"])
 
-                                        # puts "P = '#{getConfiguration()[Steps][key]["TempConfig"]["P"]}'"
-                                        # puts "I = '#{getConfiguration()[Steps][key]["TempConfig"]["I"]}'" 
-                                        # puts "D = '#{getConfiguration()[Steps][key]["TempConfig"]["D"]}'"
+                                        # puts"P = '#{getConfiguration()[Steps][key]["TempConfig"]["P"]}'"
+                                        # puts"I = '#{getConfiguration()[Steps][key]["TempConfig"]["I"]}'" 
+                                        # puts"D = '#{getConfiguration()[Steps][key]["TempConfig"]["D"]}'"
                                         
                                         # Make sure all the duts have the settings PIDTH we sent.
                                         SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
@@ -724,8 +724,8 @@ class TCUSampler
                                             @dutTempTripMax = hold
                                         end
                                         # PP.pp(@stepToWorkOn)
-                                        # puts "TIMERRUFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRUFP"]}'"
-                                        # puts "TIMERRDFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRDFP"]}'"
+                                        # puts"TIMERRUFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRUFP"]}'"
+                                        # puts"TIMERRDFP = '#{getConfiguration()[Steps][key]["TempConfig"]["TIMERRDFP"]}'"
 
                                         timerRUFP = getConfiguration()[Steps][key]["TempConfig"]["TIMERRUFP"]
                                         timerRDFP = getConfiguration()[Steps][key]["TempConfig"]["TIMERRDFP"]
@@ -735,13 +735,13 @@ class TCUSampler
 
                         		        # Setup the power supplies...
                                         @stepToWorkOn["PsConfig"].each do |key, data|
-                                            # puts "key='#{key}' #{__LINE__}-#{__FILE__}"
+                                            # puts"key='#{key}' #{__LINE__}-#{__FILE__}"
                                             if key[0..1] == "VP"
                                                 sequencePS = "S#{key[1..-1]}"
-                                                # puts "sequencePS='#{sequencePS}' is '#{PsSeqItem::EthernetOrSlotPcb_Ethernent}' #{__LINE__}-#{__FILE__}"
+                                                # puts"sequencePS='#{sequencePS}' is '#{PsSeqItem::EthernetOrSlotPcb_Ethernent}' #{__LINE__}-#{__FILE__}"
                                                 if @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::EthernetOrSlotPcb] == PsSeqItem::EthernetOrSlotPcb_Ethernent 
                                                     if @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SeqUp].to_i > 0
-                                                        # puts "SeqUp value = '#{@stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SeqUp]}' #{__LINE__}-#{__FILE__}"
+                                                        # puts"SeqUp value = '#{@stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SeqUp]}' #{__LINE__}-#{__FILE__}"
                                                         # Setup a connetion to the PS via ethernet, and set the voltage and current settings
                                                         if @socketIp.nil?
                                                             @socketIp = Hash.new
@@ -749,20 +749,20 @@ class TCUSampler
                                                         host = @ethernetScheme[key[1..-1]].chomp
                                                         port = 5025                # port
                                                         if @socketIp[host].nil?
-                                                            # puts "host = '#{host}',port = '#{port}' #{__LINE__}-#{__FILE__}"
+                                                            # puts"host = '#{host}',port = '#{port}' #{__LINE__}-#{__FILE__}"
                                                             openEthernetPsSocket(host,port)
                                                         end
                                                         @stepToWorkOn["PsConfig"][sequencePS][PsSeqItem::SocketIp] = @ethernetScheme[key[1..-1]].chomp
                     
                                                         if @socketIp[host]
                                                             # Set the voltage
-                                                            # puts "voltage name = '#{key}', NomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                            # puts"voltage name = '#{key}', NomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} #{__LINE__}-#{__FILE__}"
                                                             # print "VNomSet=#{@stepToWorkOn["PsConfig"][key][NomSet]} "
                                                             @socketIp[host].print("SOUR:VOLT #{@stepToWorkOn["PsConfig"][key][NomSet]}\r\n")
                         
                                                             # Set the current
-                                                            # puts "current name = 'I#{key[1..-1]}', NomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
-                                                            # puts "INomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                            # puts"current name = 'I#{key[1..-1]}', NomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
+                                                            # puts"INomSet=#{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]} #{__LINE__}-#{__FILE__}"
                                                             @socketIp[host].print("SOUR:CURR #{@stepToWorkOn["PsConfig"]["I#{key[1..-1]}"][NomSet]}\r\n")
                                                         end
                                                     end
@@ -774,43 +774,43 @@ class TCUSampler
                                     end
                                 end
                             end
-                            # puts "C #{__LINE__}-#{__FILE__}"
+                            # puts"C #{__LINE__}-#{__FILE__}"
                         end
-                        # puts "D #{__LINE__}-#{__FILE__}"
+                        # puts"D #{__LINE__}-#{__FILE__}"
 		            end
-		            # puts "E #{__LINE__}-#{__FILE__}"
+		            # puts"E #{__LINE__}-#{__FILE__}"
                 end
-                # puts "F #{__LINE__}-#{__FILE__}"
+                # puts"F #{__LINE__}-#{__FILE__}"
 	        end
-	        # puts "G #{__LINE__}-#{__FILE__}"
+	        # puts"G #{__LINE__}-#{__FILE__}"
 	        stepNumber += 1
 	    end
 	    
         # Setup the total time still to go on the step queue
         hash = Hash.new
 	    stepNumber = 0
-	    # puts "getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
+	    # puts"getConfiguration().nil? = #{getConfiguration().nil?}  #{__LINE__}-#{__FILE__}"
 	    while getConfiguration().nil? == false && getConfiguration()["Steps"].nil? == false && 
 	    	stepNumber<getConfiguration()["Steps"].length 
-	    	# puts "A0 #{__LINE__}-#{__FILE__}"
-            # puts "A1 #{__LINE__}-#{__FILE__}"
+	    	# puts"A0 #{__LINE__}-#{__FILE__}"
+            # puts"A1 #{__LINE__}-#{__FILE__}"
             getConfiguration()[Steps].each do |key, array|
                 getConfiguration()[Steps][key].each do |key2, array2|
                     # Get the total time of Steps in queue
                     if key2 == StepNum 
                         if @stepToWorkOn != getConfiguration()[Steps][key]
                             if getConfiguration()[Steps][key][StepTimeLeft].to_i > 0 && hash[key].nil?
-                                puts "Add time #{getConfiguration()[Steps][key][StepTimeLeft]} key='#{key}' @samplerData.GetTotalTimeOfStepsInQueue()='#{@samplerData.GetTotalTimeOfStepsInQueue()}'"
+                                # puts"Add time #{getConfiguration()[Steps][key][StepTimeLeft]} key='#{key}' @samplerData.GetTotalTimeOfStepsInQueue()='#{@samplerData.GetTotalTimeOfStepsInQueue()}'"
                                 hash[key] = key
                                 @samplerData.SetTotalTimeOfStepsInQueue(getConfiguration()[Steps][key][StepTimeLeft].to_f+@samplerData.GetTotalTimeOfStepsInQueue().to_f)
-                                puts "New total @samplerData.GetTotalTimeOfStepsInQueue()='#{@samplerData.GetTotalTimeOfStepsInQueue()}'"
+                                # puts"New total @samplerData.GetTotalTimeOfStepsInQueue()='#{@samplerData.GetTotalTimeOfStepsInQueue()}'"
                             end
                         end
                     end
                 end
-	            # puts "E #{__LINE__}-#{__FILE__}"
+	            # puts"E #{__LINE__}-#{__FILE__}"
             end
-	        # puts "G #{__LINE__}-#{__FILE__}"
+	        # puts"G #{__LINE__}-#{__FILE__}"
 	        stepNumber += 1
 	    end
 =begin
@@ -828,7 +828,7 @@ class TCUSampler
 
             if @boardData[LastStepNumOfSentLog] != @samplerData.GetStepNumber()
                 @boardData[LastStepNumOfSentLog] = @samplerData.GetStepNumber()
-                # puts "@samplerData.GetStepNumber()=#{@samplerData.GetStepNumber()} #{__LINE__}-#{__FILE__}"
+                # puts"@samplerData.GetStepNumber()=#{@samplerData.GetStepNumber()} #{__LINE__}-#{__FILE__}"
                 @isOkToLog = checkOkToLog()
                 
                 # If step number is not numeric, don't process code below.
@@ -836,11 +836,11 @@ class TCUSampler
                 
 =begin
                 if @boardData[HighestStepNumber].nil? == false
-                    puts "stepnumber='#{stepnumber}', 1<= #{stepnumber} && #{stepnumber} <= #{@boardData[HighestStepNumber]} = '#{1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]}'"
+                    # puts"stepnumber='#{stepnumber}', 1<= #{stepnumber} && #{stepnumber} <= #{@boardData[HighestStepNumber]} = '#{1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]}'"
                 end
 =end
 
-                puts "@boardData[HighestStepNumber]='#{@boardData[HighestStepNumber]}' 1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]='#{1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]}'"
+                # puts"@boardData[HighestStepNumber]='#{@boardData[HighestStepNumber]}' 1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]='#{1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]}'"
                 if @boardData[HighestStepNumber].nil? == false && 1<= stepnumber && stepnumber <= @boardData[HighestStepNumber]
                     @timeOfLog = Time.new.to_i
                     if @loggingTime.nil?
@@ -850,7 +850,7 @@ class TCUSampler
                     @logRptAvgCt = 0
                     @logRptAvg = nil
                     
-                    puts "Sending log data.  #{Time.now.inspect}. #{__LINE__}-#{__FILE__}"
+                    # puts"Sending log data.  #{Time.now.inspect}. #{__LINE__}-#{__FILE__}"
                     # tbs  = "BIB#: #{@ethernetScheme[SlotBibNum]}\n"
                     tbs = ""
                     tbs += "Test Step: step##{@samplerData.GetStepNumber()}-#{@samplerData.GetStepName()}  Time: #{Time.now.inspect}\n"
@@ -973,7 +973,7 @@ class TCUSampler
 
     def stopMachineIfTripped(gPIO2Param, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
         if @disabledPS.include?(key2) == false
-            # puts "'#{key2}' is not disabled.  Checking for trip points."
+            # puts"'#{key2}' is not disabled.  Checking for trip points."
             # if (key2 == "VPS3")
             #     puts("key2 = #{key2}, tripMin='#{tripMin}', actualValue='#{actualValue}', tripMax='#{tripMax}', flagTolP='#{flagTolP}', flagTolN='#{flagTolN}'")
             # end
@@ -1014,7 +1014,7 @@ class TCUSampler
     end
     
     def setBoardData(boardDataParam,uart1, calledFrom)
-        puts "calledFrom=#{calledFrom} @#{__LINE__}-#{__FILE__}"
+        # puts"calledFrom=#{calledFrom} @#{__LINE__}-#{__FILE__}"
         # The configuration was just loaded from file.  We must setup the system to be in a given state.
         # For example, if the system is in runmode, when starting the system over, the PS must sequence up
         # properly then set the system to run mode.
@@ -1053,7 +1053,7 @@ class TCUSampler
     
     def setAllStepsDone_YesNo(allStepsDone_YesNoParam,calledFrom)
         #if allStepsDone_YesNoParam == SharedLib::Yes
-        #    puts caller # Kernel#caller returns an array of strings
+        #    # putscaller # Kernel#caller returns an array of strings
         #end
         @boardData[SharedLib::AllStepsDone_YesNo] = allStepsDone_YesNoParam
         @samplerData.SetAllStepsDone_YesNo(allStepsDone_YesNoParam,"#{__LINE__}-#{__FILE__}")
@@ -1067,16 +1067,16 @@ class TCUSampler
 					fileRead += line
 				end
 			end
-			# puts fileRead
+			# putsfileRead
 			setBoardData(JSON.parse(fileRead),uart1,"#{__LINE__}-#{__FILE__}")
 			# @boardData[SharedLib::AllStepsDone_Yes9No] = SharedLib::No
 			
-			# puts "Checking content of getConfiguration() function"
-			# puts "getConfiguration().nil?='#{getConfiguration().nil?}'"
+			# puts"Checking content of getConfiguration() function"
+			# puts"getConfiguration().nil?='#{getConfiguration().nil?}'"
 			# PP.pp(getConfiguration())
 			rescue Exception => e  
-                puts "e.message=#{e.message }"
-                puts "e.backtrace.inspect=#{e.backtrace.inspect}" 
+                # puts"e.message=#{e.message }"
+                # puts"e.backtrace.inspect=#{e.backtrace.inspect}" 
         		SharedLib.bbbLog("There's no data in the holding tank.  New machine starting up. #{__LINE__}-#{__FILE__}")
         		setBoardData(Hash.new,uart1,"#{__LINE__}-#{__FILE__}")
         		setToMode(SharedLib::InStopMode, "#{__LINE__}-#{__FILE__}")
@@ -1094,43 +1094,43 @@ class TCUSampler
     end
     
     def pollAdcInput()
-        # puts "E #{__LINE__}-#{__FILE__}"
+        # puts"E #{__LINE__}-#{__FILE__}"
         if @initpollAdcInputFunc
-            # puts "f #{__LINE__}-#{__FILE__}"
+            # puts"f #{__LINE__}-#{__FILE__}"
             pAin = AINPin.new(:P9_39)
-            # puts "g #{__LINE__}-#{__FILE__}"
-            # puts "pAin.read=#{pAin.read}"
-            # puts "g.1 #{__LINE__}-#{__FILE__}"
+            # puts"g #{__LINE__}-#{__FILE__}"
+            # puts"pAin.read=#{pAin.read}"
+            # puts"g.1 #{__LINE__}-#{__FILE__}"
             @samplerData.SetData(SharedLib::AdcInput,SharedLib::SLOTP5V,pAin.read,@multiplier)
-            # puts "h #{__LINE__}-#{__FILE__}"
+            # puts"h #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_40)
-            # puts "i #{__LINE__}-#{__FILE__}"
+            # puts"i #{__LINE__}-#{__FILE__}"
             @samplerData.SetData(SharedLib::AdcInput,SharedLib::SLOTP3V3,pAin.read,@multiplier)
-            # puts "j #{__LINE__}-#{__FILE__}"
+            # puts"j #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_37)
-            # puts "k #{__LINE__}-#{__FILE__}"
+            # puts"k #{__LINE__}-#{__FILE__}"
             @samplerData.SetData(SharedLib::AdcInput,SharedLib::SLOTP1V8,pAin.read,@multiplier)
-            # puts "l #{__LINE__}-#{__FILE__}"
+            # puts"l #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_38)
-            # puts "m #{__LINE__}-#{__FILE__}"
+            # puts"m #{__LINE__}-#{__FILE__}"
             @samplerData.SetData(SharedLib::AdcInput,SharedLib::SlotTemp1,pAin.read,@multiplier)
-            # puts "n #{__LINE__}-#{__FILE__}"
+            # puts"n #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_36)
-            # puts "o #{__LINE__}-#{__FILE__}"
+            # puts"o #{__LINE__}-#{__FILE__}"
             @samplerData.SetData(SharedLib::AdcInput,SharedLib::CALREF,pAin.read,@multiplier)
-            # puts "p #{__LINE__}-#{__FILE__}"
+            # puts"p #{__LINE__}-#{__FILE__}"
 
             pAin = AINPin.new(:P9_35)
-            # puts "q #{__LINE__}-#{__FILE__}"
+            # puts"q #{__LINE__}-#{__FILE__}"
             @samplerData.SetData(SharedLib::AdcInput,SharedLib::SlotTemp2,pAin.read,@multiplier)
-            # puts "r #{__LINE__}-#{__FILE__}"
+            # puts"r #{__LINE__}-#{__FILE__}"
         else
             # The code is not initialized to run this function
-            puts "The code is not initialized to run this function - #{__LINE__}-#{__FILE__}"
+            # puts"The code is not initialized to run this function - #{__LINE__}-#{__FILE__}"
             exit
         end
     end
@@ -1169,13 +1169,13 @@ class TCUSampler
                     useIndex = aMux
                 end
                 @samplerData.SetData(SharedLib::MuxData,useIndex,retval,@multiplier)
-                # puts "retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) "
+                # puts"retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) "
                 aMux += 1
                 # sleep(1)
             end
         else
             # The code is not initialized to run this function
-            puts "The code is not initialized to run this function - #{__LINE__}-#{__FILE__}"
+            # puts"The code is not initialized to run this function - #{__LINE__}-#{__FILE__}"
             exit
         end
     end
@@ -1253,12 +1253,12 @@ class TCUSampler
 		end
 		
 		# Fish for the SlotOwner value...
-		# puts "ethernetScheme=#{ethernetScheme}"
+		# puts"ethernetScheme=#{ethernetScheme}"
 		ct = 0
 		while ct < ethernetScheme.length do
             if ct >= 1
 		        splittedLine = ethernetScheme[ct].split(",")
-    			# puts "splittedLine[0].strip='#{splittedLine[0].strip}'"
+    			# puts"splittedLine[0].strip='#{splittedLine[0].strip}'"
     			if splittedLine.nil? == false && splittedLine[0].strip == "SlotCtrlr ID"
     			    slotOwner = splittedLine[1].strip
     			end
@@ -1266,7 +1266,7 @@ class TCUSampler
             ct += 1
         end
 		@samplerData.SetSlotOwner(slotOwner)
-		# puts "slotOwner='#{slotOwner}'"
+		# puts"slotOwner='#{slotOwner}'"
 		# SharedLib.pause "Fishing for slot controller ID","#{__LINE__}-#{__FILE__}"
 		
 		
@@ -1371,7 +1371,7 @@ class TCUSampler
             #
             # We're in limbo for some reason
             #
-            puts "We're in limbo @samplerData.GetBbbMode()='#{@samplerData.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
+            # puts"We're in limbo @samplerData.GetBbbMode()='#{@samplerData.GetBbbMode()}' #{__LINE__}-#{__FILE__}"
             loadConfigurationFromHoldingTank(uart1)
 
 		    case @lastPcCmd
@@ -1446,7 +1446,7 @@ class TCUSampler
     end
     
     def fanCtrl(pwmParam, fanParam)
-        # puts "fanCtrl pwm='#{pwmParam}', fan='#{fanParam}' [#{__LINE__}-#{__FILE__}]"
+        # puts"fanCtrl pwm='#{pwmParam}', fan='#{fanParam}' [#{__LINE__}-#{__FILE__}]"
         if @lastPwmParam != pwmParam
             @lastPwmParam = pwmParam # So it won't keep calling the function
             @gPIO2.slotFanPulseWidthModulator(pwmParam)
@@ -1641,8 +1641,8 @@ class TCUSampler
     	    @logRptAvg["#{Temp2Max}"] = adcData[SharedLib::SlotTemp2.to_s].to_f/1000.0
     	end
 
-        # puts "-------------------------------------------"
-        # puts "@logRptAvgCt=#{@logRptAvgCt}"
+        # puts"-------------------------------------------"
+        # puts"@logRptAvgCt=#{@logRptAvgCt}"
         # PP.pp(@logRptAvg)
     end
 
@@ -2026,7 +2026,7 @@ class TCUSampler
     end
 
     def testBadMeasForTripPts(key2,actualValue, fromParam)
-        puts "testBadMeasForTripPts for '#{key2}'. [called from #{fromParam}] #{__LINE__}-#{__FILE__}"
+        # puts"testBadMeasForTripPts for '#{key2}'. [called from #{fromParam}] #{__LINE__}-#{__FILE__}"
 
         if @testBadMeasForTripPts.nil?
             @testBadMeasForTripPts = Hash.new
@@ -2034,7 +2034,7 @@ class TCUSampler
         
         if @testBadMeasForTripPts[key2].nil?
             @testBadMeasForTripPts[key2] = key2
-            puts "testBadMeasForTripPts for '#{key2}' returning fudged data. #{__LINE__}-#{__FILE__}"
+            # puts"testBadMeasForTripPts for '#{key2}' returning fudged data. #{__LINE__}-#{__FILE__}"
             return 1000*actualValue
         else
             return actualValue
@@ -2060,7 +2060,7 @@ class TCUSampler
     end
 
     def evaluateDevices(pollIntervalInSeconds, pollingTime, uart1, twtimeleft)
-        # puts "@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
+        # puts"@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)=#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}  #{__LINE__}-#{__FILE__}"
 	    if @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)>0
 	        # We're still running.
 	        # getConfiguration()[Steps][@stepToWorkOn["Key"]][StepTimeLeft] = @stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)
@@ -2071,7 +2071,7 @@ class TCUSampler
 	        # First, display the trip points, then display the current values.
 	        # Then compare the two values.  If trip points fail
 	        @stepToWorkOn.each do |key, array|
-                # puts "#{key}----- #{__LINE__}-#{__FILE__}"
+                # puts"#{key}----- #{__LINE__}-#{__FILE__}"
                 if key == "PsConfig"
                     adcData = @samplerData.GetDataAdcInput("#{__LINE__}-#{__FILE__}")
                     muxData = @samplerData.GetDataMuxData("#{__LINE__}-#{__FILE__}")
@@ -2096,7 +2096,7 @@ class TCUSampler
 			                flagTolN = hold
 			            end
 			            
-			            # puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
+			            # puts"key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
                         case key2
                         when "VPS0"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"32").to_f
@@ -2120,7 +2120,7 @@ class TCUSampler
                                 return
                             end
                         when "VPS1"
-                            # puts "PS1V = #{@samplerData.getPsVolts(muxData,adcData,"33")}"
+                            # puts"PS1V = #{@samplerData.getPsVolts(muxData,adcData,"33")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"33").to_f
                             if SetupAtHome
                                 actualValue = 1.08
@@ -2130,13 +2130,13 @@ class TCUSampler
                                 return
                             end
                         when "IPS1"
-                            # puts "PS1I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
+                            # puts"PS1I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
                             end
                         when "VPS2"
-                            # puts "PS2V = #{@samplerData.getPsVolts(muxData,adcData,"34")}"
+                            # puts"PS2V = #{@samplerData.getPsVolts(muxData,adcData,"34")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"34").to_f
                             if SetupAtHome
                                 actualValue = 2.1
@@ -2146,13 +2146,13 @@ class TCUSampler
                                 return
                             end
                         when "IPS2"
-                            # puts "PS2I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
+                            # puts"PS2I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,key2)}"
                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
                             end
                         when "VPS3"
-			                # puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
+			                # puts"key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"35").to_f
                             if SetupAtHome
                                 # actualValue = 1.0
@@ -2163,40 +2163,40 @@ class TCUSampler
                             end 
                         when "IPS3"
                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
-                            # puts "eiPs=#{eiPs} #{__LINE__}-#{__FILE__}"
-                            # puts "key2=#{key2}, key2[1..-1]=#{key2[1..-1]} #{__LINE__}-#{__FILE__}"
-                            # puts "actualValue=#{actualValue} #{__LINE__}-#{__FILE__}"
+                            # puts"eiPs=#{eiPs} #{__LINE__}-#{__FILE__}"
+                            # puts"key2=#{key2}, key2[1..-1]=#{key2[1..-1]} #{__LINE__}-#{__FILE__}"
+                            # puts"actualValue=#{actualValue} #{__LINE__}-#{__FILE__}"
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
                             end
                         when "VPS4"
-                            # puts "PS4V = #{@samplerData.getPsVolts(muxData,adcData,"36")}"
+                            # puts"PS4V = #{@samplerData.getPsVolts(muxData,adcData,"36")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"36").to_f
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
                             end
                         when "IPS4"
-                            # puts "PS4I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2")}"
+                            # puts"PS4I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,"IPS2")}"
                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
                             # actualValue = testBadMeasForTripPts(key2,actualValue,"#{__LINE__}-#{__FILE__}")
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
                             end
                         when "VPS5"
-                            # puts "PS5V = #{@samplerData.getPsVolts(muxData,adcData,"37")}"
+                            # puts"PS5V = #{@samplerData.getPsVolts(muxData,adcData,"37")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"37").to_f
                             # actualValue = testBadMeasForTripPts(key2,actualValue,"#{__LINE__}-#{__FILE__}")
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
                             end
                         when "IPS5"
-                            # puts "PS5I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,nil)}"
+                            # puts"PS5I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,nil)}"
                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,nil).to_f
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
                             end
                         when "VPS6"
-                            # puts "PS6V = #{@samplerData.getPsVolts(muxData,adcData,"38")}"
+                            # puts"PS6V = #{@samplerData.getPsVolts(muxData,adcData,"38")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"38").to_f
                             if SetupAtHome
                                 actualValue = 3.3
@@ -2206,13 +2206,13 @@ class TCUSampler
                                 return
                             end
                         when "IPS6"
-                            # puts "PS6I = #{@samplerData.getPsCurrent(muxData,eiPs,"24",nil)}"
+                            # puts"PS6I = #{@samplerData.getPsCurrent(muxData,eiPs,"24",nil)}"
                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,"24",nil).to_f
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
                             end
                         when "VPS7"
-                            # puts "PS7V = #{@samplerData.getPsVolts(muxData,adcData,"39")}"
+                            # puts"PS7V = #{@samplerData.getPsVolts(muxData,adcData,"39")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"39").to_f
                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                             if SetupAtHome
@@ -2222,13 +2222,13 @@ class TCUSampler
                                 return
                             end
                         when "IPS7"
-                            # puts "PS7I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,nil)}"
+                            # puts"PS7I = #{@samplerData.getPsCurrent(muxData,eiPs,nil,nil)}"
                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,nil,key2[1..-1]).to_f
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
                             end
                         when "VPS8"
-                            # puts "PS8V = #{@samplerData.getPsVolts(muxData,adcData,"40")}"
+                            # puts"PS8V = #{@samplerData.getPsVolts(muxData,adcData,"40")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"40").to_f
                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                             if SetupAtHome
@@ -2238,13 +2238,13 @@ class TCUSampler
                                 return
                             end
                         when "IPS8"
-                            # puts "PS8I = #{@samplerData.getPsCurrent(muxData,eiPs,"25",nil)}"
+                            # puts"PS8I = #{@samplerData.getPsCurrent(muxData,eiPs,"25",nil)}"
                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,"25",nil).to_f
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
                             end
                         when "VPS9"
-                            # puts "PS9V = #{@samplerData.getPsVolts(muxData,adcData,"41")}"
+                            # puts"PS9V = #{@samplerData.getPsVolts(muxData,adcData,"41")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"41").to_f
                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                             if SetupAtHome
@@ -2254,13 +2254,13 @@ class TCUSampler
                                 return
                             end
                         when "IPS9"
-                            # puts "PS9I = #{@samplerData.getPsCurrent(muxData,eiPs,"26",nil)}"
+                            # puts"PS9I = #{@samplerData.getPsCurrent(muxData,eiPs,"26",nil)}"
                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,"26",nil).to_f
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
                             end
                         when "VPS10"
-                            # puts "PS10V = #{@samplerData.getPsVolts(muxData,adcData,"42")}"
+                            # puts"PS10V = #{@samplerData.getPsVolts(muxData,adcData,"42")}"
                             actualValue = @samplerData.getPsVolts(muxData,adcData,"42").to_f
                             #@samplerData.ReportError("#{key2} value fudged to pass on line #{__LINE__}-#{__FILE__}")
                             if SetupAtHome
@@ -2270,7 +2270,7 @@ class TCUSampler
                                 return
                             end
                         when "IPS10"
-                            # puts "PS10I = #{@samplerData.getPsCurrent(muxData,eiPs,"27",nil)}"
+                            # puts"PS10I = #{@samplerData.getPsCurrent(muxData,eiPs,"27",nil)}"
                             actualValue = @samplerData.getPsCurrent(muxData,eiPs,"27",nil).to_f
                             if stopMachineIfTripped(@gPIO2, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
                                 return
@@ -2280,7 +2280,7 @@ class TCUSampler
                             ct = 0
                             while ct<24 do
                                 if @tcusToSkip[ct].nil? == true
-            						# puts "dutI#{ct} :tripMin='#{tripMin}' flagTolP='#{flagTolP}' actualValue='#{actualValue}' flagTolN='#{flagTolN}' tripMax='#{tripMax}' #{__LINE__}-#{__FILE__}"
+            						# puts"dutI#{ct} :tripMin='#{tripMin}' flagTolP='#{flagTolP}' actualValue='#{actualValue}' flagTolN='#{flagTolN}' tripMax='#{tripMax}' #{__LINE__}-#{__FILE__}"
                                     actualValue = SharedLib.getCurrentDutDisplay(muxData,"#{ct}").to_f
                                     
                                     if (flagTolP <= actualValue && actualValue <= flagTolN) == false
@@ -2328,7 +2328,7 @@ class TCUSampler
 			            tripMax = array2["TripMax"]
 			            flagTolP = array2["FlagTolP"]
 			            flagTolN = array2["FlagTolN"]
-			            # puts "key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
+			            # puts"key='#{key2}',nomSet = '#{nomSet}', tripMin = '#{tripMin}', tripMax = '#{tripMax}', flagTolP = '#{flagTolP}', flagTolN='#{flagTolN}'"
                         case key2
                         when "TDUT"
                             if (tripMin < tripMax) == false
@@ -2353,7 +2353,7 @@ class TCUSampler
 					                splitted = @tcuData["#{dutCt}"].split(',')
             						temperature = SharedLib::make5point2Format(splitted[2]).to_f
             						
-                                    # puts "dut##{dutCt} flagTolP='#{flagTolP}' <= temp='#{temperature}' <= #{flagTolN} : '#{flagTolP<=temperature && temperature<=flagTolN}'"
+                                    # puts"dut##{dutCt} flagTolP='#{flagTolP}' <= temp='#{temperature}' <= #{flagTolN} : '#{flagTolP<=temperature && temperature<=flagTolN}'"
                 				    if flagTolP<=temperature && temperature<=flagTolN
                 				        if @dutTempTolReached[dutCt].nil?
                     				        @dutTempTolReached[dutCt] = true
@@ -2386,7 +2386,7 @@ class TCUSampler
         				    if @allDutTempTolReached == false 
         				        setTimeOfRun() # So the countdown will never take place.
         				    end
-                            # puts "@totDutTempReached='#{@totDutTempReached}'/'#{@totDutsAvailable}' @allDutTempTolReached = '#{@allDutTempTolReached}'"
+                            # puts"@totDutTempReached='#{@totDutTempReached}'/'#{@totDutsAvailable}' @allDutTempTolReached = '#{@allDutTempTolReached}'"
             				
                             if @allDutTempTolReached
                                 if @tcuData.nil? == false
@@ -2458,7 +2458,7 @@ class TCUSampler
                 pollIntervalInSeconds = @loggingTime
             end
             
-            # puts "@isOkToLog='#{@isOkToLog}',  @allDutTempTolReached='#{@allDutTempTolReached}', @boardData[\"isOkToLog\"]='#{@boardData["isOkToLog"]}' #{__LINE__}-#{__FILE__}"
+            # puts"@isOkToLog='#{@isOkToLog}',  @allDutTempTolReached='#{@allDutTempTolReached}', @boardData[\"isOkToLog\"]='#{@boardData["isOkToLog"]}' #{__LINE__}-#{__FILE__}"
             if @isOkToLog && @allDutTempTolReached
                 doTheAveragingOfMesurements()
                 if @timeOfLog.to_i <= Time.now.to_i
@@ -2515,12 +2515,12 @@ class TCUSampler
                     # Get the total time of Steps in queue
                     if key2 == StepNum
                         if getConfiguration()[Steps][key][StepTimeLeft]>0
-                            puts "Step# '#{array2}' StepTimeLeft='#{getConfiguration()[Steps][key][StepTimeLeft]}' #{__LINE__}-#{__LINE__}"
+                            # puts"Step# '#{array2}' StepTimeLeft='#{getConfiguration()[Steps][key][StepTimeLeft]}' #{__LINE__}-#{__LINE__}"
                             leftOverTime += getConfiguration()[Steps][key][StepTimeLeft]
                         end
                     end
                 end
-	            # puts "E #{__LINE__}-#{__FILE__}"
+	            # puts"E #{__LINE__}-#{__FILE__}"
             end
         end
         
@@ -2570,7 +2570,7 @@ class TCUSampler
         # Handle the lights and buzzer
         if cfgName == "Yes"
             # We have a step config file loaded.
-            # puts "EXT_INPUTS_x2=#{@gPIO2.getGPIO2(GPIO2::EXT_INPUTS_x2)} #{__LINE__}-#{__FILE__}"
+            # puts"EXT_INPUTS_x2=#{@gPIO2.getGPIO2(GPIO2::EXT_INPUTS_x2)} #{__LINE__}-#{__FILE__}"
             if @lastSettings != Alarming
                 # There's a lot loaded.
                 if @samplerData.GetBbbMode() == SharedLib::InRunMode
@@ -2637,7 +2637,7 @@ class TCUSampler
     
     def checkDeadTcus(uart1)
         @tcusToSkip = Hash.new
-        puts "SetupAtHome='#{SetupAtHome}'"
+        # puts"SetupAtHome='#{SetupAtHome}'"
         if SetupAtHome
             return # Don't check for Tcu status if we're running code at home.
         end
@@ -2654,10 +2654,10 @@ class TCUSampler
                 uart1 = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
             else
 #SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
-                # puts "Sent 'S?' - responded :'#{uartResponse}' #{__LINE__}-#{__FILE__}"
+                # puts"Sent 'S?' - responded :'#{uartResponse}' #{__LINE__}-#{__FILE__}"
                 # uart1.write("V?\n");
                 # x = uart1.readline
-                # puts "Sent 'V?' - responded :'#{x}' #{__LINE__}-#{__FILE__}"
+                # puts"Sent 'V?' - responded :'#{x}' #{__LINE__}-#{__FILE__}"
             end
             ct += 1
         end
@@ -2702,7 +2702,7 @@ class TCUSampler
         # Initialize SPI device SPI0
         # spi = SPIDevice.new(:SPI1, 2, 2000000, 16)
         
-        # puts " setData='#{setData}'"
+        # puts" setData='#{setData}'"
         # Transfer the data 
         @spi.xfer([stdData+setData.to_i].pack("S")) # 0x800 3.3V
         
@@ -2742,7 +2742,7 @@ class TCUSampler
         checkDeadTcus(uart1)
         @samplerData.setDontSendErrorColor(false)
         @samplerData.clearStopMessage()
-        puts caller # Kernel#caller returns an array of strings
+        # putscaller # Kernel#caller returns an array of strings
         setToMode(SharedLib::InRunMode,"#{__LINE__}-#{__FILE__}")
     end
     
@@ -2760,16 +2760,16 @@ class TCUSampler
             `mkdir /mnt/card`
         end
 
-        #puts "Check 1 on/mnt/card #{__LINE__}-#{__FILE__}"
+        ## puts"Check 1 on/mnt/card #{__LINE__}-#{__FILE__}"
         `umount /mnt/card`
         
-        #puts "Check 2 on/mnt/card #{__LINE__}-#{__FILE__}"
+        ## puts"Check 2 on/mnt/card #{__LINE__}-#{__FILE__}"
         #`fsck -a /dev/mmcblk0p1`
 
-        #puts "Check 3 on/mnt/card #{__LINE__}-#{__FILE__}"
+        ## puts"Check 3 on/mnt/card #{__LINE__}-#{__FILE__}"
         `mount /dev/mmcblk0p1  /mnt/card`
 
-        #puts "Check 4  on/mnt/card #{__LINE__}-#{__FILE__}"
+        ## puts"Check 4  on/mnt/card #{__LINE__}-#{__FILE__}"
         `rm -rf /mnt/card/PcDown.BackLog`
 
         setBoardPsDefaultSettings()
@@ -2863,7 +2863,7 @@ class TCUSampler
 
         if @stepToWorkOn.nil? == false
             # PP.pp(@stepToWorkOn)
-            # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
+            # puts"Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
             limboCheck(@stepToWorkOn[StepNum],uart1)
         else
     	    initStepToWorkOnVar(uart1)
@@ -2890,21 +2890,21 @@ class TCUSampler
         
         # This is the data that was loaded from the state of machine.
         @stepToWorkOn = @boardData["stepToWorkOn"]
-        puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
-        puts "@stepToWorkOn.nil? == false=#{@stepToWorkOn.nil? == false} #{__LINE__}-#{__FILE__}"
+        # puts"@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
+        # puts"@stepToWorkOn.nil? == false=#{@stepToWorkOn.nil? == false} #{__LINE__}-#{__FILE__}"
         if @stepToWorkOn.nil? == false
 =begin            
-            puts "Loaded StepTimeLeft @boardData[StepTimeLeft]='#{@boardData[StepTimeLeft]}'"
-            puts "Loaded number saved '#{@stepToWorkOn[StepNum]}'"
+            # puts"Loaded StepTimeLeft @boardData[StepTimeLeft]='#{@boardData[StepTimeLeft]}'"
+            # puts"Loaded number saved '#{@stepToWorkOn[StepNum]}'"
             if getConfiguration() != nil
                 getConfiguration()[Steps].each do |key, array|
                     getConfiguration()[Steps][key].each do |key2, array2|
                         # Get the total time of Steps in queue
                         if key2 == StepNum 
-                            puts "Step# '#{array2}' StepTimeLeft='#{getConfiguration()[Steps][key][StepTimeLeft]}' #{__LINE__}-#{__LINE__}"
+                            # puts"Step# '#{array2}' StepTimeLeft='#{getConfiguration()[Steps][key][StepTimeLeft]}' #{__LINE__}-#{__LINE__}"
                         end
                     end
-    	            # puts "E #{__LINE__}-#{__FILE__}"
+    	            # puts"E #{__LINE__}-#{__FILE__}"
                 end
             end
 =end
@@ -2926,7 +2926,7 @@ class TCUSampler
             stepNum = ""
             if @stepToWorkOn.nil? == false
                 # PP.pp(@stepToWorkOn)
-                # puts "Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
+                # puts"Printing @stepToWorkOn content. #{__LINE__}-#{__FILE__}"
                 stepNum = @stepToWorkOn[StepNum]
             end
             
@@ -2955,22 +2955,22 @@ class TCUSampler
             else
                 waitTimeInspect = "temp time wait left ='#{twtimeleft}'"
             end
-            puts "Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} #{waitTimeInspect} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
+            # puts"Mode()=#{@samplerData.GetBbbMode()} Done()=#{@samplerData.GetAllStepsDone_YesNo()} CfgName()=#{cfgName} stepNum=#{stepNum} #{waitTimeInspect} #{Time.now.inspect} #{__LINE__}-#{__FILE__}"
 =begin
             if getConfiguration() != nil
                 getConfiguration()[Steps].each do |key, array|
                     getConfiguration()[Steps][key].each do |key2, array2|
                         # Get the total time of Steps in queue
                         if key2 == StepNum 
-                            puts "Step# '#{array2}' StepTimeLeft='#{getConfiguration()[Steps][key][StepTimeLeft]}' #{__LINE__}-#{__LINE__}"
+                            # puts"Step# '#{array2}' StepTimeLeft='#{getConfiguration()[Steps][key][StepTimeLeft]}' #{__LINE__}-#{__LINE__}"
                         end
                     end
-    	            # puts "E #{__LINE__}-#{__FILE__}"
+    	            # puts"E #{__LINE__}-#{__FILE__}"
                 end
             end
 =end            
             if @stepToWorkOn.nil? == false
-                puts "StepNum = #{@stepToWorkOn[StepNum]} @stepToWorkOn[StepTimeLeft]='#{@stepToWorkOn[StepTimeLeft]}' timeleft='#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}'"
+                # puts"StepNum = #{@stepToWorkOn[StepNum]} @stepToWorkOn[StepTimeLeft]='#{@stepToWorkOn[StepTimeLeft]}' timeleft='#{@stepToWorkOn[StepTimeLeft]-(Time.now.to_f-getTimeOfRun)}'"
                 # SharedLib.pause "status","#{__LINE__}-#{__FILE__}"
             end
 
@@ -3007,11 +3007,11 @@ class TCUSampler
         		    pcCmd = pcCmdObj[0]
         		    timeOfCmd = pcCmdObj[1]
         		    if @lastTimeOfCmd != timeOfCmd # @lastPcCmd != pcCmd && 
-        		        puts "new pc command. #{pcCmdObj}"
+        		        # puts"new pc command. #{pcCmdObj}"
                         @lastPcCmd = pcCmd 
                         @lastTimeOfCmd = timeOfCmd
                         @lastSettings = -1
-            		    puts "\n\n\nNew command from PC - '#{pcCmd}' @samplerData.GetPcCmd().length='#{pcCmdObj.length}'  #{__LINE__}-#{__FILE__}"
+            		    # puts"\n\n\nNew command from PC - '#{pcCmd}' @samplerData.GetPcCmd().length='#{pcCmdObj.length}'  #{__LINE__}-#{__FILE__}"
                         @samplerData.SetButtonDisplayToNormal(SharedLib::NormalButtonDisplay)
             		    case pcCmd
             	        when SharedLib::RunFromPc
@@ -3106,7 +3106,7 @@ class TCUSampler
                 		else
                 		    SharedLib.bbbLog("Unknown PC command @samplerData.GetPcCmd()='#{@samplerData.GetPcCmd()}'.")
                 		end
-                		puts "@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
+                		# puts"@stepToWorkOn.nil?=#{@stepToWorkOn.nil?} #{__LINE__}-#{__FILE__}"
             		    # Code block below tells the PcListener that it got the message.
     
                     end
@@ -3132,7 +3132,7 @@ class TCUSampler
 
         	# This line of code makes the 'Sender' process useless.  This gives the fastest time of data update to the display.
         	SendSampledTcuToPCLib::SendDataToPC(@samplerData,"#{__LINE__}-#{__FILE__}")
-            # puts "#{Time.now.inspect} #{__LINE__}-#{__FILE__}"            
+            # puts"#{Time.now.inspect} #{__LINE__}-#{__FILE__}"            
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
             timeNow = Time.now.to_f

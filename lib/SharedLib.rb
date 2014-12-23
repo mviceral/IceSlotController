@@ -398,9 +398,9 @@ class SharedLib
     end
   
     def pause(msgParam,fromParam)
-        puts "#{msgParam}"
-        puts "      o Paused at #{fromParam}"
-        gets
+        # puts "#{msgParam}"
+        # puts "      o Paused at #{fromParam}"
+        # gets
     end
 
     def getBits(dataParam)
@@ -416,7 +416,7 @@ class SharedLib
         if @oldMessage != sentMessage
             @oldMessage = sentMessage
     	    log = "#{Time.new.inspect} : #{sentMessage}"
-    	    puts "#{log}"
+    	    # puts "#{log}"
         end
     end
     
@@ -471,7 +471,7 @@ class SharedLib
 				pathD = `cd ~/slot-controller_data; pwd`
 			end
 			pathD = pathD.strip # Remove the white spaces
-			puts "pathD=#{pathD} #{__LINE__}-#{__FILE__}"
+			# puts "pathD=#{pathD} #{__LINE__}-#{__FILE__}"
 			File.open("#{pathD}/#{Pc_SlotCtrlIps}", "r") do |f|
 				f.each_line do |line|
 					config.push(line)

@@ -57,23 +57,23 @@ class SharedMemory
     def writeAndFreeLocked(strParam, fromParam)
 =begin
         if @lockedAt == ""
-            puts "Memory not locked!  Called from [ #{fromParam} ]"
+            # puts"Memory not locked!  Called from [ #{fromParam} ]"
             exit
         end
 	    @lockedAt = ""
 =end
-        # puts "Freeing locked memory. #{__LINE__}-#{__FILE__}"
+        # puts"Freeing locked memory. #{__LINE__}-#{__FILE__}"
         # @theMemory = strParam.to_json
         @theMemory = strParam
-        # puts "Check A. #{__LINE__}-#{__FILE__}"
-        # puts "Check B. #{__LINE__}-#{__FILE__}"
+        # puts"Check A. #{__LINE__}-#{__FILE__}"
+        # puts"Check B. #{__LINE__}-#{__FILE__}"
     end
     
 =begin    
     def freeLocked(fromParam)
         # sourceLock - not used but for making sure data is considered.
         if @lockedAt == ""
-            puts "Memory not locked!  Called from [ #{fromParam} ]"
+            # puts"Memory not locked!  Called from [ #{fromParam} ]"
             exit
         end
 	    @lockedAt = ""
@@ -95,15 +95,15 @@ class SharedMemory
     end
     
 	def setErrorColor(errorColorParam, fromParam)
-#puts "fromParam=#{fromParam}, #{__LINE__}-#{__FILE__}"
+## puts"fromParam=#{fromParam}, #{__LINE__}-#{__FILE__}"
         if errorColorParam.nil? == false
     	    errorColorParam.each do |key, array|
     	        filtered = key[1.."IDUT".length]
     	        if filtered == "IDUT" || filtered == "TDUT" 
-#puts "fromParam=#{fromParam}, #{__LINE__}-#{__FILE__}"
+## puts"fromParam=#{fromParam}, #{__LINE__}-#{__FILE__}"
                 end
-#                puts "#{key}-----"
-#                puts array
+#                # puts"#{key}-----"
+#                # putsarray
             end
         end
 		ds = lockMemory("#{__LINE__}-#{__FILE__}")
@@ -124,7 +124,7 @@ class SharedMemory
 
     def getMemory()
         while @lockedAt.nil? == false && @lockedAt != ""
-            puts "It's locked at #{@lockedAt}"
+            # puts"It's locked at #{@lockedAt}"
             sleep(1)
         end
         
@@ -143,29 +143,29 @@ class SharedMemory
     
     def lockMemory(fromParam)
 =begin
-        # puts "Locking memory (from:#{fromParam}). #{__LINE__}-#{__FILE__}"
+        # puts"Locking memory (from:#{fromParam}). #{__LINE__}-#{__FILE__}"
     	while @lockedAt.nil? == false && @lockedAt != ""
-            puts "Shared memory used at '#{@lockedAt}'."
+            # puts"Shared memory used at '#{@lockedAt}'."
             sleep(1.0/1000.0)
-            # puts "Called from '#{fromParam}'."
-            # puts "Exiting code. @#{__LINE__}-#{__FILE__}"
+            # puts"Called from '#{fromParam}'."
+            # puts"Exiting code. @#{__LINE__}-#{__FILE__}"
             # exit
     	end
     	@lockedAt = fromParam
 =end    	
         begin
-        	# puts "From #{__LINE__}-#{__FILE__}"
-        	# puts "GetDataV1()=#{GetDataV1()}"
+        	# puts"From #{__LINE__}-#{__FILE__}"
+        	# puts"GetDataV1()=#{GetDataV1()}"
         	# ds = JSON.parse(@theMemory)
         	if @theMemory.nil?
         	    @theMemory = Hash.new
         	end
         	ds = @theMemory
                     	
-        	# puts "A - good data #{__LINE__}-#{__FILE__}"
+        	# puts"A - good data #{__LINE__}-#{__FILE__}"
         rescue
             ds = Hash.new
-            puts "\n\n\nB - faulty data #{__LINE__}-#{__FILE__}"
+            # puts"\n\n\nB - faulty data #{__LINE__}-#{__FILE__}"
         end	    
         return ds
     end
@@ -205,7 +205,7 @@ class SharedMemory
     
 	def SetDispBoardData(configurationFileNameParam, configDateUploadParam, allStepsDone_YesNoParam, bbbModeParam,
 		stepNameParam, stepNumberParam, stepTotalTimeParam, slotTimeParam, slotOwnerParam, allStepsCompletedAtParam, dispTotalStepDurationParam, adcInputParam, muxDataParam, tcuParam,eipsParam, errMsgParam,totalTimeOfStepsInQueue)      
-		# puts "tcuParam = #{}"
+		# puts"tcuParam = #{}"
 		# SharedLib.pause "Checking tcuParam", "#{__LINE__}-#{__FILE__}"
 		ds = lockMemory("#{__LINE__}-#{__FILE__}")
 		if ds[SharedLib::PC].nil?
@@ -243,7 +243,7 @@ class SharedMemory
 					errorLogPath = "../\"error logs\""
 					while errMsgParam.length>0
 						errItem = errMsgParam.shift
-						# puts "Got a message from the board: '#{errItem}'"
+						# puts"Got a message from the board: '#{errItem}'"
 						str = "#{errItem.to_json}"
 						ct = 0
 						newStr = ""
@@ -262,7 +262,7 @@ class SharedMemory
 				end
 				rescue
 					#`echo "#{SharedLib.makeUriFriendly(errMsgParam)}" >> #{newErrLogFileName}`
-					puts errMsgParam
+					# putserrMsgParam
 			end			
 
 			writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
@@ -317,7 +317,7 @@ class SharedMemory
 				SetDispSlotOwner(hash[SharedLib::SlotOwner])
 
 				# printDataContent(hash[SharedLib::SlotOwner])
-				# puts "Error color check #{__LINE__}-#{__FILE__}"
+				# puts"Error color check #{__LINE__}-#{__FILE__}"
 				# PP.pp(GetDispErrorColor(hash[SharedLib::SlotOwner]))
 				# configDateUpload = Time.at(GetDispConfigDateUpload(hash[SharedLib::SlotOwner]).to_i)
 			end
@@ -325,7 +325,7 @@ class SharedMemory
 	end
 	
 	def initialize()
-		puts "SharedMemory got initialized. #{__LINE__}-#{__FILE__}"
+		# puts"SharedMemory got initialized. #{__LINE__}-#{__FILE__}"
 		@lockedAt = ""		
 	end
 	
@@ -385,29 +385,29 @@ class SharedMemory
 			# There's no data in this slot.
 			return 
 		end
-# puts "printDataContent('#{slotOwnerParam}') - #{__LINE__}-#{__FILE__}"
-		puts "Display button = '#{GetDispButton(slotOwnerParam)}'"
-		print "TotalTimeOfStepsInQueue ="
-		puts " '#{GetDispTotalTimeOfStepsInQueue(slotOwnerParam)}'"
-		puts "ConfigurationFileName = #{GetDispConfigurationFileName(slotOwnerParam)}"
-		puts "ConfigDateUpload = #{GetDispConfigDateUpload(slotOwnerParam)}"
-		puts "AllStepsDone_YesNo = #{GetDispAllStepsDone_YesNo(slotOwnerParam)}"
-		puts "BbbMode = #{GetDispBbbMode(slotOwnerParam)}"
-		puts "StepName = #{GetDispStepName(slotOwnerParam)}"
-		puts "StepNumber = #{GetDispStepNumber(slotOwnerParam)}"
-		puts "StepTotalTime = #{GetDispStepTimeLeft(slotOwnerParam)}"
-		puts "SlotIpAddress = #{GetDispSlotIpAddress(slotOwnerParam)}"
+# puts"printDataContent('#{slotOwnerParam}') - #{__LINE__}-#{__FILE__}"
+		# puts"Display button = '#{GetDispButton(slotOwnerParam)}'"
+		# print "TotalTimeOfStepsInQueue ="
+		# puts" '#{GetDispTotalTimeOfStepsInQueue(slotOwnerParam)}'"
+		# puts"ConfigurationFileName = #{GetDispConfigurationFileName(slotOwnerParam)}"
+		# puts"ConfigDateUpload = #{GetDispConfigDateUpload(slotOwnerParam)}"
+		# puts"AllStepsDone_YesNo = #{GetDispAllStepsDone_YesNo(slotOwnerParam)}"
+		# puts"BbbMode = #{GetDispBbbMode(slotOwnerParam)}"
+		# puts"StepName = #{GetDispStepName(slotOwnerParam)}"
+		# puts"StepNumber = #{GetDispStepNumber(slotOwnerParam)}"
+		# puts"StepTotalTime = #{GetDispStepTimeLeft(slotOwnerParam)}"
+		# puts"SlotIpAddress = #{GetDispSlotIpAddress(slotOwnerParam)}"
 		slotTime = GetDispSlotTime(slotOwnerParam).to_i
-		puts "SlotTime = #{Time.at(slotTime).inspect}"
-		# puts "AdcInput = #{GetDispAdcInput(slotOwnerParam)}"
-		puts "MuxData = #{GetDispMuxData(slotOwnerParam)}"
-		puts "Tcu = #{GetDispTcu(slotOwnerParam)}"
-		puts "AllStepsCompletedAt = #{GetDispAllStepsCompletedAt(slotOwnerParam)}"
-		puts "TotalStepDuration = #{GetDispTotalStepDuration(slotOwnerParam)}"
+		# puts"SlotTime = #{Time.at(slotTime).inspect}"
+		# puts"AdcInput = #{GetDispAdcInput(slotOwnerParam)}"
+		# puts"MuxData = #{GetDispMuxData(slotOwnerParam)}"
+		# puts"Tcu = #{GetDispTcu(slotOwnerParam)}"
+		# puts"AllStepsCompletedAt = #{GetDispAllStepsCompletedAt(slotOwnerParam)}"
+		# puts"TotalStepDuration = #{GetDispTotalStepDuration(slotOwnerParam)}"
 	end
 	
 	def getDispErrorMsg(slotOwnerParam)
-		# puts "checkFunc got called. slotOwnerParam='#{slotOwnerParam}'"
+		# puts"checkFunc got called. slotOwnerParam='#{slotOwnerParam}'"
 		# Display what ever un-acknowledged errors are in the record.
 		pcShared = getPCShared()
 		slotOwner = slotOwnerParam
@@ -429,20 +429,20 @@ class SharedMemory
 					 echo "no"
 				fi`
 				
-				# puts "newErrLogFileName='#{newErrLogFileName}' fileExists='#{fileExists}' #{__LINE__}-#{__FILE__}"
+				# puts"newErrLogFileName='#{newErrLogFileName}' fileExists='#{fileExists}' #{__LINE__}-#{__FILE__}"
 				
 				if fileExists.chomp == "yes"
 					begin
 						errorItem = `head -1 #{newErrLogFileName}`
 						errorItem = errorItem.chomp
 						if errorItem.length > 0
-							# puts "C errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
+							# puts"C errorItem='#{errorItem}' #{__LINE__}-#{__FILE__}"
 							ds = lockMemory("#{__LINE__}-#{__FILE__}")
 							ds[SharedLib::PC][slotOwner][SharedLib::ErrorMsg] = JSON.parse(errorItem)
 							writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 						end
 						rescue Exception => e
-							puts "e.message=#{e.message } #{__LINE__}-#{__FILE__}"
+							# puts"e.message=#{e.message } #{__LINE__}-#{__FILE__}"
 					end
 				end
 			end
@@ -601,9 +601,9 @@ class SharedMemory
     end
 
     def GetSlotTime(fromParam)
-        # puts "A GetSlotTime got called. #{fromParam} @#{__LINE__}-#{__FILE__}"
+        # puts"A GetSlotTime got called. #{fromParam} @#{__LINE__}-#{__FILE__}"
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
-        # puts "B GetSlotTime got called. #{fromParam} @#{__LINE__}-#{__FILE__}"
+        # puts"B GetSlotTime got called. #{fromParam} @#{__LINE__}-#{__FILE__}"
         return ds[SharedLib::SlotTime]
     end
     
@@ -652,7 +652,7 @@ class SharedMemory
     end
 
     def pause(paramA,fromParam)
-        puts "Paused - '#{paramA}' '#{fromParam}'"
+        # puts"Paused - '#{paramA}' '#{fromParam}'"
         gets
     end
 
@@ -682,7 +682,7 @@ class SharedMemory
     
     def SetConfigDateUpload(configDateUploadParam)
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
-        # puts "configDateUploadParam=#{configDateUploadParam} #{__LINE__}-#{__FILE__}"
+        # puts"configDateUploadParam=#{configDateUploadParam} #{__LINE__}-#{__FILE__}"
         ds[SharedLib::ConfigDateUpload] = configDateUploadParam
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
@@ -767,15 +767,15 @@ class SharedMemory
     end
 
     def ClearConfiguration(fromParam)
-        # puts "called from #{fromParam}"
-        puts "Start 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
+        # puts"called from #{fromParam}"
+        # puts"Start 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
         SetConfigurationFileName("")
         SetConfigDateUpload("")
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
     	ds["Configuration"] = "" # Clears the configuration.
     	ds[TimeOfPcUpload] = Time.new.to_i
         tbr = writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}") # tbr - to be returned
-        puts "Done 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
+        # puts"Done 'def ClearConfiguration' #{__LINE__} #{__FILE__}"
     end
     
     def SetTotalStepDuration(totalStepDurationParam)
@@ -812,8 +812,8 @@ class SharedMemory
     end
         
     def SetConfiguration(dataParam,fromParam)
-        # puts "SetConfiguration got called. #{__LINE__}-#{__FILE__}"
-        # puts "dataParam:#{__LINE__}-#{__FILE__}\n#{dataParam}"
+        # puts"SetConfiguration got called. #{__LINE__}-#{__FILE__}"
+        # puts"dataParam:#{__LINE__}-#{__FILE__}\n#{dataParam}"
         configDataUpload = dataParam["ConfigDateUpload"]
         configurationFileName = dataParam["FileName"]
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
@@ -828,7 +828,7 @@ class SharedMemory
         totalStepDuration = 0
         if hold.nil? == false
             hold["Steps"].each do |key, array|
-                # puts "key='#{key}'#{__LINE__}-#{__FILE__}"
+                # puts"key='#{key}'#{__LINE__}-#{__FILE__}"
                 # PP.pp(array)
                 # sleep(1.0)
                 hold["Steps"][key]["StepTimeLeft"] = 60.0*hold["Steps"][key]["Step Time"].to_f
@@ -951,13 +951,13 @@ class SharedMemory
     end
     
     def setDataFromPcToBoard(hashSocket)
-        puts "setDataFromPcToBoard got called. #{__LINE__}-#{__FILE__}"
+        # puts"setDataFromPcToBoard got called. #{__LINE__}-#{__FILE__}"
         mode = hashSocket["Cmd"]
         hash = hashSocket["Data"]
         @hashConfigFromPC = hash
         @slotOwner = hash["SlotOwner"]
 		SetPcCmd(mode,"#{__LINE__}-#{__FILE__}")
-        puts "mode='#{mode}'"
+        # puts"mode='#{mode}'"
 		case mode
 		when SharedLib::ClearConfigFromPc
 			# ClearConfiguration("#{__LINE__}-#{__FILE__}")
@@ -966,11 +966,11 @@ class SharedMemory
 		when SharedLib::StopFromPc
 		when SharedLib::ClearErrFromPc
 		when SharedLib::LoadConfigFromPc
-			puts "LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
-			# puts "hash=#{hash}"
-			puts "SlotOwner=#{hash["SlotOwner"]}"
+			# puts"LoadConfigFromPc code block got called. #{__LINE__}-#{__FILE__}"
+			# puts"hash=#{hash}"
+			# puts"SlotOwner=#{hash["SlotOwner"]}"
 			date = Time.at(hash[SharedLib::ConfigDateUpload])
-			#puts "PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
+			## puts"PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
 			# Sync the board time with the pc time
 			`echo "date before setting:";date`
 			`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}"`
@@ -980,7 +980,7 @@ class SharedMemory
 		else
 			`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 		end
-        puts "User input @pcCmdNew='#{@pcCmdNew}'"
+        # puts"User input @pcCmdNew='#{@pcCmdNew}'"
     end
 	
     def SetPcCmdThread(cmdParam,timeOfCmdParam)
@@ -1005,25 +1005,25 @@ class SharedMemory
             writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 =begin            
             totalCmdInStack = ds[Cmd].length
-            puts "Total sent cmds in stack: '#{totalCmdInStack}'"
+            # puts"Total sent cmds in stack: '#{totalCmdInStack}'"
     
             while ds[Cmd].length == totalCmdInStack
                 sleep(0.25)
                 ds = getMemory()
-                puts "x Total sent cmds in stack: '#{ds[Cmd].length}'"
+                # puts"x Total sent cmds in stack: '#{ds[Cmd].length}'"
             end
             
             # The sampler processed the command.  Make sure it was the last command sent.
             
             if ds[CmdProcessed].nil? == false && ds[CmdProcessed].length > 0 && ds[CmdProcessed][0] == cmdParam  && ds[CmdProcessed][1] == timeOfCmdParam
                 samplerNotProcessed = false
-                puts "A Processed the command: '#{ds[CmdProcessed][0]}'"
+                # puts"A Processed the command: '#{ds[CmdProcessed][0]}'"
             #else
                 # Keep looping until the board processed it.
             end
         end
 =end            
-        # puts "B Processed the command: '#{ds[CmdProcessed][0]}'"
+        # puts"B Processed the command: '#{ds[CmdProcessed][0]}'"
     end
 	
     def SetPcCmd(cmdParam,calledFrom)
@@ -1036,17 +1036,17 @@ class SharedMemory
     end
 
     def SetBbbMode(modeParam,calledFrom)
-        puts "param sent #{modeParam} #{calledFrom}"
+        # puts"param sent #{modeParam} #{calledFrom}"
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
         oldModeParam = ds[Mode]
         print "Changing bbb mode from #{oldModeParam} to "
         ds[Mode] = "#{modeParam}"
-        puts "#{modeParam} [#{calledFrom}]"
+        # puts"#{modeParam} [#{calledFrom}]"
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
 
     def GetDataMuxData(fromParam)
-        # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
+        # puts"fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
     	tbr = getMemory()[SharedLib::MuxData] # tbr - to be returned
     	if tbr.nil?
     	    ds = lockMemory("#{__LINE__}-#{__FILE__}")
@@ -1058,7 +1058,7 @@ class SharedMemory
     end
     
     def GetDataAdcInput(fromParam)
-        # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
+        # puts"fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
     	ds = getMemory()
     	if ds[SharedLib::AdcInput].nil?
     	    ds = lockMemory("#{__LINE__}-#{__FILE__}")
@@ -1118,7 +1118,7 @@ class SharedMemory
     end
     
     def GetDataTcu(fromParam)
-        # puts "fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
+        # puts"fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
     	tbr = getMemory()[SharedLib::Tcu] # tbr - to be returned
     	if tbr.nil?
     	    ds = lockMemory("#{__LINE__}-#{__FILE__}")
@@ -1131,7 +1131,7 @@ class SharedMemory
 
     
     def WriteDataTcu(stringParam,fromParam)
-        # puts "stringParam='#{stringParam}' fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
+        # puts"stringParam='#{stringParam}' fromParam = #{fromParam} #{__LINE__}-#{__FILE__}"
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
         if ds[SharedLib::Tcu].nil?
             ds[SharedLib::Tcu] = Hash.new
@@ -1139,7 +1139,7 @@ class SharedMemory
         
         ds[SharedLib::Tcu] = stringParam 
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-        # puts "Check = '#{GetDataTcu("#{__LINE__}-#{__FILE__}")}'  #{__LINE__}-#{__FILE__}"
+        # puts"Check = '#{GetDataTcu("#{__LINE__}-#{__FILE__}")}'  #{__LINE__}-#{__FILE__}"
     end
 
     def SetupData
@@ -1183,22 +1183,22 @@ class SharedMemory
     end
     
     def SetData(dataTypeParam,indexParam,dataValueParam,multiplierParam)
-        # puts "check A #{__LINE__}-#{__FILE__}"
+        # puts"check A #{__LINE__}-#{__FILE__}"
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
-        # puts "check B #{__LINE__}-#{__FILE__}"
+        # puts"check B #{__LINE__}-#{__FILE__}"
         if ds[dataTypeParam].nil?
-            # puts "ds[#{dataTypeParam}] is nil #{__LINE__}-#{__FILE__}"
+            # puts"ds[#{dataTypeParam}] is nil #{__LINE__}-#{__FILE__}"
             ds[dataTypeParam] = Hash.new
         end
-        # puts "check C #{__LINE__}-#{__FILE__}"
+        # puts"check C #{__LINE__}-#{__FILE__}"
         
         ds[dataTypeParam][indexParam.to_s] = (dataValueParam*multiplierParam[indexParam]).to_s
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-        # puts "check D #{__LINE__}-#{__FILE__}"
+        # puts"check D #{__LINE__}-#{__FILE__}"
         # PP.pp(ds)
-        # puts "@setData.length=#{@setData.length}"
+        # puts"@setData.length=#{@setData.length}"
         # gets
-        # puts "writeAndFreeLocked(@setData) = #{writeAndFreeLocked(@setData)}"
+        # puts"writeAndFreeLocked(@setData) = #{writeAndFreeLocked(@setData)}"
     end
 
     def GetDispDutToolTip(slotLabel2Param)
