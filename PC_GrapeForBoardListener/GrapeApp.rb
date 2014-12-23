@@ -154,11 +154,11 @@ module MigrationCount
 							str = "Insert into log(idLogTime, data) "+
 							"values(#{GetDispSlotTime()},\"#{forDbase}\")"
 
-							puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
+							# puts "@#{__LINE__}-#{__FILE__} sqlStr = ->#{str}<-"
 							begin
 								dbRecord.execute "#{str}"
 								rescue SQLite3::Exception => e 
-								puts "\n\n"
+								# puts "\n\n"
 								SharedLib.bbbLog "str = ->#{str}<- #{__LINE__}-#{__FILE__}"
 								SharedLib.bbbLog "#{e} #{__LINE__}-#{__FILE__}"
 								# End of 'rescue SQLite3::Exception => e'
@@ -190,7 +190,7 @@ module MigrationCount
 						# SharedLib.pause "Checking hash data","#{__LINE__}-#{__FILE__}"
 						rescue Exception => e
 							# The data didn't parse properly.  Do nothing.
-							puts e.message  
+							# puts e.message  
 						ensure
 					end
 				end
