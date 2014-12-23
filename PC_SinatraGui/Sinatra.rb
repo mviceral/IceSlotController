@@ -96,7 +96,7 @@ class UserInterface
 			lenOfStrToLookInto = "SLOT1 IP".length
   		File.open("../../slot-controller_data/#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
   			f.each_line do |line|
-#  				puts "line='#{line}' #{__LINE__}-#{__FILE__}"
+#  				# puts "line='#{line}' #{__LINE__}-#{__FILE__}"
 					if line[0..(lenOfStrToLookInto-1)] == "SLOT1 IP"
 						@slotToIp[SharedLib::SLOT1] = line[(lenOfStrToLookInto+1)..-1].strip
 					elsif line[0..(lenOfStrToLookInto-1)] == "SLOT2 IP"
@@ -503,7 +503,7 @@ class UserInterface
 		writeToSettingsLog("",settingsFileName)
 
 		#PP.pp(getSlotProperties())
-		#puts "About to send to the Board. #{__LINE__}-#{__FILE__}"
+		## puts "About to send to the Board. #{__LINE__}-#{__FILE__}"
 		#exit
 		begin
 			# puts "LoadConfig on IP='#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}'"
@@ -912,7 +912,7 @@ class UserInterface
 								end
 								emailFolks += emailAddr
 							}
-							puts "Sending shutdown message to '#{emailFolks}'."
+							# puts "Sending shutdown message to '#{emailFolks}'."
 							`echo \"#{shutdownEmailMessage}\" | mail -s \"BE2/MoSys Slot Process Shutdown\" \"#{emailFolks}\"`
 						end
 					end
@@ -1743,7 +1743,7 @@ end
 			# Make sure that the index is unique, and not repeated.
 			#
 			if valueParam.length>0 && colnameParam==UserInterface::IndexCol
-				#puts "valueParam=#{valueParam} hashUniqueIndex[valueParam]=#{hashUniqueIndex[valueParam]} hashUniqueIndex=#{hashUniqueIndex}"
+				## puts "valueParam=#{valueParam} hashUniqueIndex[valueParam]=#{hashUniqueIndex[valueParam]} hashUniqueIndex=#{hashUniqueIndex}"
 				if hashUniqueIndex[valueParam].nil? == false
 					redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 					redirectWithError += "&ErrRow=#{rowParam}&ErrColType=#{colnameParam}&ErrValue="+
@@ -2669,7 +2669,7 @@ end
 	end
 
 	def pause(paramA,paramLocation)
-		puts "Paused at #{paramLocation} - #{paramA}"
+		# puts "Paused at #{paramLocation} - #{paramA}"
 		gets
 	end
 	
