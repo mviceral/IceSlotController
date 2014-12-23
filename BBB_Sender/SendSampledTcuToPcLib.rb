@@ -232,14 +232,8 @@ Temperature Setting: <temp>
         # SharedLib.pause "Function got called.  Checking value @firstBackLog='#{@firstBackLog}'","#{__LINE__}-#{__FILE__}"
         # puts "@firstBackLog check"
         # puts @firstBackLog
-        # sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
-        # `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
         if File.exist?(SharedLib::PathFile_BbbBackLog)
-            sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
-            `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
 			File.open(SharedLib::PathFile_BbbBackLog, "r") do |f|
-                sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
-                `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
 				f.each_line do |line|
 				    if @firstBackLog.nil?
     					@firstBackLog = line
@@ -282,12 +276,8 @@ Temperature Setting: <temp>
             sentData = false
             while sentData == false && ct < 1
                 begin
-                    # sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
-                    # `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                     if @firstBackLog.nil?
                         # sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
-                        # sentBackLogData = "slotInfoJson = -->#{slotInfoJson}<-- #{__LINE__}-#{__FILE__}"
-                        # `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         begin
                             # puts "Sending slotInfoJson"
                             # puts slotInfoJson
@@ -296,7 +286,10 @@ Temperature Setting: <temp>
                             sentData = true
                             @packageInfo = nil
                             rescue Exception => e  
-                                puts "Failed to send to '#{@pcIpAddr}'.  Attempting again."
+                                # puts "Failed to send to '#{@pcIpAddr}'.  Attempting again."
+                                sentBackLogData = "#{Time.now.inspect} - Failed to send to '#{@pcIpAddr}'.  Attempting again.. #{__LINE__}-#{__FILE__}"
+                                sentBackLogData += "e.message='#{e.message}'. #{__LINE__}-#{__FILE__}"
+                                `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
 =begin                                
                                 puts e.message  
                                 @firstBackLog = slotInfoJson
@@ -307,13 +300,7 @@ Temperature Setting: <temp>
 =end                                
                         end
                     else
-                        sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
-                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
-                        sentBackLogData = "@firstBackLog='#{@firstBackLog}' #{__LINE__}-#{__FILE__}"
-                        `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                         begin
-                            sentBackLogData = "#{Time.now.inspect} - Shutdown trip. #{__LINE__}-#{__FILE__}"
-                            `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                             # puts "Sending @firstBackLog"
                             # puts @firstBackLog
                             resp = 
@@ -355,8 +342,9 @@ Temperature Setting: <temp>
                                     @packageInfo = nil
                             end
                             rescue Exception => e  
-                                puts "Failed to send to '#{@pcIpAddr}'.  Attempting again."
-                                puts e.message  
+                                sentBackLogData = "#{Time.now.inspect} - Failed to send to '#{@pcIpAddr}'.  Attempting again.. #{__LINE__}-#{__FILE__}"
+                                sentBackLogData += "e.message='#{e.message}'. #{__LINE__}-#{__FILE__}"
+                                `echo \"#{sentBackLogData}\" >> /mnt/card/Activity.log`
                                 # puts e.backtrace.inspect
 =begin                                
                         	    File.open(SharedLib::PathFile_BbbBackLog, "a") { 
@@ -374,7 +362,6 @@ Temperature Setting: <temp>
             end
             
             if sentData == false
-                puts "Completely failed to send.  Saving data to PcDown.BackLog file."
                 if @firstBackLog.nil?
                     @firstBackLog = slotInfoJson
                 end
@@ -384,9 +371,10 @@ Temperature Setting: <temp>
         	        file.write "\n"
                 }
                 
-                failedToSend = "#{Time.now.inspect} Failed to send to PC. #{__LINE__}-#{__FILE__}"
+                failedToSend = "#{Time.now.inspect} Completely failed to send.  Saving data to PcDown.BackLog file.. #{__LINE__}-#{__FILE__}"
                 `echo \"#{failedToSend}\" >> /mnt/card/Activity.log`
                 
+=begin                
                 # See if restarting the ruby scripts will solve the problem
                 if @xCountPassedThenSendAgain.nil? || @xCountPassedThenSendAgain >= 5
                     failedToSend = "#{Time.now.inspect} Failed to send to PC for 5 times.  Restarting scripts. #{__LINE__}-#{__FILE__}"
@@ -395,6 +383,7 @@ Temperature Setting: <temp>
                     # `cd ../scripts; ruby killRubyCodes.rb`
                 end
                 @xCountPassedThenSendAgain += 1
+=end                
             end
         end
     end
