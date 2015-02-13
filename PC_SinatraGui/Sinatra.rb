@@ -481,8 +481,8 @@ class UserInterface
 
 		fileName = getSlotProperties()["FileName"]
 		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
-		puts "slotProperties[slotOwnerParam][SharedMemory::LotID]='#{slotProperties[slotOwnerParam][SharedMemory::LotID]}'.  #{__LINE__}-#{__FILE__}"
-		puts "slotProperties[slotOwnerParam][SharedMemory::LotDesc]='#{slotProperties[slotOwnerParam][SharedMemory::LotDesc]}'.  #{__LINE__}-#{__FILE__}"
+		# puts "slotProperties[slotOwnerParam][SharedMemory::LotID]='#{slotProperties[slotOwnerParam][SharedMemory::LotID]}'.  #{__LINE__}-#{__FILE__}"
+		# puts "slotProperties[slotOwnerParam][SharedMemory::LotDesc]='#{slotProperties[slotOwnerParam][SharedMemory::LotDesc]}'.  #{__LINE__}-#{__FILE__}"
 		genFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),slotProperties[slotOwnerParam][SharedMemory::LotID],	slotProperties[slotOwnerParam][SharedMemory::LotDesc], slotOwnerParam)
 		settingsFileName =  genFileName+".dat"
 		settingsFileName = settingsFileName.gsub(/[ ]/,'\ ')
@@ -952,7 +952,7 @@ class UserInterface
 						# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
 						timeOfFile = (Time.at(configDateUpload.to_i)).strftime("%Y%m%d")
 						# puts "timeOfFile-'#{timeOfFile}'. #{__LINE__}-#{__FILE__}"
-						if timeOfFile.include? "19691231" == false
+						if (timeOfFile.include? "19691231") == false
 							`cd #{SharedMemory::StepsLogRecordsPath}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
 						end
 					}							
