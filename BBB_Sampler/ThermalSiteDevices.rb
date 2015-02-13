@@ -103,10 +103,10 @@ class ThermalSiteDevices
         # End of 'def analyzeData'  
     end
     
-    def logData(parentMemory)
+    def logData(parentMemory,tcusToSkip)
         # Did we get the data?
         # puts "   #{Time.now.to_f.inspect} - ThermalSiteDevices.logData function got called A."
-        dBase.saveAllData(parentMemory,Time.now)
+        dBase.saveAllData(parentMemory,tcusToSkip,Time.now)
         # puts "   #{Time.now.to_f.inspect} - ThermalSiteDevices.logData function got called B."
         # End of 'def logData'
     end

@@ -2,7 +2,7 @@
 require_relative '../lib/SharedMemory'
 require_relative '../lib/SharedLib'
 # ----------------- Bench mark string length so it'll fit on GitHub display without having to scroll ----------------
-SetupAtHome_DutObj  = false # So we can do some work at home
+SetupAtHome_DutObj  = true # So we can do some work at home
 
 class DutObj
     FaultyTcu = "Faulty Tcu"        
@@ -176,7 +176,7 @@ class DutObj
         # puts "poll @statusResponse[#{dutNumParam}] = '#{@statusResponse[dutNumParam]}'"
     end
 
-    def saveAllData(parentMemory, timeNowParam)
+    def saveAllData(parentMemory, tcusToSkip, timeNowParam)
         dutNum = 0;
         allDutData = "";
         while  dutNum<TOTAL_DUTS_TO_LOOK_AT  do
@@ -184,7 +184,7 @@ class DutObj
             # Get the string index [1..-1] because we're skipping the first character '@'
             # Parse the data out.
             #
-            if @statusResponse[dutNum].nil? == false
+            if @statusResponse[dutNum].nil? == false && tcusToSkip[dutNum].nil? == true
                 # Old code
                 # SD card just got plugged in.  DutObj got re-initialized.
                 #

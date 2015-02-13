@@ -16,7 +16,7 @@ SERVER_URI ="druby://localhost:8787"
 
 include Beaglebone
 
-SetupAtHome_Sampler = false # So we can do some work at home
+SetupAtHome_Sampler = true # So we can do some work at home
 
 TOTAL_DUTS_TO_LOOK_AT  = 24
 class TCUSampler
@@ -951,6 +951,11 @@ class TCUSampler
         end
     end
     
+    def getErrorColorFlag(key2)
+        setErrorColorFlagBase(key2)
+        return @boardData[SharedMemory::ErrorColor][key2][SharedMemory::CurrentState]
+    end
+    
     def setErrorColorFlag(key2,flag,fromParam)
         setErrorColorFlagBase(key2)
 
@@ -965,10 +970,10 @@ class TCUSampler
         @samplerData.setErrorColor(@boardData[SharedMemory::ErrorColor],fromParam+",#{__LINE__}-#{__FILE__}")
     end
 
-    def reportToLogFile(tbs)
+    def reportToLogFile(tbs, doSysSnapShot=true)
         timeOfError = Time.new
         @samplerData.ReportError(tbs,timeOfError)
-        logSystemStateSnapShot(tbs,timeOfError)
+        logSystemStateSnapShot(tbs,timeOfError,doSysSnapShot)
     end
 
     def stopMachineIfTripped(gPIO2Param, key2, tripMin, actualValue, tripMax, flagTolP, flagTolN)
@@ -984,7 +989,10 @@ class TCUSampler
             end
             
             if (flagTolP <= actualValue && actualValue <= flagTolN) == false
-                reportToLogFile("NOTICE - #{key2} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed (in step##{@boardData[LastStepNumOfSentLog]}).");
+                if getErrorColorFlag(key2) == SharedMemory::GreenFlag
+                    reportToLogFile("NOTICE - #{key2} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed (in step##{@boardData[LastStepNumOfSentLog]}).");
+                end
+                
                 setErrorColorFlag(key2,SharedMemory::OrangeFlag,"#{__LINE__}-#{__FILE__}")
                 if (tripMin <= actualValue && actualValue <= tripMax) == false
                     if is2ndFault(key2,unit,tripMin,actualValue,tripMax)
@@ -1006,6 +1014,9 @@ class TCUSampler
                     end
                 end
             else
+                if getErrorColorFlag(key2) == SharedMemory::OrangeFlag
+                    reportToLogFile("NOTICE - #{key2} returned within tolerance. (in step##{@boardData[LastStepNumOfSentLog]}).",false);
+                end
                 setErrorColorFlag(key2,SharedMemory::GreenFlag,"#{__LINE__}-#{__FILE__}")
                 clearFault(key2)
             end
@@ -1084,13 +1095,25 @@ class TCUSampler
     end
     
     def getMuxValue(aMuxParam)
-        a=0
-        @gPIO2.setGPIO2(GPIO2::ANA_MEAS4_SEL_xD, aMuxParam)
-        while a<5
-            readValue = @pAinMux.read
-            a += 1
+        # puts "SetupAtHome_Sampler = #{SetupAtHome_Sampler}"
+        # puts "aMuxParam='#{aMuxParam}' #{__LINE__}-#{__FILE__}"
+        if SetupAtHome_Sampler == true
+            if aMuxParam == 2
+                return 0
+            elsif aMuxParam == 7
+                return 0
+            else
+                return 50.12
+            end
+        else
+            a=0
+            @gPIO2.setGPIO2(GPIO2::ANA_MEAS4_SEL_xD, aMuxParam)
+            while a<5
+                readValue = @pAinMux.read
+                a += 1
+            end
+            return @pAinMux.read
         end
-        return @pAinMux.read
     end
     
     def pollAdcInput()
@@ -1168,6 +1191,29 @@ class TCUSampler
                 else
                     useIndex = aMux
                 end
+                
+                # Poll for 5 times.  If the retrieved value is less than 0.5 volts it's a dead tcu
+                if SharedLib::IDUT1 <= useIndex && useIndex <= SharedLib::IDUT24
+                    # Make sure it's a dut.
+                    if retval*@multiplier[useIndex] < 0.5
+                        # puts "mux index='#{useIndex}' read '#{retval*@multiplier[useIndex]}'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
+                        # puts "@numTimesPolledForEmptySocket=#{@numTimesPolledForEmptySocket}, @numTimesPolledForEmptySocket[useIndex]=#{@numTimesPolledForEmptySocket[useIndex]} #{__LINE__}-#{__FILE__}."
+                        if @numTimesPolledForEmptySocket[useIndex].nil? # Means not yet initialized
+                            # puts "mux index='#{useIndex}' read 'retval*@multiplier[useIndex]'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
+                            @numTimesPolledForEmptySocket[useIndex] = 0
+                        end
+                        
+                        if @tcusToSkip[useIndex].nil?
+                            # puts "mux index='#{useIndex}' read 'retval*@multiplier[useIndex]'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
+                            @numTimesPolledForEmptySocket[useIndex] += 1
+                            if @numTimesPolledForEmptySocket[useIndex] > 5
+                                # puts "Adding mux index='#{useIndex}' as tcusToSkip. #{__LINE__}-#{__FILE__}."
+                                @tcusToSkip[useIndex] = useIndex
+                            end
+                        end
+                    end
+                end
+                # retval*@multiplier[useIndex]
                 @samplerData.SetData(SharedLib::MuxData,useIndex,retval,@multiplier)
                 # puts"retval= '0x#{retval.to_s(16)}' AMUX CH (0x#{aMux.to_s(16)}) "
                 aMux += 1
@@ -1813,9 +1859,9 @@ class TCUSampler
         sendToLogger(tbs)
     end
 
-    def logSystemStateSnapShot(strParam, timeParam)
+    def logSystemStateSnapShot(strParam, timeParam,doSysSnapShot=true)
         tbs = "#{timeParam.inspect} - #{strParam}"
-        if @isOkToLog && @allDutTempTolReached
+        if @isOkToLog && @allDutTempTolReached && doSysSnapShot
             mins =  (@samplerData.GetStepTimeLeft()/60.0).to_i
             secs =  (@samplerData.GetStepTimeLeft()-mins*60.0).to_i
             tbs += "\nSystem state snapshot:  step time left - #{SharedLib.makeTime2colon2Format(mins,secs)} (mm:ss)\n"
@@ -2039,6 +2085,16 @@ class TCUSampler
         else
             return actualValue
         end
+    end
+
+    def getDutErrorColorFlag(key2,ct)
+        setErrorColorFlagBase(key2)        
+        
+        if @boardData[SharedMemory::ErrorColor][key2][ct].nil?
+            @boardData[SharedMemory::ErrorColor][key2][ct] = Hash.new
+        end
+        
+        return @boardData[SharedMemory::ErrorColor][key2][ct][SharedMemory::CurrentState]
     end
 
     def setDutErrorColorFlag(key2,ct,flag)
@@ -2282,9 +2338,40 @@ class TCUSampler
                                 if @tcusToSkip[ct].nil? == true
             						# puts"dutI#{ct} :tripMin='#{tripMin}' flagTolP='#{flagTolP}' actualValue='#{actualValue}' flagTolN='#{flagTolN}' tripMax='#{tripMax}' #{__LINE__}-#{__FILE__}"
                                     actualValue = SharedLib.getCurrentDutDisplay(muxData,"#{ct}").to_f
+
+=begin                                    
+                					if ct == 22
+                					    if @someCt.nil?
+                					        @someCt = 0
+                					    end
+                					    
+                                        @someCt += 1
+                                        puts "@someCt='#{@someCt}' #{__LINE__}-#{__FILE__}"
+                					    if @someCt>15
+                					        @someCt = 0
+                					        if @makeIfFaulty.nil?
+                					            @makeIfFaulty = true
+                					        end
+                					        
+                					        if @makeIfFaulty
+                					            @makeIfFaulty = false
+                					        else
+                					            @makeIfFaulty = true
+                					        end
+                                            puts "@makeIfFaulty ='#{@makeIfFaulty}' #{__LINE__}-#{__FILE__}"
+                					    end
+                					    
+            					        if @makeIfFaulty
+            					            actualValue = (flagTolN+tripMax)/2
+            					        end
+                					end
+=end    
+    
                                     
                                     if (flagTolP <= actualValue && actualValue <= flagTolN) == false
-                                        reportToLogFile("NOTICE - IDUT#{ct} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed (in step##{@boardData[LastStepNumOfSentLog]}).")
+                                        if getDutErrorColorFlag(key2,ct) == SharedMemory::GreenFlag
+                                            reportToLogFile("NOTICE - IDUT#{ct} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed (in step##{@boardData[LastStepNumOfSentLog]}).")
+                                        end
                                         setDutErrorColorFlag(key2,ct,SharedMemory::OrangeFlag)
 
                                         # actualValue = testBadMeasForTripPts("#{key2}#{ct}",actualValue,"#{__LINE__}-#{__FILE__}")
@@ -2303,6 +2390,9 @@ class TCUSampler
                                         end
 
                                     else
+                                        if getDutErrorColorFlag(key2,ct) == SharedMemory::OrangeFlag
+                                            reportToLogFile("NOTICE - IDUT#{ct} returned within tolerance. (in step##{@boardData[LastStepNumOfSentLog]}).",false);
+                                        end                                        
                                         setDutErrorColorFlag(key2,ct,SharedMemory::GreenFlag)
                                         clearFault("#{key2}#{ct}")
                                     end
@@ -2400,8 +2490,11 @@ class TCUSampler
                                             # Un-comment code line below if you want a trip on a dut current
                         					# actualValue = 1000*SharedLib::make5point2Format(splitted[2]).to_f
                         					
+                        					
                                             if (flagTolP <= actualValue && actualValue <= flagTolN) == false
-                                                reportToLogFile("NOTICE - DUT##{dutCt} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed (in step##{@boardData[LastStepNumOfSentLog]}).")
+                                                if getDutErrorColorFlag(key2,dutCt) == SharedMemory::GreenFlag
+                                                    reportToLogFile("NOTICE - DUT##{dutCt} out of bound flag points.  '#{flagTolP}'#{unit} <= '#{actualValue}'#{unit} <= '#{flagTolN}'#{unit} failed (in step##{@boardData[LastStepNumOfSentLog]}).")
+                                                end
                                                 setDutErrorColorFlag(key2,dutCt,SharedMemory::OrangeFlag)
 
                                                 # actualValue = testBadMeasForTripPts("#{key2}#{dutCt}",actualValue,"#{__LINE__}-#{__FILE__}")
@@ -2421,6 +2514,9 @@ class TCUSampler
                                                     end
                                                 end
                                             else
+                                                if getDutErrorColorFlag(key2,dutCt) == SharedMemory::OrangeFlag
+                                                    reportToLogFile("NOTICE - DUT##{dutCt} returned within tolerance. (in step##{@boardData[LastStepNumOfSentLog]}).",false);
+                                                end                                        
                                                 setDutErrorColorFlag(key2,dutCt,SharedMemory::GreenFlag)
                                                 clearFault("#{key2}#{dutCt}")
                                             end
@@ -2636,6 +2732,7 @@ class TCUSampler
     end
     
     def checkDeadTcus(uart1)
+        @numTimesPolledForEmptySocket = Hash.new
         @tcusToSkip = Hash.new
         # puts"SetupAtHome='#{SetupAtHome}'"
         if SetupAtHome
@@ -2645,15 +2742,15 @@ class TCUSampler
         ct = 0
         while ct<24 && @tcusToSkip[ct].nil? do 
             uartResponse = DutObj::getTcuStatusS(ct,uart1,@gPIO2)
-#SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
+            #SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
             if uartResponse == DutObj::FaultyTcu
-#SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
+                #SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
                 @tcusToSkip[ct] = ct
                 SharedLib.bbbLog("UART not responding to TCU#{ct} (zero based index), adding item to be skipped when polling. #{__LINE__}-#{__FILE__}")
                 uart1.disable   # uart1Param variable is now dead cuz it timed out.
                 uart1 = UARTDevice.new(:UART1, 115200)  # replace the dead uart variable.
             else
-#SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
+                #SharedLib.pause "ct='#{ct}' uartResponse='#{uartResponse}'","#{__LINE__}-#{__FILE__}"
                 # puts"Sent 'S?' - responded :'#{uartResponse}' #{__LINE__}-#{__FILE__}"
                 # uart1.write("V?\n");
                 # x = uart1.readline
@@ -2923,6 +3020,7 @@ class TCUSampler
         timeStamp += 1.0
         
         while true
+            # puts "polling #{__LINE__}-#{__FILE__}"
             stepNum = ""
             if @stepToWorkOn.nil? == false
                 # PP.pp(@stepToWorkOn)
@@ -3050,7 +3148,6 @@ class TCUSampler
             		    when SharedLib::LoadConfigFromPc
                             `rm -rf #{HoldingTankFilename}`
             		        checkDeadTcus(uart1)
-    
             		        @fault = nil
                             @samplerData.clearStopMessage()
             		        @lotStartedAlready = false
@@ -3124,7 +3221,7 @@ class TCUSampler
             pollAdcInput()
             pollMuxValues()
             ThermalSiteDevices.pollDevices(uart1,@gPIO2,@tcusToSkip,@thermalSiteDevices)
-            ThermalSiteDevices.logData(@samplerData)
+            ThermalSiteDevices.logData(@samplerData,@tcusToSkip)
             getEthernetPsCurrent()
             backFansHandler()
             runAwayTempHandler() # Need to verify this code.
@@ -3174,4 +3271,4 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 534
+# 1191

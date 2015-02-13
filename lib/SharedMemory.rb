@@ -980,7 +980,7 @@ class SharedMemory
 		else
 			`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 		end
-        # puts"User input @pcCmdNew='#{@pcCmdNew}'"
+        puts"User input @pcCmdNew='#{mode}'"
     end
 	
     def SetPcCmdThread(cmdParam,timeOfCmdParam)
@@ -1183,22 +1183,12 @@ class SharedMemory
     end
     
     def SetData(dataTypeParam,indexParam,dataValueParam,multiplierParam)
-        # puts"check A #{__LINE__}-#{__FILE__}"
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
-        # puts"check B #{__LINE__}-#{__FILE__}"
         if ds[dataTypeParam].nil?
-            # puts"ds[#{dataTypeParam}] is nil #{__LINE__}-#{__FILE__}"
             ds[dataTypeParam] = Hash.new
         end
-        # puts"check C #{__LINE__}-#{__FILE__}"
-        
         ds[dataTypeParam][indexParam.to_s] = (dataValueParam*multiplierParam[indexParam]).to_s
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
-        # puts"check D #{__LINE__}-#{__FILE__}"
-        # PP.pp(ds)
-        # puts"@setData.length=#{@setData.length}"
-        # gets
-        # puts"writeAndFreeLocked(@setData) = #{writeAndFreeLocked(@setData)}"
     end
 
     def GetDispDutToolTip(slotLabel2Param)
