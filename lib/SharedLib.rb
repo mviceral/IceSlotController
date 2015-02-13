@@ -341,13 +341,7 @@ class SharedLib
 		return newStr
 	end
   
-	def getLogFileName(configDateUpload,slotOwnerParam,lotIDParam,lotDescParam,slotParam)
-  		configDateUpload = Time.at(configDateUpload.to_i)
-		lot = "#{lotIDParam}"
-		lotDesc = "#{lotDescParam}"
-		brd = "#{slotOwnerParam}"
-		machine = getSystemID()
-
+	def getSlotId(slotParam)
 		case slotParam
 			when SLOT1
 				slot = "Slot 1"
@@ -358,6 +352,15 @@ class SharedLib
 			else
 				slot = slotParam
 		end
+		return slot
+	end
+	def getLogFileName(configDateUpload,slotOwnerParam,lotIDParam,lotDescParam,slotParam)
+  		configDateUpload = Time.at(configDateUpload.to_i)
+		lot = "#{lotIDParam}"
+		lotDesc = "#{lotDescParam}"
+		brd = "#{slotOwnerParam}"
+		machine = getSystemID()
+		slot = getSlotId(slotParam)
 		date = "#{configDateUpload.strftime("%Y%m%d")}"
 		return "BE2_#{lot}_#{lotDesc}_#{brd}_#{machine}_#{slot}_#{date}"
 		# return "iceLog_brd#{slotOwnerParam}_lot#{lotIDParam}_time#{configDateUpload.strftime("%Y%m%d_%H%M%S")}"

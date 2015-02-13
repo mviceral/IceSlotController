@@ -485,6 +485,7 @@ class UserInterface
 		puts "slotProperties[slotOwnerParam][SharedMemory::LotDesc]='#{slotProperties[slotOwnerParam][SharedMemory::LotDesc]}'.  #{__LINE__}-#{__FILE__}"
 		genFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),slotProperties[slotOwnerParam][SharedMemory::LotID],	slotProperties[slotOwnerParam][SharedMemory::LotDesc], slotOwnerParam)
 		settingsFileName =  genFileName+".dat"
+		settingsFileName = settingsFileName.gsub(/[ ]/,'\ ')
 		recipeStepFile = "../../slot-controller_data/steps config file repository/#{fileName}"
 		recipeLastModified = File.mtime(recipeStepFile)
 		
@@ -501,6 +502,8 @@ class UserInterface
 		writeToSettingsLog("System: #{systemID}",settingsFileName)
 		writeToSettingsLog("BIB#: #{bibID}",settingsFileName)
 		writeToSettingsLog("Lot ID: #{getSlotProperties()[SharedMemory::LotID]}",settingsFileName)
+		writeToSettingsLog("Lot Description: #{getSlotProperties()[SharedMemory::LotDesc]}",settingsFileName)
+		writeToSettingsLog("Slot#: #{SharedLib.getSlotId(slotOwnerParam)}",settingsFileName)
 		writeToSettingsLog("Slot Controller Software Ver: #{@sharedMem.GetDispCodeVersion(slotOwnerParam,SharedMemory::SlotCtrlVer)}",settingsFileName)
 		writeToSettingsLog("PC Software Ver: #{@sharedMem.getCodeVersion(SharedMemory::PcVer)}",settingsFileName)
 		writeToSettingsLog("",settingsFileName)
@@ -947,7 +950,11 @@ class UserInterface
 						# puts "lotID = '#{lotID}'  #{__LINE__}-#{__FILE__}"
 						dBaseFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),lotID,lotDesc,slotOwnerParam)+".dat"		
 						# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
-						`cd #{SharedMemory::StepsLogRecordsPath}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
+						timeOfFile = (Time.at(configDateUpload.to_i)).strftime("%Y%m%d")
+						# puts "timeOfFile-'#{timeOfFile}'. #{__LINE__}-#{__FILE__}"
+						if timeOfFile.include? "19691231" == false
+							`cd #{SharedMemory::StepsLogRecordsPath}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
+						end
 					}							
 					data = @sharedMemService.getLogInfoFromPC()
 					# End of 'while data.nil? == false'
@@ -1162,7 +1169,7 @@ class UserInterface
 					# See if the log file is over 10 meg.
 					directory = SharedMemory::StepsLogRecordsPath
 					generalFileName = SharedLib.getLogFileName(@sharedMem.GetDispConfigDateUpload(slotLabel2Param),SharedLib.getBibID(slotLabel2Param),@sharedMem.GetDispLotID(slotLabel2Param),@sharedMem.GetDispLotDesc(slotLabel2Param),slotLabel2Param)
-					dBaseFileName = generalFileName+".dat"		
+					dBaseFileName = generalFileName+".dat"
 
 					# Don't split file anymore.
 					# puts "dBaseFileName = '#{dBaseFileName}' #{__LINE__}-#{__FILE__}"
@@ -1174,8 +1181,8 @@ class UserInterface
 					#end
 
 					# Zip it instead
-					dBaseFileName.gsub(/[ ]/,'\ ')
-					`cd #{directory}; gzip -c #{dBaseFileName} > #{dBaseFileName}.gz`
+					linuxFileName = dBaseFileName.gsub(/[ ]/,'\ ')
+					`cd #{directory}; gzip -c #{linuxFileName} > #{linuxFileName}.gz`
 				end
 			topTable += "
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>ALL STEPS COMPLETE</td></tr>
