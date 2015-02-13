@@ -3014,6 +3014,7 @@ class TCUSampler
             @samplerData.SetStepTimeLeft(@stepToWorkOn[StepTimeLeft])
             @samplerData.SetTotalStepDuration(@boardData[SharedLib::TotalStepDuration])
             @samplerData.SetLotID(@boardData[SharedMemory::LotID])
+            @samplerData.SetDataItem(SharedMemory::LotDesc,@boardData[SharedMemory::LotDesc])
         end
         
         timeStamp = Time.now.to_f

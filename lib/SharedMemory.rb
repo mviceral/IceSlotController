@@ -53,6 +53,7 @@ class SharedMemory
 	
 	LogInfo = "LogInfo"
 	LotID = "LotID"
+	LotDesc = "LotDesc"
 	ShutDownInfo = "ShutDownInfo"
     def writeAndFreeLocked(strParam, fromParam)
 =begin
@@ -111,13 +112,22 @@ class SharedMemory
 		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}");
 	end
 	
+	def SetDataItem(lotIDParam,dataParam)
+		ds = getMemory()
+		if ds["Configuration"].nil?
+		    ds["Configuration"] = Hash.new
+		end
+		ds["Configuration"][lotIDParam] = dataParam
+		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+	end
+
 	def SetLotID(lotIDParam)
-        ds = getMemory()
-        if ds["Configuration"].nil?
-            ds["Configuration"] = Hash.new
-        end
-        ds["Configuration"][SharedMemory::LotID] = lotIDParam
-        writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
+		ds = getMemory()
+		if ds["Configuration"].nil?
+		    ds["Configuration"] = Hash.new
+		end
+		ds["Configuration"][SharedMemory::LotID] = lotIDParam
+		writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
 	end
 	
 
@@ -255,7 +265,12 @@ class SharedMemory
 							end
 							ct += 1
 						end
-						generalFileName = SharedLib.getLogFileName(GetDispConfigDateUpload(slotOwnerParam),SharedLib.getBibID(slotOwnerParam),GetDispLotID(slotOwnerParam))
+						generalFileName = SharedLib.getLogFileName(
+							GetDispConfigDateUpload(slotOwnerParam),
+							SharedLib.getBibID(slotOwnerParam),
+							GetDispLotID(slotOwnerParam),
+							GetDispLotDesc(slotOwnerParam),
+							slotOwnerParam)
 						# Can't get it to dump to '_data' folder.
 						`echo \"#{newStr}\" >> #{SharedMemory::StepsLogRecordsPath}/#{generalFileName}.ErrorLog`
 					end
@@ -329,15 +344,6 @@ class SharedMemory
 		@lockedAt = ""		
 	end
 	
-=begin	
-	def getLogFileName(slotOwnerParam)
-		configDateUpload = Time.at(GetDispConfigDateUpload(slotOwnerParam).to_i)
-		fileName = GetDispConfigurationFileName(slotOwnerParam)
-		genFileName = SharedLib.getLogFileName(fileName,configDateUpload,slotOwnerParam,GetDispLotID(slotOwnerParam))
-		return genFileName+".log"
-	end
-=end
-
 	def getPsVolts(muxData,adcData,rawDataParam)
 		if rawDataParam.to_i >= 48
 			if adcData.nil? == false && adcData[rawDataParam].nil? == false
@@ -1220,12 +1226,20 @@ class SharedMemory
         ds[PsToolTip][psParam] = dataParam
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
     end
-    
+
+    def GetDispLotDesc(slotOwnerParam)
+	return GetDispLotSubFunc(slotOwnerParam,LotDesc)
+    end
+
     def GetDispLotID(slotOwnerParam)
+	return GetDispLotSubFunc(slotOwnerParam,LotID)
+    end
+
+    def GetDispLotSubFunc(slotOwnerParam,param2)
     	if getMemory().nil? == false
     		if getMemory()[SharedLib::PC].nil? == false
     			if getMemory()[SharedLib::PC][slotOwnerParam].nil? == false
-    				return getMemory()[SharedLib::PC][slotOwnerParam][LotID]
+    				return getMemory()[SharedLib::PC][slotOwnerParam][param2]
     			else
     				return nil
     			end
@@ -1272,4 +1286,4 @@ class SharedMemory
     end
 =end    
 end
-# 307
+# 1222

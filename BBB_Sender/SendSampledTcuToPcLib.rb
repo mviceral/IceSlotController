@@ -111,9 +111,12 @@ Temperature Setting: <temp>
         else
             slotInfo[SharedMemory::ErrorColor] = sharedMemParam.getErrorColor() 
         end
+
         if sharedMemParam.GetConfiguration().nil? == false
             slotInfo[SharedMemory::LotID] = sharedMemParam.GetConfiguration()[SharedMemory::LotID]
+            slotInfo[SharedMemory::LotDesc] = sharedMemParam.GetConfiguration()[SharedMemory::LotDesc]
         end
+
         slotInfo[SharedMemory::SlotCtrlVer] = sharedMemParam.getCodeVersion(SharedMemory::SlotCtrlVer)
         slotInfo[SharedLib::ConfigurationFileName] = sharedMemParam.GetConfigurationFileName()
         slotInfo[SharedLib::ConfigDateUpload] = sharedMemParam.GetConfigDateUpload()

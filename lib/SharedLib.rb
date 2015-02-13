@@ -2,7 +2,7 @@ require 'singleton'
 require 'forwardable'
 require 'uri'
 
-SetupAtHome  = true # So we can do some work at home
+SetupAtHome  = false # So we can do some work at home
 
 class SharedLib
 	include Singleton
@@ -341,11 +341,16 @@ class SharedLib
 		return newStr
 	end
   
-  def getLogFileName(configDateUpload,slotOwnerParam,lotIDParam)
-  	configDateUpload = Time.at(configDateUpload.to_i)
-		ct = 0
-		return "iceLog_brd#{slotOwnerParam}_lot#{lotIDParam}_time#{configDateUpload.strftime("%Y%m%d_%H%M%S")}"
-		
+	def getLogFileName(configDateUpload,slotOwnerParam,lotIDParam,slotParam)
+  		configDateUpload = Time.at(configDateUpload.to_i)
+		lot = "#{lotIDParam}"
+		lotDesc = ""
+		brd = "#{slotOwnerParam}"
+		machine = getSystemID()
+		slot = slotParam
+		date = "#{configDateUpload.strftime("%Y%m%d")}"
+		return "BE2_#{lot}_#{lotDesc}_#{brd}_#{machine}_#{slot}_#{date}"
+		# return "iceLog_brd#{slotOwnerParam}_lot#{lotIDParam}_time#{configDateUpload.strftime("%Y%m%d_%H%M%S")}"
 	end
   
   def makeUriFriendly(stringParam)  

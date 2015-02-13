@@ -41,7 +41,7 @@ module MigrationCount
 	end # End of 'class Migrations'
 	
 	class Func
-    include Singleton
+		include Singleton
 
 		def subFunc(sharedMemServiceParam,lastMessageSentParam,data, parseJson)							
 			sharedMem = sharedMemServiceParam.getSharedMem()		 
@@ -68,10 +68,10 @@ module MigrationCount
 			sharedMem.processRecDataFromPC(hash)
 		end
 		
-    class << self
-      extend Forwardable
-      def_delegators :instance, *Func.instance_methods(false)
-    end
+		class << self
+			extend Forwardable
+			def_delegators :instance, *Func.instance_methods(false)
+		end
 	end
 	# This is the Grape REST API implementation
 	class API < Grape::API

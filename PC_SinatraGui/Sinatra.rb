@@ -96,7 +96,7 @@ class UserInterface
 			lenOfStrToLookInto = "SLOT1 IP".length
   		File.open("../../slot-controller_data/#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
   			f.each_line do |line|
-#  				# puts "line='#{line}' #{__LINE__}-#{__FILE__}"
+  				# puts "line='#{line}' #{__LINE__}-#{__FILE__}"
 					if line[0..(lenOfStrToLookInto-1)] == "SLOT1 IP"
 						@slotToIp[SharedLib::SLOT1] = line[(lenOfStrToLookInto+1)..-1].strip
 					elsif line[0..(lenOfStrToLookInto-1)] == "SLOT2 IP"
@@ -130,9 +130,10 @@ class UserInterface
 		@redirectWithError
 	end
 	
-	def setConfigFileName(fileNameParam, lotIDParam)
+	def setConfigFileName(fileNameParam, lotIDParam, lotDescParam)
 		getSlotProperties()[FileName] = fileNameParam
 		getSlotProperties()[SharedMemory::LotID] = lotIDParam
+		getSlotProperties()[SharedMemory::LotDesc] = lotDescParam
 	end
 	RowOfStepName = 8
 	def mustBeBoolean(configFileName,ctParam,config,itemNameParam)
@@ -480,8 +481,13 @@ class UserInterface
 
 		fileName = getSlotProperties()["FileName"]
 		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
-		genFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),slotProperties[slotOwnerParam][SharedMemory::LotID])
-		settingsFileName =  genFileName+".log"
+		genFileName = SharedLib.getLogFileName(
+			configDateUpload,
+			SharedLib.getBibID(slotOwnerParam),
+			slotProperties[slotOwnerParam][SharedMemory::LotID],
+			slotProperties[slotOwnerParam][SharedMemory::LotDesc],
+			slotOwnerParam)
+		settingsFileName =  genFileName+".dat"
 		recipeStepFile = "../../slot-controller_data/steps config file repository/#{fileName}"
 		recipeLastModified = File.mtime(recipeStepFile)
 		
@@ -937,11 +943,17 @@ class UserInterface
 						# puts "hash[SharedLib::ConfigurationFileName]='#{hash[SharedLib::ConfigurationFileName]}' #{__LINE__}-#{__FILE__}"
 						slotOwnerParam = hash[SharedLib::SlotOwner]
 						# puts "hash[SharedLib::SlotOwner]='#{hash[SharedLib::SlotOwner]}' #{__LINE__}-#{__FILE__}"
-						hashForLotId = JSON.parse(data[SharedMemory::SystemInfo])
-						lotID = hashForLotId[SharedMemory::LotID]
+						hashForLotData = JSON.parse(data[SharedMemory::SystemInfo])
+						lotID = hashForLotData[SharedMemory::LotID]
+						lotDesc = hashForLotData[SharedMemory::LotDesc]
 						# puts "data[SharedMemory::SystemInfo] = '#{data[SharedMemory::SystemInfo]}'  #{__LINE__}-#{__FILE__}"
 						# puts "lotID = '#{lotID}'  #{__LINE__}-#{__FILE__}"
-						dBaseFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),lotID)+".log"		
+						dBaseFileName = SharedLib.getLogFileName(
+							configDateUpload,
+							SharedLib.getBibID(slotOwnerParam),
+							lotID,
+							lotDesc,
+							slotOwnerParam)+".dat"		
 						# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
 						`cd #{SharedMemory::StepsLogRecordsPath}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
 					}							
@@ -1156,15 +1168,25 @@ class UserInterface
 					
 					# See if the log file is over 10 meg.
 					directory = SharedMemory::StepsLogRecordsPath
-					generalFileName = SharedLib.getLogFileName(@sharedMem.GetDispConfigDateUpload(slotLabel2Param),SharedLib.getBibID(slotLabel2Param),@sharedMem.GetDispLotID(slotLabel2Param))
-					dBaseFileName = generalFileName+".log"		
+					generalFileName = SharedLib.getLogFileName(
+						@sharedMem.GetDispConfigDateUpload(slotLabel2Param),
+						SharedLib.getBibID(slotLabel2Param),
+						@sharedMem.GetDispLotID(slotLabel2Param),
+						@sharedMem.GetDispLotDesc(slotLabel2Param),
+						slotLabel2Param)
+					dBaseFileName = generalFileName+".dat"		
+=begin
+	# Don't split file anymore.
 					# puts "dBaseFileName = '#{dBaseFileName}' #{__LINE__}-#{__FILE__}"
 					fileitem = `ls -l #{directory}| grep #{dBaseFileName}`.strip
 					# puts "fileitem = #{fileitem}"
-					fileItemParts = fileitem.split(" ")					
+					fileItemParts = fileitem.split(" ")
 					if fileItemParts[4].to_i > 10000000
 						`cd #{directory}; split -b 10000000 #{dBaseFileName} #{generalFileName}_Part`
 					end
+=end
+					# Zip it instead
+					`cd #{directory}; gzip -c #{dBaseFileName} > #{dBaseFileName}.gz`
 				end
 			topTable += "
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>ALL STEPS COMPLETE</td></tr>
@@ -1663,6 +1685,7 @@ end
 					function getLotId(slotOwnerParam, btnStateParam, fileParam) {
 						var defaultValue = \"--LOT ID--\";
 						var lotID = prompt(\"Selected step config file: '\"+fileParam+\"'\\n\\nPlease provide the 'Lot ID' for this run:\", defaultValue);
+						var lotDesc = prompt(\"Selected step config file: '\"+fileParam+\"'\\n\\nLot description:\", \"\");
 						if (lotID != null && lotID!=defaultValue) {
 							// Make sure that the inputed characters are all valid for filename.
 							faultyInput = false;
@@ -1692,7 +1715,7 @@ end
 								// http://www.mtu.edu/umc/services/web/cms/characters-avoid/
 								alert (\"Entered Lot ID: '\"+lotID+\"'\\n\\nThe following chacters cannot be used for Lot ID: '/', '\\\\', '?', '%', '*', ':', '|', '\\\"', '<', '>', '#', '$', '+', '!', '`', '&', '‘', '{', '=', '}', ' ' (blank spaces), '@'..\\n\\nRe-select step config file and provide Lot ID to continue.\");
 							else
-								window.location=\"../TopBtnPressed?slot=\"+slotOwnerParam+\"&BtnState=\"+btnStateParam+\"&File=\"+encodeURIComponent(fileParam)+\"&LotID=\"+lotID+\"\";
+								window.location=\"../TopBtnPressed?slot=\"+slotOwnerParam+\"&BtnState=\"+btnStateParam+\"&File=\"+encodeURIComponent(fileParam)+\"&LotID=\"+lotID+\"&LotDesc=\"+lotDesc+\"\"; 
 						}
 						else
 						{
@@ -2622,7 +2645,7 @@ end
 		# End of 'checkFaultyPsConfig'	
 	end
 	
-	def setupBbbSlotProcess(fileNameParam, slotOwnerParam, lotIDParam)
+	def setupBbbSlotProcess(fileNameParam, slotOwnerParam, lotIDParam,lotDescParam)
 		#
 		# Find out what type of file we're dealing with:
 		# *.step - for Step file
@@ -2645,7 +2668,7 @@ end
 			return false
 		end
 		
-		setConfigFileName("#{fileNameParam}",lotIDParam)
+		setConfigFileName("#{fileNameParam}",lotIDParam,lotDescParam)
 		# PP.pp(slotProperties)
 		
 		if setBbbConfigUpload(slotOwnerParam) == false
@@ -2753,7 +2776,7 @@ get '/TopBtnPressed' do
 		settings.ui.redirectWithError += "&BtnState=#{settings.ui.Load}"	
 		# puts "LotID='#{params[:LotID]}'"
 		# SharedLib.pause "Checking LotID","#{__LINE__}-#{__FILE__}"
-		if settings.ui.setupBbbSlotProcess(params[:File],params[:slot],params[:LotID]) == false
+		if settings.ui.setupBbbSlotProcess(params[:File],params[:slot],params[:LotID],params[:LotDesc]) == false
 			redirect settings.ui.redirectWithError
 		end
 		redirect "../"
