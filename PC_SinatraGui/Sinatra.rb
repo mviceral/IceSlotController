@@ -481,12 +481,9 @@ class UserInterface
 
 		fileName = getSlotProperties()["FileName"]
 		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
-		genFileName = SharedLib.getLogFileName(
-			configDateUpload,
-			SharedLib.getBibID(slotOwnerParam),
-			slotProperties[slotOwnerParam][SharedMemory::LotID],
-			slotProperties[slotOwnerParam][SharedMemory::LotDesc],
-			slotOwnerParam)
+		puts "slotProperties[slotOwnerParam][SharedMemory::LotID]='#{slotProperties[slotOwnerParam][SharedMemory::LotID]}'.  #{__LINE__}-#{__FILE__}"
+		puts "slotProperties[slotOwnerParam][SharedMemory::LotDesc]='#{slotProperties[slotOwnerParam][SharedMemory::LotDesc]}'.  #{__LINE__}-#{__FILE__}"
+		genFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),slotProperties[slotOwnerParam][SharedMemory::LotID],	slotProperties[slotOwnerParam][SharedMemory::LotDesc], slotOwnerParam)
 		settingsFileName =  genFileName+".dat"
 		recipeStepFile = "../../slot-controller_data/steps config file repository/#{fileName}"
 		recipeLastModified = File.mtime(recipeStepFile)
@@ -872,7 +869,7 @@ class UserInterface
 		return slotLabelParam.delete(' ')
 	end
 	
-	def updatedSharedMemory
+	def updatedSharedMemory()
 			@sharedMem = @sharedMemService.getSharedMem() # .processRecDataFromPC(.getDataFromBoardToPc())
 			shutDownInfoParam = @sharedMemService.getShutDownInfoFromPC()
 			if shutDownInfoParam.nil? == false
@@ -948,12 +945,7 @@ class UserInterface
 						lotDesc = hashForLotData[SharedMemory::LotDesc]
 						# puts "data[SharedMemory::SystemInfo] = '#{data[SharedMemory::SystemInfo]}'  #{__LINE__}-#{__FILE__}"
 						# puts "lotID = '#{lotID}'  #{__LINE__}-#{__FILE__}"
-						dBaseFileName = SharedLib.getLogFileName(
-							configDateUpload,
-							SharedLib.getBibID(slotOwnerParam),
-							lotID,
-							lotDesc,
-							slotOwnerParam)+".dat"		
+						dBaseFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),lotID,lotDesc,slotOwnerParam)+".dat"		
 						# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
 						`cd #{SharedMemory::StepsLogRecordsPath}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
 					}							
@@ -981,8 +973,9 @@ class UserInterface
 	end
 	def GetSlotDisplay(slotLabel2Param)
 		lotID = @sharedMem.GetDispLotID(slotLabel2Param)
+		lotDesc = @sharedMem.GetDispLotDesc(slotLabel2Param)
 		if lotID.nil? == false && lotID.length > 0
-			lotID = ", Lot ID: #{lotID}"
+			lotID = ", Lot ID: #{lotID} - '#{lotDesc}'"
 		else
 			lotID = ""
 		end
@@ -1168,24 +1161,20 @@ class UserInterface
 					
 					# See if the log file is over 10 meg.
 					directory = SharedMemory::StepsLogRecordsPath
-					generalFileName = SharedLib.getLogFileName(
-						@sharedMem.GetDispConfigDateUpload(slotLabel2Param),
-						SharedLib.getBibID(slotLabel2Param),
-						@sharedMem.GetDispLotID(slotLabel2Param),
-						@sharedMem.GetDispLotDesc(slotLabel2Param),
-						slotLabel2Param)
+					generalFileName = SharedLib.getLogFileName(@sharedMem.GetDispConfigDateUpload(slotLabel2Param),SharedLib.getBibID(slotLabel2Param),@sharedMem.GetDispLotID(slotLabel2Param),@sharedMem.GetDispLotDesc(slotLabel2Param),slotLabel2Param)
 					dBaseFileName = generalFileName+".dat"		
-=begin
-	# Don't split file anymore.
+
+					# Don't split file anymore.
 					# puts "dBaseFileName = '#{dBaseFileName}' #{__LINE__}-#{__FILE__}"
-					fileitem = `ls -l #{directory}| grep #{dBaseFileName}`.strip
+					#fileitem = `ls -l #{directory}| grep #{dBaseFileName}`.strip
 					# puts "fileitem = #{fileitem}"
-					fileItemParts = fileitem.split(" ")
-					if fileItemParts[4].to_i > 10000000
-						`cd #{directory}; split -b 10000000 #{dBaseFileName} #{generalFileName}_Part`
-					end
-=end
+					#fileItemParts = fileitem.split(" ")
+					#if fileItemParts[4].to_i > 10000000
+					#	`cd #{directory}; split -b 10000000 #{dBaseFileName} #{generalFileName}_Part`
+					#end
+
 					# Zip it instead
+					dBaseFileName.gsub(/[ ]/,'\ ')
 					`cd #{directory}; gzip -c #{dBaseFileName} > #{dBaseFileName}.gz`
 				end
 			topTable += "
@@ -1685,7 +1674,6 @@ end
 					function getLotId(slotOwnerParam, btnStateParam, fileParam) {
 						var defaultValue = \"--LOT ID--\";
 						var lotID = prompt(\"Selected step config file: '\"+fileParam+\"'\\n\\nPlease provide the 'Lot ID' for this run:\", defaultValue);
-						var lotDesc = prompt(\"Selected step config file: '\"+fileParam+\"'\\n\\nLot description:\", \"\");
 						if (lotID != null && lotID!=defaultValue) {
 							// Make sure that the inputed characters are all valid for filename.
 							faultyInput = false;
@@ -1715,6 +1703,7 @@ end
 								// http://www.mtu.edu/umc/services/web/cms/characters-avoid/
 								alert (\"Entered Lot ID: '\"+lotID+\"'\\n\\nThe following chacters cannot be used for Lot ID: '/', '\\\\', '?', '%', '*', ':', '|', '\\\"', '<', '>', '#', '$', '+', '!', '`', '&', '‘', '{', '=', '}', ' ' (blank spaces), '@'..\\n\\nRe-select step config file and provide Lot ID to continue.\");
 							else
+								var lotDesc = prompt(\"Lot description:\", \"\");
 								window.location=\"../TopBtnPressed?slot=\"+slotOwnerParam+\"&BtnState=\"+btnStateParam+\"&File=\"+encodeURIComponent(fileParam)+\"&LotID=\"+lotID+\"&LotDesc=\"+lotDesc+\"\"; 
 						}
 						else

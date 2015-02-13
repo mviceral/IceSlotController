@@ -722,6 +722,7 @@ class SharedMemory
 		ds[SharedLib::PC][slotOwnerParam][SharedMemory::SlotCtrlVer] = hash[SharedMemory::SlotCtrlVer]
 		ds[SharedLib::PC][slotOwnerParam][SharedMemory::WaitTempMsg] = hash[SharedMemory::WaitTempMsg]
 		ds[SharedLib::PC][slotOwnerParam][LotID] = hash[LotID]
+		ds[SharedLib::PC][slotOwnerParam][LotDesc] = hash[LotDesc]
 		ds[SharedLib::PC][slotOwnerParam][PsToolTip] = hash[PsToolTip]
 		ds[SharedLib::PC][slotOwnerParam][DutToolTip] = hash[DutToolTip]
 		ds[SharedLib::PC][slotOwnerParam][ErrorColor] = hash[ErrorColor]
