@@ -16,7 +16,7 @@ SERVER_URI ="druby://localhost:8787"
 
 include Beaglebone
 
-SetupAtHome_Sampler = true # So we can do some work at home
+SetupAtHome_Sampler = false # So we can do some work at home
 
 TOTAL_DUTS_TO_LOOK_AT  = 24
 class TCUSampler
@@ -1193,22 +1193,31 @@ class TCUSampler
                 end
                 
                 # Poll for 5 times.  If the retrieved value is less than 0.5 volts it's a dead tcu
-                if SharedLib::IDUT1 <= useIndex && useIndex <= SharedLib::IDUT24
+                # puts "@boardData[LastStepNumOfSentLog] = '#{@boardData[LastStepNumOfSentLog]}' #{__LINE__}-#{__FILE__}."
+                # puts "SharedLib::IDUT1=#{SharedLib::IDUT1}, useIndex=#{useIndex}, SharedLib::IDUT24='#{SharedLib::IDUT24}' value='#{SharedLib::IDUT1 <= useIndex && useIndex <= SharedLib::IDUT24}'"
+                # SharedLib.pause "@isOkToLog = '#{@isOkToLog}'","#{__LINE__}-#{__FILE__}."
+                if SharedLib::IDUT1 <= useIndex && useIndex <= SharedLib::IDUT24 && @samplerData.GetBbbMode() == "InRunMode"
+                    # && @boardData[LastStepNumOfSentLog].to_i == 1
                     # Make sure it's a dut.
-                    if retval*@multiplier[useIndex] < 0.5
-                        # puts "mux index='#{useIndex}' read '#{retval*@multiplier[useIndex]}'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
-                        # puts "@numTimesPolledForEmptySocket=#{@numTimesPolledForEmptySocket}, @numTimesPolledForEmptySocket[useIndex]=#{@numTimesPolledForEmptySocket[useIndex]} #{__LINE__}-#{__FILE__}."
-                        if @numTimesPolledForEmptySocket[useIndex].nil? # Means not yet initialized
-                            # puts "mux index='#{useIndex}' read 'retval*@multiplier[useIndex]'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
-                            @numTimesPolledForEmptySocket[useIndex] = 0
-                        end
-                        
-                        if @tcusToSkip[useIndex].nil?
-                            # puts "mux index='#{useIndex}' read 'retval*@multiplier[useIndex]'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
-                            @numTimesPolledForEmptySocket[useIndex] += 1
-                            if @numTimesPolledForEmptySocket[useIndex] > 5
-                                # puts "Adding mux index='#{useIndex}' as tcusToSkip. #{__LINE__}-#{__FILE__}."
-                                @tcusToSkip[useIndex] = useIndex
+                    if retval*@multiplier[useIndex] > 0.5*1000.0
+                        puts "useIndex = '#{useIndex}', retval*@multiplier[useIndex]='#{retval*@multiplier[useIndex]}'"
+                    end
+                    
+                    if @numTimesPolledForEmptySocket[useIndex].nil? # Means not yet initialized
+                        # puts "mux index='#{useIndex}' read 'retval*@multiplier[useIndex]'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
+                        @numTimesPolledForEmptySocket[useIndex] = 0
+                    else
+                        # puts "mux index='#{useIndex}' read '#{retval*@multiplier[useIndex]}'. @numTimesPolledForEmptySocket[useIndex]='#{@numTimesPolledForEmptySocket[useIndex]}' #{__LINE__}-#{__FILE__}."
+                        if retval*@multiplier[useIndex] < 0.5*1000.0
+                            # puts "mux index='#{useIndex}' read '#{retval*@multiplier[useIndex]}'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
+                            # SharedLib.pause "@numTimesPolledForEmptySocket=#{@numTimesPolledForEmptySocket}, @numTimesPolledForEmptySocket[useIndex]=#{@numTimesPolledForEmptySocket[useIndex]}","#{__LINE__}-#{__FILE__}."
+                            if @tcusToSkip[useIndex].nil?
+                                # puts "mux index='#{useIndex}' read 'retval*@multiplier[useIndex]'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
+                                @numTimesPolledForEmptySocket[useIndex] += 1
+                                if @numTimesPolledForEmptySocket[useIndex] > 5
+                                    # SharedLib.pause "Adding mux index='#{useIndex}' as tcusToSkip.","#{__LINE__}-#{__FILE__}."
+                                    @tcusToSkip[useIndex] = useIndex
+                                end
                             end
                         end
                     end
@@ -2908,7 +2917,19 @@ class TCUSampler
         #  Due to firewall error in PC without knowing it was, had to move some code to handle exception codes to prevent 
         #  from crashing.
         #  Added some activity logs on start up, failed to send to PC, and sent backlog data due to lost PC connection.
-        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.3")
+        # version 1.0.4 - 18 Dec 2014
+        # 1.)    File naming on the log files
+        #   o After reading the ICE_File_Transfer_Feb2015.pptx, I had to add 'Description' after entering the Lot ID to satisfy the 'AnyString' requirement.
+        # 2.)    Reporting method changes for Tolerance alarms
+        #   o As Andrew suggested, only report the incident of the fault tolerance with the system snap shot, and report a one-liner statement that the fault tolerance is back to normal once it returns to normal.
+        # 3.)    Do not split into multiple files
+        #   o Removed the file splitting, and replaced it by zipping the file to ".gz" file.
+        # 4.)    Disable sites if current is less than 0.5A ( treat as empty )
+        #   o I have a solution, but I still need to tweak it case when the system is running normally, and the dut may need to be reseted while it's running, it might treat the dut being reset as disabled.
+        # 5.)    ( optional  based on time ) Automated transfer/copy of files once cleared on system
+        #   o My interpretation is once the 'Clear' button is pressed, move the log file to a ftp folder; I need to do this still, and better to do it on the actual system.
+
+        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.4")
         turnOffHeaters()
     	initMuxValueFunc()
     	initpollAdcInputFunc()

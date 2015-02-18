@@ -1046,7 +1046,7 @@ class SharedMemory
         # puts"param sent #{modeParam} #{calledFrom}"
         ds = lockMemory("#{__LINE__}-#{__FILE__}")
         oldModeParam = ds[Mode]
-        print "Changing bbb mode from #{oldModeParam} to "
+        # print "Changing bbb mode from #{oldModeParam} to "
         ds[Mode] = "#{modeParam}"
         # puts"#{modeParam} [#{calledFrom}]"
         writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")

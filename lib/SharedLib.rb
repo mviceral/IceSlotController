@@ -416,9 +416,9 @@ class SharedLib
     end
   
     def pause(msgParam,fromParam)
-        # puts "#{msgParam}"
-        # puts "      o Paused at #{fromParam}"
-        # gets
+        puts "#{msgParam}"
+        puts "      o Paused at #{fromParam}"
+        gets
     end
 
     def getBits(dataParam)
