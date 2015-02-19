@@ -987,7 +987,7 @@ class SharedMemory
 		else
 			`echo "#{Time.new.inspect} : mode='#{mode}' not recognized. #{__LINE__}-#{__FILE__}">>/tmp/bbbError.log`
 		end
-        puts"User input @pcCmdNew='#{mode}'"
+        # puts "User input @pcCmdNew='#{mode}'"
     end
 	
     def SetPcCmdThread(cmdParam,timeOfCmdParam)

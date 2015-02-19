@@ -1199,28 +1199,46 @@ class TCUSampler
                 if SharedLib::IDUT1 <= useIndex && useIndex <= SharedLib::IDUT24 && @samplerData.GetBbbMode() == "InRunMode"
                     # && @boardData[LastStepNumOfSentLog].to_i == 1
                     # Make sure it's a dut.
-                    if retval*@multiplier[useIndex] > 0.5*1000.0
-                        puts "useIndex = '#{useIndex}', retval*@multiplier[useIndex]='#{retval*@multiplier[useIndex]}'"
+                    
+                    if @dutAlreadyCheckedForEmpty[useIndex].nil?
+                        @dutAlreadyCheckedForEmpty[useIndex] = false
                     end
                     
-                    if @numTimesPolledForEmptySocket[useIndex].nil? # Means not yet initialized
-                        # puts "mux index='#{useIndex}' read 'retval*@multiplier[useIndex]'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
-                        @numTimesPolledForEmptySocket[useIndex] = 0
-                    else
-                        # puts "mux index='#{useIndex}' read '#{retval*@multiplier[useIndex]}'. @numTimesPolledForEmptySocket[useIndex]='#{@numTimesPolledForEmptySocket[useIndex]}' #{__LINE__}-#{__FILE__}."
-                        if retval*@multiplier[useIndex] < 0.5*1000.0
-                            # puts "mux index='#{useIndex}' read '#{retval*@multiplier[useIndex]}'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
-                            # SharedLib.pause "@numTimesPolledForEmptySocket=#{@numTimesPolledForEmptySocket}, @numTimesPolledForEmptySocket[useIndex]=#{@numTimesPolledForEmptySocket[useIndex]}","#{__LINE__}-#{__FILE__}."
-                            if @tcusToSkip[useIndex].nil?
+                    if @dutAlreadyCheckedForEmpty[useIndex] == false
+                        if @ctForEmptyDutCheck[useIndex].nil?
+                            @ctForEmptyDutCheck[useIndex] = -1
+                        end
+                    
+                        @ctForEmptyDutCheck[useIndex] += 1;
+                        if @ctForEmptyDutCheck[useIndex] > 10
+                            # Never check for it again.
+                            @dutAlreadyCheckedForEmpty[useIndex] = true
+                        else
+                            #if retval*@multiplier[useIndex] > 0.5*1000.0
+                            #    puts "useIndex = '#{useIndex}', retval*@multiplier[useIndex]='#{retval*@multiplier[useIndex]}'"
+                            #end
+                            
+                            if @numTimesPolledForEmptySocket[useIndex].nil? # Means not yet initialized
                                 # puts "mux index='#{useIndex}' read 'retval*@multiplier[useIndex]'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
-                                @numTimesPolledForEmptySocket[useIndex] += 1
-                                if @numTimesPolledForEmptySocket[useIndex] > 5
-                                    # SharedLib.pause "Adding mux index='#{useIndex}' as tcusToSkip.","#{__LINE__}-#{__FILE__}."
-                                    @tcusToSkip[useIndex] = useIndex
+                                @numTimesPolledForEmptySocket[useIndex] = 0
+                            else
+                                # puts "mux index='#{useIndex}' read '#{retval*@multiplier[useIndex]}'. @numTimesPolledForEmptySocket[useIndex]='#{@numTimesPolledForEmptySocket[useIndex]}' #{__LINE__}-#{__FILE__}."
+                                if retval*@multiplier[useIndex] < 0.5*1000.0
+                                    # puts "mux index='#{useIndex}' read '#{retval*@multiplier[useIndex]}'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
+                                    # SharedLib.pause "@numTimesPolledForEmptySocket=#{@numTimesPolledForEmptySocket}, @numTimesPolledForEmptySocket[useIndex]=#{@numTimesPolledForEmptySocket[useIndex]}","#{__LINE__}-#{__FILE__}."
+                                    if @tcusToSkip[useIndex].nil?
+                                        # puts "mux index='#{useIndex}' read 'retval*@multiplier[useIndex]'.  It's less that 0.5 #{__LINE__}-#{__FILE__}."
+                                        @numTimesPolledForEmptySocket[useIndex] += 1
+                                        if @numTimesPolledForEmptySocket[useIndex] > 5
+                                            # SharedLib.pause "Adding mux index='#{useIndex}' as tcusToSkip.","#{__LINE__}-#{__FILE__}."
+                                            @tcusToSkip[useIndex] = useIndex
+                                        end
+                                    end
                                 end
                             end
                         end
                     end
+                    
                 end
                 # retval*@multiplier[useIndex]
                 @samplerData.SetData(SharedLib::MuxData,useIndex,retval,@multiplier)
@@ -2742,6 +2760,9 @@ class TCUSampler
     
     def checkDeadTcus(uart1)
         @numTimesPolledForEmptySocket = Hash.new
+        @ctForEmptyDutCheck = Hash.new
+        @dutAlreadyCheckedForEmpty = Hash.new
+        
         @tcusToSkip = Hash.new
         # puts"SetupAtHome='#{SetupAtHome}'"
         if SetupAtHome
