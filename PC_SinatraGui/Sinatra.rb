@@ -40,6 +40,7 @@ class UserInterface
 	Run = "Run"
 	Stop = "Stop"
 	Clear = "Clear"
+	ProcessDone = "ProcessDone"
 	
 	#
 	# Accessor for the button image like Stop, Play, Load(Folder), Eject
@@ -277,6 +278,28 @@ class UserInterface
 	def setSlotOwner(slotOwnerParam)
 		@slotOwnerThe = slotOwnerParam
 		@sharedMem.SetDispSlotOwner(slotOwnerParam)
+	end
+
+	def doLastStepsOfCompleteLot(slotOwnerParam)
+		#
+		# Make the folder if it does not exist
+		#
+		targetFolder = "#{SharedLib.getZippedLogFileDropFolder()}/#{SharedLib.getProductType()}_LogFiles"
+		# puts "targetFolder='#{targetFolder}'"
+		# puts "ZippedLogFileDropFolder='#{SharedLib.getZippedLogFileDropFolder()}'"
+		targetFolder = targetFolder.gsub(/[ ]/,'\ ')
+		if File.directory?(targetFolder) == false
+			`mkdir #{targetFolder}`
+		end
+
+
+		directory = SharedMemory::StepsLogRecordsPath
+		generalFileName = SharedLib.getLogFileName(@sharedMem.GetDispConfigDateUpload(slotOwnerParam),SharedLib.getBibID(slotOwnerParam),@sharedMem.GetDispLotID(slotOwnerParam),@sharedMem.GetDispLotDesc(slotOwnerParam),slotOwnerParam)
+		dBaseFileName = generalFileName+".dat"
+
+		# Zip it the log file and move it to the targetFolder
+		linuxFileName = dBaseFileName.gsub(/[ ]/,'\ ')
+		`cd #{directory}; gzip -c #{linuxFileName} > #{linuxFileName}.gz; cp #{linuxFileName}.gz #{targetFolder}`
 	end
 
 	def getSlotOwner
@@ -975,7 +998,8 @@ class UserInterface
 				# - Moved the code for processing for back-log data (accrued data from BBB case PC is down), and the sending of shutdown email vice 
 				# having the grape code do the sending of emails.  The BBB that tells the Grape to send out shutdown email gets its connection
 				# to fall out.  Hopefully, it'll work if the sending is done in Sinatra side - the completely separate process.
-				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.3")
+				# ver 1.0.4 - notes in Sampler.rb code on 1.0.4 code implementation.
+				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.4")
 			end
 	end
 	def GetSlotDisplay(slotLabel2Param)
@@ -1157,33 +1181,6 @@ class UserInterface
 				@sharedMem.GetDispConfigurationFileName(slotLabel2Param).nil? == false &&
 				@sharedMem.GetDispConfigurationFileName(slotLabel2Param).length > 0
 				
-				# Put the code here to chop up the log file if it's over 10meg in size.
-				if @fileChoppedUp.nil?
-					@fileChoppedUp = Hash.new
-				end
-				
-				if @fileChoppedUp[slotLabel2Param] != @sharedMem.GetDispConfigurationFileName(slotLabel2Param)
-					# So it would not run the code in this block again if it's true.
-					@fileChoppedUp[slotLabel2Param] = @sharedMem.GetDispConfigurationFileName(slotLabel2Param)
-					
-					# See if the log file is over 10 meg.
-					directory = SharedMemory::StepsLogRecordsPath
-					generalFileName = SharedLib.getLogFileName(@sharedMem.GetDispConfigDateUpload(slotLabel2Param),SharedLib.getBibID(slotLabel2Param),@sharedMem.GetDispLotID(slotLabel2Param),@sharedMem.GetDispLotDesc(slotLabel2Param),slotLabel2Param)
-					dBaseFileName = generalFileName+".dat"
-
-					# Don't split file anymore.
-					# puts "dBaseFileName = '#{dBaseFileName}' #{__LINE__}-#{__FILE__}"
-					#fileitem = `ls -l #{directory}| grep #{dBaseFileName}`.strip
-					# puts "fileitem = #{fileitem}"
-					#fileItemParts = fileitem.split(" ")
-					#if fileItemParts[4].to_i > 10000000
-					#	`cd #{directory}; split -b 10000000 #{dBaseFileName} #{generalFileName}_Part`
-					#end
-
-					# Zip it instead
-					linuxFileName = dBaseFileName.gsub(/[ ]/,'\ ')
-					`cd #{directory}; gzip -c #{linuxFileName} > #{linuxFileName}.gz`
-				end
 			topTable += "
 				 			<tr><td align=\"center\"><font size=\"1.75\"/>ALL STEPS COMPLETE</td></tr>
 				 			<tr>
@@ -1247,7 +1244,7 @@ class UserInterface
 				 			<tr>
 				 				<td align = \"center\">
 				 					<button 
-										onclick=\"window.location='/TopBtnPressed?slot=#{slotLabel2Param}&BtnState=#{btnState}'\"
+								onclick=\"tellUserFileIsCopied('#{slotLabel2Param}','#{btnState}')\"
 										type=\"button\" 
 				 						style=\"width:100;height:25\" 
 				 						id=\"btn_#{slotLabel2Param}\" "
@@ -1678,6 +1675,7 @@ end
 		tbr += "
 					</form>
 				<script type=\"text/javascript\">
+
 					function getLotId(slotOwnerParam, btnStateParam, fileParam) {
 						var defaultValue = \"--LOT ID--\";
 						var lotID = prompt(\"Selected step config file: '\"+fileParam+\"'\\n\\nPlease provide the 'Lot ID' for this run:\", defaultValue);
@@ -2873,9 +2871,13 @@ get '/TopBtnPressed' do
 			redirect "../"
 		elsif SharedMemory.uriToStr(params[:BtnState]) == settings.ui.Clear
 			#
-			# The Clear button got pressed.
+			# The Clear button got pressed, the button that shows when the process is complete.  Not the one where the lot 
+			# is stopped.
 			#
-			# puts "\n\n\nClear button got called. #{__LINE__}-#{__FILE__}"
+			puts "SharedMemory.uriToStr(params[:ProcessDone]) = '#{SharedMemory.uriToStr(params[:ProcessDone])}' #{__LINE__}-#{__FILE__}"
+			if SharedMemory.uriToStr(params[:ProcessDone]) == "ProcessDone"
+				settings.ui.doLastStepsOfCompleteLot(settings.ui.getSlotOwner())
+			end
 			settings.ui.setToLoadMode(params[:slot])
 			redirect "../"
 		elsif SharedMemory.uriToStr(params[:BtnState]) == "ClearError"
@@ -3064,6 +3066,13 @@ __END__
 	</style>
 	
 	<script type="text/javascript">
+	function tellUserFileIsCopied(slotLabel2Param,btnState) {
+		if (btnState == 'Clear') {
+			alert("Lot completed properly.  Log file will be copied to its corresponding folder.");
+		}
+		window.location='/TopBtnPressed?slot='+slotLabel2Param+'&BtnState='+btnState+'&ProcessDone=ProcessDone';
+	}
+
 
 	ct = 0;
 	function updateBtnColor(SlotParam,ct) {

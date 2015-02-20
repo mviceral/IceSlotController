@@ -1,3 +1,5 @@
+# To run this code, type in ". runBe2Stress.sh" and press enter.
+
 # This script will run the processes for the BE2STRESS.
 # Provide the three IP addresses of the slot controllers to SLOT1, SLOT2, and SLOT3 variables.
 
@@ -25,5 +27,8 @@ read -n1 -r -p "Press any to continue..." key
 #    # Space pressed, do something
 #fi
 xdg-open http://localhost:4569 2>/dev/null &
+
+# do the ftp folder mount 
+/etc/init.d/setFtpMosys
 clear
 exit

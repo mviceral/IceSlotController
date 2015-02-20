@@ -151,25 +151,50 @@ class SharedLib
   #
   # Functions
   #
+	def getValueWithinPc_SlotCtrlIpsFile(valueToLookForParam)
+		puts "valueToLookForParam='#{valueToLookForParam}' #{__LINE__}-#{__FILE__}"
+		toBeReturned = ""
+		config = Array.new
+		File.open("../../slot-controller_data/#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
+			f.each_line do |line|
+				config.push(line)
+			end			
+		end
+
+		# Parse each lines and mind the information we need for the report.
+		ct = 0
+		while ct < config.length 
+			colContent = config[ct].split(":")
+			puts "colContent[0]='#{colContent[0]}' #{__LINE__}-#{__FILE__}"
+			if colContent[0] == valueToLookForParam
+				puts "Found it! #{__LINE__}-#{__FILE__}"
+				toBeReturned = colContent[1].chomp
+				toBeReturned = toBeReturned.strip
+			end
+			ct += 1
+		end
+		return toBeReturned
+	end
+
+	def getZippedLogFileDropFolder()
+		if @zippedLogFileDropFolder.nil?
+			# Remove the '"' from front and back of the string
+			hold = getValueWithinPc_SlotCtrlIpsFile("Zipped Log File Drop Folder")
+			@zippedLogFileDropFolder = hold[1..-2]
+		end
+		return @zippedLogFileDropFolder
+	end
+
+	def getProductType()
+		if @productType.nil?
+			@productType = getValueWithinPc_SlotCtrlIpsFile("Product Type")
+		end
+		return @productType
+	end
+
 	def getSystemID()
 		if @systemID.nil?
-			config = Array.new
-			File.open("../../slot-controller_data/#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
-				f.each_line do |line|
-					config.push(line)
-				end			
-			end
-	
-			# Parse each lines and mind the information we need for the report.
-			ct = 0
-			while ct < config.length 
-				colContent = config[ct].split(":")
-				if colContent[0] == "System ID"
-					@systemID = colContent[1].chomp
-					@systemID = @systemID.strip
-				end
-				ct += 1
-			end
+			@systemID = getValueWithinPc_SlotCtrlIpsFile("System ID")
 		end
 		return @systemID
 	end
@@ -362,7 +387,8 @@ class SharedLib
 		machine = getSystemID()
 		slot = getSlotId(slotParam)
 		date = "#{configDateUpload.strftime("%Y%m%d")}"
-		return "BE2_#{lot}_#{lotDesc}_#{brd}_#{machine}_#{slot}_#{date}"
+		productType = getProductType()
+		return "#{productType}_#{lot}_#{lotDesc}_#{brd}_#{machine}_#{slot}_#{date}"
 		# return "iceLog_brd#{slotOwnerParam}_lot#{lotIDParam}_time#{configDateUpload.strftime("%Y%m%d_%H%M%S")}"
 	end
   
