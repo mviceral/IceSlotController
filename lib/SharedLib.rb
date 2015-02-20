@@ -152,7 +152,7 @@ class SharedLib
   # Functions
   #
 	def getValueWithinPc_SlotCtrlIpsFile(valueToLookForParam)
-		puts "valueToLookForParam='#{valueToLookForParam}' #{__LINE__}-#{__FILE__}"
+		# puts"valueToLookForParam='#{valueToLookForParam}' #{__LINE__}-#{__FILE__}"
 		toBeReturned = ""
 		config = Array.new
 		File.open("../../slot-controller_data/#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
@@ -165,9 +165,9 @@ class SharedLib
 		ct = 0
 		while ct < config.length 
 			colContent = config[ct].split(":")
-			puts "colContent[0]='#{colContent[0]}' #{__LINE__}-#{__FILE__}"
+			# puts"colContent[0]='#{colContent[0]}' #{__LINE__}-#{__FILE__}"
 			if colContent[0] == valueToLookForParam
-				puts "Found it! #{__LINE__}-#{__FILE__}"
+				# puts"Found it! #{__LINE__}-#{__FILE__}"
 				toBeReturned = colContent[1].chomp
 				toBeReturned = toBeReturned.strip
 			end
@@ -442,13 +442,13 @@ class SharedLib
     end
   
     def pause(msgParam,fromParam)
-        puts "#{msgParam}"
-        puts "      o Paused at #{fromParam}"
+        # puts"#{msgParam}"
+        # puts"      o Paused at #{fromParam}"
         gets
     end
 
     def getBits(dataParam)
-        # puts "dataParam=#{dataParam} dataParam.class=#{dataParam.class} #{__LINE__}-#{__FILE__}"
+        # # puts"dataParam=#{dataParam} dataParam.class=#{dataParam.class} #{__LINE__}-#{__FILE__}"
         bits = dataParam.to_s(2)
         while bits.length < 8
             bits = "0"+bits
@@ -460,7 +460,7 @@ class SharedLib
         if @oldMessage != sentMessage
             @oldMessage = sentMessage
     	    log = "#{Time.new.inspect} : #{sentMessage}"
-    	    # puts "#{log}"
+    	    # # puts"#{log}"
         end
     end
     
@@ -474,7 +474,7 @@ class SharedLib
             else
         	    forDbase += slotInfoJson[ct]
             end
-            # puts "forDbase=#{forDbase}"
+            # # puts"forDbase=#{forDbase}"
             # SharedLib.pause "At pause","#{__LINE__}-#{__FILE__}"
     	    ct += 1
     	end
@@ -515,7 +515,7 @@ class SharedLib
 				pathD = `cd ~/slot-controller_data; pwd`
 			end
 			pathD = pathD.strip # Remove the white spaces
-			# puts "pathD=#{pathD} #{__LINE__}-#{__FILE__}"
+			# # puts"pathD=#{pathD} #{__LINE__}-#{__FILE__}"
 			File.open("#{pathD}/#{Pc_SlotCtrlIps}", "r") do |f|
 				f.each_line do |line|
 					config.push(line)

@@ -83,7 +83,7 @@ class UserInterface
 	attr_accessor :sharedMem
 		
 	def clearErrorSlot(slotOwnerParam)
-		# puts "clearErrorSlot(slotOwnerParam) got called. slotOwnerParam='#{slotOwnerParam}' SharedLib::ErrorMsg='#{SharedLib::ErrorMsg}'"
+		# puts"clearErrorSlot(slotOwnerParam) got called. slotOwnerParam='#{slotOwnerParam}' SharedLib::ErrorMsg='#{SharedLib::ErrorMsg}'"
 		ds = @sharedMem.lockMemory("#{__LINE__}-#{__FILE__}")
 		ds[SharedLib::PC][slotOwnerParam][SharedLib::ErrorMsg] = nil
 		@sharedMem.writeAndFreeLocked(ds,"#{__LINE__}-#{__FILE__}")
@@ -97,7 +97,7 @@ class UserInterface
 			lenOfStrToLookInto = "SLOT1 IP".length
   		File.open("../../slot-controller_data/#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
   			f.each_line do |line|
-  				# puts "line='#{line}' #{__LINE__}-#{__FILE__}"
+  				# puts"line='#{line}' #{__LINE__}-#{__FILE__}"
 					if line[0..(lenOfStrToLookInto-1)] == "SLOT1 IP"
 						@slotToIp[SharedLib::SLOT1] = line[(lenOfStrToLookInto+1)..-1].strip
 					elsif line[0..(lenOfStrToLookInto-1)] == "SLOT2 IP"
@@ -109,13 +109,13 @@ class UserInterface
   		end
 =begin  		
   		@slotToIp.each do |key, array|
-				# puts "#{key}-----"
-				# puts array
+				# puts"#{key}-----"
+				# putsarray
 			end
 			SharedLib.pause "Checking values of @slotToIp","#{__LINE__}-#{__FILE__}"
 =end			
 		end
-		# puts "slotParam='#{slotParam}' @slotToIp='#{@slotToIp}' fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
+		# puts"slotParam='#{slotParam}' @slotToIp='#{@slotToIp}' fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
 		return @slotToIp[slotParam]
 	end
 	
@@ -145,7 +145,7 @@ class UserInterface
 		ct = ctParam #9 "Auto Restart"
 		while ct < config.length do
 			stepName = config[ct-indexOfStepNameFromCt].split(",")[4].strip # Get the row data for the step file name.
-			# puts "stepName = '#{stepName}'"
+			# puts"stepName = '#{stepName}'"
 			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 			stepTime = config[ct].split(",")[4].strip
 			if (stepTime=="1" || stepTime == "0") == false
@@ -176,15 +176,15 @@ class UserInterface
 		#  "ctParam='#{ctParam}', RowOfStepName='#{RowOfStepName}', indexOfStepName='#{indexOfStepName}'"
 		ct = ctParam
 		while ct < config.length && (ct-indexOfStepName) < config.length do
-			# puts "ct='#{ct}', indexOfStepName='#{indexOfStepName}', ct-indexOfStepName='#{ct-indexOfStepName}', config.length='#{config.length}'"
+			# puts"ct='#{ct}', indexOfStepName='#{indexOfStepName}', ct-indexOfStepName='#{ct-indexOfStepName}', config.length='#{config.length}'"
 			colName = config[ct-indexOfStepName].split(",")[1].strip # Get the row data for the step file name.
 			stepName = config[ct-indexOfStepName].split(",")[4].strip # Get the row data for the step file name.
-			# puts "stepName = '#{stepName}' indexOfStepName-ct='#{indexOfStepName-ct}'"
+			# puts"stepName = '#{stepName}' indexOfStepName-ct='#{indexOfStepName-ct}'"
 			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 			
 			if colName == "Step Name"
 				stepName = config[ct-indexOfStepName].split(",")[4].strip # Get the row data for the step file name.
-			# puts "stepName = '#{stepName}'"
+			# puts"stepName = '#{stepName}'"
 			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 				stepTime = config[ct].split(",")[4].strip
 				if SharedLib.is_a_number?(stepTime) == false
@@ -195,17 +195,17 @@ class UserInterface
 					@redirectWithError += "#{SharedLib.makeUriFriendly(configFileName)}"
 					error = "Step File '#{configFileName}' - '#{itemNameParam}' '#{stepTime}' on line "
 					error += "'#{ct+1}' must be a number."
-					# puts "A error =>#{error}<= @#{__LINE__}-#{__FILE__}"
+					# puts"A error =>#{error}<= @#{__LINE__}-#{__FILE__}"
 					@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
-					# puts "B @redirectWithError =>#{@redirectWithError}<= @#{__LINE__}-#{__FILE__}"
+					# puts"B @redirectWithError =>#{@redirectWithError}<= @#{__LINE__}-#{__FILE__}"
 					return false
 				else				
 					slotConfigStep = getSlotConfigStep(stepName)
 					slotConfigStep[itemNameParam] = stepTime
-					# puts "\n\n\nCheck below #{__LINE__}-#{__FILE__}"
-					# puts "stepName='#{stepName}'"
-					# puts "stepTime='#{stepTime}'"
-					# puts "itemNameParam='#{itemNameParam}'"
+					# puts"\n\n\nCheck below #{__LINE__}-#{__FILE__}"
+					# puts"stepName='#{stepName}'"
+					# puts"stepTime='#{stepTime}'"
+					# puts"itemNameParam='#{itemNameParam}'"
 				end
 			end				
 			ct += @totalRowsToLookAt
@@ -285,8 +285,8 @@ class UserInterface
 		# Make the folder if it does not exist
 		#
 		targetFolder = "#{SharedLib.getZippedLogFileDropFolder()}/#{SharedLib.getProductType()}_LogFiles"
-		# puts "targetFolder='#{targetFolder}'"
-		# puts "ZippedLogFileDropFolder='#{SharedLib.getZippedLogFileDropFolder()}'"
+		# puts"targetFolder='#{targetFolder}'"
+		# puts"ZippedLogFileDropFolder='#{SharedLib.getZippedLogFileDropFolder()}'"
 		targetFolder = targetFolder.gsub(/[ ]/,'\ ')
 		if File.directory?(targetFolder) == false
 			`mkdir #{targetFolder}`
@@ -433,15 +433,15 @@ class UserInterface
 	end
 	
 	def getButtonDisplay(slotLabel2Param,fromParam)
-		# puts "getButtonDisplay() got called."
+		# puts"getButtonDisplay() got called."
 		tbr = "" # To be returned
 		configFileName = @sharedMem.GetDispConfigurationFileName(slotLabel2Param)
 		# @sharedMem.SetDispSlotOwner(slotLabelParam)
-		# puts "slotLabelParam=#{slotLabelParam}"
-		# puts "@sharedMem.GetDispSlotOwner()=#{@sharedMem.GetDispSlotOwner()}"
-		# puts "configFileName.nil? = #{configFileName.nil?}"
-		# puts "configFileName = #{configFileName}"
-		# puts "@sharedMem.GetDispBbbMode(slotLabel2Param) = #{@sharedMem.GetDispBbbMode(slotLabel2Param)}"
+		# puts"slotLabelParam=#{slotLabelParam}"
+		# puts"@sharedMem.GetDispSlotOwner()=#{@sharedMem.GetDispSlotOwner()}"
+		# puts"configFileName.nil? = #{configFileName.nil?}"
+		# puts"configFileName = #{configFileName}"
+		# puts"@sharedMem.GetDispBbbMode(slotLabel2Param) = #{@sharedMem.GetDispBbbMode(slotLabel2Param)}"
 		if configFileName.nil? || configFileName.length == 0
 			return Load
 		end
@@ -470,7 +470,7 @@ class UserInterface
 	
 	def setToLoadMode(slotOwnerParam)
 		begin
-			# puts "Clearing board IP=#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")} #{__LINE__}-#{__FILE__}"
+			# puts"Clearing board IP=#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")} #{__LINE__}-#{__FILE__}"
 			hash = Hash.new
 			hash[SharedLib::SlotOwner] = slotOwnerParam
 			slotData = hash.to_json
@@ -487,10 +487,10 @@ class UserInterface
 		# hash1 = JSON.parse(@response)
 		# hash2 = JSON.parse(hash1["bbbResponding"])
 		# PP.pp(hash2)
-		# puts "Checking hash2 content.  #{__LINE__}-#{__FILE__}"
+		# puts"Checking hash2 content.  #{__LINE__}-#{__FILE__}"
 		# gets
   		# @sharedMem.SetDataBoardToPc(hash2)
-		# puts "C Checking.  #{__LINE__}-#{__FILE__}"
+		# puts"C Checking.  #{__LINE__}-#{__FILE__}"
 	end
 
 	def writeToSettingsLog(toBeWritten,settingsFileName)
@@ -504,8 +504,8 @@ class UserInterface
 
 		fileName = getSlotProperties()["FileName"]
 		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
-		# puts "slotProperties[slotOwnerParam][SharedMemory::LotID]='#{slotProperties[slotOwnerParam][SharedMemory::LotID]}'.  #{__LINE__}-#{__FILE__}"
-		# puts "slotProperties[slotOwnerParam][SharedMemory::LotDesc]='#{slotProperties[slotOwnerParam][SharedMemory::LotDesc]}'.  #{__LINE__}-#{__FILE__}"
+		# puts"slotProperties[slotOwnerParam][SharedMemory::LotID]='#{slotProperties[slotOwnerParam][SharedMemory::LotID]}'.  #{__LINE__}-#{__FILE__}"
+		# puts"slotProperties[slotOwnerParam][SharedMemory::LotDesc]='#{slotProperties[slotOwnerParam][SharedMemory::LotDesc]}'.  #{__LINE__}-#{__FILE__}"
 		genFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),slotProperties[slotOwnerParam][SharedMemory::LotID],	slotProperties[slotOwnerParam][SharedMemory::LotDesc], slotOwnerParam)
 		settingsFileName =  genFileName+".dat"
 		settingsFileName = settingsFileName.gsub(/[ ]/,'\ ')
@@ -532,24 +532,24 @@ class UserInterface
 		writeToSettingsLog("",settingsFileName)
 
 		#PP.pp(getSlotProperties())
-		## puts "About to send to the Board. #{__LINE__}-#{__FILE__}"
+		## puts"About to send to the Board. #{__LINE__}-#{__FILE__}"
 		#exit
 		begin
-			# puts "LoadConfig on IP='#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}'"
+			# puts"LoadConfig on IP='#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}'"
 			
 			@response = 
 		    RestClient.post "#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
-			# puts "#{__LINE__}-#{__FILE__} @response=#{@response}"
+			# puts"#{__LINE__}-#{__FILE__} @response=#{@response}"
 			@sharedMem.SetDispButton(slotOwnerParam,"Loading")			
 			# hash1 = JSON.parse(@response)
-			# puts "check A #{__LINE__}-#{__FILE__}"
+			# puts"check A #{__LINE__}-#{__FILE__}"
 			# hash2 = JSON.parse(hash1["bbbResponding"])
-			# puts "check B #{__LINE__}-#{__FILE__}"
+			# puts"check B #{__LINE__}-#{__FILE__}"
 			# @sharedMem.SetDataBoardToPc(hash2)
-			# puts "check C #{__LINE__}-#{__FILE__}"
+			# puts"check C #{__LINE__}-#{__FILE__}"
 			return true
 			rescue
-			# puts "No response.#{__LINE__}-#{__FILE__} @response=#{@response}"
+			# puts"No response.#{__LINE__}-#{__FILE__} @response=#{@response}"
 			@redirectWithError = "/TopBtnPressed?slot=#{slotOwnerParam}&BtnState=#{Load}"
 			@redirectWithError += "&ErrGeneral=bbbDown"
 			#@redirectWithError += "&ErrGeneral=EFGH"
@@ -625,11 +625,11 @@ class UserInterface
 			if @sharedMem.GetDispAllStepsDone_YesNo(slotLabel2Param) == SharedLib::Yes
 				cellColor = "#04B404"
 			else
-				# puts "printing GREEN (#{@sharedMem.GetDispConfigurationFileName(slotLabel2Param).length})- #{__LINE__} #{__FILE__}"
+				# puts"printing GREEN (#{@sharedMem.GetDispConfigurationFileName(slotLabel2Param).length})- #{__LINE__} #{__FILE__}"
 				cellColor = defColorParam
 			end
 		else
-			# puts "printing GRAY - #{__LINE__} #{__FILE__}"
+			# puts"printing GRAY - #{__LINE__} #{__FILE__}"
 			cellColor = "#cccccc"			
 		end
 	end
@@ -674,30 +674,30 @@ class UserInterface
 		withinATag = false
 		if cellColor == "#cccccc"
 			# if slotLabel2Param == "SLOT1"		
-				# puts "asfd #{__LINE__}-#{__FILE__}"
+				# puts"asfd #{__LINE__}-#{__FILE__}"
 			# end
 			toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		else
 			# if slotLabel2Param == "SLOT1"		
-				# puts "asfd #{__LINE__}-#{__FILE__}"
+				# puts"asfd #{__LINE__}-#{__FILE__}"
 			# end
 			if @sharedMem.GetDispPsToolTip(slotLabel2Param).nil?
 				# if slotLabel2Param == "SLOT1"		
-					# puts "asfd #{__LINE__}-#{__FILE__}"
+					# puts"asfd #{__LINE__}-#{__FILE__}"
 				# end
 				toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 			else
 				#if slotLabel2Param == "SLOT1"		
-					# puts "asfd #{__LINE__}-#{__FILE__}"
+					# puts"asfd #{__LINE__}-#{__FILE__}"
 				#end
 				if @sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam].nil?
 					if slotLabel2Param == "SLOT1"		
-						# puts "asfd #{__LINE__}-#{__FILE__}"
+						# puts"asfd #{__LINE__}-#{__FILE__}"
 					end
 					toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 				else				
 					if slotLabel2Param == "SLOT1"		
-						# puts "asfd #{__LINE__}-#{__FILE__} '#{@sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]}'"
+						# puts"asfd #{__LINE__}-#{__FILE__} '#{@sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]}'"
 					end
 					toDisplay = "#{labelParam}-&#10;"
 					toDisplay += @sharedMem.GetDispPsToolTip(slotLabel2Param)[labelParam]
@@ -766,7 +766,7 @@ class UserInterface
 			temperature = SharedLib.make5point2Format(splittedData[2])
 			enableToolTip = true
 		end
-		# puts "rawDataParam=#{rawDataParam}, tcuData=#{tcuData} #{__LINE__}-#{__FILE__}"
+		# puts"rawDataParam=#{rawDataParam}, tcuData=#{tcuData} #{__LINE__}-#{__FILE__}"
 		
 		if enableToolTip
 			# We need to get the Heating or Cooling state of the dut and the PWM value.
@@ -779,19 +779,19 @@ class UserInterface
 				end
 				toDisplay += "&#10;#{@sharedMem.GetDispDutToolTip(slotLabel2Param)}"
 				toDisplay += "AmbT:#{splittedData[1]}C"
-				# puts "splittedData=#{splittedData}"
+				# puts"splittedData=#{splittedData}"
 				if splittedData[0] == "1"
 					toDisplay += "&#10;Running"
 				else
 					toDisplay += "&#10;Stopped"
 				end
-				# puts "slotLabel2Param='#{slotLabel2Param}' splittedData=#{splittedData}, tcuData='#{tcuData}' #{__LINE__}-#{__FILE__}"
+				# puts"slotLabel2Param='#{slotLabel2Param}' splittedData=#{splittedData}, tcuData='#{tcuData}' #{__LINE__}-#{__FILE__}"
 			else
 				toDisplay = ""
 			end
 			toBeReturned = "<a onClick=\"if (ctrlButtonPressed){alert('#{toDisplay}');}\"><table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 			toBeReturned.gsub! '&#10;', '\n'
-			# puts "toBeReturned='#{toBeReturned}' #{__LINE__}-#{__FILE__}"
+			# puts"toBeReturned='#{toBeReturned}' #{__LINE__}-#{__FILE__}"
 			# toBeReturned = "<table title=\"#{@sharedMem.GetDispDutToolTip(slotLabel2Param)}\" bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
 		else
 			toBeReturned = "<table bgcolor=\"#{cellColor}\" width=\"#{cellWidth}\">"
@@ -900,10 +900,10 @@ class UserInterface
 			shutDownInfoParam = @sharedMemService.getShutDownInfoFromPC()
 			if shutDownInfoParam.nil? == false
 				while shutDownInfoParam.nil? == false
-					# puts "Checking shutDownInfoParam='#{shutDownInfoParam}' #{__LINE__}-#{__FILE__}"							
+					# puts"Checking shutDownInfoParam='#{shutDownInfoParam}' #{__LINE__}-#{__FILE__}"							
 					if @lastMessageSentParam != "#{shutDownInfoParam}"
 						@lastMessageSentParam = "#{shutDownInfoParam}"
-						# puts "Sending shutDownInfoParam='#{shutDownInfoParam}' #{__LINE__}-#{__FILE__}"							
+						# puts"Sending shutDownInfoParam='#{shutDownInfoParam}' #{__LINE__}-#{__FILE__}"							
 						shutdownEmailSubject = "BE2/MoSys Shutdown Notification"
 						systemID = SharedLib.getSystemID()						
 						shutdownEmailMessage = ""
@@ -941,7 +941,7 @@ class UserInterface
 								end
 								emailFolks += emailAddr
 							}
-							# puts "Sending shutdown message to '#{emailFolks}'."
+							# puts"Sending shutdown message to '#{emailFolks}'."
 							`echo \"#{shutdownEmailMessage}\" | mail -s \"BE2/MoSys Slot Process Shutdown\" \"#{emailFolks}\"`
 						end
 					end
@@ -958,23 +958,23 @@ class UserInterface
 					arrData.each {
 						|hashX|
 						hash = JSON.parse(hashX)
-						# puts "x hash=#{hash[SharedLib::DataLog]} #{__LINE__}-#{__FILE__}"
+						# puts"x hash=#{hash[SharedLib::DataLog]} #{__LINE__}-#{__FILE__}"
 						# The sent data is a log data.  Write it to file							
 						configDateUpload = Time.at(hash[SharedLib::ConfigDateUpload].to_i)
-						# puts "hash[SharedLib::ConfigDateUpload]='#{hash[SharedLib::ConfigDateUpload]}'. #{__LINE__}-#{__FILE__}"
+						# puts"hash[SharedLib::ConfigDateUpload]='#{hash[SharedLib::ConfigDateUpload]}'. #{__LINE__}-#{__FILE__}"
 						fileName = hash[SharedLib::ConfigurationFileName]
-						# puts "hash[SharedLib::ConfigurationFileName]='#{hash[SharedLib::ConfigurationFileName]}' #{__LINE__}-#{__FILE__}"
+						# puts"hash[SharedLib::ConfigurationFileName]='#{hash[SharedLib::ConfigurationFileName]}' #{__LINE__}-#{__FILE__}"
 						slotOwnerParam = hash[SharedLib::SlotOwner]
-						# puts "hash[SharedLib::SlotOwner]='#{hash[SharedLib::SlotOwner]}' #{__LINE__}-#{__FILE__}"
+						# puts"hash[SharedLib::SlotOwner]='#{hash[SharedLib::SlotOwner]}' #{__LINE__}-#{__FILE__}"
 						hashForLotData = JSON.parse(data[SharedMemory::SystemInfo])
 						lotID = hashForLotData[SharedMemory::LotID]
 						lotDesc = hashForLotData[SharedMemory::LotDesc]
-						# puts "data[SharedMemory::SystemInfo] = '#{data[SharedMemory::SystemInfo]}'  #{__LINE__}-#{__FILE__}"
-						# puts "lotID = '#{lotID}'  #{__LINE__}-#{__FILE__}"
+						# puts"data[SharedMemory::SystemInfo] = '#{data[SharedMemory::SystemInfo]}'  #{__LINE__}-#{__FILE__}"
+						# puts"lotID = '#{lotID}'  #{__LINE__}-#{__FILE__}"
 						dBaseFileName = SharedLib.getLogFileName(configDateUpload,SharedLib.getBibID(slotOwnerParam),lotID,lotDesc,slotOwnerParam)+".dat"		
-						# puts "dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
+						# puts"dBaseFileName-'#{dBaseFileName}'. #{__LINE__}-#{__FILE__}"
 						timeOfFile = (Time.at(configDateUpload.to_i)).strftime("%Y%m%d")
-						# puts "timeOfFile-'#{timeOfFile}'. #{__LINE__}-#{__FILE__}"
+						# puts"timeOfFile-'#{timeOfFile}'. #{__LINE__}-#{__FILE__}"
 						if (timeOfFile.include? "19691231") == false
 							`cd #{SharedMemory::StepsLogRecordsPath}; echo "#{hash[SharedLib::DataLog]}" >> \"#{dBaseFileName}\"`
 						end
@@ -1255,8 +1255,8 @@ class UserInterface
 		end
 		btnStateDisp = @sharedMem.GetDispButton(slotLabel2Param)
 		toDisplay = getButtonDisplay(slotLabel2Param,"#{__LINE__}-#{__FILE__}")
-		# puts "toDisplay=#{toDisplay} #{__LINE__}-#{__FILE__}"
-		# puts "btnStateDisp=#{btnStateDisp} #{__LINE__}-#{__FILE__}"
+		# puts"toDisplay=#{toDisplay} #{__LINE__}-#{__FILE__}"
+		# puts"btnStateDisp=#{btnStateDisp} #{__LINE__}-#{__FILE__}"
 		if btnStateDisp.nil? == false 
 			if btnStateDisp != SharedLib::NormalButtonDisplay
 				toDisplay = btnStateDisp
@@ -1366,7 +1366,7 @@ class UserInterface
 				 				
 				 				if getButtonDisplay(slotLabel2Param,"#{__LINE__}-#{__FILE__}") == Run	
 btnStateDisp = @sharedMem.GetDispButton(slotLabel2Param)
-# puts "btnStateDisp='#{btnStateDisp}' #{__LINE__}-#{__FILE__}"
+# puts"btnStateDisp='#{btnStateDisp}' #{__LINE__}-#{__FILE__}"
 toDisplay = Clear
 if btnStateDisp.nil? == false 
 	if btnStateDisp != "Clearing"
@@ -1396,7 +1396,7 @@ if @sharedMem.GetDispErrorColor(slotLabel2Param).nil? == false
 	@sharedMem.GetDispErrorColor(slotLabel2Param).each do |key, array|	
 		if key == "TDUT" || key == "IDUT"
 			array.each do |key2, array2|
-				# puts "key2='#{key2}' #{__LINE__}-#{__FILE__}"
+				# puts"key2='#{key2}' #{__LINE__}-#{__FILE__}"
 				array2.each do |key3, array3|
 					if key3 == "Latch" && array3 != 0
 						buttonState = showButton
@@ -1454,13 +1454,13 @@ end
 	end
 	
 	def getListOfFiles(path, extentionParam)
-		# puts "cd '#{path}'; ls -lt #{extentionParam} #{__LINE__}-#{__FILE__}"
+		# puts"cd '#{path}'; ls -lt #{extentionParam} #{__LINE__}-#{__FILE__}"
 		listOfFiles = `cd "#{path}"; ls -lt #{extentionParam}`
 		fileRow = listOfFiles.split("\n")
 		ct = 0
 		while ct<fileRow.length
 			fileItem= fileRow[ct].split(" ")
-			# puts "'0'=#{fileItem[0]}, '1'=#{fileItem[1]}, '2'=#{fileItem[2]}, '3'=#{fileItem[3]}, '4'=#{fileItem[4]}, '5'=#{fileItem[5]}, '6'=#{fileItem[6]}, '7'=#{fileItem[7]}, '8'=#{fileItem[8]}"
+			# puts"'0'=#{fileItem[0]}, '1'=#{fileItem[1]}, '2'=#{fileItem[2]}, '3'=#{fileItem[3]}, '4'=#{fileItem[4]}, '5'=#{fileItem[5]}, '6'=#{fileItem[6]}, '7'=#{fileItem[7]}, '8'=#{fileItem[8]}"
 			at = fileRow[ct].index(fileItem[7])+fileItem[7].length
 			ct += fileRow.length
 		end
@@ -1469,7 +1469,7 @@ end
 		tbr = Array.new # tbr - to be returned
 		while ct<fileRow.length
 			tbr.push("#{fileRow[ct][(at+1)..-1]}")
-			# puts "#{(ct)} - #{fileRow[ct][at..-1]}"
+			# puts"#{(ct)} - #{fileRow[ct][at..-1]}"
 			ct += 1
 		end
 		return tbr
@@ -1760,7 +1760,7 @@ end
 			# Make sure that the index is unique, and not repeated.
 			#
 			if valueParam.length>0 && colnameParam==UserInterface::IndexCol
-				## puts "valueParam=#{valueParam} hashUniqueIndex[valueParam]=#{hashUniqueIndex[valueParam]} hashUniqueIndex=#{hashUniqueIndex}"
+				## puts"valueParam=#{valueParam} hashUniqueIndex[valueParam]=#{hashUniqueIndex[valueParam]} hashUniqueIndex=#{hashUniqueIndex}"
 				if hashUniqueIndex[valueParam].nil? == false
 					redirectWithError = "/TopBtnPressed?slot=#{getSlotOwner()}&BtnState=#{Load}"
 					redirectWithError += "&ErrRow=#{rowParam}&ErrColType=#{colnameParam}&ErrValue="+
@@ -1811,7 +1811,7 @@ end
 		# PP.pp(getSlotProperties()["Steps"])
 		# pause("checking the new \"Steps\" value","#{__LINE__}-#{__FILE__}")
 
-		# puts "stepName='#{stepName}'"
+		# puts"stepName='#{stepName}'"
 		# PP.pp(slotConfigStep)
 		# End of 'def setItemParameter(nameParam, param, valueParam)'
 	end
@@ -1874,8 +1874,8 @@ end
 	end	
 
 	def checkFaultyDutSiteActivationMinCurrentConfig(fileNameParam, fromParam)
-		# puts "Within checkFaultyDutSiteActivationMinCurrentConfig function."
-		# puts "Starting with function 'checkFaultyDutSiteActivationMinCurrentConfig' @redirectWithError='#{@redirectWithError}' #{__LINE__}-#{__FILE__}"
+		# puts"Within checkFaultyDutSiteActivationMinCurrentConfig function."
+		# puts"Starting with function 'checkFaultyDutSiteActivationMinCurrentConfig' @redirectWithError='#{@redirectWithError}' #{__LINE__}-#{__FILE__}"
 		# Returns true if no fault, false if there is error
 		#
 		clearError()
@@ -2025,7 +2025,7 @@ end
 			#   How are we going to check whether the file is present or not?
 			ct = 2 # this is the row for the pretest power supply config file.
 			@stepName = config[ct-1].split(",")[4].strip # Get the row data for file name.
-			# puts "@stepName = '#{@stepName}'"
+			# puts"@stepName = '#{@stepName}'"
 			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 
 			colContent = config[ct].split(",")[4].strip
@@ -2047,7 +2047,7 @@ end
 			#
 			ct = 4 # this is the row for the pretest 'DUT Site Activation Min Current File'
 			@stepName = config[1].split(",")[4].strip # Get the row data for file name.
-			# puts "@stepName = '#{@stepName}'"
+			# puts"@stepName = '#{@stepName}'"
 			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 			colContent = config[ct].split(",")[4].strip
 			if colContent.nil? == true || colContent.length == 0
@@ -2076,7 +2076,7 @@ end
 				if colName == "Step Name"
 					# The section of the read file is still working on a step.
 					@stepName = config[ct].split(",")[4].strip # Get the row data for file name.
-			# puts "@stepName = '#{@stepName}'"
+			# puts"@stepName = '#{@stepName}'"
 			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 					valueColumnOrStepNameRow = config[ct].split(",")[4].strip
 					#
@@ -2163,7 +2163,7 @@ end
 				colName = config[ct].split(",")[1].strip
 				if colName == 	"Power Supplies"
 					@stepName = config[ct+2].split(",")[4].strip # Get the row data for file name.
-			# puts "@stepName = '#{@stepName}' ct-3='#{ct-3}'"
+			# puts"@stepName = '#{@stepName}' ct-3='#{ct-3}'"
 			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 					colContent = config[ct].split(",")[4].strip
 					colContent = colContent.chomp
@@ -2191,7 +2191,7 @@ end
 			ct = beginningLineOfSteps+2
 			while ct < config.length do
 				@stepName = config[ct+1].split(",")[4].strip # Get the row data for the step file name.
-			# puts "@stepName = '#{@stepName}'"
+			# puts"@stepName = '#{@stepName}'"
 			# SharedLib.pause "Checking","#{__LINE__}-#{__FILE__}"
 				colContent = config[ct].split(",")[4].strip
 				if colContent.nil? == true || colContent.length == 0
@@ -2310,7 +2310,7 @@ end
 		end
 		
 		knownRowNames = getKnownRowNamesFor(configFileType)
-		# puts "knownRowNames=#{knownRowNames} #{__LINE__}-#{__FILE__}"
+		# puts"knownRowNames=#{knownRowNames} #{__LINE__}-#{__FILE__}"
 		#
 		# Make sure that each row have a column name that is found within the template which Mike provided.
 		#
@@ -2357,22 +2357,22 @@ end
 				)
 			else
 				colContent = config[ct].split(",")[3].upcase
-				# puts "colName='#{colName}' colContent='#{colContent}' #{__LINE__}-#{__FILE__}"
+				# puts"colName='#{colName}' colContent='#{colContent}' #{__LINE__}-#{__FILE__}"
 				slotConfigStep[configFileType][colName] = colContent
 			end
 			ct+=1
 		end
 		# PP.pp(slotConfigStep)
-		# puts "stepName='#{stepName}'"
+		# puts"stepName='#{stepName}'"
 		# SharedLib.pause "Checking the configstep","#{__LINE__}-#{__FILE__}"
 	end
 
 	def checkFaultyPsConfig(fileNameParam,fromParam)
 =begin	
-		# puts "checkFaultyPsConfig got called. #{__LINE__}-#{__FILE__}"
-		# puts "fileNameParam=#{fileNameParam} #{__LINE__}-#{__FILE__}"
-		# puts "fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
-		# puts "configFileType=#{configFileType} #{__LINE__}-#{__FILE__}"
+		# puts"checkFaultyPsConfig got called. #{__LINE__}-#{__FILE__}"
+		# puts"fileNameParam=#{fileNameParam} #{__LINE__}-#{__FILE__}"
+		# puts"fromParam=#{fromParam} #{__LINE__}-#{__FILE__}"
+		# puts"configFileType=#{configFileType} #{__LINE__}-#{__FILE__}"
 =end		
 		#
 		# Returns true if no fault, false if there is error
@@ -2385,7 +2385,7 @@ end
 			end
 		end
 		knownRowNames = getKnownRowNamesFor(configFileType)
-		# puts "knownRowNames=#{knownRowNames} #{__LINE__}-#{__FILE__}"
+		# puts"knownRowNames=#{knownRowNames} #{__LINE__}-#{__FILE__}"
 		#
 		# Make sure that each row have a column name that is found within the template which Mike provided.
 		#
@@ -2565,7 +2565,7 @@ end
 						error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', sequence number"
 						error += " '#{columns[seqDownCol]}' on index '#{columns[indexCol]}' is already accounted for"
 						error += " sequence down."
-						# puts "error @#{__LINE__}-#{__FILE__}"
+						# puts"error @#{__LINE__}-#{__FILE__}"
 						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 						return false
 					end
@@ -2578,7 +2578,7 @@ end
 						error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', sequence number"
 						error += " '#{columns[seqUpCol]}' on index '#{columns[indexCol]}' is already accounted for" 
 						error += " sequence up."
-						# puts "error @#{__LINE__}-#{__FILE__}"
+						# puts"error @#{__LINE__}-#{__FILE__}"
 						@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 						return false
 					end
@@ -2592,7 +2592,7 @@ end
 					error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}' on"
 					error += " index '#{columns[indexCol]}', if PS is turned off on "
 					error += "power sequence (sequence order = 0), it must have a sequence = 0 for both SEQ UP and SEQ DN."
-						# puts "error @#{__LINE__}-#{__FILE__}"
+						# puts"error @#{__LINE__}-#{__FILE__}"
 					@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 					return false
 				end
@@ -2679,14 +2679,14 @@ end
 			#
 			error = "Error: In file '#{SharedLib.makeUriFriendly(fileNameParam)}', #{colNameParam} column"
 			error += " on index '#{columns[indexCol]}' must be an integer."
-						# puts "error @#{__LINE__}-#{__FILE__}"
+						# puts"error @#{__LINE__}-#{__FILE__}"
 			@redirectWithError += "&ErrGeneral=#{SharedLib.makeUriFriendly(error)}"
 			return false
 		end
 	end
 
 	def pause(paramA,paramLocation)
-		# puts "Paused at #{paramLocation} - #{paramA}"
+		# puts"Paused at #{paramLocation} - #{paramA}"
 		gets
 	end
 	
@@ -2713,7 +2713,7 @@ end
 		elsif minCurrFile == minCurrFileExtension
 			@configFileType = SharedLib::MinCurrConfig
 		else
-			# puts "error @#{__LINE__}-#{__FILE__}"
+			# puts"error @#{__LINE__}-#{__FILE__}"
 			@redirectWithError += "&ErrGeneral=FileNotKnown&ErrInFile=#{SharedLib.makeUriFriendly(uploadedFileName)}"
 			return false
 		end
@@ -2768,7 +2768,7 @@ get '/TopBtnPressed' do
 		#
 		settings.ui.redirectWithError = "/TopBtnPressed?slot=#{settings.ui.getSlotOwner()}"
 		settings.ui.redirectWithError += "&BtnState=#{settings.ui.Load}"	
-		# puts "LotID='#{params[:LotID]}'"
+		# puts"LotID='#{params[:LotID]}'"
 		# SharedLib.pause "Checking LotID","#{__LINE__}-#{__FILE__}"
 		if settings.ui.setupBbbSlotProcess(params[:File],params[:slot],params[:LotID],params[:LotDesc]) == false
 			redirect settings.ui.redirectWithError
@@ -2874,7 +2874,7 @@ get '/TopBtnPressed' do
 			# The Clear button got pressed, the button that shows when the process is complete.  Not the one where the lot 
 			# is stopped.
 			#
-			puts "SharedMemory.uriToStr(params[:ProcessDone]) = '#{SharedMemory.uriToStr(params[:ProcessDone])}' #{__LINE__}-#{__FILE__}"
+			# puts "SharedMemory.uriToStr(params[:ProcessDone]) = '#{SharedMemory.uriToStr(params[:ProcessDone])}' #{__LINE__}-#{__FILE__}"
 			if SharedMemory.uriToStr(params[:ProcessDone]) == "ProcessDone"
 				settings.ui.doLastStepsOfCompleteLot(settings.ui.getSlotOwner())
 			end
@@ -2970,7 +2970,7 @@ post '/TopBtnPressed' do
 end
 
 post '/AckError' do
-	# puts "post AckError"
+	# puts"post AckError"
 end
  
 get '/AckError' do
@@ -2978,9 +2978,9 @@ get '/AckError' do
 	errLogFileName = "../\"error logs\"/ErrorLog_#{params[:slot]}.log"
 	errorItem = `head -1 #{newErrLogFileName}`
 	errorItem = errorItem.chomp
-	# puts "errorItem='#{errorItem}' errorItem.length=#{errorItem.length} #{__FILE__}-#{__LINE__}"
+	# puts"errorItem='#{errorItem}' errorItem.length=#{errorItem.length} #{__FILE__}-#{__LINE__}"
 	if errorItem.length>0
-		# puts "at errLogFileName='#{errLogFileName}' #{__FILE__}-#{__LINE__}"
+		# puts"at errLogFileName='#{errLogFileName}' #{__FILE__}-#{__LINE__}"
 		newStr = SharedLib::MakeShellFriendly(errorItem)
 		`echo \"#{newStr}\" >> #{errLogFileName}`	
 =begin
@@ -3135,11 +3135,11 @@ __END__
 			while pcVer.nil? || pcVer.length == 0 || slotCtrlVer.nil? || slotCtrlVer.length == 0
 				sleep(1)
 				pcVer = settings.ui.sharedMem.getCodeVersion(SharedMemory::PcVer)
-				# puts "SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
+				# puts"SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
 
 				settings.ui.updatedSharedMemory()
 				slotCtrlVer = settings.ui.sharedMem.GetDispCodeVersion("SLOT#{slotNum}",SharedMemory::SlotCtrlVer)
-				# puts "SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
+				# puts"SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
 				if slotCtrlVer.nil? || slotCtrlVer.length == 0
 					slotNum += 1
 					if slotNum >= 4
