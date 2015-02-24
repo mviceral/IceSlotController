@@ -1232,6 +1232,7 @@ class TCUSampler
                                         if @numTimesPolledForEmptySocket[useIndex] > 5
                                             # SharedLib.pause "Adding mux index='#{useIndex}' as tcusToSkip.","#{__LINE__}-#{__FILE__}."
                                             @tcusToSkip[useIndex] = useIndex
+											turnOffDuts(@tcusToSkip)
                                         end
                                     end
                                 end
@@ -1391,7 +1392,7 @@ class TCUSampler
                 @bbbDefaultFile[name][LocationCol] = columns[LocationCol]
 		    end
                 
-            ct += 1
+            	ct += 1
 		end
     end
     
@@ -1402,7 +1403,40 @@ class TCUSampler
         @gPIO2.etsEna3SetOff(bitToUse)
     end
 
-=begin    
+		def etsEnaBit(ctParamOrig)
+			toBeReturned = 1
+
+			# Hard code some computation 
+			ctParam = ctParamOrig
+			if ctParam >= 16
+				ctParam -= 8
+			end
+
+			if ctParam >= 8
+				ctParam -= 8
+			end
+
+			# Short on time, hard-coding bit values of bits.
+			if 0 == ctParam 
+				toBeReturned = 1
+			elsif 1 == ctParam  
+				toBeReturned = 2 
+			elsif 2 == ctParam  
+				toBeReturned = 4 
+			elsif 3 == ctParam  
+				toBeReturned = 8 
+			elsif 4 == ctParam  
+				toBeReturned = 16 
+			elsif 5 == ctParam  
+				toBeReturned = 32 
+			elsif 6 == ctParam  
+				toBeReturned = 64 
+			elsif 7 == ctParam  
+				toBeReturned = 128 
+			end
+			return toBeReturned
+		end
+
     def turnOffDuts(tcusToSkipParam)
         SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
         ct = 0
@@ -1423,7 +1457,6 @@ class TCUSampler
             ct += 1
         end
     end
-=end
 
     def limboCheck(stepNum,uart1)
         configName = @samplerData.GetConfigurationFileName()
@@ -3214,6 +3247,7 @@ class TCUSampler
                 		    @boardData[Configuration] = @samplerData.GetConfiguration()
                 		    @boardData[SharedLib::TotalStepDuration] = @samplerData.GetTotalStepDuration()
                 		    @boardData[SharedMemory::LotID] = @samplerData.GetConfiguration()[SharedMemory::LotID]
+                		    @boardData[SharedMemory::LotDesc] = @samplerData.GetConfiguration()[SharedMemory::LotDesc]
                             @samplerData.setErrorColor(nil,"#{__LINE__}-#{__FILE__}")
                 		    @samplerData.SetConfigurationFileName(@boardData[Configuration][FileName])
                 		    @samplerData.SetConfigDateUpload(@boardData[Configuration]["ConfigDateUpload"])
