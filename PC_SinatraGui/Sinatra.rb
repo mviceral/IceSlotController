@@ -755,7 +755,12 @@ class UserInterface
 			tcuData = @sharedMem.GetDispTcu(slotLabel2Param)["#{rawDataParam}"]
 		else
 			tcuData = "---"
+			end
+=begin
+		if slotLabel2Param == "SLOT1" 
+			puts "tcuData=#{tcuData}, labelParam=#{labelParam}, rawDataParam=#{rawDataParam}, slotLabel2Param=#{slotLabel2Param}  #{__LINE__}-#{__FILE__}"
 		end
+=end
 		cellColor = setBkColor(slotLabel2Param,"#99bb11")
 		splittedData = nil
 		if tcuData == "---"
