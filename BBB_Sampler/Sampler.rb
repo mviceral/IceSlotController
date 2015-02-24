@@ -1409,7 +1409,7 @@ class TCUSampler
 			# Hard code some computation 
 			ctParam = ctParamOrig
 			if ctParam >= 16
-				ctParam -= 8
+				ctParam -= 16
 			end
 
 			if ctParam >= 8

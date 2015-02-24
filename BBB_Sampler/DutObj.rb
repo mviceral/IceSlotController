@@ -68,7 +68,7 @@ class DutObj
         line = ""
         # while keepLooping
             begin
-                complete_results = Timeout.timeout(1) do # it was 0.1 before      
+                complete_results = Timeout.timeout(2) do # it was 0.1 before      
                     keepLooping = true
                     while keepLooping
                         c = uart1Param.readchar
@@ -142,7 +142,7 @@ class DutObj
                 ""
             end
 =end            
-            # sleep(0.01) - Commenting this line to see if the polling will be faster and the code would still work.
+            sleep(0.01) # Commenting this line to see if the polling will be faster and the code would still work.
             # puts "getTcuStatus(#{dutNumParam})='#{tbr}' #{__LINE__}-#{__FILE__}"
             return tbr
         #end
