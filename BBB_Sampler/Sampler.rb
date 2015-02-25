@@ -1441,7 +1441,7 @@ class TCUSampler
         SharedLib.bbbLog "Turning on controllers.  #{__LINE__}-#{__FILE__}"
         ct = 0
         while ct<24 do
-            if tcusToSkipParam[ct].nil? == true
+            if tcusToSkipParam[ct].nil? == false
                 bitToUse = etsEnaBit(ct)
                 if 0<=ct && ct <=7  
                     # SharedLib.bbbLog "Turning on controller '#{ct}' (zero base),  @gPIO2.etsEna1Set('#{bitToUse}').  #{__LINE__}-#{__FILE__}"
