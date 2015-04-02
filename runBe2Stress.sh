@@ -19,7 +19,7 @@ echo "a browser at 'http://localhost:4569'.  Please wait for the page to load"
 echo "since the browser is waiting for the slot controllers to respond "
 echo "(at most, about ~1 minute)."
 echo ""
-echo "Once the the display values on the slots are active, they're ready for"
+echo "Once the display values on the slots are active, they're ready for"
 echo "commands."
 read -n1 -r -p "Press any to continue..." key
 

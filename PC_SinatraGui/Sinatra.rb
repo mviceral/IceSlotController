@@ -502,7 +502,71 @@ class UserInterface
 		slotProperties[slotOwnerParam][SharedLib::SlotOwner] = slotOwnerParam
 		slotData = slotProperties[slotOwnerParam].to_json
 
-		fileName = getSlotProperties()["FileName"]
+		fileNameRaw = getSlotProperties()["FileName"]
+        fileName = fileNameRaw[0..-1]
+        # Expected file name format:
+        # BE2-<TYPE>-<TEMP>-<HOURS>.step
+        #
+        # Massaged file name:
+        # BE2-<TYPE>-STEPS-<HOURS>.step
+        # 
+        # Once done, see if you could make a show stopper if file is not in correct format.
+        #
+
+        #
+        # Get the <HOURS> value.
+        # puts "fileNameRaw='#{fileNameRaw}' #{__LINE__}-#{__FILE__}"
+        fileNameReversed = fileNameRaw.reverse!
+        # puts "fileNameReversed='#{fileNameReversed}' #{__LINE__}-#{__FILE__}"
+
+        # Expected data :pets.<SRUOH>-
+        dashAt = fileNameReversed.index('-')
+        # puts "dashAt='#{dashAt}' #{__LINE__}-#{__FILE__}"
+
+        # Get the reversed <HOURS>
+        reversedHours = fileNameReversed[0,dashAt];
+        smallHAt = reversedHours.index('h')
+        bigHAt = reversedHours.index('H')
+        if (smallHAt != nil || bigHAt != nil) 
+            if smallHAt != nil
+                hAt = smallHAt
+            else 
+                hAt = bigHAt
+            end
+            # puts "hAt='#{hAt}' #{__LINE__}-#{__FILE__}"
+            hold = reversedHours[0..hAt-1]+reversedHours[hAt+1..-1]
+            reversedHours = hold
+        end
+        # puts "reversedHours='#{reversedHours}' #{__LINE__}-#{__FILE__}"
+
+        # Un-reverse the hours
+        fileNameHours = reversedHours.reverse!
+        # puts "fileNameHours='#{fileNameHours}' #{__LINE__}-#{__FILE__}"
+
+        # Get the BE2-<TYPE> from the reversed filename.
+        # Get the left over strings after getting the hours
+        # puts "fileNameReversed='#{fileNameReversed}' #{__LINE__}-#{__FILE__}"
+        reversedLeftOverFileName = fileNameReversed[(dashAt+1)..-1]
+        # puts "reversedLeftOverFileName='#{reversedLeftOverFileName}' #{__LINE__}-#{__FILE__}"
+
+        # We should have "BE2-<TYPE>-<TEMP>" in reversed.
+        # Get the index of '-' so we could get "BE2-<TYPE>"
+        dashAt = reversedLeftOverFileName.index('-')
+        # puts "dashAt='#{dashAt}' #{__LINE__}-#{__FILE__}"
+        reversedfileNameType = reversedLeftOverFileName[dashAt+1..-1]
+        # puts "reversedfileNameType='#{reversedfileNameType}' #{__LINE__}-#{__FILE__}"
+
+        # In principle, we have reversedfileNameType "<TYPE>-BE2"
+        fileNameType = reversedfileNameType.reverse!
+        # puts "fileNameType='#{fileNameType}' #{__LINE__}-#{__FILE__}"
+
+        # Construct the filename per specification "BE2-<TYPE>-<HOURS>.step"
+        filenameForDisplay = fileNameType+"-STEPS-"+fileNameHours
+
+        # puts "filename='#{filename}' #{__LINE__}-#{__FILE__}"
+        # Terminate the code to check see if values are correct.
+        # exit
+
 		configDateUpload = getSlotProperties()[SharedLib::ConfigDateUpload]
 		# puts"slotProperties[slotOwnerParam][SharedMemory::LotID]='#{slotProperties[slotOwnerParam][SharedMemory::LotID]}'.  #{__LINE__}-#{__FILE__}"
 		# puts"slotProperties[slotOwnerParam][SharedMemory::LotDesc]='#{slotProperties[slotOwnerParam][SharedMemory::LotDesc]}'.  #{__LINE__}-#{__FILE__}"
@@ -512,7 +576,7 @@ class UserInterface
 		recipeStepFile = "../../slot-controller_data/steps config file repository/#{fileName}"
 		recipeLastModified = File.mtime(recipeStepFile)
 		
-		writeToSettingsLog("Program: #{fileName}, Last modified: #{recipeLastModified}",settingsFileName)
+		writeToSettingsLog("Program: #{filenameForDisplay}, Last modified: #{recipeLastModified}",settingsFileName)
 		
 		# Get the oven ID
 		# Read the content of the file "#{SharedLib::Pc_SlotCtrlIps}" file to get the needed information...
@@ -531,9 +595,9 @@ class UserInterface
 		writeToSettingsLog("PC Software Ver: #{@sharedMem.getCodeVersion(SharedMemory::PcVer)}",settingsFileName)
 		writeToSettingsLog("",settingsFileName)
 
-		#PP.pp(getSlotProperties())
-		## puts"About to send to the Board. #{__LINE__}-#{__FILE__}"
-		#exit
+		# PP.pp(getSlotProperties())
+		# puts"About to send to the Board. #{__LINE__}-#{__FILE__}"
+		# exit
 		begin
 			# puts"LoadConfig on IP='#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}'"
 			
@@ -1436,8 +1500,14 @@ if @sharedMem.GetDispErrorColor(slotLabel2Param).nil? == false
 		topTable += "<a href=\"/TopBtnPressed?slot=#{slotLabel2Param}&BtnState=ClearError\" class=\"myButton\">Clear Error</a>"
 	end
 end
+				slotCtrlVer = @sharedMem.GetDispCodeVersion(slotLabel2Param,SharedMemory::SlotCtrlVer)
 					topTable+=				 					
 				 			"</td></tr>
+                            <tr>
+                                <td valign=\"bottom\">
+						            <font size=\"0\">Slot Ctrl ver:#{slotCtrlVer}</font>
+                                </td>
+                            </tr>
 				 		</table>
 					</td>
 				</tr>
@@ -3160,7 +3230,9 @@ __END__
 				<td  align="right" >
 					<table>
 						<tr><td align="center" valign="bottom" nowrap colspan="2"><font size="5"><%= SharedLib.getSystemID() %></font></td></tr>
-						<tr><td align="right" valign="top" nowrap><font size="1">PC ver:<%= pcVer %>,</font></td><td align="left" valign="top" nowrap><font size="1">Slot Ctrl ver:<%= slotCtrlVer %></font></td></tr>
+						<tr><td align="right" valign="top" nowrap><font size="1">PC ver:<%= pcVer %></font></td>
+                            <!-- <td align="left" valign="top" nowrap><font size="1">Slot Ctrl ver:<%= slotCtrlVer %></font></td> -->
+                        </tr>
 					</table>
 				</td>
 			</tf>
