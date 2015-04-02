@@ -2983,7 +2983,7 @@ class TCUSampler
         # 5.)    ( optional  based on time ) Automated transfer/copy of files once cleared on system
         #   o My interpretation is once the 'Clear' button is pressed, move the log file to a ftp folder; I need to do this still, and better to do it on the actual system.
 
-        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.4")
+        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.5")
         turnOffHeaters()
     	initMuxValueFunc()
     	initpollAdcInputFunc()
@@ -3096,6 +3096,7 @@ class TCUSampler
         timeStamp += 1.0
         
         while true
+            # puts "Check A #{Time.now}"
             # puts "polling #{__LINE__}-#{__FILE__}"
             stepNum = ""
             if @stepToWorkOn.nil? == false
@@ -3222,6 +3223,10 @@ class TCUSampler
                             # Commented out for now since we need to see the activity
                             `rm -rf /mnt/card/Activity.log`
             		    when SharedLib::LoadConfigFromPc
+                            timeStamp = Time.now.to_f
+                            timeStamp += 1.0
+        
+                            # puts "Check B"
                             `rm -rf #{HoldingTankFilename}`
             		        checkDeadTcus(uart1)
             		        @fault = nil
@@ -3310,12 +3315,22 @@ class TCUSampler
             #
             # What if there was a hiccup and waitTime-Time.now becomes negative
             timeNow = Time.now.to_f
+            # puts"#{__LINE__}-#{__FILE__}"            
             if (timeStamp-timeNow>0)
+                # puts"timeStamp-timeNow=#{timeStamp-timeNow} #{__LINE__}-#{__FILE__}"            
+                if timeStamp-timeNow>1
+                    timeStamp=timeNow+1
+                end
                 sleep(timeStamp-timeNow) # Get some sleep time so the Grape app will be a bit more responsive.
+            # puts"#{__LINE__}-#{__FILE__}"            
             end
+            # puts"#{__LINE__}-#{__FILE__}"            
             while (timeStamp-timeNow<0.0)
-                timeStamp += 1.0
+                # puts"timeStamp-timeNow=#{timeStamp-timeNow} #{__LINE__}-#{__FILE__}"            
+                timeStamp = timeNow 
+            # puts"#{__LINE__}-#{__FILE__}"            
             end
+            # puts"#{__LINE__}-#{__FILE__}"            
             
             if getSavedMode() == SharedLib::InRunMode || getSavedMode() == SharedLib::InStopMode
                 if getSavedMode() == SharedLib::InRunMode 

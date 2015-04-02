@@ -5,7 +5,6 @@ require 'grape'
 require 'pp'
 #require 'sqlite3'
 require 'drb/drb'
-
 require_relative '../lib/SharedLib'
 require_relative '../lib/SharedMemory'
 require_relative '../BBB_Sender/SendSampledTcuToPcLib'
@@ -104,6 +103,17 @@ module PcListenerModule
 					mode = hash["Cmd"]
 					sharedMem = SharedMemory.new()
 					hash["Data"] = JSON.parse(params["#{SharedLib::PcToBbbData}"])
+                    # PP.pp(hash["Data"])
+                    # puts "hash[\"Data\"]['ConfigDateUpload'] = '#{hash["Data"][SharedLib::ConfigDateUpload]}'" 
+                    if mode == SharedLib::LoadConfigFromPc
+						date = Time.at(hash["Data"][SharedLib::ConfigDateUpload])
+						# puts "PC time - '#{date.strftime("%d %b %Y %H:%M:%S")}'"
+						# Sync the board time with the pc time
+						# `echo "date before setting:";date`
+						`date -s "#{date.strftime("%d %b %Y %H:%M:%S")}" 2>/dev/null &`
+						# `echo "date after setting:";date`
+                    end
+                    # puts "mode='#{mode}' #{__LINE__}-#{__FILE__}"
 					sharedMem = @@sharedMemService.getSharedMem()		 
 					sharedMem.setDataFromPcToBoard(hash)
 					# puts "Got something from PC: #{hash["Cmd"]}"

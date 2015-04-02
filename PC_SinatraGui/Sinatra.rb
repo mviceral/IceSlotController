@@ -1068,7 +1068,7 @@ class UserInterface
 				# having the grape code do the sending of emails.  The BBB that tells the Grape to send out shutdown email gets its connection
 				# to fall out.  Hopefully, it'll work if the sending is done in Sinatra side - the completely separate process.
 				# ver 1.0.4 - notes in Sampler.rb code on 1.0.4 code implementation.
-				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.4")
+				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.5")
 			end
 	end
 	def GetSlotDisplay(slotLabel2Param)
