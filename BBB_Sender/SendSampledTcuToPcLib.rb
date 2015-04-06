@@ -249,6 +249,9 @@ Temperature Setting: <temp>
         # puts @firstBackLog
         # SharedLib.pause "Checking if backlog file was opened.","#{__LINE__}-#{__FILE__}"
 
+        @pcIpAddr = "192.168.121.1" # Hardcoded IP address of PC
+        
+=begin        
         if @pcIpAddr.nil?
     		File.open("../../slot-controller_data/BBB_configuration files/ethernet scheme setup.csv", "r") do |f|
     			f.each_line do |line|
@@ -266,7 +269,7 @@ Temperature Setting: <temp>
                 @samplerData.ReportError("File 'BBB_configuration files/ethernet scheme setup.csv' does not have an entry for PC IP address.")
             end
         end
-        
+=end        
         if @arrOfDataToSend.nil?
             @arrOfDataToSend = Array.new
         end
@@ -425,3 +428,4 @@ Temperature Setting: <temp>
 end 
 
 # working 224
+

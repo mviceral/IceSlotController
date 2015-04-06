@@ -98,12 +98,15 @@ class UserInterface
   		File.open("../../slot-controller_data/#{SharedLib::Pc_SlotCtrlIps}", "r") do |f|
   			f.each_line do |line|
   				# puts"line='#{line}' #{__LINE__}-#{__FILE__}"
-					if line[0..(lenOfStrToLookInto-1)] == "SLOT1 IP"
-						@slotToIp[SharedLib::SLOT1] = line[(lenOfStrToLookInto+1)..-1].strip
-					elsif line[0..(lenOfStrToLookInto-1)] == "SLOT2 IP"
-						@slotToIp[SharedLib::SLOT2] = line[(lenOfStrToLookInto+1)..-1].strip
-					elsif line[0..(lenOfStrToLookInto-1)] == "SLOT3 IP"
-						@slotToIp[SharedLib::SLOT3] = line[(lenOfStrToLookInto+1)..-1].strip
+				if line[0..(lenOfStrToLookInto-1)] == "SLOT1 IP"
+					# @slotToIp[SharedLib::SLOT1] = line[(lenOfStrToLookInto+1)..-1].strip
+					@slotToIp[SharedLib::SLOT1] = "192.168.121.2"
+				elsif line[0..(lenOfStrToLookInto-1)] == "SLOT2 IP"
+					# @slotToIp[SharedLib::SLOT2] = line[(lenOfStrToLookInto+1)..-1].strip
+					@slotToIp[SharedLib::SLOT2] = "192.168.121.3"
+				elsif line[0..(lenOfStrToLookInto-1)] == "SLOT3 IP"
+					# @slotToIp[SharedLib::SLOT3] = line[(lenOfStrToLookInto+1)..-1].strip
+					@slotToIp[SharedLib::SLOT3] = "192.168.121.4"
 			    end
   			end
   		end
@@ -1068,7 +1071,7 @@ class UserInterface
 				# having the grape code do the sending of emails.  The BBB that tells the Grape to send out shutdown email gets its connection
 				# to fall out.  Hopefully, it'll work if the sending is done in Sinatra side - the completely separate process.
 				# ver 1.0.4 - notes in Sampler.rb code on 1.0.4 code implementation.
-				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.5")
+				@sharedMem.setCodeVersion(SharedMemory::PcVer,"1.0.6")
 			end
 	end
 	def GetSlotDisplay(slotLabel2Param)
@@ -1501,11 +1504,13 @@ if @sharedMem.GetDispErrorColor(slotLabel2Param).nil? == false
 	end
 end
 				slotCtrlVer = @sharedMem.GetDispCodeVersion(slotLabel2Param,SharedMemory::SlotCtrlVer)
+                boardIp = getBoardIp(slotLabel2Param, "#{__LINE__}-#{__FILE__}")
+
 					topTable+=				 					
 				 			"</td></tr>
                             <tr>
                                 <td valign=\"bottom\">
-						            <font size=\"0\">Slot Ctrl ver:#{slotCtrlVer}</font>
+						            <font size=\"0\">Slot Ctrl ver:#{slotCtrlVer}, Ip Addr:#{boardIp}</font>
                                 </td>
                             </tr>
 				 		</table>

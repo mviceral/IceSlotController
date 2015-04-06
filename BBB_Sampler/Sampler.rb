@@ -1317,6 +1317,62 @@ class TCUSampler
     end
 
     def readInEthernetScheme
+        # New approach:  Read the dip switches and determine what slot the BBB is assigned.
+        slotID = SharedLib.getBits(@gPIO2.getGPIO2(GPIO2::SLOT_ADDR_x0))[0..1]
+        # puts "slotID='#{slotID}' @gPIO2.getGPIO2(SLOT_ADDR_x0)='#{@gPIO2.getGPIO2(GPIO2::SLOT_ADDR_x0)}' bits='#{SharedLib.getBits(@gPIO2.getGPIO2(GPIO2::SLOT_ADDR_x0))}' #{__LINE__}-#{__FILE__}"
+		@ethernetScheme = Hash.new
+        @ethernetScheme["PC"] = "192.168.121.1"
+        if slotID == "01"
+		    @samplerData.SetSlotOwner("SLOT1")
+            @ethernetScheme["PS0"] = "192.168.121.5"
+            @ethernetScheme["PS1"] = "192.168.121.6"
+            @ethernetScheme["PS2"] = "192.168.121.7"
+            @ethernetScheme["PS3"] = "192.168.121.8"
+            @ethernetScheme["PS4"] = "192.168.121.9"
+            @ethernetScheme["PS5"] = "192.168.121.10"
+            @ethernetScheme["PS7"] = "192.168.121.11"
+            
+            # Set the ip address of the BBB dynamically
+            `ifconfig eth0 192.168.121.2 netmask 255.255.255.0 &`
+        elsif slotID == "10"
+		    @samplerData.SetSlotOwner("SLOT2")
+            @ethernetScheme["PS0"] = "192.168.121.12"
+            @ethernetScheme["PS1"] = "192.168.121.13"
+            @ethernetScheme["PS2"] = "192.168.121.14"
+            @ethernetScheme["PS3"] = "192.168.121.15"
+            @ethernetScheme["PS4"] = "192.168.121.16"
+            @ethernetScheme["PS5"] = "192.168.121.17"
+            @ethernetScheme["PS7"] = "192.168.121.18"
+            
+            # Set the ip address of the BBB dynamically
+            `ifconfig eth0 192.168.121.3 netmask 255.255.255.0 &`
+        elsif slotID == "11"
+	    	@samplerData.SetSlotOwner("SLOT3")
+            @ethernetScheme["PS0"] = "192.168.121.19"
+            @ethernetScheme["PS1"] = "192.168.121.20"
+            @ethernetScheme["PS2"] = "192.168.121.21"
+            @ethernetScheme["PS3"] = "192.168.121.22"
+            @ethernetScheme["PS4"] = "192.168.121.23"
+            @ethernetScheme["PS5"] = "192.168.121.24"
+            @ethernetScheme["PS7"] = "192.168.121.25"
+            
+            # Set the ip address of the BBB dynamically
+            `ifconfig eth0 192.168.121.4 netmask 255.255.255.0 &`
+		else
+    		@samplerData.SetSlotOwner("SLOTX")
+            @ethernetScheme["PS0"] = "192.168.121.26"
+            @ethernetScheme["PS1"] = "192.168.121.27"
+            @ethernetScheme["PS2"] = "192.168.121.28"
+            @ethernetScheme["PS3"] = "192.168.121.29"
+            @ethernetScheme["PS4"] = "192.168.121.30"
+            @ethernetScheme["PS5"] = "192.168.121.31"
+            @ethernetScheme["PS7"] = "192.168.121.32"
+            `ifconfig eth0 192.168.121.33 netmask 255.255.255.0 &`
+        end
+        
+        # exit
+        # removed code below because we're now using the dip switches.
+=begin        
         # Read in the EthernetScheme.csv file
 		ethernetScheme = Array.new
 		@ethernetScheme = Hash.new
@@ -1356,7 +1412,9 @@ class TCUSampler
             end
             ct += 1
         end
-        # PP.pp(@ethernetScheme)
+        PP.pp(@ethernetScheme)
+        exit
+=end        
     end
     
     def readInBbbDefaultsFile
@@ -2983,7 +3041,7 @@ class TCUSampler
         # 5.)    ( optional  based on time ) Automated transfer/copy of files once cleared on system
         #   o My interpretation is once the 'Clear' button is pressed, move the log file to a ftp folder; I need to do this still, and better to do it on the actual system.
 
-        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.5")
+        @samplerData.setCodeVersion(SharedMemory::SlotCtrlVer,"1.0.6")
         turnOffHeaters()
     	initMuxValueFunc()
     	initpollAdcInputFunc()
@@ -3363,4 +3421,5 @@ class TCUSampler
 end
 
 TCUSampler.runTCUSampler
-# 1191
+# 1321
+
