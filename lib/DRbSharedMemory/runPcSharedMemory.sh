@@ -12,7 +12,7 @@ trap "rm -f ${LockFile}; exit" INT TERM EXIT
 echo $$ > ${LockFile}
 
 # do stuff
-cd /home/cseven/slot-controller/lib/DRbSharedMemory/
+cd /home/be2/slot-controller/lib/DRbSharedMemory/
 # cd /home/marvinv/slot-controller/lib/DRbSharedMemory
 ruby Server.rb
 

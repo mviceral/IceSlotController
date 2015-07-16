@@ -65,6 +65,7 @@ module MigrationCount
 				hash = data[SharedMemory::SystemInfo]
 			end
 			sharedMem = sharedMemServiceParam.getSharedMem()		 
+			 puts "sharedMem='#{sharedMem}' #{__LINE__}-#{__FILE__}"
 			sharedMem.processRecDataFromPC(hash)
 		end
 		
@@ -109,6 +110,7 @@ module MigrationCount
 			# you will get the record with that id.
 			#
 			post "/Duts" do
+				puts "Hello world. #{__LINE__}-#{__FILE__}"
 				if params["Duts"]
 					begin
 						#

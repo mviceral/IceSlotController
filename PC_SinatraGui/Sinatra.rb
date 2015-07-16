@@ -15,6 +15,7 @@ require 'pp' # Pretty print to see the hash values.
 
 require 'drb/drb'
 
+
 class UserInterface
 	SERVER_URI="druby://localhost:8787"
 	#
@@ -90,6 +91,7 @@ class UserInterface
 	end
 
 	def getBoardIp(slotParam, fromParam)
+
 		if @slotToIp.nil?
 			@slotToIp = Hash.new
 
@@ -235,6 +237,7 @@ class UserInterface
 	end
 	
 	def convertToTable(configTemplateRows,maxColCt) 
+		
 		tbr = "" # tbr - to be returned
 		tbr += "			
 				<table width=\"100%\">
@@ -473,7 +476,7 @@ class UserInterface
 	
 	def setToLoadMode(slotOwnerParam)
 		begin
-			# puts"Clearing board IP=#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")} #{__LINE__}-#{__FILE__}"
+			#puts"Clearing board IP=#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")} #{__LINE__}-#{__FILE__}"
 			hash = Hash.new
 			hash[SharedLib::SlotOwner] = slotOwnerParam
 			slotData = hash.to_json
@@ -602,21 +605,21 @@ class UserInterface
 		# puts"About to send to the Board. #{__LINE__}-#{__FILE__}"
 		# exit
 		begin
-			# puts"LoadConfig on IP='#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}'"
+			 puts"LoadConfig on IP='#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}'"
 			
 			@response = 
 		    RestClient.post "#{getBoardIp(slotOwnerParam,"#{__LINE__}-#{__FILE__}")}:8000/v1/pclistener/", { PcToBbbCmd:"#{SharedLib::LoadConfigFromPc}",PcToBbbData:"#{slotData}" }.to_json, :content_type => :json, :accept => :json
-			# puts"#{__LINE__}-#{__FILE__} @response=#{@response}"
+			 puts"#{__LINE__}-#{__FILE__} @response=#{@response}"
 			@sharedMem.SetDispButton(slotOwnerParam,"Loading")			
-			# hash1 = JSON.parse(@response)
-			# puts"check A #{__LINE__}-#{__FILE__}"
-			# hash2 = JSON.parse(hash1["bbbResponding"])
-			# puts"check B #{__LINE__}-#{__FILE__}"
+			 hash1 = JSON.parse(@response)
+			 puts"check A #{__LINE__}-#{__FILE__}"
+			 hash2 = JSON.parse(hash1["bbbResponding"])
+			 puts"check B #{__LINE__}-#{__FILE__}"
 			# @sharedMem.SetDataBoardToPc(hash2)
 			# puts"check C #{__LINE__}-#{__FILE__}"
 			return true
 			rescue
-			# puts"No response.#{__LINE__}-#{__FILE__} @response=#{@response}"
+			 puts"No response.#{__LINE__}-#{__FILE__} @response=#{@response}"
 			@redirectWithError = "/TopBtnPressed?slot=#{slotOwnerParam}&BtnState=#{Load}"
 			@redirectWithError += "&ErrGeneral=bbbDown"
 			#@redirectWithError += "&ErrGeneral=EFGH"
@@ -631,6 +634,7 @@ class UserInterface
 	def initialize
 		@slotToIp = nil		
 		DRb.start_service
+
 		@sharedMemService = DRbObject.new_with_uri(SERVER_URI)
 		@sharedMem = SharedMemory.new
 		# end of 'def initialize'
@@ -1439,6 +1443,7 @@ class UserInterface
 				 				if getButtonDisplay(slotLabel2Param,"#{__LINE__}-#{__FILE__}") == Run	
 btnStateDisp = @sharedMem.GetDispButton(slotLabel2Param)
 # puts"btnStateDisp='#{btnStateDisp}' #{__LINE__}-#{__FILE__}"
+
 toDisplay = Clear
 if btnStateDisp.nil? == false 
 	if btnStateDisp != "Clearing"
@@ -1934,6 +1939,7 @@ end
 	end
 	
 	def setToRunMode(slotOwnerParam)
+		puts "setToRunMode"
 		#
 		# Send all info to BBB
 		# 1) Make sure the BBB is up an running.
@@ -2807,6 +2813,8 @@ end
 	# End of class UserInterface
 end
 	
+
+
 set :ui, UserInterface.new
 set :port, 4569 # orig 4569
 
@@ -2840,7 +2848,12 @@ get '/ViewFile' do
 	return tbr
 end
 
+
+
 get '/TopBtnPressed' do
+
+	# puts "TopBtnPressed"
+
 	settings.ui.setSlotOwner("#{SharedMemory.uriToStr(params[:slot])}")
 	if params[:File].nil? == false
 		#
@@ -2990,7 +3003,10 @@ end
 
 get '/' do 
 	# return settings.ui.display
+	
+	#puts "<html><body>Test</body></html>"
 	erb :home
+
 end
 
 post '/' do	
@@ -3209,15 +3225,16 @@ __END__
 	<body onmousedown="isKeyPressed(event)">
 		<%
 			# Get the PC version, and Slot Ctrl version
-			pcVer = ""
-			slotCtrlVer = ""
+			pcVer = "1.0.6"
+			slotCtrlVer = "1.0"
 			slotNum = 1
 			while pcVer.nil? || pcVer.length == 0 || slotCtrlVer.nil? || slotCtrlVer.length == 0
 				sleep(1)
 				pcVer = settings.ui.sharedMem.getCodeVersion(SharedMemory::PcVer)
-				# puts"SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
+				#puts"SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
 
 				settings.ui.updatedSharedMemory()
+				
 				slotCtrlVer = settings.ui.sharedMem.GetDispCodeVersion("SLOT#{slotNum}",SharedMemory::SlotCtrlVer)
 				# puts"SLOT#{slotNum} check.  Derived slotCtrlVer='#{slotCtrlVer}' pcVer='#{pcVer}' #{__LINE__}-#{__FILE__}"
 				if slotCtrlVer.nil? || slotCtrlVer.length == 0
@@ -3240,7 +3257,7 @@ __END__
                         </tr>
 					</table>
 				</td>
-			</tf>
+			</tr>
 		</table>		
 		<div style="height: 300px;" id="myDiv">
 		</div>

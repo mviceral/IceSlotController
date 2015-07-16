@@ -369,11 +369,11 @@ class SharedLib
 	def getSlotId(slotParam)
 		case slotParam
 			when SLOT1
-				slot = "Slot 1"
+				slot = "Slot1"
 			when SLOT2
-				slot = "Slot 2"
+				slot = "Slot2"
 			when SLOT3
-				slot = "Slot 3"
+				slot = "Slot3"
 			else
 				slot = slotParam
 		end
